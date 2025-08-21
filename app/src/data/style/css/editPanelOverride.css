@@ -1,0 +1,39 @@
+/* Override para posicionar e redimensionar os painéis de edição e tempo */
+#editPanel {
+  position: absolute;
+  top: 50%;
+  left: 40px;
+  transform: translateY(-50%);
+  width: 340px;
+  max-width: 95vw;
+  min-width: 260px;
+  z-index: 50;
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+#astroTimePanel {
+  position: absolute;
+  top: 50%;
+  right: 40px;
+  left: auto;
+  transform: translateY(-50%);
+  width: 210px;
+  min-width: 160px;
+  z-index: 51;
+  display: none;
+}
+
+@media (max-width: 900px) {
+  #editPanel {
+    left: 10px;
+    width: 90vw;
+    min-width: 180px;
+    max-width: 98vw;
+  }
+  #astroTimePanel {
+    right: 10px;
+    width: 150px;
+    min-width: 100px;
+  }
+}

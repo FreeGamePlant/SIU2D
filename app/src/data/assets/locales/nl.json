@@ -1,0 +1,314 @@
+{
+  "ui": {
+    "gameTitle": "SIU 2D - Simulator van het Onvoorstelbare Universum",
+    "buttons": {
+      "play": "Spelen",
+      "saves": "Opslagen",
+      "options": "Opties",
+      "tutorial": "Handleiding",
+      "warnings": "Waarschuwingen",
+      "exit": "Afsluiten",
+      "tSingularity": "T-Singulariteit",
+      "achievements": "Prestaties",
+      "language": "Taal"
+    },
+    "config": {
+      "title": "Universum Instellingen",
+      "gravity": "Zwaartekracht",
+      "drag": "Ruimteweerstand",
+      "shadows": "Schaduwen",
+      "tempZones": "Temperatuurzones",
+      "showNames": "Namen Tonen",
+      "spaceColor": "Ruimtekleur",
+      "musicVolume": "Muziekvolume",
+      "sfxVolume": "Geluidseffecten Volume",
+      "withdrawalMode": "Terugtrekkingsmodus",
+      "resetPhysics": "Natuurkunde Resetten"
+    },
+    "warnings": {
+      "title": "Belangrijke Waarschuwingen",
+      "warning1": "Waarschuwing 1 - Overdrijf het aantal hemellichamen (planeten, sterren, etc.) niet. Te veel objecten kunnen tot vertragingen leiden, afhankelijk van uw apparaat. We streven naar een goede ervaring: eenvoudig, zonder overdrijving, met goede gameplay en leerervaring.",
+      "warning2": "Waarschuwing 2 - Het spel is in ontwikkeling. Bugs kunnen voorkomen. Meld deze a.u.b. zodat we ze kunnen oplossen.",
+      "warning3": "Waarschuwing 3 - Dit spel is niet 100% realistisch. Grootten, afstanden en andere factoren zijn vereenvoudigd voor betere gameplay en begrip.",
+      "warning4": "Waarschuwing 4 - Misbruik het spel niet, dit kan prestatieproblemen en crashes veroorzaken. Het spel is ontworpen voor ontspannen spelplezier.",
+      "enjoy": "Veel plezier! We hopen dat je geniet van het verkennen van het universum. Voor vragen of suggesties, neem contact met ons op."
+    },
+    "saves": {
+      "title": "Universum Opslagen",
+      "placeholder": "Opslagnaam",
+      "saveButton": "Universum Opslaan",
+      "noSaves": "Geen opslagen gevonden.",
+      "load": "Laden",
+      "delete": "Verwijderen"
+    },
+    "achievements": {
+      "title": "Prestaties"
+    },
+    "language": {
+      "title": "Taal Selecteren"
+    },
+    "game": {
+      "creationMode": "Creatiemodus:",
+      "universeInfo": {
+        "title": "Universuminformatie",
+        "time": "Tijd:",
+        "astroCount": "Hemellichamen:",
+        "speed": "Snelheid:",
+        "types": "Typen:"
+      }
+    },
+    "inGameMenu": {
+      "title": "Universummenu",
+      "sections": {
+        "createAstros": "Hemellichamen Maken",
+        "astroSettings": "Hemellichaam Instellingen",
+        "options": "Opties",
+        "physics": "Natuurkunde",
+        "timeControl": "Tijdcontrole",
+        "saves": "Opslagen",
+        "controls": "Besturing"
+      },
+      "appearance": {
+        "title": "Uiterlijk",
+        "primaryColor": "Primaire Kleur:",
+        "secondaryColor": "Secundaire Kleur:",
+        "ringColor": "Ringkleur:"
+      },
+      "physicalProperties": {
+        "title": "Fysische Eigenschappen",
+        "mass": "Massa:",
+        "gravity": "Zwaartekracht:",
+        "temperature": "Temperatuur:",
+        "rotation": "Rotatiesnelheid:"
+      },
+      "characteristics": {
+        "title": "Kenmerken",
+        "water": "Water:",
+        "clouds": "Wolken:",
+        "gases": "Gassen:",
+        "rings": "Ringen:",
+        "ringMass": "Ringmassa:"
+      },
+      "apply": "Instellingen Toepassen",
+      "reset": "Resetten",
+      "presets": "Voorinstellingen",
+      "resetPhysics": "Resetten",
+      "saveUniverse": "Universum Opslaan",
+      "back": "TERUG",
+      "options": {
+        "volume": "Volume:(Radio Converter)",
+        "graphicsQuality": "Grafische Kwaliteit:",
+        "low": "Laag",
+        "medium": "Gemiddeld",
+        "high": "Hoog",
+        "shadows": "Schaduwen:",
+        "tempZones": "Temperatuurzones tonen:",
+        "showNames": "Namen tonen:"
+      },
+      "physics": {
+        "gravity": "Zwaartekracht:",
+        "drag": "Ruimteweerstand:"
+      },
+      "timeControl": {
+        "stop": "Stoppen (0x)",
+        "distantPast": "Ver Verleden (0.01x)",
+        "past": "Verleden (0.1x)",
+        "future": "Toekomst (1x)",
+        "distantFuture": "Verre Toekomst (10x)",
+        "superFast": "Supersnel (100x)",
+        "megaFast": "Megasnel (1000x)",
+        "hyperFast": "Hypersnel (10000x)",
+        "ultraFast": "Ultrasnel (100000x)"
+      },
+      "controls": {
+        "leftClick": "Linkerklik:",
+        "drag": "Slepen:",
+        "rightClick": "Rechterklik:",
+        "wasd": "WASD:",
+        "zoomInOut": "Q / E:",
+        "resetUniverse": "F:",
+        "toggleTempZones": "T:",
+        "leftClickDesc": "Maak hemellichaam",
+        "dragDesc": "Snelheid instellen",
+        "rightClickDesc": "Hemellichaam bewerken",
+        "wasdDesc": "Camera bewegen",
+        "zoomInOutDesc": "Inzoomen / Uitzoomen",
+        "resetUniverseDesc": "Universum resetten",
+        "toggleTempZonesDesc": "Temperatuurzones wisselen"
+      }
+    },
+    "astroTypes": {
+      "radiation": {
+        "name": "Straling",
+        "description": "Energierijke deeltjes uit zwarte gaten en quasars. Kleiner dan ruimtestof."
+      },
+      "nebula": {
+        "name": "Nevel",
+        "description": "Gas- en stofwolken waar sterren en planeten ontstaan."
+      },
+      "spaceDust": {
+        "name": "Ruimtestof",
+        "description": "Microscopische deeltjes die de basis van hemellichamen vormen."
+      },
+      "meteoroid": {
+        "name": "Meteoroïde",
+        "description": "Rots- of metaalfragmenten in de ruimte."
+      },
+      "meteorite": {
+        "name": "Meteoriet",
+        "description": "Meteoroïden die de atmosfeer overleefden."
+      },
+      "comet": {
+        "name": "Komeet",
+        "description": "IJzige lichamen met staarten die bij sterren ontstaan."
+      },
+      "asteroid": {
+        "name": "Planetoïde",
+        "description": "Kleine rotsachtige lichamen met onregelmatige vormen."
+      },
+      "planetoid": {
+        "name": "Planeetachtige",
+        "description": "Hemellichamen kleiner dan planeten maar groter dan planetoïden."
+      },
+      "rockyPlanet": {
+        "name": "Rotsplaneet",
+        "description": "Rotsachtige planeten met continenten, atmosfeer en oceanen."
+      },
+      "gasGiant": {
+        "name": "Gasreus",
+        "description": "Gasreuzen met atmosferische banden en stormen."
+      },
+      "brownDwarf": {
+        "name": "Bruine Dwerg",
+        "description": "Mislukte sterren zonder voldoende massa."
+      },
+      "redDwarf": {
+        "name": "Rode Dwerg",
+        "description": "Bijna mislukte ster, maar vrij eeuwig en heet."
+      },
+      "ttauriStar": {
+        "name": "T Tauri-ster",
+        "description": "Jonge ster in contractiefase, zeer actief."
+      },
+      "star": {
+        "name": "Gemiddelde Ster",
+        "description": "Ster met gemiddelde massa (zoals de Zon), essentieel voor leven."
+      },
+      "redGiant": {
+        "name": "Rode Reus",
+        "description": "Voorlaatste fase van een gemiddelde ster."
+      },
+      "carbonStar": {
+        "name": "Koolstofster",
+        "description": "Koele ster met hoge koolstofconcentratie."
+      },
+      "giantStar": {
+        "name": "Reuzenster",
+        "description": "Ster groter dan gemiddelde sterren."
+      },
+      "redSupergiant": {
+        "name": "Rode Superreus",
+        "description": "Voorlaatste fase van een reuzenster."
+      },
+      "hypergiant": {
+        "name": "Hyperreus",
+        "description": "Extreem lichtsterke en massieve reuzenster."
+      },
+      "massiveStar": {
+        "name": "Massieve Ster",
+        "description": "Ster met massa > 8x die van de Zon."
+      },
+      "supermassiveStar": {
+        "name": "Supermassieve Ster",
+        "description": "Ster met massa > 8x die van de Zon."
+      },
+      "whiteDwarf": {
+        "name": "Witte Dwerg",
+        "description": "Overblijfsel van lichte sterren na de rode reusfase."
+      },
+      "HeliumWhiteDwarf": {
+        "name": "Helium Witte Dwerg",
+        "description": "Overblijfsel van sterren met hoog heliumgehalte."
+      },
+      "blackDwarf": {
+        "name": "Zwarte Dwerg",
+        "description": "Laatste fase van een witte dwerg, koud en donker."
+      },
+      "neutronStar": {
+        "name": "Neutronenster",
+        "description": "Ultradichte restanten van massieve sterren."
+      },
+      "pulsar": {
+        "name": "Pulsar",
+        "description": "Neutronenster met kosmische stralingsbundels - een kosmische vuurtoren!"
+      },
+      "magnetar": {
+        "name": "Magnetar",
+        "description": "Extreem dichte neutronensterren."
+      },
+      "quarkStar": {
+        "name": "Quarkster",
+        "description": "Neutronensterren met gecondenseerde strange kernen."
+      },
+      "strangeStar": {
+        "name": "Strange Ster",
+        "description": "Hypothetische ster gemaakt van quarkmaterie."
+      },
+      "blackHole": {
+        "name": "Zwart Gat",
+        "description": "Regio's met extreme zwaartekracht. Stervormig/Intermediair"
+      },
+      "quasar": {
+        "name": "Quasar",
+        "description": "Actieve supermassieve zwarte gaten met energiestralen."
+      },
+      "wormhole": {
+        "name": "Wormgat",
+        "description": "Hypothetische ruimte-tijdtunnel tussen twee punten."
+      },
+      "whiteHole": {
+        "name": "Wit Gat",
+        "description": "Theoretische regio die materie uitstoot."
+      }
+    },
+    "editPanel": {
+      "title": "Hemellichaam Bewerken",
+      "name": "Naam:",
+      "type": "Type:",
+      "class": "Klasse:",
+      "temperature": "Temperatuur:",
+      "primaryColor": "Primaire Kleur:",
+      "secondaryColor": "Secundaire Kleur:",
+      "mass": "Massa:",
+      "gravity": "Zwaartekracht:",
+      "rotation": "Rotatiesnelheid:",
+      "water": "Water:",
+      "clouds": "Wolken:",
+      "gases": "Gassen:",
+      "ringMass": "Ringmassa:",
+      "description": "Beschrijving:",
+      "locked": "Vergrendeld:",
+      "delete": "Hemellichaam Verwijderen",
+      "apply": "Wijzigingen Toepassen"
+    },
+    "temperatureZones": {
+      "title": "Temperatuurzones:",
+      "tooHot": "Te Hete Zone (> 500°C)",
+      "hot": "Hete Zone (300-500°C)",
+      "warm": "Warme Zone (100-300°C)",
+      "habitable": "Leefbare Zone (0-100°C)",
+      "cold": "Koude Zone (-100-0°C)",
+      "freeze": "Vrieszone (< -100°C)"
+    },
+    "common": {
+      "common": "Gewoon",
+      "uncommon": "Ongewoon",
+      "rare": "Zeldzaam",
+      "hyperRare": "Hyperzeldzaam",
+      "ultraRare": "Ultrazeldzaam",
+      "epic": "Episch",
+      "exotic": "Exotisch",
+      "legendary": "Legendarisch"
+    }
+  }
+}

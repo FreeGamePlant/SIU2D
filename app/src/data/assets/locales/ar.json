@@ -1,0 +1,314 @@
+{
+  "ui": {
+    "gameTitle": "SIU 2D - محاكاة الكون المذهل",
+    "buttons": {
+      "play": "اللعب",
+      "saves": "الحفظ",
+      "options": "الإعدادات",
+      "tutorial": "البرنامج التعليمي",
+      "warnings": "تحذيرات",
+      "exit": "خروج",
+      "tSingularity": "التفرد الزمني",
+      "achievements": "الإنجازات",
+      "language": "اللغة"
+    },
+    "config": {
+      "title": "إعدادات الكون",
+      "gravity": "الجاذبية",
+      "drag": "مقاومة الفضاء",
+      "shadows": "الظلال",
+      "tempZones": "مناطق الحرارة",
+      "showNames": "عرض الأسماء",
+      "spaceColor": "لون الفضاء",
+      "musicVolume": "صوت الموسيقى",
+      "sfxVolume": "صوت المؤثرات",
+      "withdrawalMode": "وضع الانسحاب",
+      "resetPhysics": "إعادة الضبط الفيزيائي"
+    },
+    "warnings": {
+      "title": "تحذيرات هامة",
+      "warning1": "تحذير 1 - لا تبالغ في عدد الأجرام السماوية (كواكب، نجوم، إلخ). الإفراط قد يسبب تباطؤ اللعبة حسب جهازك. نهدف لتجربة لعب متوازنة.",
+      "warning2": "تحذير 2 - اللعبة قيد التطوير. قد تواجه أخطاء. يُرجى الإبلاغ عنها للإصلاح.",
+      "warning3": "تحذير 3 - المحاكاة غير واقعية 100%. تم تبسيط الأحجام والمسافات لتسهيل اللعب والفهم.",
+      "warning4": "تحذير 4 - تجنب الإفراط في استخدام اللعبة لتجنب تعطل الأداء. صُممت للتجربة المرحة المتوازنة.",
+      "enjoy": "استمتع باللعبة! نرحب بأسئلتك ومقترحاتك."
+    },
+    "saves": {
+      "title": "حفظ الكون",
+      "placeholder": "اسم الحفظ",
+      "saveButton": "حفظ الكون",
+      "noSaves": "لا توجد حفظات",
+      "load": "تحميل",
+      "delete": "حذف"
+    },
+    "achievements": {
+      "title": "الإنجازات"
+    },
+    "language": {
+      "title": "اختر اللغة"
+    },
+    "game": {
+      "creationMode": "وضع الإنشاء:",
+      "universeInfo": {
+        "title": "معلومات الكون",
+        "time": "الزمن:",
+        "astroCount": "الأجرام السماوية:",
+        "speed": "السرعة:",
+        "types": "الأنواع:"
+      }
+    },
+    "inGameMenu": {
+      "title": "قائمة الكون",
+      "sections": {
+        "createAstros": "إنشاء أجرام سماوية",
+        "astroSettings": "إعدادات الجرم",
+        "options": "خيارات",
+        "physics": "الفيزياء",
+        "timeControl": "تحكم بالزمن",
+        "saves": "الحفظ",
+        "controls": "عناصر التحكم"
+      },
+      "appearance": {
+        "title": "المظهر",
+        "primaryColor": "اللون الأساسي:",
+        "secondaryColor": "اللون الثانوي:",
+        "ringColor": "لون الحلقات:"
+      },
+      "physicalProperties": {
+        "title": "الخصائص الفيزيائية",
+        "mass": "الكتلة:",
+        "gravity": "الجاذبية:",
+        "temperature": "الحرارة:",
+        "rotation": "سرعة الدوران:"
+      },
+      "characteristics": {
+        "title": "الخصائص",
+        "water": "الماء:",
+        "clouds": "السحب:",
+        "gases": "الغازات:",
+        "rings": "الحلقات:",
+        "ringMass": "كتلة الحلقات:"
+      },
+      "apply": "تطبيق الإعدادات",
+      "reset": "إعادة ضبط",
+      "presets": "إعدادات مسبقة",
+      "resetPhysics": "إعادة الضبط",
+      "saveUniverse": "حفظ الكون",
+      "back": "عودة",
+      "options": {
+        "volume": "الصوت:(محول راديو)",
+        "graphicsQuality": "جودة الرسومات:",
+        "low": "منخفضة",
+        "medium": "متوسطة",
+        "high": "عالية",
+        "shadows": "الظلال:",
+        "tempZones": "عرض مناطق الحرارة:",
+        "showNames": "عرض الأسماء:"
+      },
+      "physics": {
+        "gravity": "قوة الجاذبية:",
+        "drag": "مقاومة الفضاء:"
+      },
+      "timeControl": {
+        "stop": "توقف (0x)",
+        "distantPast": "بطيء جداً (0.01x)",
+        "past": "بطيء (0.1x)",
+        "future": "عادي (1x)",
+        "distantFuture": "سريع (10x)",
+        "superFast": "سريع جداً (100x)",
+        "megaFast": "فائق السرعة (1000x)",
+        "hyperFast": "هايبر سريع (10000x)",
+        "ultraFast": "ألترا سريع (100000x)"
+      },
+      "controls": {
+        "leftClick": "النقر الأيسر:",
+        "drag": "السحب:",
+        "rightClick": "النقر الأيمن:",
+        "wasd": "WASD:",
+        "zoomInOut": "Q / E:",
+        "resetUniverse": "F:",
+        "toggleTempZones": "T:",
+        "leftClickDesc": "إنشاء جرم سماوي",
+        "dragDesc": "ضبط السرعة الابتدائية",
+        "rightClickDesc": "تعديل الجرم",
+        "wasdDesc": "تحريك الكاميرا",
+        "zoomInOutDesc": "تكبير / تصغير",
+        "resetUniverseDesc": "إعادة ضبط الكون",
+        "toggleTempZonesDesc": "تبديل مناطق الحرارة"
+      }
+    },
+    "astroTypes": {
+      "radiation": {
+        "name": "إشعاع",
+        "description": "جسيمات نشطة تنبعث من الثقوب السوداء والكوازارات"
+      },
+      "nebula": {
+        "name": "سديم",
+        "description": "سحب غازية وغبارية تشكل النجوم والكواكب"
+      },
+      "spaceDust": {
+        "name": "غبار فضائي",
+        "description": "جسيمات مجهرية تشكل أساس الأجرام السماوية"
+      },
+      "meteoroid": {
+        "name": "نيزك",
+        "description": "شظايا صخرية أو معدنية في الفضاء"
+      },
+      "meteorite": {
+        "name": "حجر نيزكي",
+        "description": "نيازك نجت من الدخول الجوي"
+      },
+      "comet": {
+        "name": "مذنب",
+        "description": "أجسام جليدية ذات ذيول تتشكل قرب النجوم"
+      },
+      "asteroid": {
+        "name": "كويكب",
+        "description": "أجسام صخرية صغيرة غير منتظمة الشكل"
+      },
+      "planetoid": {
+        "name": "كوكب صغير",
+        "description": "أجرام أصغر من الكواكب وأكبر من الكويكبات"
+      },
+      "rockyPlanet": {
+        "name": "كوكب صخري",
+        "description": "كواكب صخرية بقارات وغلاف جوي ومحيطات"
+      },
+      "gasGiant": {
+        "name": "عملاق غازي",
+        "description": "عمالقة غازية بأحزمة جوية وعواصف"
+      },
+      "brownDwarf": {
+        "name": "قزم بني",
+        "description": "نجوم فاشلة لم تصل لكتلة كافية"
+      },
+      "redDwarf": {
+        "name": "قزم أحمر",
+        "description": "نجم شبه فاشل لكنه دائم وحار"
+      },
+      "ttauriStar": {
+        "name": "نجم تي الثور",
+        "description": "نجم شاب في مرحلة التقلص ونشيط جداً"
+      },
+      "star": {
+        "name": "نجم عادي",
+        "description": "نجم متوسط الكتلة (شبيه بالشمس) أساسي للحياة"
+      },
+      "redGiant": {
+        "name": "عملاق أحمر",
+        "description": "المرحلة ما قبل الأخيرة للنجم العادي"
+      },
+      "carbonStar": {
+        "name": "نجم كربوني",
+        "description": "نجم بارد بتركيز كربون عالي"
+      },
+      "giantStar": {
+        "name": "نجم عملاق",
+        "description": "نجم أكبر من النجوم العادية"
+      },
+      "redSupergiant": {
+        "name": "عملاق أحمر ضخم",
+        "description": "المرحلة ما قبل الأخيرة للنجم العملاق"
+      },
+      "hypergiant": {
+        "name": "هايبر عملاق",
+        "description": "نجم عملاق ضخم وساطع للغاية"
+      },
+      "massiveStar": {
+        "name": "نجم ضخم",
+        "description": "نجم كتلته تفوق الشمس 8 مرات"
+      },
+      "supermassiveStar": {
+        "name": "نجم فائق الضخامة",
+        "description": "نجم كتلته تفوق الشمس 8 مرات"
+      },
+      "whiteDwarf": {
+        "name": "قزم أبيض",
+        "description": "بقايا نجوم منخفضة الكتلة بعد مرحلة العملاق الأحمر"
+      },
+      "HeliumWhiteDwarf": {
+        "name": "قزم أبيض هيليوم",
+        "description": "بقايا نجوم غنية بالهيليوم"
+      },
+      "blackDwarf": {
+        "name": "قزم أسود",
+        "description": "المرحلة النهائية للقزم الأبيض (بارد ومظلم)"
+      },
+      "neutronStar": {
+        "name": "نجم نيوتروني",
+        "description": "بقايا فائقة الكثافة لنجوم ضخمة"
+      },
+      "pulsar": {
+        "name": "نجم نابض",
+        "description": "نجم نيوتروني يبعث إشعاعات كهرومغناطيسية - منارة كونية!"
+      },
+      "magnetar": {
+        "name": "ماغنيطار",
+        "description": "نجوم نيوترونية بكثافة فائقة"
+      },
+      "quarkStar": {
+        "name": "نجم كواركي",
+        "description": "نجوم نيوترونية بنوى كواركية غريبة"
+      },
+      "strangeStar": {
+        "name": "نجم غريب",
+        "description": "نجم افتراضي مكون من مادة كواركية"
+      },
+      "blackHole": {
+        "name": "ثقب أسود",
+        "description": "مناطق فضائية بجاذبية متطرفة. نجمي/متوسط"
+      },
+      "quasar": {
+        "name": "كويزار",
+        "description": "ثقوب سوداء فائقة الكتلة مع نفاثات طاقية"
+      },
+      "wormhole": {
+        "name": "ثقب دودي",
+        "description": "نفق افتراضي في الزمكان يصل نقطتين"
+      },
+      "whiteHole": {
+        "name": "ثقب أبيض",
+        "description": "منطقة افتراضية تدفع المادة للخارج"
+      }
+    },
+    "editPanel": {
+      "title": "تعديل الجرم السماوي",
+      "name": "الاسم:",
+      "type": "النوع:",
+      "class": "الفئة:",
+      "temperature": "الحرارة:",
+      "primaryColor": "اللون الأساسي:",
+      "secondaryColor": "اللون الثانوي:",
+      "mass": "الكتلة:",
+      "gravity": "الجاذبية:",
+      "rotation": "سرعة الدوران:",
+      "water": "الماء:",
+      "clouds": "السحب:",
+      "gases": "الغازات:",
+      "ringMass": "كتلة الحلقات:",
+      "description": "الوصف:",
+      "locked": "مقفل:",
+      "delete": "حذف الجرم",
+      "apply": "تطبيق التغييرات"
+    },
+    "temperatureZones": {
+      "title": "مناطق الحرارة:",
+      "tooHot": "منطقة شديدة الحرارة (>500°م)",
+      "hot": "منطقة حارة (300-500°م)",
+      "warm": "منطقة دافئة (100-300°م)",
+      "habitable": "منطقة صالحة للحياة (0-100°م)",
+      "cold": "منطقة باردة (-100-0°م)",
+      "freeze": "منطقة التجمد (< -100°م)"
+    },
+    "common": {
+      "common": "شائع",
+      "uncommon": "غير شائع",
+      "rare": "نادر",
+      "hyperRare": "نادر جداً",
+      "ultraRare": "نادر للغاية",
+      "epic": "ملحمي",
+      "exotic": "غريب",
+      "legendary": "أسطوري"
+    }
+  }
+}

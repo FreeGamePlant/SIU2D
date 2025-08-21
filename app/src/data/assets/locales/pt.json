@@ -1,0 +1,314 @@
+{
+  "ui": {
+    "gameTitle": "SIU 2D - Simulador do Incrível Universo",
+    "buttons": {
+      "play": "Jogar",
+      "saves": "Saves",
+      "options": "Opções",
+      "tutorial": "Tutorial",
+      "warnings": "Avisos",
+      "exit": "Sair",
+      "tSingularity": "T Singularity",
+      "achievements": "Conquistas",
+      "language": "Idioma"
+    },
+    "config": {
+      "title": "Configurações do Universo",
+      "gravity": "Gravidade",
+      "drag": "Arrasto do Espaço",
+      "shadows": "Sombras",
+      "tempZones": "Zonas de Temperatura",
+      "showNames": "Mostrar Nomes",
+      "spaceColor": "Cor do Espaço",
+      "musicVolume": "Volume da Música",
+      "sfxVolume": "Volume dos Efeitos",
+      "withdrawalMode": "Modo Retirada",
+      "resetPhysics": "Restaurar Física"
+    },
+    "warnings": {
+      "title": "Avisos Importantes",
+      "warning1": "Aviso 1 - Por Favor, não exagere na quantidade de Astros(Planetas,Estrelas e etc.) caso exagere demais na quantidade de Astros, o jogo irá começar a travar, dependendo do seu dispositivo, por favor, não coloque demais! querermos uma boa experiência para você, e simples, sem muito exagero, com jogabilidade e aprendizado bom.",
+      "warning2": "Aviso 2 - O jogo está em desenvolvimento, bugs podem ocorrer, por favor, relate-os para que possamos corrigir e melhorar a experiência de jogo.",
+      "warning3": "Aviso 3 - Esse Jogo claramente não é 100% realista, tamanhos, distâncias e outros fatores são simplificados para facilitar a jogabilidade e o entendimento do universo simulado.",
+      "warning4": "Aviso 4 - Por favor, não abuse no jogo, isso pode causar problemas de desempenho e travamentos. O jogo é projetado para ser jogado de forma casual e divertida, especialmente o aviso 1 acima.",
+      "enjoy": "Bom Jogo! Esperamos que você se divirta explorando o universo e criando seus próprios astros. Se tiver dúvidas ou sugestões, sinta-se à vontade para entrar em contato conosco."
+    },
+    "saves": {
+      "title": "Saves do Universo",
+      "placeholder": "Nome do Save",
+      "saveButton": "Salvar Universo",
+      "noSaves": "Nenhum save encontrado.",
+      "load": "Carregar",
+      "delete": "Excluir"
+    },
+    "achievements": {
+      "title": "Conquistas"
+    },
+    "language": {
+      "title": "Selecione o Idioma"
+    },
+    "game": {
+      "creationMode": "Modo criação:",
+      "universeInfo": {
+        "title": "Informações do Universo",
+        "time": "Tempo:",
+        "astroCount": "Astros:",
+        "speed": "Velocidade:",
+        "types": "Tipos:"
+      }
+    },
+    "inGameMenu": {
+      "title": "Menu do Universo",
+      "sections": {
+        "createAstros": "Criar Astros",
+        "astroSettings": "Configurações do Astro",
+        "options": "Opções",
+        "physics": "Física",
+        "timeControl": "Controle de Tempo",
+        "saves": "Saves",
+        "controls": "Controles"
+      },
+      "appearance": {
+        "title": "Aparência",
+        "primaryColor": "Cor Principal:",
+        "secondaryColor": "Cor Secundária:",
+        "ringColor": "Cor dos Anéis:"
+      },
+      "physicalProperties": {
+        "title": "Propriedades Físicas",
+        "mass": "Massa:",
+        "gravity": "Gravidade:",
+        "temperature": "Temperatura:",
+        "rotation": "Velocidade de Rotação:"
+      },
+      "characteristics": {
+        "title": "Características",
+        "water": "Água:",
+        "clouds": "Nuvens:",
+        "gases": "Gases:",
+        "rings": "Anéis:",
+        "ringMass": "Massa do Anel:"
+      },
+      "apply": "Aplicar Configurações",
+      "reset": "Redefinir",
+      "presets": "Predefinições",
+      "resetPhysics": "Redefinir",
+      "saveUniverse": "Salvar Universo",
+      "back": "VOLTAR",
+      "options": {
+        "volume": "Volume:(Conversor de Rádio)",
+        "graphicsQuality": "Qualidade Gráfica:",
+        "low": "Baixa",
+        "medium": "Média",
+        "high": "Alta",
+        "shadows": "Sombras:",
+        "tempZones": "Mostrar zonas de temperatura:",
+        "showNames": "Mostrar nomes:"
+      },
+      "physics": {
+        "gravity": "Força Gravitacional:",
+        "drag": "Resistência do Espaço:"
+      },
+      "timeControl": {
+        "stop": "Parar (0x)",
+        "distantPast": "Lento (0.01x)",
+        "past": "Lento (0.1x)",
+        "future": "Normal (1x)",
+        "distantFuture": "Rápido (10x)",
+        "superFast": "Super Rápido (100x)",
+        "megaFast": "Mega Rápido (1000x)",
+        "hyperFast": "Hiper Rápido (10000x)",
+        "ultraFast": "Ultra Rápido (100000x)"
+      },
+      "controls": {
+        "leftClick": "Clique Esquerdo:",
+        "drag": "Arrastar:",
+        "rightClick": "Clique Direito:",
+        "wasd": "WASD:",
+        "zoomInOut": "Q / E:",
+        "resetUniverse": "F:",
+        "toggleTempZones": "T:",
+        "leftClickDesc": "Criar astro",
+        "dragDesc": "Definir velocidade inicial",
+        "rightClickDesc": "Editar astro",
+        "wasdDesc": "Mover câmera",
+        "zoomInOutDesc": "Zoom in / Zoom out",
+        "resetUniverseDesc": "Resetar universo",
+        "toggleTempZonesDesc": "Alternar zonas de temperatura"
+      }
+    },
+    "astroTypes": {
+      "radiation": {
+        "name": "Radiação",
+        "description": "Partículas energéticas emitidas por buracos negros e quasares. Muito menores que poeira espacial."
+      },
+      "nebula": {
+        "name": "Nebulosa",
+        "description": "Nuvens de gás e poeira que formam estrelas e planetas."
+      },
+      "spaceDust": {
+        "name": "Poeira Espacial",
+        "description": "Partículas microscópicas que formam a base dos astros."
+      },
+      "meteoroid": {
+        "name": "Meteoróide",
+        "description": "Fragmentos de rocha ou metal no espaço."
+      },
+      "meteorite": {
+        "name": "Meteorito",
+        "description": "Meteoróides que sobreviveram à entrada na atmosfera."
+      },
+      "comet": {
+        "name": "Cometa",
+        "description": "Corpos gelados com caudas que se formam perto de estrelas."
+      },
+      "asteroid": {
+        "name": "Asteroides",
+        "description": "Pequenos corpos rochosos com formatos irregulares."
+      },
+      "planetoid": {
+        "name": "Planetoides",
+        "description": "Corpos celestes menores que planetas, mas maiores que asteroides."
+      },
+      "rockyPlanet": {
+        "name": "Planeta Rochoso",
+        "description": "Planetas Rochosos , com continentes, atmosfera e oceanos."
+      },
+      "gasGiant": {
+        "name": "Planeta Gasoso",
+        "description": "Gigantes gasosos com faixas atmosféricas e tempestades."
+      },
+      "brownDwarf": {
+        "name": "Anã Marrom",
+        "description": "Estrelas fracassadas que não atingiram massa suficiente."
+      },
+      "redDwarf": {
+        "name": "Anã Vermelha",
+        "description": "Estrela que quase fracassou, más é um pouco eterna e quente."
+      },
+      "ttauriStar": {
+        "name": "Estrela T Tauri",
+        "description": "Estrela jovem em fase de contração, muito ativa."
+      },
+      "star": {
+        "name": "Estrela Comum",
+        "description": "Estrela de massa comum, tipo sol, estrelas exenciais para a vida."
+      },
+      "redGiant": {
+        "name": "Gigante Vermelha",
+        "description": "A Pedúltima Fase de uma estrela comum"
+      },
+      "carbonStar": {
+        "name": "Estrela de Carbono",
+        "description": "Estrela fria com alta concentração de carbono."
+      },
+      "giantStar": {
+        "name": "Estrela Gigante",
+        "description": "Uma Estrela maior que estrelas comuns."
+      },
+      "redSupergiant": {
+        "name": "Supergigante Vermelha",
+        "description": "Pedúltima Fase de uma Estrela Gigante"
+      },
+      "hypergiant": {
+        "name": "Hipergigante",
+        "description": "Estrela gigante extremamente luminosa e massiva."
+      },
+      "massiveStar": {
+        "name": "Estrela Massiva",
+        "description": "Estrela com massa superior a 8 vezes a do Sol."
+      },
+      "supermassiveStar": {
+        "name": "Supermassiva",
+        "description": "Estrela com massa superior a 8 vezes a do Sol."
+      },
+      "whiteDwarf": {
+        "name": "Anã Branca",
+        "description": "Resto de estrelas de baixa massa após a fase de gigante vermelha."
+      },
+      "HeliumWhiteDwarf": {
+        "name": "Anã Branca de Hélio",
+        "description": "Resto de estrelas de alta quantidade de hélio."
+      },
+      "blackDwarf": {
+        "name": "Anã Negra",
+        "description": "O estágio final de uma anã branca, completamente fria e escura."
+      },
+      "neutronStar": {
+        "name": "Estrela de Nêutrons",
+        "description": "Remanescentes ultra-densos de estrelas massivas."
+      },
+      "pulsar": {
+        "name": "Pulsar",
+        "description": "Um Tipo de estrela ne neutrons, com faixes de radiação cósmica, um farol cósmico!"
+      },
+      "magnetar": {
+        "name": "Magnetar",
+        "description": "Estrelas de Neutrons extremamente densas."
+      },
+      "quarkStar": {
+        "name": "Pulsar de Quark",
+        "description": "Estrelas de Neutrons com Núcleo Estranho, bem condensado."
+      },
+      "strangeStar": {
+        "name": "Estrela Estranha",
+        "description": "Hipotética estrela feita de matéria quark."
+      },
+      "blackHole": {
+        "name": "Buraco Negro",
+        "description": "Regiões do espaço com gravidade extrema. Estelares/Intermediarios"
+      },
+      "quasar": {
+        "name": "Quasar",
+        "description": "Buracos negros supermassivos ativos com jatos de energia."
+      },
+      "wormhole": {
+        "name": "Buraco de Minhoca",
+        "description": "Hipotético túnel no espaço-tempo conectando dois pontos."
+      },
+      "whiteHole": {
+        "name": "Buraco Branco",
+        "description": "Teórica região que expele matéria."
+      }
+    },
+    "editPanel": {
+      "title": "Editar Astro",
+      "name": "Nome:",
+      "type": "Tipo:",
+      "class": "Classe:",
+      "temperature": "Temperatura:",
+      "primaryColor": "Cor Principal:",
+      "secondaryColor": "Cor Secundária:",
+      "mass": "Massa:",
+      "gravity": "Gravidade:",
+      "rotation": "Velocidade de Rotação:",
+      "water": "Água:",
+      "clouds": "Nuvens:",
+      "gases": "Gases:",
+      "ringMass": "Massa do Anel:",
+      "description": "Descrição:",
+      "locked": "Preso:",
+      "delete": "Deletar Astro",
+      "apply": "Aplicar Alterações"
+    },
+    "temperatureZones": {
+      "title": "Zonas de Temperatura:",
+      "tooHot": "To Hot Zone (&gt; 500°C)",
+      "hot": "Hot Zone (300-500°C)",
+      "warm": "Warm Zone (100-300°C)",
+      "habitable": "Habitable Zone (0-100°C)",
+      "cold": "Cold Zone (-100-0°C)",
+      "freeze": "Freeze Zone (&lt; -100°C)"
+    },
+    "common": {
+      "common": "Comum",
+      "uncommon": "Incomum",
+      "rare": "Raro",
+      "hyperRare": "Hiper Raro",
+      "ultraRare": "Ultra Raro",
+      "epic": "Épico",
+      "exotic": "Exótico",
+      "legendary": "Legendário"
+    }
+  }
+}

@@ -1,0 +1,81 @@
+/* Estilos para o painel flutuante de tempo do astro */
+#astroTimePanel {
+  display: none;
+  position: absolute;
+  top: 50%;
+  left: calc(50% + 340px);
+  transform: translateY(-50%);
+  width: 210px;
+  max-height: 90vh;
+  overflow-y: auto;
+  background: rgba(2,48,71,0.98);
+  border: 2px solid #4fc3f7;
+  border-radius: 12px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+  padding: 12px 14px;
+  z-index: 101;
+}
+
+/* Força sempre a barra de rolagem vertical para teste */
+#astroTimePanel {
+  overflow-y: scroll !important;
+}
+
+#astroTimePanel::-webkit-scrollbar {
+  width: 8px;
+}
+#astroTimePanel::-webkit-scrollbar-thumb {
+  background: #4fc3f7;
+  border-radius: 8px;
+}
+#astroTimePanel::-webkit-scrollbar-track {
+  background: #01203a;
+  border-radius: 8px;
+}
+
+#astroTimePanel::-webkit-scrollbar {
+  width: 8px;
+}
+#astroTimePanel::-webkit-scrollbar-thumb {
+  background: #4fc3f7;
+  border-radius: 8px;
+}
+#astroTimePanel::-webkit-scrollbar-track {
+  background: #01203a;
+  border-radius: 8px;
+}
+
+#astroTimePanel .astro-time-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+#astroTimePanel .astro-time-title {
+  font-size: 1rem;
+  color: #29b6f6;
+  font-weight: bold;
+}
+
+#closeTimePanel {
+  background: none;
+  border: none;
+  color: #4fc3f7;
+  font-size: 1.1rem;
+  cursor: pointer;
+}
+
+#astroTimePanel .edit-group {
+  margin-bottom: 8px;
+}
+#astroTimePanel .edit-group:last-child {
+  margin-bottom: 0;
+}
+#astroTimePanel .edit-label {
+  font-size: 0.95rem;
+}
+#astroTimePanel .edit-input {
+  font-size: 0.95rem;
+  padding: 6px;
+}

@@ -1,0 +1,314 @@
+{
+  "ui": {
+    "gameTitle": "SIU 2D - 神奇宇宙模拟器",
+    "buttons": {
+      "play": "开始游戏",
+      "saves": "存档",
+      "options": "设置",
+      "tutorial": "教程",
+      "warnings": "重要警告",
+      "exit": "退出",
+      "tSingularity": "T奇点",
+      "achievements": "成就",
+      "language": "语言"
+    },
+    "config": {
+      "title": "宇宙设置",
+      "gravity": "引力强度",
+      "drag": "空间阻力",
+      "shadows": "阴影效果",
+      "tempZones": "温度区域",
+      "showNames": "显示名称",
+      "spaceColor": "空间颜色",
+      "musicVolume": "音乐音量",
+      "sfxVolume": "音效音量",
+      "withdrawalMode": "撤离模式",
+      "resetPhysics": "重置物理规则"
+    },
+    "warnings": {
+      "title": "重要警告",
+      "warning1": "警告1 - 请勿过度添加天体（行星、恒星等）。设备性能有限，过多天体会导致卡顿。我们旨在为您提供简洁、流畅的游戏体验与学习环境。",
+      "warning2": "警告2 - 游戏处于开发阶段。可能出现漏洞，请及时报告以便我们修复和改进体验。",
+      "warning3": "警告3 - 本游戏非100%写实。为优化游戏性和理解性，天体的尺寸、距离等参数均已简化处理。",
+      "warning4": "警告4 - 请勿滥用游戏功能，过度操作可能导致性能问题或崩溃。游戏设计初衷为休闲娱乐，请特别注意警告1。",
+      "enjoy": "祝您游戏愉快！期待您在探索宇宙和创造天体的过程中获得乐趣。如有疑问或建议，欢迎随时联系我们。"
+    },
+    "saves": {
+      "title": "宇宙存档",
+      "placeholder": "存档名称",
+      "saveButton": "保存宇宙",
+      "noSaves": "未找到存档",
+      "load": "加载",
+      "delete": "删除"
+    },
+    "achievements": {
+      "title": "成就系统"
+    },
+    "language": {
+      "title": "选择语言"
+    },
+    "game": {
+      "creationMode": "创造模式：",
+      "universeInfo": {
+        "title": "宇宙信息",
+        "time": "时间：",
+        "astroCount": "天体数量：",
+        "speed": "速度：",
+        "types": "类型："
+      }
+    },
+    "inGameMenu": {
+      "title": "宇宙菜单",
+      "sections": {
+        "createAstros": "创建天体",
+        "astroSettings": "天体设置",
+        "options": "选项",
+        "physics": "物理规则",
+        "timeControl": "时间控制",
+        "saves": "存档管理",
+        "controls": "操作控制"
+      },
+      "appearance": {
+        "title": "外观设置",
+        "primaryColor": "主色调：",
+        "secondaryColor": "辅色调：",
+        "ringColor": "星环颜色："
+      },
+      "physicalProperties": {
+        "title": "物理属性",
+        "mass": "质量：",
+        "gravity": "引力：",
+        "temperature": "温度：",
+        "rotation": "自转速度："
+      },
+      "characteristics": {
+        "title": "特性",
+        "water": "水量：",
+        "clouds": "云量：",
+        "gases": "气体：",
+        "rings": "星环：",
+        "ringMass": "星环质量："
+      },
+      "apply": "应用设置",
+      "reset": "重置",
+      "presets": "预设方案",
+      "resetPhysics": "重置",
+      "saveUniverse": "保存宇宙",
+      "back": "返回",
+      "options": {
+        "volume": "音量：（无线电转换器）",
+        "graphicsQuality": "画质：",
+        "low": "低",
+        "medium": "中",
+        "high": "高",
+        "shadows": "阴影效果：",
+        "tempZones": "显示温度区域：",
+        "showNames": "显示名称："
+      },
+      "physics": {
+        "gravity": "引力强度：",
+        "drag": "空间阻力："
+      },
+      "timeControl": {
+        "stop": "停止 (0x)",
+        "distantPast": "远古 (0.01x)",
+        "past": "过去 (0.1x)",
+        "future": "现在 (1x)",
+        "distantFuture": "未来 (10x)",
+        "superFast": "超速 (100x)",
+        "megaFast": "极速 (1000x)",
+        "hyperFast": "神速 (10000x)",
+        "ultraFast": "终极速 (100000x)"
+      },
+      "controls": {
+        "leftClick": "左键点击：",
+        "drag": "拖拽：",
+        "rightClick": "右键点击：",
+        "wasd": "WASD键：",
+        "zoomInOut": "Q/E键：",
+        "resetUniverse": "F键：",
+        "toggleTempZones": "T键：",
+        "leftClickDesc": "创建天体",
+        "dragDesc": "设置初始速度",
+        "rightClickDesc": "编辑天体",
+        "wasdDesc": "移动视角",
+        "zoomInOutDesc": "放大/缩小",
+        "resetUniverseDesc": "重置宇宙",
+        "toggleTempZonesDesc": "切换温度区域"
+      }
+    },
+    "astroTypes": {
+      "radiation": {
+        "name": "辐射粒子",
+        "description": "黑洞和类星体释放的高能粒子，比太空尘埃更微小"
+      },
+      "nebula": {
+        "name": "星云",
+        "description": "气体和尘埃构成的云团，恒星与行星的诞生之地"
+      },
+      "spaceDust": {
+        "name": "太空尘埃",
+        "description": "构成天体基础的微观粒子"
+      },
+      "meteoroid": {
+        "name": "流星体",
+        "description": "太空中的岩石或金属碎片"
+      },
+      "meteorite": {
+        "name": "陨石",
+        "description": "成功穿越大气层的流星体"
+      },
+      "comet": {
+        "name": "彗星",
+        "description": "恒星附近形成的带尾冰质天体"
+      },
+      "asteroid": {
+        "name": "小行星",
+        "description": "不规则形状的岩石天体"
+      },
+      "planetoid": {
+        "name": "类行星",
+        "description": "体积小于行星但大于小行星的天体"
+      },
+      "rockyPlanet": {
+        "name": "岩石行星",
+        "description": "拥有大陆、大气和海洋的固态行星"
+      },
+      "gasGiant": {
+        "name": "气态巨行星",
+        "description": "拥有大气带和风暴的气态行星"
+      },
+      "brownDwarf": {
+        "name": "褐矮星",
+        "description": "未能达到恒星质量极限的失败恒星"
+      },
+      "redDwarf": {
+        "name": "红矮星",
+        "description": "接近失败但近乎永恒的炽热恒星"
+      },
+      "ttauriStar": {
+        "name": "金牛T星",
+        "description": "处于收缩阶段的高度活跃年轻恒星"
+      },
+      "star": {
+        "name": "主序星",
+        "description": "中等质量恒星（类太阳），生命存在的关键"
+      },
+      "redGiant": {
+        "name": "红巨星",
+        "description": "主序星的末期阶段"
+      },
+      "carbonStar": {
+        "name": "碳星",
+        "description": "高碳浓度的低温恒星"
+      },
+      "giantStar": {
+        "name": "巨星",
+        "description": "体积超越主序星的恒星"
+      },
+      "redSupergiant": {
+        "name": "红超巨星",
+        "description": "巨星的末日阶段"
+      },
+      "hypergiant": {
+        "name": "特超巨星",
+        "description": "极端明亮的大质量恒星"
+      },
+      "massiveStar": {
+        "name": "大质量恒星",
+        "description": "质量超过太阳8倍的恒星"
+      },
+      "supermassiveStar": {
+        "name": "超大质量恒星",
+        "description": "质量超过太阳8倍的恒星"
+      },
+      "whiteDwarf": {
+        "name": "白矮星",
+        "description": "低质量恒星红巨星阶段后的残骸"
+      },
+      "HeliumWhiteDwarf": {
+        "name": "氦白矮星",
+        "description": "高氦含量恒星的残骸"
+      },
+      "blackDwarf": {
+        "name": "黑矮星",
+        "description": "白矮星的终极形态，完全冷却的黑暗残骸"
+      },
+      "neutronStar": {
+        "name": "中子星",
+        "description": "大质量恒星坍缩形成的超高密度残骸"
+      },
+      "pulsar": {
+        "name": "脉冲星",
+        "description": "释放宇宙射线束的中子星——宇宙灯塔！"
+      },
+      "magnetar": {
+        "name": "磁星",
+        "description": "拥有极端磁场的中子星"
+      },
+      "quarkStar": {
+        "name": "夸克星",
+        "description": "核心由奇异物质构成的中子星"
+      },
+      "strangeStar": {
+        "name": "奇异星",
+        "description": "由夸克物质构成的假想天体"
+      },
+      "blackHole": {
+        "name": "黑洞",
+        "description": "具有极端引力的时空区域（恒星级/中等质量）"
+      },
+      "quasar": {
+        "name": "类星体",
+        "description": "释放能量喷流的活跃超大质量黑洞"
+      },
+      "wormhole": {
+        "name": "虫洞",
+        "description": "连接时空两点的假想隧道"
+      },
+      "whiteHole": {
+        "name": "白洞",
+        "description": "理论上只喷发物质的时空区域"
+      }
+    },
+    "editPanel": {
+      "title": "编辑天体",
+      "name": "名称：",
+      "type": "类型：",
+      "class": "类别：",
+      "temperature": "温度：",
+      "primaryColor": "主色调：",
+      "secondaryColor": "辅色调：",
+      "mass": "质量：",
+      "gravity": "引力：",
+      "rotation": "自转速度：",
+      "water": "水量：",
+      "clouds": "云量：",
+      "gases": "气体：",
+      "ringMass": "星环质量：",
+      "description": "描述：",
+      "locked": "已锁定：",
+      "delete": "删除天体",
+      "apply": "应用修改"
+    },
+    "temperatureZones": {
+      "title": "温度区域：",
+      "tooHot": "极热区 (>500°C)",
+      "hot": "高温区 (300-500°C)",
+      "warm": "温暖区 (100-300°C)",
+      "habitable": "宜居区 (0-100°C)",
+      "cold": "寒冷区 (-100-0°C)",
+      "freeze": "冰冻区 (<-100°C)"
+    },
+    "common": {
+      "common": "普通",
+      "uncommon": "罕见",
+      "rare": "稀有",
+      "hyperRare": "超稀有",
+      "ultraRare": "特稀有",
+      "epic": "史诗",
+      "exotic": "异域",
+      "legendary": "传说"
+    }
+  }
+}

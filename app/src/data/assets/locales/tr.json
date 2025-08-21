@@ -1,0 +1,314 @@
+{
+  "ui": {
+    "gameTitle": "SIU 2D - İnanılmaz Evren Simülatörü",
+    "buttons": {
+      "play": "Oyna",
+      "saves": "Kayıtlar",
+      "options": "Ayarlar",
+      "tutorial": "Öğretici",
+      "warnings": "Uyarılar",
+      "exit": "Çıkış",
+      "tSingularity": "T Tekilliği",
+      "achievements": "Başarımlar",
+      "language": "Dil"
+    },
+    "config": {
+      "title": "Evren Ayarları",
+      "gravity": "Yer Çekimi",
+      "drag": "Uzay Direnci",
+      "shadows": "Gölgeler",
+      "tempZones": "Sıcaklık Bölgeleri",
+      "showNames": "İsimleri Göster",
+      "spaceColor": "Uzay Rengi",
+      "musicVolume": "Müzik Sesi",
+      "sfxVolume": "Ses Efektleri",
+      "withdrawalMode": "Çekilme Modu",
+      "resetPhysics": "Fiziği Sıfırla"
+    },
+    "warnings": {
+      "title": "Önemli Uyarılar",
+      "warning1": "Uyarı 1 - Lütfen Gök Cisimlerinin (Gezegenler, Yıldızlar vb.) sayısını abartmayın. Çok fazla eklerseniz, cihazınıza bağlı olarak oyun takılabilir. Basit, aşırılık olmadan, iyi oynanış ve öğrenmeyle güzel bir deneyim yaşamanızı istiyoruz.",
+      "warning2": "Uyarı 2 - Oyun geliştirme aşamasındadır. Hatalar oluşabilir. Lütfen bunları bize bildirin ki düzeltebilelim ve oyun deneyiminizi iyileştirebilelim.",
+      "warning3": "Uyarı 3 - Bu oyun %100 gerçekçi değildir. Boyutlar, mesafeler ve diğer faktörler oyun kolaylığı ve simüle edilen evrenin anlaşılırlığı için basitleştirilmiştir.",
+      "warning4": "Uyarı 4 - Lütfen oyunu kötüye kullanmayın, çünkü bu performans sorunlarına ve çökmelere neden olabilir. Oyun, özellikle Yukarıdaki Uyarı 1 ile ilgili olarak, rahat ve eğlenceli oynanış için tasarlanmıştır.",
+      "enjoy": "Oyunun Keyfini Çıkarın! Evreni keşfetmekten ve kendi gök cisimlerinizi oluşturmaktan keyif almanızı umuyoruz. Sorularınız veya önerileriniz varsa, bize ulaşmaktan çekinmeyin."
+    },
+    "saves": {
+      "title": "Evren Kayıtları",
+      "placeholder": "Kayıt Adı",
+      "saveButton": "Evreni Kaydet",
+      "noSaves": "Kayıt bulunamadı.",
+      "load": "Yükle",
+      "delete": "Sil"
+    },
+    "achievements": {
+      "title": "Başarımlar"
+    },
+    "language": {
+      "title": "Dil Seçin"
+    },
+    "game": {
+      "creationMode": "Oluşturma modu:",
+      "universeInfo": {
+        "title": "Evren Bilgisi",
+        "time": "Zaman:",
+        "astroCount": "Gök Cisimleri:",
+        "speed": "Hız:",
+        "types": "Türler:"
+      }
+    },
+    "inGameMenu": {
+      "title": "Evren Menüsü",
+      "sections": {
+        "createAstros": "Gök Cisimleri Oluştur",
+        "astroSettings": "Gök Cismi Ayarları",
+        "options": "Ayarlar",
+        "physics": "Fizik",
+        "timeControl": "Zaman Kontrolü",
+        "saves": "Kayıtlar",
+        "controls": "Kontroller"
+      },
+      "appearance": {
+        "title": "Görünüm",
+        "primaryColor": "Ana Renk:",
+        "secondaryColor": "İkincil Renk:",
+        "ringColor": "Halka Rengi:"
+      },
+      "physicalProperties": {
+        "title": "Fiziksel Özellikler",
+        "mass": "Kütle:",
+        "gravity": "Yer Çekimi:",
+        "temperature": "Sıcaklık:",
+        "rotation": "Dönüş Hızı:"
+      },
+      "characteristics": {
+        "title": "Özellikler",
+        "water": "Su:",
+        "clouds": "Bulutlar:",
+        "gases": "Gazlar:",
+        "rings": "Halkalar:",
+        "ringMass": "Halka Kütlesi:"
+      },
+      "apply": "Ayarları Uygula",
+      "reset": "Sıfırla",
+      "presets": "Ön Ayarlar",
+      "resetPhysics": "Sıfırla",
+      "saveUniverse": "Evreni Kaydet",
+      "back": "GERİ",
+      "options": {
+        "volume": "Ses: (Radyo Dönüştürücü)",
+        "graphicsQuality": "Grafik Kalitesi:",
+        "low": "Düşük",
+        "medium": "Orta",
+        "high": "Yüksek",
+        "shadows": "Gölgeler:",
+        "tempZones": "Sıcaklık bölgelerini göster:",
+        "showNames": "İsimleri göster:"
+      },
+      "physics": {
+        "gravity": "Yer Çekimi Kuvveti:",
+        "drag": "Uzay Direnci:"
+      },
+      "timeControl": {
+        "stop": "Durdur (0x)",
+        "distantPast": "Yavaş (0.01x)",
+        "past": "Yavaş (0.1x)",
+        "future": "Normal (1x)",
+        "distantFuture": "Hızlı (10x)",
+        "superFast": "Süper Hızlı (100x)",
+        "megaFast": "Mega Hızlı (1000x)",
+        "hyperFast": "Hyper Hızlı (10000x)",
+        "ultraFast": "Ultra Hızlı (100000x)"
+      },
+      "controls": {
+        "leftClick": "Sol Tık:",
+        "drag": "Sürükle:",
+        "rightClick": "Sağ Tık:",
+        "wasd": "WASD:",
+        "zoomInOut": "Q / E:",
+        "resetUniverse": "F:",
+        "toggleTempZones": "T:",
+        "leftClickDesc": "Gök cismi oluştur",
+        "dragDesc": "Başlangıç hızını ayarla",
+        "rightClickDesc": "Gök cismini düzenle",
+        "wasdDesc": "Kamerayı hareket ettir",
+        "zoomInOutDesc": "Yakınlaş / Uzaklaş",
+        "resetUniverseDesc": "Evreni sıfırla",
+        "toggleTempZonesDesc": "Sıcaklık bölgelerini aç/kapat"
+      }
+    },
+    "astroTypes": {
+      "radiation": {
+        "name": "Radyasyon",
+        "description": "Kara delikler ve kuasarlar tarafından yayılan enerjik parçacıklar. Uzay tozundan çok daha küçük."
+      },
+      "nebula": {
+        "name": "Bulutsu",
+        "description": "Yıldız ve gezegen oluşturan gaz ve toz bulutları."
+      },
+      "spaceDust": {
+        "name": "Uzay Tozu",
+        "description": "Gök cisimlerinin temelini oluşturan mikroskobik parçacıklar."
+      },
+      "meteoroid": {
+        "name": "Meteoroid",
+        "description": "Uzaydaki kaya veya metal parçaları."
+      },
+      "meteorite": {
+        "name": "Meteorit",
+        "description": "Atmosfere girişten sağ çıkan meteoroidler."
+      },
+      "comet": {
+        "name": "Kuyruklu Yıldız",
+        "description": "Yıldızların yakınında oluşan, kuyruklu buzlu cisimler."
+      },
+      "asteroid": {
+        "name": "Asteroit",
+        "description": "Düzensiz şekilli küçük kaya cisimler."
+      },
+      "planetoid": {
+        "name": "Planetoid",
+        "description": "Gezegenlerden küçük ama asteroitlerden büyük gök cisimleri."
+      },
+      "rockyPlanet": {
+        "name": "Kayalık Gezegen",
+        "description": "Kıtaları, atmosferi ve okyanusları olan kayalık gezegenler."
+      },
+      "gasGiant": {
+        "name": "Gaz Devi",
+        "description": "Atmosferik bantları ve fırtınaları olan gaz devleri."
+      },
+      "brownDwarf": {
+        "name": "Kahverengi Cüce",
+        "description": "Yeterli kütleye ulaşamayan başarısız yıldızlar."
+      },
+      "redDwarf": {
+        "name": "Kırmızı Cüce",
+        "description": "Neredeyse başarısız yıldız, ama bir nebze ebedi ve sıcak."
+      },
+      "ttauriStar": {
+        "name": "T Tauri Yıldızı",
+        "description": "Daralma aşamasındaki genç yıldız, oldukça aktif."
+      },
+      "star": {
+        "name": "Sıradan Yıldız",
+        "description": "Ortalama kütleli yıldız (Güneş benzeri), yaşam için gerekli."
+      },
+      "redGiant": {
+        "name": "Kırmızı Dev",
+        "description": "Sıradan bir yıldızın sondan bir önceki evresi."
+      },
+      "carbonStar": {
+        "name": "Karbon Yıldızı",
+        "description": "Yüksek karbon konsantrasyonlu soğuk yıldız."
+      },
+      "giantStar": {
+        "name": "Dev Yıldız",
+        "description": "Sıradan yıldızlardan daha büyük yıldız."
+      },
+      "redSupergiant": {
+        "name": "Kırmızı Süperdev",
+        "description": "Dev bir yıldızın sondan bir önceki evresi."
+      },
+      "hypergiant": {
+        "name": "Hiperdev",
+        "description": "Aşırı parlak ve büyük kütleli dev yıldız."
+      },
+      "massiveStar": {
+        "name": "Büyük Kütleli Yıldız",
+        "description": "Kütlesi Güneş'inkinin 8 katından fazla olan yıldız."
+      },
+      "supermassiveStar": {
+        "name": "Süper Büyük Kütleli Yıldız",
+        "description": "Kütlesi Güneş'inkinin 8 katından fazla olan yıldız."
+      },
+      "whiteDwarf": {
+        "name": "Beyaz Cüce",
+        "description": "Düşük kütleli yıldızların kırmızı dev evresinden sonraki kalıntısı."
+      },
+      "HeliumWhiteDwarf": {
+        "name": "Helyum Beyaz Cücesi",
+        "description": "Yüksek helyum içeriğine sahip yıldızların kalıntısı."
+      },
+      "blackDwarf": {
+        "name": "Kara Cüce",
+        "description": "Beyaz cücenin tamamen soğumuş ve karanlık son hali."
+      },
+      "neutronStar": {
+        "name": "Nötron Yıldızı",
+        "description": "Büyük kütleli yıldızların ultra yoğun kalıntıları."
+      },
+      "pulsar": {
+        "name": "Pulsar",
+        "description": "Kozmik radyasyon ışınları olan bir nötron yıldızı türü - bir kozmik deniz feneri!"
+      },
+      "magnetar": {
+        "name": "Magnetar",
+        "description": "Son derece yoğun nötron yıldızları."
+      },
+      "quarkStar": {
+        "name": "Kuark Yıldızı",
+        "description": "Tuhaf çekirdekleri yoğunlaşmış nötron yıldızları."
+      },
+      "strangeStar": {
+        "name": "Tuhaf Yıldız",
+        "description": "Kuark maddesinden yapılmış varsayımsal yıldız."
+      },
+      "blackHole": {
+        "name": "Kara Delik",
+        "description": "Aşırı yer çekimine sahip uzay bölgeleri. Yıldızsal/Ara"
+      },
+      "quasar": {
+        "name": "Kuas",
+        "description": "Enerji jetleri olan aktif süper kütleli kara delikler."
+      },
+      "wormhole": {
+        "name": "Solucan Deliği",
+        "description": "İki noktayı birbirine bağlayan varsayımsal uzay-zaman tüneli."
+      },
+      "whiteHole": {
+        "name": "Beyaz Delik",
+        "description": "Maddeyi dışarı atan teorik bölge."
+      }
+    },
+    "editPanel": {
+      "title": "Gök Cismini Düzenle",
+      "name": "İsim:",
+      "type": "Tür:",
+      "class": "Sınıf:",
+      "temperature": "Sıcaklık:",
+      "primaryColor": "Ana Renk:",
+      "secondaryColor": "İkincil Renk:",
+      "mass": "Kütle:",
+      "gravity": "Yer Çekimi:",
+      "rotation": "Dönüş Hızı:",
+      "water": "Su:",
+      "clouds": "Bulutlar:",
+      "gases": "Gazlar:",
+      "ringMass": "Halka Kütlesi:",
+      "description": "Açıklama:",
+      "locked": "Kilitli:",
+      "delete": "Gök Cismini Sil",
+      "apply": "Değişiklikleri Uygula"
+    },
+    "temperatureZones": {
+      "title": "Sıcaklık Bölgeleri:",
+      "tooHot": "Çok Sıcak Bölge (> 500°C)",
+      "hot": "Sıcak Bölge (300-500°C)",
+      "warm": "Ilık Bölge (100-300°C)",
+      "habitable": "Yaşanabilir Bölge (0-100°C)",
+      "cold": "Soğuk Bölge (-100-0°C)",
+      "freeze": "Donma Bölgesi (< -100°C)"
+    },
+    "common": {
+      "common": "Yaygın",
+      "uncommon": "Nadir",
+      "rare": "Çok Nadir",
+      "hyperRare": "Aşırı Nadir",
+      "ultraRare": "Ultra Nadir",
+      "epic": "Epik",
+      "exotic": "Egzotik",
+      "legendary": "Efsanevi"
+    }
+  }
+}

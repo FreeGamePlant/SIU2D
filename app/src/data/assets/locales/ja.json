@@ -1,0 +1,314 @@
+{
+  "ui": {
+    "gameTitle": "SIU 2D - 驚異の宇宙シミュレーター",
+    "buttons": {
+      "play": "プレイ",
+      "saves": "セーブ",
+      "options": "オプション",
+      "tutorial": "チュートリアル",
+      "warnings": "警告",
+      "exit": "終了",
+      "tSingularity": "T特異点",
+      "achievements": "実績",
+      "language": "言語"
+    },
+    "config": {
+      "title": "宇宙設定",
+      "gravity": "重力",
+      "drag": "空間抵抗",
+      "shadows": "影",
+      "tempZones": "温度ゾーン",
+      "showNames": "名前表示",
+      "spaceColor": "宇宙の色",
+      "musicVolume": "音楽音量",
+      "sfxVolume": "効果音音量",
+      "withdrawalMode": "退避モード",
+      "resetPhysics": "物理リセット"
+    },
+    "warnings": {
+      "title": "重要なお知らせ",
+      "warning1": "警告1 - 天体（惑星、恒星など）の数を過度に増やさないでください。デバイスによってはゲームが重くなります。良好な体験とシンプルなゲームプレイ、学習効果を提供するためです。",
+      "warning2": "警告2 - ゲームは開発中です。バグが発生する可能性があるため、報告をお願いします。",
+      "warning3": "警告3 - このゲームは100%リアルではありません。サイズ、距離などはゲームプレイと理解を容易にするため簡略化されています。",
+      "warning4": "警告4 - ゲームの過度な使用はパフォーマンス問題やクラッシュの原因となります。特に警告1に注意してください。",
+      "enjoy": "楽しいゲームを！宇宙探索と天体創造をお楽しみください。質問や提案があればお知らせください。"
+    },
+    "saves": {
+      "title": "宇宙セーブデータ",
+      "placeholder": "セーブ名",
+      "saveButton": "宇宙を保存",
+      "noSaves": "セーブデータが見つかりません",
+      "load": "読み込む",
+      "delete": "削除"
+    },
+    "achievements": {
+      "title": "実績"
+    },
+    "language": {
+      "title": "言語選択"
+    },
+    "game": {
+      "creationMode": "作成モード:",
+      "universeInfo": {
+        "title": "宇宙情報",
+        "time": "時間:",
+        "astroCount": "天体数:",
+        "speed": "速度:",
+        "types": "タイプ:"
+      }
+    },
+    "inGameMenu": {
+      "title": "宇宙メニュー",
+      "sections": {
+        "createAstros": "天体作成",
+        "astroSettings": "天体設定",
+        "options": "オプション",
+        "physics": "物理",
+        "timeControl": "時間制御",
+        "saves": "セーブ",
+        "controls": "操作"
+      },
+      "appearance": {
+        "title": "外観",
+        "primaryColor": "主色:",
+        "secondaryColor": "副色:",
+        "ringColor": "輪の色:"
+      },
+      "physicalProperties": {
+        "title": "物理特性",
+        "mass": "質量:",
+        "gravity": "重力:",
+        "temperature": "温度:",
+        "rotation": "回転速度:"
+      },
+      "characteristics": {
+        "title": "特徴",
+        "water": "水:",
+        "clouds": "雲:",
+        "gases": "ガス:",
+        "rings": "輪:",
+        "ringMass": "輪の質量:"
+      },
+      "apply": "設定適用",
+      "reset": "リセット",
+      "presets": "プリセット",
+      "resetPhysics": "リセット",
+      "saveUniverse": "宇宙を保存",
+      "back": "戻る",
+      "options": {
+        "volume": "音量:(ラジオ変換)",
+        "graphicsQuality": "画質:",
+        "low": "低",
+        "medium": "中",
+        "high": "高",
+        "shadows": "影:",
+        "tempZones": "温度ゾーン表示:",
+        "showNames": "名前表示:"
+      },
+      "physics": {
+        "gravity": "重力:",
+        "drag": "空間抵抗:"
+      },
+      "timeControl": {
+        "stop": "停止 (0x)",
+        "distantPast": "低速 (0.01x)",
+        "past": "低速 (0.1x)",
+        "future": "通常 (1x)",
+        "distantFuture": "高速 (10x)",
+        "superFast": "超高速 (100x)",
+        "megaFast": "メガ高速 (1000x)",
+        "hyperFast": "ハイパー高速 (10000x)",
+        "ultraFast": "ウルトラ高速 (100000x)"
+      },
+      "controls": {
+        "leftClick": "左クリック:",
+        "drag": "ドラッグ:",
+        "rightClick": "右クリック:",
+        "wasd": "WASD:",
+        "zoomInOut": "Q / E:",
+        "resetUniverse": "F:",
+        "toggleTempZones": "T:",
+        "leftClickDesc": "天体作成",
+        "dragDesc": "初速設定",
+        "rightClickDesc": "天体編集",
+        "wasdDesc": "カメラ移動",
+        "zoomInOutDesc": "ズームイン/アウト",
+        "resetUniverseDesc": "宇宙リセット",
+        "toggleTempZonesDesc": "温度ゾーン切替"
+      }
+    },
+    "astroTypes": {
+      "radiation": {
+        "name": "放射線",
+        "description": "ブラックホールやクエーサーから放出される高エネルギー粒子。宇宙塵より遥かに小さい"
+      },
+      "nebula": {
+        "name": "星雲",
+        "description": "星や惑星を形成するガスと塵の雲"
+      },
+      "spaceDust": {
+        "name": "宇宙塵",
+        "description": "天体の基礎となる微粒子"
+      },
+      "meteoroid": {
+        "name": "流星物質",
+        "description": "宇宙空間の岩石・金属片"
+      },
+      "meteorite": {
+        "name": "隕石",
+        "description": "大気圏突入を耐えた流星物質"
+      },
+      "comet": {
+        "name": "彗星",
+        "description": "恒星近くで尾を形成する氷天体"
+      },
+      "asteroid": {
+        "name": "小惑星",
+        "description": "不規則な形状の岩石天体"
+      },
+      "planetoid": {
+        "name": "準惑星",
+        "description": "惑星より小さいが小惑星より大きい天体"
+      },
+      "rockyPlanet": {
+        "name": "岩石惑星",
+        "description": "大陸、大気、海洋を持つ惑星"
+      },
+      "gasGiant": {
+        "name": "ガス巨星",
+        "description": "大気の帯と嵐を持つ巨大ガス惑星"
+      },
+      "brownDwarf": {
+        "name": "褐色矮星",
+        "description": "質量不足で恒星になれなかった天体"
+      },
+      "redDwarf": {
+        "name": "赤色矮星",
+        "description": "ほぼ失敗したが長寿命で高温の恒星"
+      },
+      "ttauriStar": {
+        "name": "Tタウリ型星",
+        "description": "収縮段階の若く活発な恒星"
+      },
+      "star": {
+        "name": "主系列星",
+        "description": "太陽型の一般的な恒星。生命に不可欠"
+      },
+      "redGiant": {
+        "name": "赤色巨星",
+        "description": "通常の恒星の終末期前段階"
+      },
+      "carbonStar": {
+        "name": "炭素星",
+        "description": "高濃度炭素を含む低温の恒星"
+      },
+      "giantStar": {
+        "name": "巨星",
+        "description": "通常の恒星より大きな恒星"
+      },
+      "redSupergiant": {
+        "name": "赤色超巨星",
+        "description": "巨星の終末期前段階"
+      },
+      "hypergiant": {
+        "name": "極超巨星",
+        "description": "超高輝度・大質量の恒星"
+      },
+      "massiveStar": {
+        "name": "大質量星",
+        "description": "太陽質量の8倍以上の恒星"
+      },
+      "supermassiveStar": {
+        "name": "超大質量星",
+        "description": "太陽質量の8倍以上の恒星"
+      },
+      "whiteDwarf": {
+        "name": "白色矮星",
+        "description": "低質量恒星の赤色巨星段階後の残骸"
+      },
+      "HeliumWhiteDwarf": {
+        "name": "ヘリウム白色矮星",
+        "description": "高濃度ヘリウムを含む恒星の残骸"
+      },
+      "blackDwarf": {
+        "name": "黒色矮星",
+        "description": "白色矮星の最終段階で冷たく暗い天体"
+      },
+      "neutronStar": {
+        "name": "中性子星",
+        "description": "大質量恒星の超高密度残骸"
+      },
+      "pulsar": {
+        "name": "パルサー",
+        "description": "宇宙放射線ビームを放つ中性子星。宇宙の灯台"
+      },
+      "magnetar": {
+        "name": "マグネター",
+        "description": "超高密度の中性子星"
+      },
+      "quarkStar": {
+        "name": "クォーク星",
+        "description": "奇妙な核を持つ高密度中性子星"
+      },
+      "strangeStar": {
+        "name": "ストレンジ星",
+        "description": "仮説上のクォーク物質で構成される恒星"
+      },
+      "blackHole": {
+        "name": "ブラックホール",
+        "description": "極端な重力領域（恒星質量/中間質量）"
+      },
+      "quasar": {
+        "name": "クエーサー",
+        "description": "エネルギー噴流を持つ活動的超巨大ブラックホール"
+      },
+      "wormhole": {
+        "name": "ワームホール",
+        "description": "時空の2点を繋ぐ仮説上のトンネル"
+      },
+      "whiteHole": {
+        "name": "ホワイトホール",
+        "description": "理論上の物質放出領域"
+      }
+    },
+    "editPanel": {
+      "title": "天体編集",
+      "name": "名前:",
+      "type": "タイプ:",
+      "class": "クラス:",
+      "temperature": "温度:",
+      "primaryColor": "主色:",
+      "secondaryColor": "副色:",
+      "mass": "質量:",
+      "gravity": "重力:",
+      "rotation": "回転速度:",
+      "water": "水:",
+      "clouds": "雲:",
+      "gases": "ガス:",
+      "ringMass": "輪の質量:",
+      "description": "説明:",
+      "locked": "固定:",
+      "delete": "天体削除",
+      "apply": "変更適用"
+    },
+    "temperatureZones": {
+      "title": "温度ゾーン:",
+      "tooHot": "過熱ゾーン (&gt; 500°C)",
+      "hot": "高温ゾーン (300-500°C)",
+      "warm": "温暖ゾーン (100-300°C)",
+      "habitable": "居住可能ゾーン (0-100°C)",
+      "cold": "寒冷ゾーン (-100-0°C)",
+      "freeze": "凍結ゾーン (&lt; -100°C)"
+    },
+    "common": {
+      "common": "一般",
+      "uncommon": "珍品",
+      "rare": "希少",
+      "hyperRare": "超希少",
+      "ultraRare": "極希少",
+      "epic": "叙事級",
+      "exotic": "異星級",
+      "legendary": "伝説級"
+    }
+  }
+}

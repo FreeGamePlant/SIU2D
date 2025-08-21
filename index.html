@@ -1,0 +1,467 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SIU 2D - Simulator of the Incredible Universe</title>
+    <link rel="manifest" href="manifest.json">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: linear-gradient(135deg, #0a0a0a 0%, #1a1a2e 50%, #16213e 100%);
+            font-family: 'Arial', sans-serif;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        #splashScreen {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            opacity: 0;
+            animation: fadeIn 5s ease-in-out forwards;
+        }
+
+        #companyName {
+            font-size: 3rem;
+            font-weight: bold;
+            color: #fff;
+            text-shadow: 0 0 20px rgba(255, 255, 255, 0.5);
+            margin-bottom: 2rem;
+            letter-spacing: 0.2rem;
+        }
+
+        #flowerContainer {
+            margin-bottom: 3rem;
+        }
+
+        #fgpFlower > div {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            background: radial-gradient(circle, #FFA500, #FF8C00);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 0 30px rgba(255, 165, 0, 0.7), inset -2px -2px 10px rgba(0,0,0,0.3);
+            animation: spin 3s linear infinite;
+        }
+
+        #fgpFlower span {
+            color: white;
+            font-weight: bold;
+            font-size: 1.5rem;
+            text-shadow: 0 0 5px rgba(0,0,0,0.5);
+        }
+
+        /* Barra de carregamento */
+        #loadingContainer {
+            width: 300px;
+            margin: 2rem 0;
+            opacity: 0;
+            animation: showLoading 0.5s ease-in-out 5s forwards;
+        }
+
+        #loadingBar {
+            width: 100%;
+            height: 8px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 4px;
+            overflow: hidden;
+            box-shadow: 0 0 10px rgba(255, 165, 0, 0.3);
+        }
+
+        #loadingProgress {
+            height: 100%;
+            background: linear-gradient(90deg, #FFA500, #FF8C00, #FFD700);
+            width: 0%;
+            border-radius: 4px;
+            animation: loadProgress 15s linear 5s forwards;
+            box-shadow: 0 0 15px rgba(255, 165, 0, 0.8);
+        }
+
+        #loadingText {
+            text-align: center;
+            color: #fff;
+            font-size: 0.9rem;
+            margin-top: 0.5rem;
+            text-shadow: 0 0 5px rgba(255, 255, 255, 0.3);
+        }
+
+        #copyrightText {
+            position: absolute;
+            bottom: 2rem;
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 0.8rem;
+            text-align: center;
+            letter-spacing: 0.05rem;
+        }
+
+        /* Animações */
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes fadeOut {
+            from {
+                opacity: 1;
+                transform: scale(1);
+            }
+            to {
+                opacity: 0;
+                transform: scale(1.1);
+            }
+        }
+
+        @keyframes spin {
+            from {
+                transform: rotate(0deg);
+            }
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        @keyframes showLoading {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes loadProgress {
+            from {
+                width: 0%;
+            }
+            to {
+                width: 100%;
+            }
+        }
+
+        .fade-out {
+            animation: fadeOut 5s ease-in-out forwards !important;
+        }
+
+        /* Responsividade para dispositivos móveis */
+        @media (max-width: 768px) {
+            #companyName {
+                font-size: 2rem;
+                margin-bottom: 1.5rem;
+                text-align: center;
+                padding: 0 1rem;
+            }
+
+            #fgpFlower > div {
+                width: 100px;
+                height: 100px;
+            }
+
+            #fgpFlower span {
+                font-size: 1.2rem;
+            }
+
+            #loadingContainer {
+                width: 250px;
+                margin: 1.5rem 0;
+            }
+
+            #loadingBar {
+                height: 6px;
+            }
+
+            #loadingText {
+                font-size: 0.8rem;
+            }
+
+            #copyrightText {
+                font-size: 0.7rem;
+                padding: 0 1rem;
+                text-align: center;
+                bottom: 1rem;
+            }
+
+            #flowerContainer {
+                margin-bottom: 2rem;
+            }
+        }
+
+        @media (max-width: 480px) {
+            #companyName {
+                font-size: 1.5rem;
+                margin-bottom: 1rem;
+                letter-spacing: 0.1rem;
+            }
+
+            #fgpFlower > div {
+                width: 80px;
+                height: 80px;
+            }
+
+            #fgpFlower span {
+                font-size: 1rem;
+            }
+
+            #loadingContainer {
+                width: 200px;
+                margin: 1rem 0;
+            }
+
+            #loadingBar {
+                height: 5px;
+            }
+
+            #loadingText {
+                font-size: 0.7rem;
+            }
+
+            #copyrightText {
+                font-size: 0.6rem;
+                bottom: 0.5rem;
+                line-height: 1.3;
+            }
+
+            #flowerContainer {
+                margin-bottom: 1.5rem;
+            }
+        }
+
+        @media (max-width: 320px) {
+            #companyName {
+                font-size: 1.2rem;
+                margin-bottom: 0.8rem;
+            }
+
+            #fgpFlower > div {
+                width: 70px;
+                height: 70px;
+            }
+
+            #fgpFlower span {
+                font-size: 0.9rem;
+            }
+
+            #loadingContainer {
+                width: 180px;
+            }
+
+            #loadingText {
+                font-size: 0.65rem;
+            }
+
+            #copyrightText {
+                font-size: 0.55rem;
+            }
+        }
+
+        /* Orientação landscape em dispositivos móveis */
+        @media (max-height: 500px) and (orientation: landscape) {
+            #splashScreen {
+                padding: 1rem 0;
+            }
+
+            #companyName {
+                font-size: 1.5rem;
+                margin-bottom: 0.5rem;
+            }
+
+            #flowerContainer {
+                margin-bottom: 1rem;
+            }
+
+            #fgpFlower > div {
+                width: 60px;
+                height: 60px;
+            }
+
+            #fgpFlower span {
+                font-size: 0.8rem;
+            }
+
+            #loadingContainer {
+                width: 200px;
+                margin: 0.5rem 0;
+            }
+
+            #copyrightText {
+                position: relative;
+                margin-top: 0.5rem;
+                font-size: 0.6rem;
+            }
+        }
+
+        /* Adaptação para telas muito grandes */
+        @media (min-width: 1920px) {
+            #companyName {
+                font-size: 4rem;
+                margin-bottom: 3rem;
+            }
+
+            #fgpFlower > div {
+                width: 150px;
+                height: 150px;
+            }
+
+            #fgpFlower span {
+                font-size: 2rem;
+            }
+
+            #loadingContainer {
+                width: 400px;
+                margin: 3rem 0;
+            }
+
+            #loadingBar {
+                height: 10px;
+            }
+
+            #loadingText {
+                font-size: 1.1rem;
+            }
+
+            #copyrightText {
+                font-size: 1rem;
+            }
+        }
+
+        /* Suporte a dispositivos com densidade de pixels alta */
+        @media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
+            #fgpFlower > div {
+                box-shadow: 0 0 30px rgba(255, 165, 0, 0.7), 
+                           inset -2px -2px 10px rgba(0,0,0,0.3),
+                           0 0 1px rgba(255, 165, 0, 0.9);
+            }
+
+            #companyName {
+                text-shadow: 0 0 20px rgba(255, 255, 255, 0.5),
+                            0 0 2px rgba(255, 255, 255, 0.3);
+            }
+        }
+
+        /* Efeito de partículas no fundo */
+        #particles {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: -1;
+        }
+
+        .particle {
+            position: absolute;
+            width: 2px;
+            height: 2px;
+            background: rgba(255, 165, 0, 0.6);
+            border-radius: 50%;
+            animation: float 6s ease-in-out infinite;
+        }
+
+        @keyframes float {
+            0%, 100% {
+                transform: translateY(0px) rotate(0deg);
+                opacity: 0.6;
+            }
+            50% {
+                transform: translateY(-20px) rotate(180deg);
+                opacity: 1;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="particles"></div>
+    
+    <div id="splashScreen">
+        <div id="companyName">FREE GAME PLANT</div>
+        <div id="flowerContainer">
+            <div id="fgpFlower">
+                <div>
+                    <span>FGP</span>
+                </div>
+            </div>
+        </div>
+        
+        <div id="loadingContainer">
+            <div id="loadingBar">
+                <div id="loadingProgress"></div>
+            </div>
+            <div id="loadingText">Carregando...</div>
+        </div>
+        <br><br>
+        <div id="copyrightText">&copy; 2025 Free Game Plant (FGP) - Todos os direitos reservados</div>
+    </div>
+
+    <script>
+        // Cria partículas de fundo
+        function createParticles() {
+            const particlesContainer = document.getElementById('particles');
+            for (let i = 0; i < 20; i++) {
+                const particle = document.createElement('div');
+                particle.className = 'particle';
+                particle.style.left = Math.random() * 100 + '%';
+                particle.style.top = Math.random() * 100 + '%';
+                particle.style.animationDelay = Math.random() * 6 + 's';
+                particle.style.animationDuration = (Math.random() * 3 + 4) + 's';
+                particlesContainer.appendChild(particle);
+            }
+        }
+
+        // Atualiza o texto de carregamento
+        function updateLoadingText() {
+            const loadingText = document.getElementById('loadingText');
+            const messages = [
+                'Carregando...',
+                'Inicializando universo...',
+                'Preparando simulação...',
+                'Quase pronto...',
+                'Finalizando...'
+            ];
+            
+            let messageIndex = 0;
+            const interval = setInterval(() => {
+                if (messageIndex < messages.length) {
+                    loadingText.textContent = messages[messageIndex];
+                    messageIndex++;
+                } else {
+                    clearInterval(interval);
+                }
+            }, 3000);
+        }
+
+        // Inicia as animações
+        createParticles();
+        
+        // Inicia o texto de carregamento após 5 segundos (quando a barra aparece)
+        setTimeout(updateLoadingText, 5000);
+        
+        // Inicia fade out após 20 segundos (5s fade in + 15s carregamento)
+        setTimeout(() => {
+            document.getElementById('splashScreen').classList.add('fade-out');
+        }, 20000);
+        
+        // Redireciona após 25 segundos (5s fade in + 15s carregamento + 5s fade out)
+        setTimeout(() => {
+            window.location.href = "app/src/data/html/SIU2Dgame.html";
+        }, 25000);
+    </script>
+</body>
+</html>

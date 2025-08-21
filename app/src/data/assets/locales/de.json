@@ -1,0 +1,314 @@
+{
+  "ui": {
+    "gameTitle": "SIU 2D - Simulator des Unglaublichen Universums",
+    "buttons": {
+      "play": "Spielen",
+      "saves": "Speicherstände",
+      "options": "Optionen",
+      "tutorial": "Tutorial",
+      "warnings": "Warnhinweise",
+      "exit": "Beenden",
+      "tSingularity": "T-Singularität",
+      "achievements": "Errungenschaften",
+      "language": "Sprache"
+    },
+    "config": {
+      "title": "Universumseinstellungen",
+      "gravity": "Gravitation",
+      "drag": "Raumwiderstand",
+      "shadows": "Schatten",
+      "tempZones": "Temperaturzonen",
+      "showNames": "Namen anzeigen",
+      "spaceColor": "Raumfarbe",
+      "musicVolume": "Musiklautstärke",
+      "sfxVolume": "SFX-Lautstärke",
+      "withdrawalMode": "Rückzugmodus",
+      "resetPhysics": "Physik zurücksetzen"
+    },
+    "warnings": {
+      "title": "Wichtige Warnhinweise",
+      "warning1": "Warnung 1 - Übertreiben Sie nicht die Anzahl der Himmelskörper (Planeten, Sterne etc.). Bei zu vielen Objekten kann das Spiel je nach Gerät ruckeln. Wir möchten Ihnen ein gutes Erlebnis bieten: einfach, ohne Übertreibungen, mit gutem Gameplay und Lernerfahrung.",
+      "warning2": "Warnung 2 - Das Spiel befindet sich in der Entwicklung. Bugs können auftreten. Bitte melden Sie diese, damit wir Ihr Spielerlebnis verbessern können.",
+      "warning3": "Warnung 3 - Dieses Spiel ist nicht 100% realistisch. Größen, Entfernungen und andere Faktoren sind vereinfacht, um Gameplay und Verständnis zu erleichtern.",
+      "warning4": "Warnung 4 - Übertreiben Sie nicht, da dies zu Leistungsproblemen und Abstürzen führen kann. Das Spiel ist für entspanntes und unterhaltsames Spielen konzipiert, insbesondere im Hinblick auf Warnung 1.",
+      "enjoy": "Viel Spaß beim Spielen! Wir hoffen, Sie haben Freude am Erkunden des Universums und Erstellen eigener Himmelskörper. Bei Fragen oder Anregungen kontaktieren Sie uns gerne."
+    },
+    "saves": {
+      "title": "Universumsspeicher",
+      "placeholder": "Speichername",
+      "saveButton": "Universum speichern",
+      "noSaves": "Keine Speicherstände gefunden.",
+      "load": "Laden",
+      "delete": "Löschen"
+    },
+    "achievements": {
+      "title": "Errungenschaften"
+    },
+    "language": {
+      "title": "Sprache auswählen"
+    },
+    "game": {
+      "creationMode": "Erstellungsmodus:",
+      "universeInfo": {
+        "title": "Universumsinformation",
+        "time": "Zeit:",
+        "astroCount": "Himmelskörper:",
+        "speed": "Geschwindigkeit:",
+        "types": "Typen:"
+      }
+    },
+    "inGameMenu": {
+      "title": "Universumsmenü",
+      "sections": {
+        "createAstros": "Himmelskörper erstellen",
+        "astroSettings": "Himmelskörper-Einstellungen",
+        "options": "Optionen",
+        "physics": "Physik",
+        "timeControl": "Zeitsteuerung",
+        "saves": "Speicherstände",
+        "controls": "Steuerung"
+      },
+      "appearance": {
+        "title": "Erscheinungsbild",
+        "primaryColor": "Primärfarbe:",
+        "secondaryColor": "Sekundärfarbe:",
+        "ringColor": "Ringfarbe:"
+      },
+      "physicalProperties": {
+        "title": "Physikalische Eigenschaften",
+        "mass": "Masse:",
+        "gravity": "Gravitation:",
+        "temperature": "Temperatur:",
+        "rotation": "Rotationsgeschwindigkeit:"
+      },
+      "characteristics": {
+        "title": "Eigenschaften",
+        "water": "Wasser:",
+        "clouds": "Wolken:",
+        "gases": "Gase:",
+        "rings": "Ringe:",
+        "ringMass": "Ringmasse:"
+      },
+      "apply": "Einstellungen übernehmen",
+      "reset": "Zurücksetzen",
+      "presets": "Voreinstellungen",
+      "resetPhysics": "Zurücksetzen",
+      "saveUniverse": "Universum speichern",
+      "back": "ZURÜCK",
+      "options": {
+        "volume": "Lautstärke:(Radio Converter)",
+        "graphicsQuality": "Grafikqualität:",
+        "low": "Niedrig",
+        "medium": "Mittel",
+        "high": "Hoch",
+        "shadows": "Schatten:",
+        "tempZones": "Temperaturzonen anzeigen:",
+        "showNames": "Namen anzeigen:"
+      },
+      "physics": {
+        "gravity": "Gravitationskraft:",
+        "drag": "Raumwiderstand:"
+      },
+      "timeControl": {
+        "stop": "Stopp (0x)",
+        "distantPast": "Langsam (0.01x)",
+        "past": "Langsam (0.1x)",
+        "future": "Normal (1x)",
+        "distantFuture": "Schnell (10x)",
+        "superFast": "Sehr schnell (100x)",
+        "megaFast": "Mega schnell (1000x)",
+        "hyperFast": "Hyper schnell (10000x)",
+        "ultraFast": "Ultra schnell (100000x)"
+      },
+      "controls": {
+        "leftClick": "Linksklick:",
+        "drag": "Ziehen:",
+        "rightClick": "Rechtsklick:",
+        "wasd": "WASD:",
+        "zoomInOut": "Q / E:",
+        "resetUniverse": "F:",
+        "toggleTempZones": "T:",
+        "leftClickDesc": "Himmelskörper erstellen",
+        "dragDesc": "Anfangsgeschwindigkeit setzen",
+        "rightClickDesc": "Himmelskörper bearbeiten",
+        "wasdDesc": "Kamera bewegen",
+        "zoomInOutDesc": "Vergrößern / Verkleinern",
+        "resetUniverseDesc": "Universum zurücksetzen",
+        "toggleTempZonesDesc": "Temperaturzonen umschalten"
+      }
+    },
+    "astroTypes": {
+      "radiation": {
+        "name": "Strahlung",
+        "description": "Energiereiche Teilchen, die von Schwarzen Löchern und Quasaren ausgesendet werden. Viel kleiner als Weltraumstaub."
+      },
+      "nebula": {
+        "name": "Nebel",
+        "description": "Gas- und Staubwolken, aus denen Sterne und Planeten entstehen."
+      },
+      "spaceDust": {
+        "name": "Weltraumstaub",
+        "description": "Mikroskopische Partikel, die die Basis von Himmelskörpern bilden."
+      },
+      "meteoroid": {
+        "name": "Meteoroid",
+        "description": "Gesteins- oder Metallfragmente im Weltraum."
+      },
+      "meteorite": {
+        "name": "Meteorit",
+        "description": "Meteoroide, die den Eintritt in die Atmosphäre überstanden haben."
+      },
+      "comet": {
+        "name": "Komet",
+        "description": "Eisige Körper mit Schweifen, die in Sternennähe entstehen."
+      },
+      "asteroid": {
+        "name": "Asteroid",
+        "description": "Kleine Gesteinskörper mit unregelmäßigen Formen."
+      },
+      "planetoid": {
+        "name": "Planetoid",
+        "description": "Himmelskörper kleiner als Planeten aber größer als Asteroiden."
+      },
+      "rockyPlanet": {
+        "name": "Gesteinsplanet",
+        "description": "Felsige Planeten mit Kontinenten, Atmosphäre und Ozeanen."
+      },
+      "gasGiant": {
+        "name": "Gasriese",
+        "description": "Gasriesen mit atmosphärischen Bändern und Stürmen."
+      },
+      "brownDwarf": {
+        "name": "Brauner Zwerg",
+        "description": "Gescheiterte Sterne ohne ausreichende Masse für Kernfusion."
+      },
+      "redDwarf": {
+        "name": "Roter Zwerg",
+        "description": "Fast gescheiterter Stern, aber relativ beständig und heiß."
+      },
+      "ttauriStar": {
+        "name": "T-Tauri-Stern",
+        "description": "Junger Stern in der Kontraktionsphase, hochaktiv."
+      },
+      "star": {
+        "name": "Normaler Stern",
+        "description": "Durchschnittlich massereicher Stern (sonnenähnlich), essentiell für Leben."
+      },
+      "redGiant": {
+        "name": "Roter Riese",
+        "description": "Vorletzte Phase eines sonnenähnlichen Sterns."
+      },
+      "carbonStar": {
+        "name": "Kohlenstoffstern",
+        "description": "Kühler Stern mit hoher Kohlenstoffkonzentration."
+      },
+      "giantStar": {
+        "name": "Riesenstern",
+        "description": "Stern größer als normale Sterne."
+      },
+      "redSupergiant": {
+        "name": "Roter Überriese",
+        "description": "Vorletzte Phase eines Riesensterns."
+      },
+      "hypergiant": {
+        "name": "Hyperriese",
+        "description": "Extrem leuchtkräftiger und massereicher Riesenstern."
+      },
+      "massiveStar": {
+        "name": "Massereicher Stern",
+        "description": "Stern mit mehr als 8 Sonnenmassen."
+      },
+      "supermassiveStar": {
+        "name": "Supermassereicher Stern",
+        "description": "Stern mit mehr als 100 Sonnenmassen."
+      },
+      "whiteDwarf": {
+        "name": "Weißer Zwerg",
+        "description": "Überrest massearmer Sterne nach der Roter-Riese-Phase."
+      },
+      "HeliumWhiteDwarf": {
+        "name": "Helium-Weißer-Zwerg",
+        "description": "Überrest von Sternen mit hohem Heliumanteil."
+      },
+      "blackDwarf": {
+        "name": "Schwarzer Zwerg",
+        "description": "Endstadium eines Weißen Zwergs, komplett kalt und dunkel."
+      },
+      "neutronStar": {
+        "name": "Neutronenstern",
+        "description": "Ultradichter Überrest massereicher Sterne."
+      },
+      "pulsar": {
+        "name": "Pulsar",
+        "description": "Neutronenstern mit Strahlungsbündeln - ein kosmischer Leuchtturm!"
+      },
+      "magnetar": {
+        "name": "Magnetar",
+        "description": "Neutronenstern mit extrem starkem Magnetfeld."
+      },
+      "quarkStar": {
+        "name": "Quarkstern",
+        "description": "Hypothetischer Stern aus Quarkmaterie."
+      },
+      "strangeStar": {
+        "name": "Seltsamer Stern",
+        "description": "Hypothetischer Stern aus Strange-Materie."
+      },
+      "blackHole": {
+        "name": "Schwarzes Loch",
+        "description": "Raumbereiche mit extremer Gravitation. Stellar/Intermediär"
+      },
+      "quasar": {
+        "name": "Quasar",
+        "description": "Aktives supermassereiches Schwarzes Loch mit Energiejets."
+      },
+      "wormhole": {
+        "name": "Wurmloch",
+        "description": "Hypothetischer Raum-Zeit-Tunnel zwischen zwei Punkten."
+      },
+      "whiteHole": {
+        "name": "Weißes Loch",
+        "description": "Theoretischer Raum, der Materie ausstößt."
+      }
+    },
+    "editPanel": {
+      "title": "Himmelskörper bearbeiten",
+      "name": "Name:",
+      "type": "Typ:",
+      "class": "Klasse:",
+      "temperature": "Temperatur:",
+      "primaryColor": "Primärfarbe:",
+      "secondaryColor": "Sekundärfarbe:",
+      "mass": "Masse:",
+      "gravity": "Gravitation:",
+      "rotation": "Rotationsgeschwindigkeit:",
+      "water": "Wasser:",
+      "clouds": "Wolken:",
+      "gases": "Gase:",
+      "ringMass": "Ringmasse:",
+      "description": "Beschreibung:",
+      "locked": "Gesperrt:",
+      "delete": "Himmelskörper löschen",
+      "apply": "Änderungen übernehmen"
+    },
+    "temperatureZones": {
+      "title": "Temperaturzonen:",
+      "tooHot": "Extrem heiße Zone (> 500°C)",
+      "hot": "Heiße Zone (300-500°C)",
+      "warm": "Warme Zone (100-300°C)",
+      "habitable": "Bewohnbare Zone (0-100°C)",
+      "cold": "Kalte Zone (-100-0°C)",
+      "freeze": "Gefrierzone (< -100°C)"
+    },
+    "common": {
+      "common": "Gewöhnlich",
+      "uncommon": "Ungewöhnlich",
+      "rare": "Selten",
+      "hyperRare": "Hyper Selten",
+      "ultraRare": "Ultra Selten",
+      "epic": "Episch",
+      "exotic": "Exotisch",
+      "legendary": "Legendär"
+    }
+  }
+}

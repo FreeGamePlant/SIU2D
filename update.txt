@@ -1,0 +1,2325 @@
+// Elementos DOM
+const canvas = document.getElementById('gameCanvas');
+const ctx = canvas.getContext('2d');
+const startScreen = document.getElementById('startScreen');
+const gameMenuBtn = document.getElementById('gameMenuBtn');
+const inGameMenu = document.getElementById('inGameMenu');
+const closeMenuBtn = inGameMenu.querySelector('.close-menu');
+const volumeSlider = document.getElementById('volumeSlider');
+const volumeValue = document.getElementById('volumeValue');
+const gravityFactorSlider = document.getElementById('gravityFactorSlider');
+const gravityFactorValue = document.getElementById('gravityFactorValue');
+const dragFactorSlider = document.getElementById('dragFactorSlider');
+const dragFactorValue = document.getElementById('dragFactorValue');
+const notification = document.getElementById('notification');
+const creationModeIndicator = document.getElementById('creationModeIndicator');
+const creationModeText = document.getElementById('creationModeText');
+const planetPreview = document.getElementById('planetPreview');
+const editPanel = document.getElementById('editPanel');
+const classOptions = document.getElementById('classOptions');
+const classGrid = document.getElementById('classGrid');
+const showTempZones = document.getElementById('showTempZones');
+const tempSlider = document.getElementById('tempSlider');
+const tempValue = document.getElementById('tempValue');
+const btnConfirmClass = document.getElementById('btnConfirmClass');
+const btnCancelClass = document.getElementById('btnCancelClass');
+const universeTimeElem = document.getElementById('universeTime');
+const astroCountElem = document.getElementById('astroCount');
+const timeScaleElem = document.getElementById('timeScale');
+const showNames = document.getElementById('showNames');
+const astroTypesElem = document.getElementById('astroTypes');
+
+// Controles de astros
+const primaryColor = document.getElementById('primaryColor');
+const secondaryColor = document.getElementById('secondaryColor');
+const ringColor = document.getElementById('ringColor');
+const massSlider = document.getElementById('massSlider');
+const massValue = document.getElementById('massValue');
+const gravitySlider = document.getElementById('gravitySlider');
+const gravityValue = document.getElementById('gravityValue');
+const rotationSlider = document.getElementById('rotationSlider');
+const rotationValue = document.getElementById('rotationValue');
+const waterSlider = document.getElementById('waterSlider');
+const waterValue = document.getElementById('waterValue');
+const cloudsSlider = document.getElementById('cloudsSlider');
+const cloudsValue = document.getElementById('cloudsValue');
+const gasSlider = document.getElementById('gasSlider');
+const gasValue = document.getElementById('gasValue');
+const hasRings = document.getElementById('hasRings');
+const ringMassSlider = document.getElementById('ringMassSlider');
+const ringMassValue = document.getElementById('ringMassValue');
+const applySettings = document.getElementById('applySettings');
+const resetSettings = document.getElementById('resetSettings');
+
+// Controles de edição
+const editName = document.getElementById('editName');
+const editType = document.getElementById('editType');
+const editClass = document.getElementById('editClass');
+const editTemperature = document.getElementById('editTemperature');
+const editColor = document.getElementById('editColor');
+const editSecondaryColor = document.getElementById('editSecondaryColor');
+const editMass = document.getElementById('editMass');
+const editGravity = document.getElementById('editGravity');
+const editRotation = document.getElementById('editRotation');
+const editWater = document.getElementById('editWater');
+const editClouds = document.getElementById('editClouds');
+const editGas = document.getElementById('editGas');
+const editRingMass = document.getElementById('editRingMass');
+const editDescription = document.getElementById('editDescription');
+const btnDeleteAstro = document.getElementById('btnDeleteAstro');
+const btnApplyChanges = document.getElementById('btnApplyChanges');
+
+// Configurações do jogo
+let gameState = 'menu'; // menu, playing, paused
+let camera = { x: 0, y: 0, zoom: 1 };
+let planets = [];
+let selectedPlanet = null;
+let mouse = { x: 0, y: 0, down: false, rightDown: false, downX: 0, downY: 0 };
+let mass = 50;
+let lastTime = 0;
+let fps = 60;
+let universeAge = 0;
+let universeTime = 0;
+let creationMode = null;
+let selectedClass = null;
+let timeScale = 1; // Controle de velocidade do tempo
+let trajectoryPoints = []; // Pontos para trajetória prevista
+let temperatureZonesVisible = true;
+let namesVisible = true; // Controle para mostrar/ocultar nomes
+
+// Configurações de qualidade
+let graphicsQuality = 'medium';
+let shadowsEnabled = true;
+let spaceColor = '#050a30';
+
+// Configurações físicas
+const G = 6.67430e-2; // Gravidade aumentada
+let gravityFactor = 5.0; // 500% como padrão
+let dragFactor = 0.0; // 0% como padrão
+
+// Configurações de astros
+let astroSettings = {
+    primaryColor: '#3498db',
+    secondaryColor: '#2ecc71',
+    ringColor: '#cccccc', // Cinza padrão
+    mass: 50,
+    gravity: 9.8,
+    temperature: 20,
+    rotationSpeed: 0.01,
+    water: 70,
+    clouds: 30,
+    gas: 80,
+    hasRings: true,
+    ringMass: 30,
+    planetClass: null
+};
+
+// Classes planetárias
+const rockyPlanetClasses = [
+    { id: 1, name: "Planeta Rochoso", description: "Feito todo de rocha formada apenas" },
+    { id: 2, name: "Planeta Oceânico", description: "Todo coberto de água" },
+    { id: 3, name: "Planeta Deserto", description: "Perdeu 80-90% de sua água superficial" },
+    { id: 4, name: "Planeta Temperado", description: "Continentes e oceanos equilibrados, mais quente que o normal" },
+    { id: 5, name: "Planeta Tundra", description: "Continentes e oceanos equilibrados, mais frio que o normal" },
+    { id: 6, name: "Planeta Habitável", description: "Temperatura ideal, cheio de vida e campos verdes" },
+    { id: 7, name: "Planeta de Lava", description: "Jovem ou muito próximo de uma estrela, superfície derretida" },
+    { id: 8, name: "Planeta Frio", description: "Frio, sem evidências de água líquida" },
+    { id: 9, name: "Planeta Congelado", description: "Água congelada pelo frio imenso" },
+    { id: 10, name: "Planeta Ebulição", description: "Água evaporada, atmosfera opaca como Vênus" },
+    { id: 11, name: "Planeta Exótico", description: "Formações únicas e aleatórias, cores e padrões variados" }
+];
+
+const gasGiantClasses = [
+    { id: 1, name: "Júpiter Quente", description: "Orbita perto de estrelas, muito quente e rápido" },
+    { id: 2, name: "Gigante Gasoso", description: "Comum, como Júpiter" },
+    { id: 3, name: "Gigante de Gelo", description: "Contém gelo, como Netuno e Urano" },
+    { id: 4, name: "Gigante Gasoso Frio", description: "Comum, mas muito frio" },
+    { id: 5, name: "Gigante Aquático", description: "Gigante de gelo que descongelou, oceanos escaldantes" },
+    { id: 6, name: "Gigante Exótico", description: "Cores e formações bizarras únicas" }
+];
+
+const planetoidClasses = [
+    { id: 1, name: "Planetoide Rochoso", description: "Feito principalmente de rocha" },
+    { id: 2, name: "Planetoide de Gelo", description: "Superfície gelada" },
+    { id: 3, name: "Planetoide Metálico", description: "Rico em metais" },
+    { id: 4, name: "Planetoide Exótico", description: "Composição única e características incomuns" }
+];
+
+// Função para gerar nomes aleatórios
+function generateRandomName() {
+    const length = Math.floor(Math.random() * 8) + 3; // 3-10 caracteres
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+    let name = '';
+    for (let i = 0; i < length; i++) {
+        name += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    return name;
+}
+
+// Inicializar o canvas
+function init() {
+    resizeCanvas();
+    window.addEventListener('resize', resizeCanvas);
+    canvas.addEventListener('mousedown', handleMouseDown);
+    canvas.addEventListener('mouseup', handleMouseUp);
+    canvas.addEventListener('mousemove', handleMouseMove);
+    canvas.addEventListener('contextmenu', handleContextMenu);
+    canvas.addEventListener('wheel', handleScroll);
+    document.addEventListener('keydown', handleKeyDown);
+    
+    // Event listeners para UI
+    document.getElementById('btnPlay').addEventListener('click', startGame);
+    gameMenuBtn.addEventListener('click', toggleGameMenu);
+    closeMenuBtn.addEventListener('click', toggleGameMenu);
+    volumeSlider.addEventListener('input', updateVolume);
+    showTempZones.addEventListener('change', toggleTemperatureZones);
+    tempSlider.addEventListener('input', updateTemperature);
+    btnConfirmClass.addEventListener('click', confirmClassSelection);
+    btnCancelClass.addEventListener('click', hideClassOptions);
+    showNames.addEventListener('change', toggleNamesVisibility);
+    
+    // Configurar sliders com valores iniciais
+    gravityFactorSlider.value = 500;
+    dragFactorSlider.value = 0;
+    gravityFactorValue.textContent = 500;
+    dragFactorValue.textContent = 0;
+    ringMassSlider.value = 30;
+    ringMassValue.textContent = 30;
+    
+    gravityFactorSlider.addEventListener('input', updateGravityFactor);
+    dragFactorSlider.addEventListener('input', updateDragFactor);
+    document.getElementById('shadowsToggle').addEventListener('change', toggleShadows);
+    document.getElementById('spaceColor').addEventListener('input', updateSpaceColor);
+    document.getElementById('graphicsQuality').addEventListener('change', updateGraphicsQuality);
+    document.getElementById('btnResetPhysics').addEventListener('click', resetPhysics);
+    
+    // Event listeners para criação de astros
+    document.querySelectorAll('.option-card').forEach(card => {
+        card.addEventListener('click', () => {
+            creationMode = card.dataset.type;
+            creationModeText.textContent = getTypeName(creationMode);
+            creationModeIndicator.style.display = 'block';
+            
+            // Mostrar opções de classe para planetas, planetoides e gigantes gasosos
+            if (['rockyPlanet', 'gasGiant', 'planetoid'].includes(creationMode)) {
+                showClassOptions(creationMode);
+            } else {
+                hideClassOptions();
+                toggleGameMenu();
+                showNotification(`Modo de criação: ${getTypeName(creationMode)}. Clique e arraste para definir a velocidade.`);
+            }
+        });
+    });
+    
+    // Event listeners para configurações de astros
+    primaryColor.addEventListener('input', updateAstroPreview);
+    secondaryColor.addEventListener('input', updateAstroPreview);
+    ringColor.addEventListener('input', updateAstroPreview);
+    massSlider.addEventListener('input', updateMass);
+    gravitySlider.addEventListener('input', updateGravity);
+    rotationSlider.addEventListener('input', updateRotation);
+    waterSlider.addEventListener('input', updateWater);
+    cloudsSlider.addEventListener('input', updateClouds);
+    gasSlider.addEventListener('input', updateGas);
+    hasRings.addEventListener('change', updateAstroPreview);
+    ringMassSlider.addEventListener('input', updateRingMass);
+    applySettings.addEventListener('click', applyAstroSettings);
+    resetSettings.addEventListener('click', resetAstroSettings);
+    
+    // Event listeners para edição de astros
+    editPanel.querySelector('.close-menu').addEventListener('click', () => {
+        editPanel.style.display = 'none';
+    });
+    
+    btnApplyChanges.addEventListener('click', applyAstroChanges);
+    btnDeleteAstro.addEventListener('click', deleteSelectedAstro);
+    
+    // Event listeners para controle de tempo
+    document.getElementById('timeDistantPast').addEventListener('click', () => setTimeScale(-10));
+    document.getElementById('timePast').addEventListener('click', () => setTimeScale(-1));
+    document.getElementById('timeStop').addEventListener('click', () => setTimeScale(0));
+    document.getElementById('timeFuture').addEventListener('click', () => setTimeScale(1));
+    document.getElementById('timeDistantFuture').addEventListener('click', () => setTimeScale(10));
+    
+    // Atualizar visualização inicial
+    updateAstroPreview();
+    
+    // Iniciar loop do jogo
+    requestAnimationFrame(gameLoop);
+}
+
+// Redimensionar canvas para preencher a janela
+function resizeCanvas() {
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+}
+
+// Mostrar opções de classe
+function showClassOptions(type) {
+    classGrid.innerHTML = '';
+    let classes = [];
+    
+    switch(type) {
+        case 'rockyPlanet':
+            classes = rockyPlanetClasses;
+            break;
+        case 'gasGiant':
+            classes = gasGiantClasses;
+            break;
+        case 'planetoid':
+            classes = planetoidClasses;
+            break;
+    }
+    
+    classes.forEach(cls => {
+        const card = document.createElement('div');
+        card.className = 'class-card';
+        card.dataset.id = cls.id;
+        card.innerHTML = `
+            <h4>${cls.name}</h4>
+            <p>${cls.description}</p>
+        `;
+        card.addEventListener('click', () => {
+            document.querySelectorAll('.class-card').forEach(c => c.classList.remove('selected'));
+            card.classList.add('selected');
+            selectedClass = cls;
+        });
+        classGrid.appendChild(card);
+    });
+    
+    classOptions.style.display = 'block';
+}
+
+// Esconder opções de classe
+function hideClassOptions() {
+    classOptions.style.display = 'none';
+    selectedClass = null;
+}
+
+// Confirmar seleção de classe
+function confirmClassSelection() {
+    if (!selectedClass) {
+        showNotification('Selecione uma classe primeiro!');
+        return;
+    }
+    
+    hideClassOptions();
+    toggleGameMenu();
+    showNotification(`Modo de criação: ${getTypeName(creationMode)} - ${selectedClass.name}. Clique e arraste para definir a velocidade.`);
+}
+
+// Desenhar um planeta
+function drawPlanet(planet) {
+    const x = (planet.x - camera.x) * camera.zoom + canvas.width / 2;
+    const y = (planet.y - camera.y) * camera.zoom + canvas.height / 2;
+    let radius = planet.radius * camera.zoom;
+    
+    if (x + radius < 0 || x - radius > canvas.width || 
+        y + radius < 0 || y - radius > canvas.height) {
+        return; // Não desenhar se estiver fora da tela
+    }
+    
+    // Desenhar planeta
+    ctx.save();
+    ctx.translate(x, y);
+    
+    if (planet.type === 'spaceDust') {
+        // Poeira espacial - pequenos pontos
+        ctx.beginPath();
+        ctx.arc(0, 0, Math.max(1, radius), 0, Math.PI * 2);
+        ctx.fillStyle = planet.color;
+        ctx.fill();
+    }
+    else if (planet.type === 'asteroid') {
+        // Desenhar asteroide com forma irregular
+        ctx.rotate(planet.rotation);
+        ctx.beginPath();
+        planet.shape.forEach((point, index) => {
+            if (index === 0) {
+                ctx.moveTo(point.x * camera.zoom, point.y * camera.zoom);
+            } else {
+                ctx.lineTo(point.x * camera.zoom, point.y * camera.zoom);
+            }
+        });
+        ctx.closePath();
+        
+        const gradient = ctx.createRadialGradient(
+            0, 0, 0,
+            0, 0, radius
+        );
+        gradient.addColorStop(0, planet.highlight || lightenColor(planet.color, 30));
+        gradient.addColorStop(1, planet.color);
+        ctx.fillStyle = gradient;
+        ctx.fill();
+    } else if (planet.type === 'planetoid') {
+        // Desenhar planetoide com forma oval
+        ctx.rotate(planet.rotation);
+        ctx.beginPath();
+        ctx.ellipse(0, 0, planet.rx * camera.zoom, planet.ry * camera.zoom, 0, 0, Math.PI * 2);
+        
+        const gradient = ctx.createRadialGradient(
+            0, 0, 0,
+            0, 0, Math.max(planet.rx, planet.ry) * camera.zoom
+        );
+        gradient.addColorStop(0, planet.highlight || lightenColor(planet.color, 30));
+        gradient.addColorStop(1, planet.color);
+        ctx.fillStyle = gradient;
+        ctx.fill();
+    } else if (planet.type === 'nebula') {
+        // Nebulosa - forma irregular translúcida
+        ctx.globalAlpha = 0.3; // Mais translúcida
+        
+        // Forma irregular de nuvem com menos pontos
+        ctx.beginPath();
+        const points = 8; // Reduzido para melhor desempenho
+        for (let i = 0; i < points; i++) {
+            const angle = (i / points) * Math.PI * 2;
+            const radiusVar = radius * (0.6 + Math.random() * 0.8);
+            const xPoint = Math.cos(angle) * radiusVar;
+            const yPoint = Math.sin(angle) * radiusVar;
+            
+            if (i === 0) {
+                ctx.moveTo(xPoint, yPoint);
+            } else {
+                ctx.lineTo(xPoint, yPoint);
+            }
+        }
+        ctx.closePath();
+        
+        // Gradiente mais simples
+        const gradient = ctx.createRadialGradient(
+            0, 0, radius * 0.2,
+            0, 0, radius
+        );
+        gradient.addColorStop(0, planet.color);
+        gradient.addColorStop(1, 'rgba(70, 130, 180, 0.1)');
+        ctx.fillStyle = gradient;
+        ctx.fill();
+        ctx.restore();
+        return; // Não precisa desenhar mais nada para nebulosas
+    } else if (planet.type === 'comet') {
+        // Núcleo
+        ctx.beginPath();
+        ctx.arc(0, 0, radius * 0.5, 0, Math.PI * 2);
+        ctx.fillStyle = planet.color;
+        ctx.fill();
+        
+        // Cauda
+        if (planet.tailDirection) {
+            ctx.rotate(planet.tailDirection);
+            
+            const tailGradient = ctx.createLinearGradient(0, 0, -radius * 10, 0);
+            tailGradient.addColorStop(0, 'rgba(100, 200, 255, 0.8)');
+            tailGradient.addColorStop(1, 'transparent');
+            
+            ctx.fillStyle = tailGradient;
+            ctx.beginPath();
+            ctx.moveTo(0, 0);
+            ctx.lineTo(-radius * 10, -radius * 2);
+            ctx.lineTo(-radius * 10, radius * 2);
+            ctx.closePath();
+            ctx.fill();
+        }
+    } else if (planet.type === 'meteoroid') {
+        // Meteoróide
+        ctx.rotate(planet.rotation);
+        
+        // Forma irregular
+        ctx.beginPath();
+        planet.shape.forEach((point, index) => {
+            if (index === 0) {
+                ctx.moveTo(point.x * camera.zoom, point.y * camera.zoom);
+            } else {
+                ctx.lineTo(point.x * camera.zoom, point.y * camera.zoom);
+            }
+        });
+        ctx.closePath();
+        
+        const gradient = ctx.createRadialGradient(0, 0, 0, 0, 0, radius);
+        gradient.addColorStop(0, '#ffffff');
+        gradient.addColorStop(1, planet.color);
+        ctx.fillStyle = gradient;
+        ctx.fill();
+    } else if (planet.type === 'ttauriStar') {
+        // Estrela T Tauri
+        ctx.beginPath();
+        ctx.arc(0, 0, radius, 0, Math.PI * 2);
+        const gradient = ctx.createRadialGradient(0, 0, 0, 0, 0, radius);
+        gradient.addColorStop(0, '#FFD700');
+        gradient.addColorStop(1, '#FF4500');
+        ctx.fillStyle = gradient;
+        ctx.fill();
+        
+        // Erupções
+        if (graphicsQuality !== 'low') {
+            const flareCount = 5;
+            for (let i = 0; i < flareCount; i++) {
+                const angle = (i / flareCount) * Math.PI * 2 + planet.rotation;
+                const flareLength = radius * (1.5 + Math.sin(planet.rotation * 5) * 0.5);
+                
+                ctx.save();
+                ctx.rotate(angle);
+                
+                const flareGradient = ctx.createLinearGradient(0, 0, flareLength, 0);
+                flareGradient.addColorStop(0, 'rgba(255, 100, 0, 0.8)');
+                flareGradient.addColorStop(1, 'transparent');
+                
+                ctx.fillStyle = flareGradient;
+                ctx.fillRect(0, -radius * 0.2, flareLength, radius * 0.4);
+                
+                ctx.restore();
+            }
+        }
+        
+        // Disco de acreção
+        if (graphicsQuality !== 'low') {
+            ctx.save();
+            ctx.rotate(planet.rotation * 0.5); // Rotação do disco
+            
+            const diskRadius = radius * 2.5;
+            const diskThickness = radius * 0.3;
+            
+            // Gradiente do disco
+            const diskGradient = ctx.createRadialGradient(
+                0, 0, diskRadius - diskThickness, 
+                0, 0, diskRadius
+            );
+            diskGradient.addColorStop(0, 'rgba(255, 215, 0, 0.8)');
+            diskGradient.addColorStop(1, 'rgba(255, 69, 0, 0.3)');
+            
+            ctx.beginPath();
+            ctx.arc(0, 0, diskRadius, 0, Math.PI * 2);
+            ctx.strokeStyle = diskGradient;
+            ctx.lineWidth = diskThickness;
+            ctx.stroke();
+            
+            ctx.restore();
+        }
+    } else if (planet.type === 'carbonStar') {
+        // Estrela de Carbono
+        ctx.beginPath();
+        ctx.arc(0, 0, radius, 0, Math.PI * 2);
+        const gradient = ctx.createRadialGradient(0, 0, 0, 0, 0, radius);
+        gradient.addColorStop(0, '#FF6347');
+        gradient.addColorStop(1, '#8B0000');
+        ctx.fillStyle = gradient;
+        ctx.fill();
+        
+        // Atmosfera de carbono
+        if (graphicsQuality !== 'low') {
+            ctx.beginPath();
+            ctx.arc(0, 0, radius * 1.2, 0, Math.PI * 2);
+            const carbonGradient = ctx.createRadialGradient(0, 0, radius, 0, 0, radius * 1.5);
+            carbonGradient.addColorStop(0, 'rgba(139, 0, 0, 0.5)');
+            carbonGradient.addColorStop(1, 'transparent');
+            ctx.fillStyle = carbonGradient;
+            ctx.fill();
+        }
+    } else if (planet.type === 'giantStar') {
+        // Estrela Gigante
+        ctx.beginPath();
+        ctx.arc(0, 0, radius, 0, Math.PI * 2);
+        const gradient = ctx.createRadialGradient(0, 0, 0, 0, 0, radius);
+        gradient.addColorStop(0, '#FF8C00');
+        gradient.addColorStop(1, '#FF4500');
+        ctx.fillStyle = gradient;
+        ctx.fill();
+        
+        // Convecção
+        if (graphicsQuality === 'high') {
+            ctx.strokeStyle = 'rgba(255, 200, 0, 0.7)';
+            ctx.lineWidth = 3;
+            for (let i = 0; i < 5; i++) {
+                const angle = Math.random() * Math.PI * 2;
+                const dist = radius * (0.3 + Math.random() * 0.5);
+                const size = radius * 0.3;
+                
+                ctx.save();
+                ctx.translate(Math.cos(angle) * dist, Math.sin(angle) * dist);
+                ctx.beginPath();
+                ctx.arc(0, 0, size, 0, Math.PI * 2);
+                ctx.stroke();
+                ctx.restore();
+            }
+        }
+    } else if (planet.type === 'hypergiant') {
+        // Hipergigante
+        ctx.beginPath();
+        ctx.arc(0, 0, radius, 0, Math.PI * 2);
+        const gradient = ctx.createRadialGradient(0, 0, 0, 0, 0, radius);
+        gradient.addColorStop(0, '#FF0000');
+        gradient.addColorStop(1, '#FF6347');
+        ctx.fillStyle = gradient;
+        ctx.fill();
+        
+        // Ejeções de massa
+        if (graphicsQuality !== 'low') {
+            ctx.globalAlpha = 0.6;
+            for (let i = 0; i < 3; i++) {
+                const angle = (i / 3) * Math.PI * 2 + planet.rotation;
+                const flareLength = radius * 3;
+                
+                ctx.save();
+                ctx.rotate(angle);
+                
+                const flareGradient = ctx.createLinearGradient(0, 0, flareLength, 0);
+                flareGradient.addColorStop(0, 'rgba(255, 100, 0, 0.8)');
+                flareGradient.addColorStop(1, 'transparent');
+                
+                ctx.fillStyle = flareGradient;
+                ctx.fillRect(0, -radius * 0.5, flareLength, radius);
+                
+                ctx.restore();
+            }
+            ctx.globalAlpha = 1;
+        }
+    } else if (planet.type === 'massiveStar') {
+        // Estrela Massiva
+        ctx.beginPath();
+        ctx.arc(0, 0, radius, 0, Math.PI * 2);
+        const gradient = ctx.createRadialGradient(0, 0, 0, 0, 0, radius);
+        gradient.addColorStop(0, '#00BFFF');
+        gradient.addColorStop(1, '#00008B');
+        ctx.fillStyle = gradient;
+        ctx.fill();
+        
+        // Vento estelar
+        if (graphicsQuality === 'high') {
+            ctx.strokeStyle = 'rgba(0, 191, 255, 0.5)';
+            ctx.lineWidth = 2;
+            for (let i = 0; i < 8; i++) {
+                const angle = (i / 8) * Math.PI * 2;
+                const flareLength = radius * 2;
+                
+                ctx.save();
+                ctx.rotate(angle);
+                
+                ctx.beginPath();
+                ctx.moveTo(0, 0);
+                ctx.lineTo(flareLength, 0);
+                ctx.stroke();
+                
+                ctx.restore();
+            }
+        }
+    } else if (planet.type === 'strangeStar') {
+        // Estrela Estranha
+        ctx.beginPath();
+        ctx.arc(0, 0, radius, 0, Math.PI * 2);
+        const gradient = ctx.createRadialGradient(0, 0, 0, 0, 0, radius);
+        gradient.addColorStop(0, '#8A2BE2');
+        gradient.addColorStop(1, '#4B0082');
+        ctx.fillStyle = gradient;
+        ctx.fill();
+        
+        // Pulsos de matéria estranha
+        if (graphicsQuality !== 'low') {
+            ctx.strokeStyle = '#9400D3';
+            ctx.lineWidth = 3;
+            ctx.beginPath();
+            ctx.arc(0, 0, radius * 1.2, 0, Math.PI * 2);
+            ctx.stroke();
+            
+            ctx.beginPath();
+            ctx.arc(0, 0, radius * 0.8, 0, Math.PI * 2);
+            ctx.stroke();
+        }
+    } else if (planet.type === 'wormhole') {
+        // Buraco de Minhoca
+        // Anel exterior
+        ctx.beginPath();
+        ctx.arc(0, 0, radius, 0, Math.PI * 2);
+        const ringGradient = ctx.createRadialGradient(0, 0, radius * 0.8, 0, 0, radius);
+        ringGradient.addColorStop(0, 'transparent');
+        ringGradient.addColorStop(1, '#00FFFF');
+        ctx.fillStyle = ringGradient;
+        ctx.fill();
+        
+        // Portal
+        ctx.beginPath();
+        ctx.arc(0, 0, radius * 0.7, 0, Math.PI * 2);
+        const portalGradient = ctx.createRadialGradient(0, 0, 0, 0, 0, radius * 0.7);
+        portalGradient.addColorStop(0, '#000033');
+        portalGradient.addColorStop(1, '#000066');
+        ctx.fillStyle = portalGradient;
+        ctx.fill();
+        
+        // Estrelas no portal
+        if (graphicsQuality !== 'low') {
+            ctx.fillStyle = '#ffffff';
+            for (let i = 0; i < 20; i++) {
+                const angle = Math.random() * Math.PI * 2;
+                const dist = Math.random() * radius * 0.6;
+                const size = Math.random() * 2;
+                ctx.beginPath();
+                ctx.arc(Math.cos(angle) * dist, Math.sin(angle) * dist, size, 0, Math.PI * 2);
+                ctx.fill();
+            }
+            
+            // Efeito de torção
+            ctx.strokeStyle = 'rgba(0, 255, 255, 0.7)';
+            ctx.lineWidth = 1;
+            for (let i = 0; i < 5; i++) {
+                const startAngle = planet.rotation + i * Math.PI * 0.4;
+                ctx.beginPath();
+                for (let a = 0; a < Math.PI * 2; a += 0.1) {
+                    const r = radius * 0.6 * (0.8 + Math.sin(a * 5 + planet.rotation) * 0.2);
+                    ctx.lineTo(Math.cos(startAngle + a) * r, Math.sin(startAngle + a) * r);
+                }
+                ctx.stroke();
+            }
+        }
+    } else if (planet.type === 'quasar') {
+        // Quasar
+        ctx.beginPath();
+        ctx.arc(0, 0, radius, 0, Math.PI * 2);
+        ctx.fillStyle = '#000000';
+        ctx.fill();
+
+        // Disco de acreção branco-amarelado, grosso, tocando o quasar
+        if (graphicsQuality !== 'low') {
+            // O disco começa no raio do quasar e vai até 4x o raio
+            const diskInnerRadius = radius;
+            const diskOuterRadius = radius * 4;
+            const diskThickness = diskOuterRadius - diskInnerRadius;
+
+            ctx.save();
+            ctx.rotate(planet.rotation * 0.2);
+
+            // Gradiente branco-amarelado, mais claro no centro
+            const diskGradient = ctx.createRadialGradient(
+                0, 0, diskInnerRadius,
+                0, 0, diskOuterRadius
+            );
+            diskGradient.addColorStop(0, '#fffde4'); // branco quase puro
+            diskGradient.addColorStop(0.2, '#fff9b0'); // amarelo claro
+            diskGradient.addColorStop(0.5, '#ffe066'); // amarelo mais forte
+            diskGradient.addColorStop(1, 'rgba(255, 224, 102, 0.1)'); // transparente
+
+            ctx.beginPath();
+            ctx.arc(0, 0, (diskInnerRadius + diskOuterRadius) / 2, 0, Math.PI * 2);
+            ctx.strokeStyle = diskGradient;
+            ctx.lineWidth = diskThickness;
+            ctx.globalAlpha = 0.85;
+            ctx.stroke();
+            ctx.globalAlpha = 1;
+
+            // Jatos luminosos norte e sul
+            if (graphicsQuality !== 'low') {
+                const jetLength = diskOuterRadius * 2.2;
+                const jetWidth = radius * 0.7;
+
+                // Norte (para cima)
+                ctx.save();
+                ctx.rotate(planet.jetAngle || 0);
+
+                const jetGradientN = ctx.createLinearGradient(0, 0, 0, -jetLength);
+                jetGradientN.addColorStop(0, 'rgba(255,255,255,1)');
+                jetGradientN.addColorStop(0.2, 'rgba(255,255,200,0.9)');
+                jetGradientN.addColorStop(0.5, 'rgba(255,255,150,0.5)');
+                jetGradientN.addColorStop(1, 'rgba(255,255,100,0.01)');
+
+                ctx.beginPath();
+                ctx.moveTo(-jetWidth/2, 0);
+                ctx.lineTo(-jetWidth/4, -jetLength*0.2);
+                ctx.lineTo(0, -jetLength);
+                ctx.lineTo(jetWidth/4, -jetLength*0.2);
+                ctx.lineTo(jetWidth/2, 0);
+                ctx.closePath();
+                ctx.fillStyle = jetGradientN;
+                ctx.shadowColor = '#fffde4';
+                ctx.shadowBlur = 30;
+                ctx.fill();
+                ctx.shadowBlur = 0;
+
+                ctx.restore();
+
+                // Sul (para baixo)
+                ctx.save();
+                ctx.rotate((planet.jetAngle || 0) + Math.PI);
+
+                const jetGradientS = ctx.createLinearGradient(0, 0, 0, -jetLength);
+                jetGradientS.addColorStop(0, 'rgba(255,255,255,1)');
+                jetGradientS.addColorStop(0.2, 'rgba(255,255,200,0.9)');
+                jetGradientS.addColorStop(0.5, 'rgba(255,255,150,0.5)');
+                jetGradientS.addColorStop(1, 'rgba(255,255,100,0.01)');
+
+                ctx.beginPath();
+                ctx.moveTo(-jetWidth/2, 0);
+                ctx.lineTo(-jetWidth/4, -jetLength*0.2);
+                ctx.lineTo(0, -jetLength);
+                ctx.lineTo(jetWidth/4, -jetLength*0.2);
+                ctx.lineTo(jetWidth/2, 0);
+                ctx.closePath();
+                ctx.fillStyle = jetGradientS;
+                ctx.shadowColor = '#fffde4';
+                ctx.shadowBlur = 30;
+                ctx.fill();
+                ctx.shadowBlur = 0;
+
+                ctx.restore();
+            }
+
+            ctx.restore();
+        }
+    } else {
+        // Desenhar outros tipos de astros como círculos
+        ctx.beginPath();
+        ctx.arc(0, 0, radius, 0, Math.PI * 2);
+        
+        if (planet.type === 'star' || planet.type === 'brownDwarf' || planet.type === 'whiteDwarf') {
+            // Gradiente para estrelas
+            const gradient = ctx.createRadialGradient(0, 0, 0, 0, 0, radius);
+            gradient.addColorStop(0, planet.color);
+            gradient.addColorStop(1, planet.glowColor || '#000000');
+            ctx.fillStyle = gradient;
+        } else {
+            // Gradiente para planetas
+            const gradient = ctx.createRadialGradient(
+                -radius * 0.3, -radius * 0.3, 0,
+                0, 0, radius
+            );
+            gradient.addColorStop(0, planet.highlight || lightenColor(planet.color, 30));
+            gradient.addColorStop(1, planet.color);
+            ctx.fillStyle = gradient;
+        }
+        
+        ctx.fill();
+    }
+    
+    ctx.restore();
+    
+    // Sombras para planetas não estelares, exceto buracos negros e quasares
+    if (shadowsEnabled && planet.type !== 'star' && planet.type !== 'brownDwarf' && planet.type !== 'whiteDwarf' && 
+        planet.type !== 'blackHole' && planet.type !== 'quasar') {
+        ctx.beginPath();
+        ctx.arc(x, y, radius, 0, Math.PI * 2);
+        const shadowGradient = ctx.createRadialGradient(
+            x + radius * 0.5, y + radius * 0.5, 0,
+            x, y, radius * 1.2
+        );
+        shadowGradient.addColorStop(0, 'rgba(0, 0, 0, 0.8)');
+        shadowGradient.addColorStop(1, 'transparent');
+        ctx.fillStyle = shadowGradient;
+        ctx.fill();
+    }
+    
+    // Brilho para estrelas
+    if ((planet.type === 'star' || planet.type === 'brownDwarf' || planet.type === 'whiteDwarf') && graphicsQuality !== 'low') {
+        ctx.beginPath();
+        ctx.arc(x, y, radius * 2, 0, Math.PI * 2);
+        const glowGradient = ctx.createRadialGradient(
+            x, y, radius,
+            x, y, radius * 3
+        );
+        glowGradient.addColorStop(0, planet.glowColor || '#ffffff');
+        glowGradient.addColorStop(1, 'transparent');
+        ctx.fillStyle = glowGradient;
+        ctx.fill();
+    }
+    
+    // Rotação e características para planetas rochosos
+    if (planet.type === 'rockyPlanet' && graphicsQuality !== 'low') {
+        ctx.save();
+        ctx.translate(x, y);
+        ctx.rotate(planet.rotation);
+        
+        // Continentes
+        if (planet.continents) {
+            ctx.fillStyle = planet.landColor || '#4CAF50';
+            planet.continents.forEach(continent => {
+                ctx.beginPath();
+                continent.points.forEach((point, i) => {
+                    const angle = (i / continent.points.length) * Math.PI * 2;
+                    const dist = point * radius * 0.8;
+                    if (i === 0) ctx.moveTo(dist, 0);
+                    else ctx.lineTo(Math.cos(angle) * dist, Math.sin(angle) * dist);
+                });
+                ctx.closePath();
+                ctx.fill();
+            });
+        }
+        
+        // Oceanos
+        if (planet.ocean) {
+            ctx.fillStyle = planet.oceanColor || '#2196F3';
+            ctx.beginPath();
+            ctx.arc(0, 0, radius * planet.ocean, 0, Math.PI * 2);
+            ctx.fill();
+        }
+        
+        // Nuvens
+        if (planet.clouds && graphicsQuality === 'high') {
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.7)';
+            ctx.beginPath();
+            ctx.arc(0, 0, radius * 1.05, 0, Math.PI * 2);
+            ctx.fill();
+        }
+        
+        ctx.restore();
+    }
+    
+    // Anéis para vários tipos de astros
+    if (planet.rings && graphicsQuality !== 'low') {
+        ctx.save();
+        ctx.translate(x, y);
+        ctx.rotate(planet.ringRotation || 0);
+        
+        // Novo cálculo para anéis circulares
+        const ringThickness = Math.max(2, Math.min(20, planet.ringMass * 0.1)) * camera.zoom;
+        const ringRadius = planet.radius * camera.zoom * 1.8;
+        
+        // Desenhar anel interno
+        ctx.beginPath();
+        ctx.arc(0, 0, ringRadius, 0, Math.PI * 2);
+        ctx.strokeStyle = planet.ringColor || 'rgba(200, 200, 200, 0.7)'; // Cinza translúcido
+        ctx.lineWidth = ringThickness;
+        ctx.stroke();
+        
+        // Adicionar detalhe central
+        if (graphicsQuality === 'high') {
+            ctx.beginPath();
+            ctx.arc(0, 0, ringRadius, 0, Math.PI * 2);
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
+            ctx.lineWidth = ringThickness * 0.3;
+            ctx.stroke();
+        }
+        
+        ctx.restore();
+    }
+    
+    // Desenhar nome do astro se estiver definido e visível
+    if (namesVisible && planet.name && graphicsQuality !== 'low') {
+        ctx.fillStyle = '#ffffff';
+        ctx.font = '12px Arial';
+        ctx.textAlign = 'center';
+        
+        // Posição ajustada para melhor visualização
+        ctx.fillText(planet.name, x, y - radius - 10);
+        
+        // Mostrar classe se existir e zoom suficiente
+        if (planet.planetClass && camera.zoom > 0.3) {
+            ctx.font = '10px Arial';
+            ctx.fillStyle = '#cccccc';
+            ctx.fillText(planet.planetClass, x, y - radius - 25);
+        }
+    }
+}
+
+// Desenhar zonas de temperatura ao redor de estrelas, buracos negros e buracos brancos
+function drawTemperatureZones() {
+    planets.forEach(planet => {
+        let centerX, centerY, baseRadius;
+        
+        if (planet.type === 'star' || planet.type === 'ttauriStar' || planet.type === 'carbonStar' || 
+            planet.type === 'giantStar' || planet.type === 'hypergiant' || planet.type === 'massiveStar' || 
+            planet.type === 'brownDwarf' || planet.type === 'whiteDwarf') {
+            // Estrelas e similares
+            if (planet.radius && planet.temperature) {
+                centerX = (planet.x - camera.x) * camera.zoom + canvas.width / 2;
+                centerY = (planet.y - camera.y) * camera.zoom + canvas.height / 2;
+                baseRadius = planet.radius * camera.zoom;
+            }
+        } else if (planet.type === 'blackHole' || planet.type === 'quasar' || planet.type === 'whiteHole') {
+            // Buracos negros e buracos brancos
+            centerX = (planet.x - camera.x) * camera.zoom + canvas.width / 2;
+            centerY = (planet.y - camera.y) * camera.zoom + canvas.height / 2;
+            baseRadius = planet.radius * camera.zoom * 5; // Zona maior
+        } else {
+            return; // Não desenhar para outros tipos
+        }
+        
+        if (!centerX || !baseRadius) return;
+        
+        // Tamanho das zonas baseado na temperatura da estrela
+        const zoneSizes = [
+            baseRadius * 5,   // To Hot Zone
+            baseRadius * 10,  // Hot Zone
+            baseRadius * 20,  // Warm Zone
+            baseRadius * 30,  // Habitable Zone
+            baseRadius * 40,  // Cold Zone
+            baseRadius * 50   // Freeze Zone
+        ];
+        
+        // Desenhar cada zona
+        for (let i = 0; i < zoneSizes.length; i++) {
+            ctx.beginPath();
+            ctx.arc(centerX, centerY, zoneSizes[i], 0, Math.PI * 2);
+            ctx.strokeStyle = [
+                'rgba(255, 51, 0, 0.5)',
+                'rgba(255, 102, 0, 0.5)',
+                'rgba(255, 153, 0, 0.5)',
+                'rgba(51, 204, 51, 0.5)',
+                'rgba(51, 153, 255, 0.5)',
+                'rgba(0, 0, 204, 0.5)'
+            ][i];
+            ctx.lineWidth = 2;
+            ctx.stroke();
+            
+            // Adicionar rótulo para zona habitável
+            if (i === 3 && camera.zoom > 0.1) {
+                ctx.fillStyle = 'rgba(255, 255, 255, 0.7)';
+                ctx.font = '10px Arial';
+                ctx.textAlign = 'center';
+                ctx.fillText('Zona Habitável', centerX, centerY - zoneSizes[i] - 5);
+            }
+        }
+    });
+}
+
+// Loop principal do jogo
+function gameLoop(timestamp) {
+    // Calcular FPS
+    if (!lastTime) lastTime = timestamp;
+    const deltaTime = timestamp - lastTime;
+    fps = Math.floor(1000 / deltaTime);
+    
+    // Limpar canvas
+    ctx.fillStyle = spaceColor;
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    
+    // Desenhar zonas de temperatura se estiverem visíveis
+    if (temperatureZonesVisible) {
+        drawTemperatureZones();
+    }
+    
+    // Atualizar física se estiver jogando
+    if (gameState === 'playing') {
+        // Aplicar escala de tempo
+        updatePhysics(deltaTime * timeScale);
+        universeAge += deltaTime / 1000;
+        universeTime += deltaTime / 1000;
+        
+        // Atualizar evolução dos astros
+        updateAstroEvolution(deltaTime);
+        
+        // Atualizar buracos brancos
+        updateWhiteHoles(deltaTime);
+        
+        // Atualizar painel de informações
+        updateInfoPanel();
+    }
+    
+    // Desenhar planetas
+    planets.forEach(planet => drawPlanet(planet));
+    
+    // Desenhar UI se não estiver no menu
+    if (gameState !== 'menu') {
+        // Desenhar informações de criação de planeta
+        if (mouse.down) {
+            const startX = (mouse.downX - camera.x) * camera.zoom + canvas.width / 2;
+            const startY = (mouse.downY - camera.y) * camera.zoom + canvas.height / 2;
+            const endX = (mouse.x - camera.x) * camera.zoom + canvas.width / 2;
+            const endY = (mouse.y - camera.y) * camera.zoom + canvas.height / 2;
+            
+            // Desenhar linha de força
+            ctx.beginPath();
+            ctx.moveTo(startX, startY);
+            ctx.lineTo(endX, endY);
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.7)';
+            ctx.lineWidth = 2;
+            ctx.stroke();
+            
+            // Desenhar seta azul (direção inicial)
+            drawArrow(startX, startY, endX, endY, '#3498db');
+            
+            // Calcular trajetória prevista
+            calculateTrajectory();
+            
+            // Desenhar trajetória prevista
+            if (trajectoryPoints.length > 1) {
+                ctx.beginPath();
+                ctx.moveTo(
+                    (trajectoryPoints[0].x - camera.x) * camera.zoom + canvas.width / 2,
+                    (trajectoryPoints[0].y - camera.y) * camera.zoom + canvas.height / 2
+                );
+                
+                for (let i = 1; i < trajectoryPoints.length; i++) {
+                    ctx.lineTo(
+                        (trajectoryPoints[i].x - camera.x) * camera.zoom + canvas.width / 2,
+                        (trajectoryPoints[i].y - camera.y) * camera.zoom + canvas.height / 2
+                    );
+                }
+                
+                ctx.strokeStyle = 'rgba(46, 204, 113, 0.7)';
+                ctx.lineWidth = 2;
+                ctx.stroke();
+                
+                // Desenhar seta verde (direção final)
+                if (trajectoryPoints.length > 10) {
+                    const lastPoint = trajectoryPoints[trajectoryPoints.length - 1];
+                    const prevPoint = trajectoryPoints[trajectoryPoints.length - 10];
+                    drawArrow(
+                        (prevPoint.x - camera.x) * camera.zoom + canvas.width / 2,
+                        (prevPoint.y - camera.y) * camera.zoom + canvas.height / 2,
+                        (lastPoint.x - camera.x) * camera.zoom + canvas.width / 2,
+                        (lastPoint.y - camera.y) * camera.zoom + canvas.height / 2,
+                        '#2ecc71'
+                    );
+                }
+            }
+        }
+    }
+    
+    lastTime = timestamp;
+    requestAnimationFrame(gameLoop);
+}
+
+// Atualizar painel de informações
+function updateInfoPanel() {
+    universeTimeElem.textContent = Math.round(universeAge) + " anos";
+    astroCountElem.textContent = planets.length;
+    timeScaleElem.textContent = timeScale + "x";
+    
+    // Contar tipos de astros
+    const typeCounts = {};
+    planets.forEach(p => {
+        typeCounts[p.type] = (typeCounts[p.type] || 0) + 1;
+    });
+    
+    // Atualizar HTML (adicionar elemento no painel)
+    astroTypesElem.innerHTML = 
+        Object.entries(typeCounts).map(([type, count]) => 
+            `${getTypeName(type)}: ${count}`
+        ).join('<br>');
+}
+
+// Desenhar uma seta
+function drawArrow(fromX, fromY, toX, toY, color) {
+    const headLength = 15;
+    const angle = Math.atan2(toY - fromY, toX - fromX);
+    
+    ctx.save();
+    ctx.translate(toX, toY);
+    ctx.rotate(angle);
+    
+    // Desenhar seta
+    ctx.beginPath();
+    ctx.moveTo(0, 0);
+    ctx.lineTo(-headLength, headLength/2);
+    ctx.lineTo(-headLength, -headLength/2);
+    ctx.closePath();
+    ctx.fillStyle = color;
+    ctx.fill();
+    
+    ctx.restore();
+}
+
+// Calcular trajetória prevista
+function calculateTrajectory() {
+    trajectoryPoints = [];
+    const steps = 200; // Mais passos para maior precisão
+    
+    // Criar planeta temporário para simulação
+    const tempPlanet = {
+        x: mouse.downX,
+        y: mouse.downY,
+        vx: (mouse.x - mouse.downX) * 0.1,
+        vy: (mouse.y - mouse.downY) * 0.1,
+        mass: creationMode ? astroSettings.mass : mass,
+        radius: Math.cbrt(creationMode ? astroSettings.mass : mass) * 5,
+        color: astroSettings.primaryColor,
+        type: creationMode || 'spaceDust'
+    };
+    
+    // Simular física
+    for (let step = 0; step < steps; step++) {
+        // Salvar posição atual
+        trajectoryPoints.push({x: tempPlanet.x, y: tempPlanet.y});
+        
+        // Aplicar gravidade de todos os planetas
+        planets.forEach(planet => {
+            if (planet === tempPlanet) return;
+            
+            // Calcular distância
+            const dx = planet.x - tempPlanet.x;
+            const dy = planet.y - tempPlanet.y;
+            const distance = Math.sqrt(dx * dx + dy * dy);
+            
+            // Força gravitacional
+            const force = gravityFactor * G * tempPlanet.mass * planet.mass / (distance * distance);
+            const forceX = force * dx / distance;
+            const forceY = force * dy / distance;
+            
+            // Aplicar forças
+            tempPlanet.vx += forceX / tempPlanet.mass * 0.1;
+            tempPlanet.vy += forceY / tempPlanet.mass * 0.1;
+        });
+        
+        // Atualizar posição
+        tempPlanet.x += tempPlanet.vx * 0.1;
+        tempPlanet.y += tempPlanet.vy * 0.1;
+    }
+}
+
+// Atualizar física dos planetas
+function updatePhysics(deltaTime) {
+    const delta = deltaTime / 1000;
+    
+    // Se o tempo estiver parado, não atualizar física
+    if (timeScale === 0) return;
+    
+    // Determinar a direção do tempo
+    const timeDirection = Math.sign(timeScale);
+    const absDelta = Math.abs(delta);
+    
+    // Atualizar velocidades
+    for (let i = 0; i < planets.length; i++) {
+        for (let j = i + 1; j < planets.length; j++) {
+            const p1 = planets[i];
+            const p2 = planets[j];
+
+            // Calcular distância
+            const dx = p2.x - p1.x;
+            const dy = p2.y - p1.y;
+            const distance = Math.sqrt(dx * dx + dy * dy);
+
+            // Evitar divisão por zero e colisões
+            const minDistance = p1.radius + p2.radius;
+
+            // Tratamento especial para quasares (apenas para força gravitacional, não para colisão)
+            let skipGravity = false;
+            if (p1.type === 'quasar' || p2.type === 'quasar') {
+                const quasar = p1.type === 'quasar' ? p1 : p2;
+                const other = p1.type === 'quasar' ? p2 : p1;
+
+                // Quasares só atraem estrelas (mas colidem com qualquer coisa)
+                const isStar = [
+                    'star', 'brownDwarf', 'whiteDwarf', 'ttauriStar', 
+                    'carbonStar', 'giantStar', 'hypergiant', 'massiveStar',
+                    'strangeStar', 'neutronStar'
+                ].includes(other.type);
+
+                if (!isStar) skipGravity = true;
+            }
+
+            // Colisão/fusão normal para todos os tipos, inclusive quasares
+            if (distance < minDistance) {
+                // Caso especial: se ambos são nebulosas, eles podem se fundir
+                if (p1.type === 'nebula' && p2.type === 'nebula') {
+                    // Fusão de nebulosas
+                    if (p1.mass > p2.mass) {
+                        p1.mass += p2.mass;
+                        p1.radius = calculateRadiusForType('nebula', p1.mass);
+                        planets.splice(j, 1);
+                        j--;
+                    } else {
+                        p2.mass += p1.mass;
+                        p2.radius = calculateRadiusForType('nebula', p2.mass);
+                        planets.splice(i, 1);
+                        i--;
+                        break;
+                    }
+                    continue;
+                }
+                // Se apenas um é nebulosa, só a nebulosa pode ser engolida
+                else if (p1.type === 'nebula' && p2.type !== 'nebula') {
+                    // p2 engole p1 (nebulosa)
+                    p2.mass += p1.mass;
+                    p2.radius = calculateRadiusForType(p2.type, p2.mass);
+                    planets.splice(i, 1);
+                    i--;
+                    break;
+                }
+                else if (p2.type === 'nebula' && p1.type !== 'nebula') {
+                    // p1 engole p2 (nebulosa)
+                    p1.mass += p2.mass;
+                    p1.radius = calculateRadiusForType(p1.type, p1.mass);
+                    planets.splice(j, 1);
+                    j--;
+                }
+                // Para outros tipos, comportamento normal de fusão
+                else {
+                    // Colisão - fundir planetas
+                    if (p1.mass > p2.mass) {
+                        // Conservar momento linear
+                        p1.vx = (p1.mass * p1.vx + p2.mass * p2.vx) / (p1.mass + p2.mass);
+                        p1.vy = (p1.mass * p1.vy + p2.mass * p2.vy) / (p1.mass + p2.mass);
+                        
+                        // Aumentar massa e raio
+                        p1.mass += p2.mass;
+                        
+                        // Calcular novo raio baseado no tipo
+                        p1.radius = calculateRadiusForType(p1.type, p1.mass);
+                        
+                        planets.splice(j, 1);
+                        j--;
+                    } else {
+                        p2.vx = (p1.mass * p1.vx + p2.mass * p2.vx) / (p1.mass + p2.mass);
+                        p2.vy = (p1.mass * p1.vy + p2.mass * p2.vy) / (p1.mass + p2.mass);
+                        
+                        p2.mass += p1.mass;
+                        p2.radius = calculateRadiusForType(p2.type, p2.mass);
+                        
+                        planets.splice(i, 1);
+                        i--;
+                        break;
+                    }
+                }
+                continue;
+            }
+            
+            // Força gravitacional
+            if (skipGravity) continue;
+            let force;
+            if (p1.type === 'whiteHole' || p2.type === 'whiteHole') {
+                // Gravidade negativa (repulsão)
+                force = -gravityFactor * G * p1.mass * p2.mass / (distance * distance);
+            } else {
+                force = gravityFactor * G * p1.mass * p2.mass / (distance * distance);
+            }
+
+            const forceX = force * dx / distance;
+            const forceY = force * dy / distance;
+
+            // Aplicar forças
+            p1.vx += forceX / p1.mass * absDelta * timeDirection;
+            p1.vy += forceY / p1.mass * absDelta * timeDirection;
+            p2.vx -= forceX / p2.mass * absDelta * timeDirection;
+            p2.vy -= forceY / p2.mass * absDelta * timeDirection;
+        }
+    }
+    
+    // Atualizar posições e aplicar arrasto
+    planets.forEach(planet => {
+        planet.x += planet.vx * absDelta * timeDirection;
+        planet.y += planet.vy * absDelta * timeDirection;
+        
+        // Aplicar arrasto
+        planet.vx *= (1 - dragFactor);
+        planet.vy *= (1 - dragFactor);
+        
+        // Atualizar rotação
+        if (planet.rotationSpeed) {
+            planet.rotation += planet.rotationSpeed * absDelta * timeDirection;
+        }
+        
+        // Atualizar pulsos para estrelas de nêutrons
+        if (planet.type === 'neutronStar' && planet.pulse) {
+            planet.pulseAngle += 0.1 * timeDirection;
+        }
+        
+        // Atualizar jatos para quasares
+        if (planet.type === 'quasar' && planet.jets) {
+            planet.jetAngle += 0.01 * timeDirection;
+        }
+        
+        // Atualizar tempo de vida para buracos brancos
+        if (planet.type === 'whiteHole') {
+            planet.lifeTime += absDelta * timeDirection;
+        }
+    });
+}
+
+// Atualizar buracos brancos
+function updateWhiteHoles(deltaTime) {
+    for (let i = 0; i < planets.length; i++) {
+        const planet = planets[i];
+        if (planet.type !== 'whiteHole') continue;
+        
+        // Perder massa com o tempo
+        const massLoss = planet.mass * 0.0001 * (deltaTime / 1000);
+        planet.mass -= massLoss;
+        planet.radius = calculateRadiusForType('whiteHole', planet.mass);
+        
+        // Expelir matéria periodicamente
+        planet.lifeTime += deltaTime / 1000;
+        if (planet.lifeTime > 0.5) { // A cada 0.5 segundos
+            planet.lifeTime = 0;
+            
+            // Criar um novo astro expelido
+            const angle = Math.random() * Math.PI * 2;
+            const distance = planet.radius * 1.1;
+            const x = planet.x + Math.cos(angle) * distance;
+            const y = planet.y + Math.sin(angle) * distance;
+            
+            // Velocidade inicial para fora
+            const speed = 50 + Math.random() * 50;
+            const vx = Math.cos(angle) * speed;
+            const vy = Math.sin(angle) * speed;
+            
+            // Tipos de matéria
+            const types = ['spaceDust', 'nebula', 'asteroid', 'meteoroid', 'comet'];
+            const type = types[Math.floor(Math.random() * types.length)];
+            
+            // Massa do novo astro (pequena)
+            const mass = type === 'spaceDust' ? 0.1 : 
+                         type === 'nebula' ? 10 : 
+                         type === 'asteroid' ? 1 : 
+                         type === 'meteoroid' ? 0.5 : 
+                         type === 'comet' ? 0.5 : 1;
+            
+            createAstro(type, x, y, vx, vy, mass);
+        }
+        
+        // Se a massa for muito pequena, remover
+        if (planet.mass < 1000) {
+            planets.splice(i, 1);
+            i--;
+            showNotification('Buraco branco desapareceu!');
+        }
+    }
+}
+
+// Atualizar evolução dos astros
+function updateAstroEvolution(deltaTime) {
+    const deltaSec = deltaTime / 1000; // Converter para segundos
+    
+    for (let i = 0; i < planets.length; i++) {
+        const planet = planets[i];
+        
+        // Evolução para nebulosas
+        if (planet.type === 'nebula') {
+            // Tempo de vida entre 20-30 segundos
+            if (planet.lifeTime >= 20 && planet.lifeTime <= 30) {
+                // Chance de 40% de transformação
+                if (Math.random() < 0.4) {
+                    // Massa entre 300-2000: transforma em anã marrom
+                    if (planet.mass >= 300 && planet.mass <= 2000) {
+                        transformToBrownDwarf(planet);
+                        showNotification('Nebulosa evoluiu para uma Anã Marrom!');
+                    } 
+                    // Massa entre 2000-10000: transforma em estrela T Tauri
+                    else if (planet.mass > 2000 && planet.mass <= 10000) {
+                        transformToTauriStar(planet);
+                        showNotification('Nebulosa evoluiu para uma Estrela T Tauri!');
+                    }
+                }
+            }
+        }
+        
+        // Verificar outras evoluções
+        if (planet.type === 'spaceDust' && planet.mass > 1) {
+            // Poeira espacial vira asteroide
+            transformToAsteroid(planet);
+            showNotification('Poeira espacial formou um Asteroide!');
+        } else if (planet.type === 'asteroid' && planet.mass > 100) {
+            // Asteroide vira planetoide
+            transformToPlanetoid(planet);
+            showNotification('Asteroide evoluiu para Planetóide!');
+        } else if (planet.type === 'planetoid' && planet.mass > 500) {
+            // Planetóide vira planeta rochoso
+            transformToRockyPlanet(planet);
+            showNotification('Planetóide evoluiu para Planeta Rochoso!');
+        } else if (planet.type === 'rockyPlanet' && planet.mass > 30500) {
+            // Planeta rochoso vira planeta gasoso
+            transformToGasGiant(planet);
+            showNotification('Planeta Rochoso evoluiu para Planeta Gasoso!');
+        } else if (planet.type === 'gasGiant' && planet.mass > 2500000) {
+            // Planeta gasoso vira anã marrom
+            transformToBrownDwarf(planet);
+            showNotification('Planeta Gasoso evoluiu para Anã Marrom!');
+        } else if (planet.type === 'brownDwarf' && planet.mass > 10000000) {
+            // Anã marrom vira estrela
+            transformToStar(planet);
+            showNotification('Anã Marrom evoluiu para Estrela!');
+        } else if (planet.type === 'star' && planet.mass > 10950900500) {
+            // Estrela vira estrela de nêutrons
+            transformToNeutronStar(planet);
+            showNotification('Estrela evoluiu para Estrela de Nêutrons!');
+        } else if (planet.type === 'neutronStar' && planet.mass > 500000000000) {
+            // Estrela de nêutrons vira buraco negro
+            transformToBlackHole(planet);
+            showNotification('Estrela de Nêutrons evoluiu para Buraco Negro!');
+        } else if (planet.type === 'blackHole' && planet.mass > 1000000000000000000000) {
+            // Buraco negro vira quasar
+            transformToQuasar(planet);
+            showNotification('Buraco Negro evoluiu para Quasar!');
+        } else if (planet.type === 'quasar' && planet.mass > 1000000000000000000000000) {
+            // Quasar vira buraco branco/big bang
+            transformToWhiteHole(planet);
+            showNotification('Quasar evoluiu para Buraco Branco/Big Bang!');
+        } else if (planet.type === 'comet' && planet.mass > 1) {
+            transformToAsteroid(planet);
+            showNotification('Cometa evoluiu para Asteroide!');
+        } else if (planet.type === 'meteoroid' && planet.mass > 1) {
+            transformToAsteroid(planet);
+            showNotification('Meteoróide evoluiu para Asteroide!');
+        } else if (planet.type === 'whiteHole' && planet.mass > 1000000000000000000000000000) {
+            transformToBigBang(planet);
+            showNotification('Buraco Branco atingiu massa crítica e se transformou em Big Bang!');
+        }
+    }
+}
+
+// Funções de transformação
+function transformToTauriStar(planet) {
+    planet.type = 'ttauriStar';
+    planet.color = '#FFD700';
+    planet.glowColor = '#FF4500';
+    planet.radius = calculateRadiusForType('ttauriStar', planet.mass);
+}
+
+function transformToAsteroid(planet) {
+    planet.type = 'asteroid';
+    planet.color = '#95a5a6';
+    planet.radius = calculateRadiusForType('asteroid', planet.mass);
+    planet.shape = generateAsteroidShape(planet.radius);
+}
+
+function transformToPlanetoid(planet) {
+    planet.type = 'planetoid';
+    planet.color = '#9b59b6';
+    planet.radius = calculateRadiusForType('planetoid', planet.mass);
+    planet.rx = planet.radius * (1 + Math.random() * 0.3);
+    planet.ry = planet.radius * (0.8 + Math.random() * 0.3);
+    planet.rotationSpeed = astroSettings.rotationSpeed;
+}
+
+function transformToRockyPlanet(planet) {
+    planet.type = 'rockyPlanet';
+    planet.color = astroSettings.primaryColor;
+    planet.landColor = astroSettings.secondaryColor;
+    planet.ocean = astroSettings.water / 100;
+    planet.oceanColor = '#3498db';
+    planet.clouds = astroSettings.clouds / 100;
+    planet.continents = generateContinents(5);
+    planet.rotationSpeed = astroSettings.rotationSpeed;
+    planet.radius = calculateRadiusForType(planet.type, planet.mass);
+}
+
+function transformToGasGiant(planet) {
+    planet.type = 'gasGiant';
+    planet.color = '#e67e22';
+    planet.rings = astroSettings.hasRings;
+    planet.ringColor = astroSettings.ringColor;
+    planet.ringHighlight = lightenColor(astroSettings.ringColor, 30);
+    planet.ringRotation = Math.random() * Math.PI * 2;
+    planet.rotationSpeed = astroSettings.rotationSpeed;
+    planet.gas = astroSettings.gas / 100;
+    planet.radius = calculateRadiusForType(planet.type, planet.mass);
+}
+
+function transformToBrownDwarf(planet) {
+    planet.type = 'brownDwarf';
+    planet.color = '#8B4513';
+    planet.glowColor = '#FF4500';
+    planet.radius = calculateRadiusForType('brownDwarf', planet.mass);
+}
+
+function transformToStar(planet) {
+    planet.type = 'star';
+    planet.color = '#FFD700';
+    planet.glowColor = '#FF4500';
+    planet.radius = calculateRadiusForType('star', planet.mass);
+}
+
+function transformToNeutronStar(planet) {
+    planet.type = 'neutronStar';
+    planet.color = '#ffffff';
+    planet.glowColor = '#3498db';
+    planet.pulse = true;
+    planet.pulseAngle = 0;
+    planet.radius = calculateRadiusForType('neutronStar', planet.mass);
+}
+
+function transformToBlackHole(planet) {
+    planet.type = 'blackHole';
+    planet.color = '#000000';
+    planet.glowColor = '#9b59b6';
+    planet.accretionDisk = true;
+    planet.diskColor = '#e74c3c';
+    planet.radius = calculateRadiusForType('blackHole', planet.mass);
+}
+
+function transformToQuasar(planet) {
+    planet.type = 'quasar';
+    planet.color = '#000000';
+    planet.glowColor = '#fffde4';
+    planet.accretionDisk = true;
+    planet.diskColor = '#fffde4';
+    planet.jets = true;
+    planet.jetAngle = Math.random() * Math.PI * 2;
+    planet.radius = calculateRadiusForType('blackHole', planet.mass); // igual ao blackHole
+}
+
+function transformToWhiteHole(planet) {
+    planet.type = 'whiteHole';
+    planet.color = '#ffffff';
+    planet.glowColor = '#3498db';
+    planet.lifeTime = 0;
+    planet.radius = calculateRadiusForType('blackHole', planet.mass); // igual ao blackHole
+}
+
+// Transformar em Big Bang
+function transformToBigBang(planet) {
+    const index = planets.indexOf(planet);
+    if (index !== -1) {
+        planets.splice(index, 1);
+        
+        // Gerar números aleatórios dentro dos intervalos
+        const dustCount = 20000 + Math.floor(Math.random() * 30001); // 20k-50k
+        const nebulaCount = 15000 + Math.floor(Math.random() * 15001); // 15k-30k
+        const asteroidCount = 10000 + Math.floor(Math.random() * 5001); // 10k-15k
+        
+        // Criar poeira espacial
+        for (let i = 0; i < dustCount; i++) {
+            createExpelledMatter('spaceDust', planet.x, planet.y, 0.01, 1);
+        }
+        
+        // Criar nebulosas
+        for (let i = 0; i < nebulaCount; i++) {
+            createExpelledMatter('nebula', planet.x, planet.y, 0.1, 1000);
+        }
+        
+        // Criar asteroides
+        for (let i = 0; i < asteroidCount; i++) {
+            createExpelledMatter('asteroid', planet.x, planet.y, 1, 100);
+        }
+        
+        showNotification('BIG BANG! O universo foi recriado com ' + 
+                         (dustCount + nebulaCount + asteroidCount) + ' novos astros!');
+    }
+}
+
+// Função auxiliar para criar matéria expelida
+function createExpelledMatter(type, x, y, minMass, maxMass) {
+    const angle = Math.random() * Math.PI * 2;
+    const distance = Math.random() * 100;
+    const mass = minMass + Math.random() * (maxMass - minMass);
+    const speed = 50 + Math.random() * 100;
+    
+    const newAstro = {
+        x: x + Math.cos(angle) * distance,
+        y: y + Math.sin(angle) * distance,
+        vx: Math.cos(angle) * speed,
+        vy: Math.sin(angle) * speed,
+        mass: mass,
+        radius: calculateRadiusForType(type, mass),
+        color: type === 'spaceDust' ? '#888888' : 
+               type === 'nebula' ? `hsl(${Math.random() * 360}, 70%, 60%)` : '#95a5a6',
+        type: type,
+        lifeTime: 0
+    };
+    
+    if (type === 'asteroid') {
+        newAstro.shape = generateAsteroidShape(newAstro.radius);
+    }
+    
+    planets.push(newAstro);
+}
+
+// Calcular raio baseado no tipo e massa (tamanhos mais realistas)
+function calculateRadiusForType(type, mass) {
+    const baseSize = Math.cbrt(mass);
+
+    switch(type) {
+        case 'spaceDust': return baseSize * 0.05;
+        case 'nebula': return baseSize * 0.5; // Tamanho reduzido
+        case 'comet': return baseSize * 0.1;
+        case 'meteoroid': return baseSize * 0.08;
+        case 'meteorite': return baseSize * 0.1;
+        case 'asteroid': return baseSize * 0.1;
+        case 'planetoid': return baseSize * 0.2;
+        case 'rockyPlanet': return baseSize * 0.3;
+        case 'gasGiant': return baseSize * 0.5;
+        case 'brownDwarf': return baseSize * 0.4;
+        case 'ttauriStar': return baseSize * 1.2;
+        case 'whiteDwarf': return 5 + mass / 100000000000;
+        case 'star': return baseSize * 0.8;
+        case 'carbonStar': return baseSize * 1.5;
+        case 'giantStar': return baseSize * 4;
+        case 'hypergiant': return baseSize * 10;
+        case 'massiveStar': return baseSize * 1.5;
+        case 'strangeStar': return 3 + mass / 1000000000000;
+        case 'neutronStar': return 2 + mass / 1000000000000;
+        case 'blackHole': return 1 + mass / 100000000000000;
+        case 'quasar':    return 1 + mass / 100000000000000; // Igual ao blackHole
+        case 'whiteHole': return 1 + mass / 100000000000000; // Igual ao blackHole
+        default: return baseSize * 0.3;
+    }
+}
+
+// Funções de UI
+function startGame() {
+    gameState = 'playing';
+    startScreen.style.display = 'none';
+    planets = [];
+    universeAge = 0;
+    universeTime = 0;
+    showNotification('Universo criado! Comece a adicionar astros.');
+}
+
+function toggleGameMenu() {
+    inGameMenu.classList.toggle('active');
+}
+
+function updateVolume() {
+    const volume = volumeSlider.value;
+    volumeValue.textContent = volume;
+    // Implementar controle de áudio aqui
+}
+
+function updateGravityFactor() {
+    gravityFactor = gravityFactorSlider.value / 100;
+    gravityFactorValue.textContent = gravityFactorSlider.value;
+}
+
+function updateDragFactor() {
+    dragFactor = dragFactorSlider.value / 100;
+    dragFactorValue.textContent = dragFactorSlider.value;
+}
+
+function resetPhysics() {
+    gravityFactorSlider.value = 500;
+    dragFactorSlider.value = 0;
+    updateGravityFactor();
+    updateDragFactor();
+    showNotification('Física redefinida para valores padrão');
+}
+
+function toggleShadows() {
+    shadowsEnabled = document.getElementById('shadowsToggle').checked;
+}
+
+function updateSpaceColor() {
+    spaceColor = document.getElementById('spaceColor').value;
+}
+
+function updateGraphicsQuality() {
+    graphicsQuality = document.getElementById('graphicsQuality').value;
+}
+
+function toggleTemperatureZones() {
+    temperatureZonesVisible = showTempZones.checked;
+}
+
+// Novo: Alternar visibilidade dos nomes
+function toggleNamesVisibility() {
+    namesVisible = showNames.checked;
+}
+
+function updateTemperature() {
+    const temp = tempSlider.value;
+    tempValue.textContent = temp + '°C';
+    astroSettings.temperature = parseInt(temp);
+}
+
+function setTimeScale(scale) {
+    timeScale = scale;
+    
+    // Atualizar botões ativos
+    document.querySelectorAll('.time-btn').forEach(btn => {
+        btn.classList.remove('active');
+    });
+    
+    switch(scale) {
+        case -10: document.getElementById('timeDistantPast').classList.add('active'); break;
+        case -1: document.getElementById('timePast').classList.add('active'); break;
+        case 0: document.getElementById('timeStop').classList.add('active'); break;
+        case 1: document.getElementById('timeFuture').classList.add('active'); break;
+        case 10: document.getElementById('timeDistantFuture').classList.add('active'); break;
+    }
+    
+    showNotification(`Velocidade do tempo: ${scale}x`);
+}
+
+function showNotification(message) {
+    notification.textContent = message;
+    notification.style.display = 'block';
+    setTimeout(() => {
+        notification.style.display = 'none';
+    }, 2900);
+}
+
+// Atualizar configurações de astros
+function updateMass() {
+    massValue.textContent = massSlider.value;
+    updateAstroPreview();
+}
+
+function updateGravity() {
+    gravityValue.textContent = gravitySlider.value;
+}
+
+function updateRotation() {
+    rotationValue.textContent = rotationSlider.value;
+}
+
+function updateWater() {
+    waterValue.textContent = waterSlider.value + '%';
+    updateAstroPreview();
+}
+
+function updateClouds() {
+    cloudsValue.textContent = cloudsSlider.value + '%';
+    updateAstroPreview();
+}
+
+function updateGas() {
+    gasValue.textContent = gasSlider.value + '%';
+    updateAstroPreview();
+}
+
+function updateRingMass() {
+    ringMassValue.textContent = ringMassSlider.value;
+    updateAstroPreview();
+}
+
+function updateAstroPreview() {
+    const primary = primaryColor.value;
+    const secondary = secondaryColor.value;
+    
+    // Atualizar visualização do planeta
+    planetPreview.style.background = `radial-gradient(circle at 30% 30%, ${secondary}, ${primary})`;
+    
+    // Atualizar configurações
+    astroSettings.primaryColor = primary;
+    astroSettings.secondaryColor = secondary;
+    astroSettings.ringColor = ringColor.value || '#cccccc'; // Garantir cinza padrão
+    astroSettings.mass = parseInt(massSlider.value);
+    astroSettings.gravity = parseFloat(gravitySlider.value);
+    astroSettings.rotationSpeed = parseFloat(rotationSlider.value);
+    astroSettings.water = parseInt(waterSlider.value);
+    astroSettings.clouds = parseInt(cloudsSlider.value);
+    astroSettings.gas = parseInt(gasSlider.value);
+    astroSettings.hasRings = hasRings.checked;
+    astroSettings.ringMass = parseInt(ringMassSlider.value);
+}
+
+function applyAstroSettings() {
+    showNotification('Configurações aplicadas! Novos astros usarão estas configurações.');
+}
+
+function resetAstroSettings() {
+    primaryColor.value = '#3498db';
+    secondaryColor.value = '#2ecc71';
+    ringColor.value = '#cccccc'; // Cinza padrão
+    massSlider.value = 50;
+    gravitySlider.value = 9.8;
+    rotationSlider.value = 0.01;
+    waterSlider.value = 70;
+    cloudsSlider.value = 30;
+    gasSlider.value = 80;
+    hasRings.checked = true;
+    ringMassSlider.value = 30;
+    tempSlider.value = 20;
+    
+    updateMass();
+    updateGravity();
+    updateRotation();
+    updateWater();
+    updateClouds();
+    updateGas();
+    updateRingMass();
+    updateTemperature();
+    updateAstroPreview();
+    
+    showNotification('Configurações de astro redefinidas');
+}
+
+// Criar um astro
+function createAstro(type, x, y, vx = 0, vy = 0, customMass = null) {
+    const planet = {
+        x: x,
+        y: y,
+        vx: vx,
+        vy: vy,
+        rotation: Math.random() * Math.PI * 2,
+        rotationSpeed: astroSettings.rotationSpeed,
+        lifeTime: 0,
+        pulseAngle: 0,
+        jetAngle: 0,
+        ringMass: astroSettings.ringMass,
+        temperature: astroSettings.temperature,
+        planetClass: selectedClass ? selectedClass.name : null,
+        name: generateRandomName() // Nome gerado automaticamente
+    };
+    
+    // Configurações específicas por tipo
+    switch (type) {
+        case 'spaceDust':
+            planet.mass = customMass !== null ? customMass : Math.max(0.01, Math.min(1, astroSettings.mass * 0.01));
+            planet.radius = calculateRadiusForType('spaceDust', planet.mass);
+            planet.color = '#888888';
+            planet.type = 'spaceDust';
+            break;
+            
+        case 'nebula':
+            planet.mass = customMass !== null ? customMass : Math.max(0.1, Math.min(10000, astroSettings.mass));
+            planet.type = 'nebula';
+            planet.color = `hsl(${Math.random() * 360}, 70%, 60%)`; // Cores aleatórias
+            planet.radius = calculateRadiusForType('nebula', planet.mass);
+            break;
+            
+        case 'comet':
+            planet.mass = customMass !== null ? customMass : Math.max(0.1, Math.min(10, astroSettings.mass));
+            planet.type = 'comet';
+            planet.color = '#3498db';
+            planet.radius = calculateRadiusForType('comet', planet.mass);
+            planet.tailDirection = Math.random() * Math.PI * 2;
+            break;
+            
+        case 'meteoroid':
+            planet.mass = customMass !== null ? customMass : Math.max(0.01, Math.min(1, astroSettings.mass));
+            planet.type = 'meteoroid';
+            planet.color = '#95a5a6';
+            planet.radius = calculateRadiusForType('meteoroid', planet.mass);
+            planet.shape = generateAsteroidShape(planet.radius);
+            break;
+            
+        case 'meteorite':
+            planet.mass = customMass !== null ? customMass : Math.max(0.1, Math.min(10, astroSettings.mass));
+            planet.type = 'meteorite';
+            planet.color = '#7f8c8d';
+            planet.radius = calculateRadiusForType('meteorite', planet.mass);
+            break;
+            
+        case 'asteroid':
+            planet.mass = customMass !== null ? customMass : Math.max(1, Math.min(100, astroSettings.mass));
+            planet.radius = calculateRadiusForType('asteroid', planet.mass);
+            planet.color = '#95a5a6';
+            planet.type = 'asteroid';
+            planet.shape = generateAsteroidShape(planet.radius);
+            planet.rings = astroSettings.hasRings;
+            planet.ringColor = astroSettings.ringColor;
+            planet.ringHighlight = lightenColor(astroSettings.ringColor, 30);
+            planet.ringRotation = Math.random() * Math.PI * 2;
+            break;
+            
+        case 'planetoid':
+            planet.mass = customMass !== null ? customMass : Math.max(300, Math.min(500, astroSettings.mass));
+            planet.radius = calculateRadiusForType('planetoid', planet.mass);
+            planet.type = 'planetoid';
+            planet.color = '#9b59b6';
+            planet.rx = planet.radius * (1 + Math.random() * 0.3);
+            planet.ry = planet.radius * (0.8 + Math.random() * 0.3);
+            planet.rotationSpeed = astroSettings.rotationSpeed;
+            planet.rings = astroSettings.hasRings;
+            planet.ringColor = astroSettings.ringColor;
+            planet.ringHighlight = lightenColor(astroSettings.ringColor, 30);
+            planet.ringRotation = Math.random() * Math.PI * 2;
+            break;
+            
+        case 'rockyPlanet':
+            planet.mass = customMass !== null ? customMass : Math.max(5000, Math.min(30500, astroSettings.mass * 10));
+            planet.type = 'rockyPlanet';
+            planet.color = astroSettings.primaryColor;
+            planet.landColor = astroSettings.secondaryColor;
+            planet.ocean = astroSettings.water / 100;
+            planet.oceanColor = '#3498db';
+            planet.clouds = astroSettings.clouds / 100;
+            planet.continents = generateContinents(5);
+            planet.rotationSpeed = astroSettings.rotationSpeed;
+            planet.radius = calculateRadiusForType('rockyPlanet', planet.mass);
+            planet.rings = astroSettings.hasRings;
+            planet.ringColor = astroSettings.ringColor;
+            planet.ringHighlight = lightenColor(astroSettings.ringColor, 30);
+            planet.ringRotation = Math.random() * Math.PI * 2;
+            break;
+            
+        case 'gasGiant':
+            planet.mass = customMass !== null ? customMass : Math.max(105000, Math.min(2500000, astroSettings.mass * 100));
+            planet.type = 'gasGiant';
+            planet.color = '#e67e22';
+            planet.rings = astroSettings.hasRings;
+            planet.ringColor = astroSettings.ringColor;
+            planet.ringHighlight = lightenColor(astroSettings.ringColor, 30);
+            planet.ringRotation = Math.random() * Math.PI * 2;
+            planet.rotationSpeed = astroSettings.rotationSpeed;
+            planet.gas = astroSettings.gas / 100;
+            planet.radius = calculateRadiusForType('gasGiant', planet.mass);
+            break;
+            
+        case 'brownDwarf':
+            planet.mass = customMass !== null ? customMass : Math.max(2550000, Math.min(10000000, astroSettings.mass * 1000));
+            planet.type = 'brownDwarf';
+            planet.color = '#8B4513';
+            planet.glowColor = '#FF4500';
+            planet.radius = calculateRadiusForType('brownDwarf', planet.mass);
+            planet.rings = astroSettings.hasRings;
+            planet.ringColor = astroSettings.ringColor;
+            planet.ringHighlight = lightenColor(astroSettings.ringColor, 30);
+            planet.ringRotation = Math.random() * Math.PI * 2;
+            break;
+            
+        case 'ttauriStar':
+            planet.mass = customMass !== null ? customMass : Math.max(10000000, Math.min(20000000, astroSettings.mass * 1000000));
+            planet.type = 'ttauriStar';
+            planet.color = '#FFD700';
+            planet.glowColor = '#FF4500';
+            planet.radius = calculateRadiusForType('ttauriStar', planet.mass);
+            break;
+            
+        case 'carbonStar':
+            planet.mass = customMass !== null ? customMass : Math.max(20000000, Math.min(50000000, astroSettings.mass * 1000000));
+            planet.type = 'carbonStar';
+            planet.color = '#C70039';
+            planet.glowColor = '#FF5733';
+            planet.radius = calculateRadiusForType('carbonStar', planet.mass);
+            break;
+            
+        case 'giantStar':
+            planet.mass = customMass !== null ? customMass : Math.max(50000000, Math.min(100000000, astroSettings.mass * 1000000));
+            planet.type = 'giantStar';
+            planet.color = '#FF8C00';
+            planet.glowColor = '#FF4500';
+            planet.radius = calculateRadiusForType('giantStar', planet.mass);
+            break;
+            
+        case 'hypergiant':
+            planet.mass = customMass !== null ? customMass : Math.max(100000000, Math.min(500000000, astroSettings.mass * 1000000));
+            planet.type = 'hypergiant';
+            planet.color = '#FF0000';
+            planet.glowColor = '#FF6347';
+            planet.radius = calculateRadiusForType('hypergiant', planet.mass);
+            break;
+            
+        case 'massiveStar':
+            planet.mass = customMass !== null ? customMass : Math.max(500000000, Math.min(1000000000, astroSettings.mass * 1000000));
+            planet.type = 'massiveStar';
+            planet.color = '#00BFFF';
+            planet.glowColor = '#00008B';
+            planet.radius = calculateRadiusForType('massiveStar', planet.mass);
+            break;
+            
+        case 'strangeStar':
+            planet.mass = customMass !== null ? customMass : Math.max(500000000000, Math.min(800000000000, astroSettings.mass * 1000000000));
+            planet.type = 'strangeStar';
+            planet.color = '#8A2BE2';
+            planet.glowColor = '#9400D3';
+            planet.radius = calculateRadiusForType('strangeStar', planet.mass);
+            break;
+            
+        case 'whiteDwarf':
+            planet.mass = customMass !== null ? customMass : 20500000000;
+            planet.type = 'whiteDwarf';
+            planet.color = '#ffffff';
+            planet.glowColor = '#3498db';
+            planet.radius = calculateRadiusForType('whiteDwarf', planet.mass);
+            planet.rings = astroSettings.hasRings;
+            planet.ringColor = astroSettings.ringColor;
+            planet.ringHighlight = lightenColor(astroSettings.ringColor, 30);
+            planet.ringRotation = Math.random() * Math.PI * 2;
+            break;
+            
+        case 'star':
+            planet.mass = customMass !== null ? customMass : Math.max(15000000, Math.min(10950900500, astroSettings.mass * 1000000));
+            planet.type = 'star';
+            planet.color = '#FFD700';
+            planet.glowColor = '#FF4500';
+            planet.radius = calculateRadiusForType('star', planet.mass);
+            planet.rings = astroSettings.hasRings;
+            planet.ringColor = astroSettings.ringColor;
+            planet.ringHighlight = lightenColor(astroSettings.ringColor, 30);
+            planet.ringRotation = Math.random() * Math.PI * 2;
+            break;
+            
+        case 'neutronStar':
+            planet.mass = customMass !== null ? customMass : Math.max(50500000000, Math.min(500000000000, astroSettings.mass * 1000000000));
+            planet.type = 'neutronStar';
+            planet.color = '#6ae1f7';
+            planet.glowColor = '#6ae1f7';
+            planet.pulse = true;
+            planet.radius = calculateRadiusForType('neutronStar', planet.mass);
+            break;
+            
+        case 'blackHole':
+            planet.mass = customMass !== null ? customMass : Math.max(1000000000000, Math.min(1000000000000000000000, astroSettings.mass * 1000000000000000));
+            planet.type = 'blackHole';
+            planet.color = '#000000';
+            planet.glowColor = '#9b59b6';
+            planet.accretionDisk = true;
+            planet.diskColor = '#e74c3c';
+            planet.radius = calculateRadiusForType('blackHole', planet.mass);
+            break;
+            
+        case 'quasar':
+            // Mesma lógica de massa e raio do blackHole
+            planet.mass = customMass !== null ? customMass : Math.max(1000000000000, Math.min(1000000000000000000000, astroSettings.mass * 1000000000000000));
+            planet.type = 'quasar';
+            planet.color = '#000000';
+            planet.glowColor = '#fffde4';
+            planet.accretionDisk = true;
+            planet.diskColor = '#fffde4';
+            planet.jets = true;
+            planet.jetAngle = Math.random() * Math.PI * 2;
+            planet.radius = calculateRadiusForType('blackHole', planet.mass); // igual ao blackHole
+            break;
+
+        case 'whiteHole':
+            // Mesma lógica de massa e raio do blackHole
+            planet.mass = customMass !== null ? customMass : Math.max(1000000000000, Math.min(1000000000000000000000, astroSettings.mass * 1000000000000000));
+            planet.type = 'whiteHole';
+            planet.color = '#ffffff';
+            planet.glowColor = '#3498db';
+            planet.lifeTime = 0;
+            planet.radius = calculateRadiusForType('blackHole', planet.mass); // igual ao blackHole
+            break;
+    }
+    
+    planets.push(planet);
+    showNotification(`${getTypeName(type)} criado!${selectedClass ? ' Classe: ' + selectedClass.name : ''}`);
+}
+
+function getTypeName(type) {
+    const names = {
+        'spaceDust': 'Poeira Espacial',
+        'nebula': 'Nebulosa',
+        'comet': 'Cometa',
+        'meteoroid': 'Meteoróide',
+        'meteorite': 'Meteorito',
+        'rockyPlanet': 'Planeta Rochoso',
+        'star': 'Estrela',
+        'gasGiant': 'Planeta Gasoso',
+        'asteroid': 'Asteroide',
+        'planetoid': 'Planetoide',
+        'neutronStar': 'Estrela de Nêutrons',
+        'blackHole': 'Buraco Negro',
+        'quasar': 'Quasar',
+        'whiteHole': 'Buraco Branco',
+        'brownDwarf': 'Anã Marrom',
+        'whiteDwarf': 'Anã Branca',
+        'ttauriStar': 'Estrela T Tauri',
+        'carbonStar': 'Estrela de Carbono',
+        'giantStar': 'Estrela Gigante',
+        'hypergiant': 'Hipergigante',
+        'massiveStar': 'Estrela Massiva',
+        'strangeStar': 'Estrela Estranha',
+        'wormhole': 'Buraco de Minhoca'
+    };
+    return names[type] || 'Astro';
+}
+
+function generateContinents(count) {
+    const continents = [];
+    for (let i = 0; i < count; i++) {
+        const points = [];
+        const numPoints = 8 + Math.floor(Math.random() * 8);
+        for (let j = 0; j < numPoints; j++) {
+            points.push(0.7 + Math.random() * 0.3);
+        }
+        continents.push({ points });
+    }
+    return continents;
+}
+
+function generateAsteroidShape(size) {
+    const points = [];
+    const numPoints = 6 + Math.floor(Math.random() * 6);
+    for (let i = 0; i < numPoints; i++) {
+        const angle = (i / numPoints) * Math.PI * 2;
+        const variation = 0.6 + Math.random() * 0.8;
+        points.push({
+            x: Math.cos(angle) * size * variation,
+            y: Math.sin(angle) * size * variation
+        });
+    }
+    return points;
+}
+
+function lightenColor(color, percent) {
+    // Converter para RGB
+    let r = parseInt(color.substring(1, 3), 16);
+    let g = parseInt(color.substring(3, 5), 16);
+    let b = parseInt(color.substring(5, 7), 16);
+    
+    // Clarear
+    r = Math.min(255, r + Math.round(255 * percent / 100));
+    g = Math.min(255, g + Math.round(255 * percent / 100));
+    b = Math.min(255, b + Math.round(255 * percent / 100));
+    
+    // Converter de volta para hex
+    return `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`;
+}
+
+// Abrir painel de edição para um astro
+function openEditPanel(planet) {
+    selectedPlanet = planet;
+    
+    // Preencher formulário com dados do astro
+    editName.value = planet.name || getTypeName(planet.type);
+    editType.value = getTypeName(planet.type);
+    editClass.value = planet.planetClass || 'Nenhuma';
+    editTemperature.value = planet.temperature !== undefined ? planet.temperature + '°C' : 'Desconhecida';
+    editColor.value = planet.color;
+    editSecondaryColor.value = planet.landColor || planet.glowColor || '#3498db';
+    editMass.value = planet.mass;
+    editGravity.value = planet.gravity || (planet.mass / 100).toFixed(1);
+    editRotation.value = planet.rotationSpeed || 0.01;
+    editWater.value = planet.ocean ? Math.round(planet.ocean * 100) : 0;
+    editClouds.value = planet.clouds ? Math.round(planet.clouds * 100) : 0;
+    editGas.value = planet.gas ? Math.round(planet.gas * 100) : 0;
+    editRingMass.value = planet.ringMass || 30;
+    
+    editDescription.value = planet.description || `Um ${getTypeName(planet.type)} no vasto universo`;
+    
+    // Mostrar painel de edição
+    editPanel.style.display = 'block';
+}
+
+// Aplicar alterações do painel de edição
+function applyAstroChanges() {
+    if (!selectedPlanet) return;
+    
+    // Aplicar alterações
+    selectedPlanet.name = editName.value;
+    selectedPlanet.color = editColor.value;
+    
+    if (selectedPlanet.landColor) selectedPlanet.landColor = editSecondaryColor.value;
+    if (selectedPlanet.glowColor) selectedPlanet.glowColor = editSecondaryColor.value;
+    
+    selectedPlanet.mass = parseFloat(editMass.value);
+    selectedPlanet.gravity = parseFloat(editGravity.value);
+    selectedPlanet.rotationSpeed = parseFloat(editRotation.value);
+    
+    if (selectedPlanet.ocean) selectedPlanet.ocean = parseFloat(editWater.value) / 100;
+    if (selectedPlanet.clouds) selectedPlanet.clouds = parseFloat(editClouds.value) / 100;
+    if (selectedPlanet.gas) selectedPlanet.gas = parseFloat(editGas.value) / 100;
+    
+    selectedPlanet.ringMass = parseFloat(editRingMass.value);
+    
+    selectedPlanet.description = editDescription.value;
+    
+    // Recalcular raio
+    selectedPlanet.radius = calculateRadiusForType(selectedPlanet.type, selectedPlanet.mass);
+    
+    // Fechar painel
+    editPanel.style.display = 'none';
+    showNotification('Alterações aplicadas com sucesso!');
+}
+
+// Deletar astro selecionado
+function deleteSelectedAstro() {
+    if (!selectedPlanet) return;
+    
+    const index = planets.indexOf(selectedPlanet);
+    if (index !== -1) {
+        planets.splice(index, 1);
+        editPanel.style.display = 'none';
+        showNotification('Astro removido com sucesso!');
+        selectedPlanet = null;
+    }
+}
+
+// Event handlers
+function handleMouseDown(e) {
+    if (gameState !== 'playing') return;
+    
+    if (e.button === 0) { // Botão esquerdo
+        mouse.down = true;
+        mouse.downX = mouse.x;
+        mouse.downY = mouse.y;
+        
+        // Criar astro selecionado no modo criação
+        if (creationMode) {
+            // Não criamos ainda, apenas iniciamos o arrasto
+            return;
+        }
+    } else if (e.button === 2) { // Botão direito
+        mouse.rightDown = true;
+        
+        // Verificar se clicou em um planeta para editar
+        for (let i = planets.length - 1; i >= 0; i--) {
+            const planet = planets[i];
+            const dx = (mouse.x - planet.x) * camera.zoom;
+            const dy = (mouse.y - planet.y) * camera.zoom;
+            const distance = Math.sqrt(dx * dx + dy * dy);
+            
+            if (distance < planet.radius * camera.zoom) {
+                openEditPanel(planet);
+                break;
+            }
+        }
+    }
+}
+
+function handleMouseUp(e) {
+    if (gameState !== 'playing') return;
+    
+    if (e.button === 0 && mouse.down) {
+        mouse.down = false;
+        
+        // Criar astro no modo criação
+        if (creationMode) {
+            const vx = (mouse.x - mouse.downX) * 0.1;
+            const vy = (mouse.y - mouse.downY) * 0.1;
+            
+            createAstro(creationMode, mouse.downX, mouse.downY, vx, vy);
+            return;
+        }
+        
+        // Criar planeta padrão com velocidade inicial
+        const vx = (mouse.x - mouse.downX) * 0.1;
+        const vy = (mouse.y - mouse.downY) * 0.1;
+        
+        planets.push({
+            x: mouse.downX,
+            y: mouse.downY,
+            vx: vx,
+            vy: vy,
+            mass: mass,
+            radius: Math.cbrt(mass) * 5,
+            color: astroSettings.primaryColor,
+            type: 'spaceDust',
+            ringMass: astroSettings.ringMass,
+            temperature: astroSettings.temperature,
+            name: generateRandomName() // Nome gerado automaticamente
+        });
+        
+        showNotification('Poeira espacial criada!');
+    } else if (e.button === 2) {
+        mouse.rightDown = false;
+    }
+}
+
+function handleMouseMove(e) {
+    const rect = canvas.getBoundingClientRect();
+    mouse.x = (e.clientX - rect.left - canvas.width / 2) / camera.zoom + camera.x;
+    mouse.y = (e.clientY - rect.top - canvas.height / 2) / camera.zoom + camera.y;
+}
+
+function handleContextMenu(e) {
+    e.preventDefault(); // Prevenir menu de contexto
+}
+
+function handleScroll(e) {
+    if (gameState !== 'playing') return;
+    
+    // Ajustar massa com scroll
+    mass += e.deltaY > 0 ? -5 : 5;
+    mass = Math.max(5, Math.min(500, mass));
+}
+
+function handleKeyDown(e) {
+    if (gameState !== 'playing') return;
+    
+    // Movimento da câmera
+    const cameraSpeed = 100 / camera.zoom;
+    
+    switch(e.key.toLowerCase()) {
+        case 'w': camera.y -= cameraSpeed; break;
+        case 's': camera.y += cameraSpeed; break;
+        case 'a': camera.x -= cameraSpeed; break;
+        case 'd': camera.x += cameraSpeed; break;
+        case 'q': camera.zoom *= 1.1; break; // Zoom in
+        case 'e': camera.zoom /= 1.1; break; // Zoom out
+        case 'f': // Resetar universo
+            planets = [];
+            camera = { x: 0, y: 0, zoom: 1 };
+            universeAge = 0;
+            universeTime = 0;
+            showNotification('Universo resetado');
+            break;
+        case 't': // Alternar zonas de temperatura
+            temperatureZonesVisible = !temperatureZonesVisible;
+            showTempZones.checked = temperatureZonesVisible;
+            showNotification(`Zonas de temperatura ${temperatureZonesVisible ? 'ativadas' : 'desativadas'}`);
+            break;
+        case 'escape': // Cancelar modo criação
+            if (creationMode) {
+                creationMode = null;
+                creationModeIndicator.style.display = 'none';
+                showNotification('Modo criação cancelado');
+            }
+            break;
+        case 'n': // Alternar visibilidade dos nomes
+            namesVisible = !namesVisible;
+            showNames.checked = namesVisible;
+            showNotification(`Nomes dos astros ${namesVisible ? 'ativados' : 'desativados'}`);
+            break;
+    }
+}
+
+// Iniciar o jogo quando a página carregar
+window.addEventListener('load', init);

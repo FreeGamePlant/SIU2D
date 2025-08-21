@@ -1,0 +1,314 @@
+{
+  "ui": {
+    "gameTitle": "SIU 2D - Simulator of the Incredible Universe",
+    "buttons": {
+      "play": "Play",
+      "saves": "Saves",
+      "options": "Options",
+      "tutorial": "Tutorial",
+      "warnings": "Warnings",
+      "exit": "Exit",
+      "tSingularity": "T Singularity",
+      "achievements": "Achievements",
+      "language": "Language"
+    },
+    "config": {
+      "title": "Universe Settings",
+      "gravity": "Gravity",
+      "drag": "Space Drag",
+      "shadows": "Shadows",
+      "tempZones": "Temperature Zones",
+      "showNames": "Show Names",
+      "spaceColor": "Space Color",
+      "musicVolume": "Music Volume",
+      "sfxVolume": "SFX Volume",
+      "withdrawalMode": "Withdrawal Mode",
+      "resetPhysics": "Reset Physics"
+    },
+    "warnings": {
+      "title": "Important Warnings",
+      "warning1": "Warning 1 - Please do not exaggerate the number of Celestial Bodies (Planets, Stars, etc.). If you add too many, the game may lag depending on your device. We want you to have a good experience: simple, without excess, with good gameplay and learning.",
+      "warning2": "Warning 2 - The game is in development. Bugs may occur. Please report them so we can fix and improve your gaming experience.",
+      "warning3": "Warning 3 - This game is not 100% realistic. Sizes, distances and other factors are simplified to facilitate gameplay and understanding of the simulated universe.",
+      "warning4": "Warning 4 - Please do not abuse the game, as this may cause performance issues and crashes. The game is designed for casual and fun play, especially regarding Warning 1 above.",
+      "enjoy": "Enjoy the Game! We hope you have fun exploring the universe and creating your own celestial bodies. If you have questions or suggestions, feel free to contact us."
+    },
+    "saves": {
+      "title": "Universe Saves",
+      "placeholder": "Save Name",
+      "saveButton": "Save Universe",
+      "noSaves": "No saves found.",
+      "load": "Load",
+      "delete": "Delete"
+    },
+    "achievements": {
+      "title": "Achievements"
+    },
+    "language": {
+      "title": "Select Language"
+    },
+    "game": {
+      "creationMode": "Creation mode:",
+      "universeInfo": {
+        "title": "Universe Information",
+        "time": "Time:",
+        "astroCount": "Celestial Bodies:",
+        "speed": "Speed:",
+        "types": "Types:"
+      }
+    },
+    "inGameMenu": {
+      "title": "Universe Menu",
+      "sections": {
+        "createAstros": "Create Celestial Bodies",
+        "astroSettings": "Celestial Body Settings",
+        "options": "Options",
+        "physics": "Physics",
+        "timeControl": "Time Control",
+        "saves": "Saves",
+        "controls": "Controls"
+      },
+      "appearance": {
+        "title": "Appearance",
+        "primaryColor": "Primary Color:",
+        "secondaryColor": "Secondary Color:",
+        "ringColor": "Ring Color:"
+      },
+      "physicalProperties": {
+        "title": "Physical Properties",
+        "mass": "Mass:",
+        "gravity": "Gravity:",
+        "temperature": "Temperature:",
+        "rotation": "Rotation Speed:"
+      },
+      "characteristics": {
+        "title": "Characteristics",
+        "water": "Water:",
+        "clouds": "Clouds:",
+        "gases": "Gases:",
+        "rings": "Rings:",
+        "ringMass": "Ring Mass:"
+      },
+      "apply": "Apply Settings",
+      "reset": "Reset",
+      "presets": "Presets",
+      "resetPhysics": "Reset",
+      "saveUniverse": "Save Universe",
+      "back": "BACK",
+      "options": {
+        "volume": "Volume:(Radio Converter)",
+        "graphicsQuality": "Graphics Quality:",
+        "low": "Low",
+        "medium": "Medium",
+        "high": "High",
+        "shadows": "Shadows:",
+        "tempZones": "Show temperature zones:",
+        "showNames": "Show names:"
+      },
+      "physics": {
+        "gravity": "Gravitational Force:",
+        "drag": "Space Resistance:"
+      },
+      "timeControl": {
+        "stop": "Stop (0x)",
+        "distantPast": "Slow (0.01x)",
+        "past": "Slow (0.1x)",
+        "future": "Normal (1x)",
+        "distantFuture": "Fast (10x)",
+        "superFast": "Super Fast (100x)",
+        "megaFast": "Mega Fast (1000x)",
+        "hyperFast": "Hyper Fast (10000x)",
+        "ultraFast": "Ultra Fast (100000x)"
+      },
+      "controls": {
+        "leftClick": "Left Click:",
+        "drag": "Drag:",
+        "rightClick": "Right Click:",
+        "wasd": "WASD:",
+        "zoomInOut": "Q / E:",
+        "resetUniverse": "F:",
+        "toggleTempZones": "T:",
+        "leftClickDesc": "Create celestial body",
+        "dragDesc": "Set initial velocity",
+        "rightClickDesc": "Edit celestial body",
+        "wasdDesc": "Move camera",
+        "zoomInOutDesc": "Zoom in / Zoom out",
+        "resetUniverseDesc": "Reset universe",
+        "toggleTempZonesDesc": "Toggle temperature zones"
+      }
+    },
+    "astroTypes": {
+      "radiation": {
+        "name": "Radiation",
+        "description": "Energetic particles emitted by black holes and quasars. Much smaller than space dust."
+      },
+      "nebula": {
+        "name": "Nebula",
+        "description": "Clouds of gas and dust that form stars and planets."
+      },
+      "spaceDust": {
+        "name": "Space Dust",
+        "description": "Microscopic particles that form the basis of celestial bodies."
+      },
+      "meteoroid": {
+        "name": "Meteoroid",
+        "description": "Rock or metal fragments in space."
+      },
+      "meteorite": {
+        "name": "Meteorite",
+        "description": "Meteoroids that survived atmospheric entry."
+      },
+      "comet": {
+        "name": "Comet",
+        "description": "Icy bodies with tails that form near stars."
+      },
+      "asteroid": {
+        "name": "Asteroid",
+        "description": "Small rocky bodies with irregular shapes."
+      },
+      "planetoid": {
+        "name": "Planetoid",
+        "description": "Celestial bodies smaller than planets but larger than asteroids."
+      },
+      "rockyPlanet": {
+        "name": "Rocky Planet",
+        "description": "Rocky planets with continents, atmosphere and oceans."
+      },
+      "gasGiant": {
+        "name": "Gas Giant",
+        "description": "Gas giants with atmospheric bands and storms."
+      },
+      "brownDwarf": {
+        "name": "Brown Dwarf",
+        "description": "Failed stars that didn't reach sufficient mass."
+      },
+      "redDwarf": {
+        "name": "Red Dwarf",
+        "description": "Nearly failed star, but somewhat eternal and hot."
+      },
+      "ttauriStar": {
+        "name": "T Tauri Star",
+        "description": "Young star in contraction phase, highly active."
+      },
+      "star": {
+        "name": "Common Star",
+        "description": "Average-mass star (Sun-like), essential for life."
+      },
+      "redGiant": {
+        "name": "Red Giant",
+        "description": "Penultimate phase of a common star."
+      },
+      "carbonStar": {
+        "name": "Carbon Star",
+        "description": "Cool star with high carbon concentration."
+      },
+      "giantStar": {
+        "name": "Giant Star",
+        "description": "Star larger than common stars."
+      },
+      "redSupergiant": {
+        "name": "Red Supergiant",
+        "description": "Penultimate phase of a giant star."
+      },
+      "hypergiant": {
+        "name": "Hypergiant",
+        "description": "Extremely luminous and massive giant star."
+      },
+      "massiveStar": {
+        "name": "Massive Star",
+        "description": "Star with mass over 8 times that of the Sun."
+      },
+      "supermassiveStar": {
+        "name": "Supermassive Star",
+        "description": "Star with mass over 8 times that of the Sun."
+      },
+      "whiteDwarf": {
+        "name": "White Dwarf",
+        "description": "Remnant of low-mass stars after the red giant phase."
+      },
+      "HeliumWhiteDwarf": {
+        "name": "Helium White Dwarf",
+        "description": "Remnant of stars with high helium content."
+      },
+      "blackDwarf": {
+        "name": "Black Dwarf",
+        "description": "Final stage of a white dwarf, completely cold and dark."
+      },
+      "neutronStar": {
+        "name": "Neutron Star",
+        "description": "Ultra-dense remnants of massive stars."
+      },
+      "pulsar": {
+        "name": "Pulsar",
+        "description": "A type of neutron star with cosmic radiation beams - a cosmic lighthouse!"
+      },
+      "magnetar": {
+        "name": "Magnetar",
+        "description": "Extremely dense neutron stars."
+      },
+      "quarkStar": {
+        "name": "Quark Star",
+        "description": "Neutron stars with condensed strange cores."
+      },
+      "strangeStar": {
+        "name": "Strange Star",
+        "description": "Hypothetical star made of quark matter."
+      },
+      "blackHole": {
+        "name": "Black Hole",
+        "description": "Regions of space with extreme gravity. Stellar/Intermediate"
+      },
+      "quasar": {
+        "name": "Quasar",
+        "description": "Active supermassive black holes with energy jets."
+      },
+      "wormhole": {
+        "name": "Wormhole",
+        "description": "Hypothetical space-time tunnel connecting two points."
+      },
+      "whiteHole": {
+        "name": "White Hole",
+        "description": "Theoretical region that expels matter."
+      }
+    },
+    "editPanel": {
+      "title": "Edit Celestial Body",
+      "name": "Name:",
+      "type": "Type:",
+      "class": "Class:",
+      "temperature": "Temperature:",
+      "primaryColor": "Primary Color:",
+      "secondaryColor": "Secondary Color:",
+      "mass": "Mass:",
+      "gravity": "Gravity:",
+      "rotation": "Rotation Speed:",
+      "water": "Water:",
+      "clouds": "Clouds:",
+      "gases": "Gases:",
+      "ringMass": "Ring Mass:",
+      "description": "Description:",
+      "locked": "Locked:",
+      "delete": "Delete Celestial Body",
+      "apply": "Apply Changes"
+    },
+    "temperatureZones": {
+      "title": "Temperature Zones:",
+      "tooHot": "Too Hot Zone (> 500°C)",
+      "hot": "Hot Zone (300-500°C)",
+      "warm": "Warm Zone (100-300°C)",
+      "habitable": "Habitable Zone (0-100°C)",
+      "cold": "Cold Zone (-100-0°C)",
+      "freeze": "Freeze Zone (< -100°C)"
+    },
+    "common": {
+      "common": "Common",
+      "uncommon": "Uncommon",
+      "rare": "Rare",
+      "hyperRare": "Hyper Rare",
+      "ultraRare": "Ultra Rare",
+      "epic": "Epic",
+      "exotic": "Exotic",
+      "legendary": "Legendary"
+    }
+  }
+}
