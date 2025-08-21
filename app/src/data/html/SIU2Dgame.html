@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<body lang="pt-BR">
+<html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -11,7 +11,6 @@
     <link rel="stylesheet" href="../style/css/SIUD2.css">
 </head>
 <body>
-    
 <div id="configSidebar">
   <button class="close-config" id="closeConfigBtn" title="Fechar Configurações">&times;</button>
   <div class="sidebar-content">
@@ -298,8 +297,8 @@
         <button class="hex-btn" id="btnWarnings"><i class="fas fa-exclamation-triangle"></i><span data-i18n="ui.buttons.warnings">Avisos</span></button>
         <button class="hex-btn" id="exitBtn"><i class="fas fa-sign-out-alt"></i><span data-i18n="ui.buttons.exit">Sair</span></button>
         <button class="hex-btn" id="btnTSingularity"><img src="../assets/img/singularity.png" alt="T Singularity" style="width: 32px; height: 32px; margin-bottom: 8px;"><span>T Singularity</span></button>
-        <button class="hex-btn" id="btnDiary"><i class="fas fa-book"></i><span>Diário do T Singularity</span></button>
-        <button class="hex-btn" id="btnNews"><i class="fas fa-newspaper"></i><span>Notícias da FGP</span></button>
+        <button class="hex-btn" id="btnDiary"><i class="fas fa-book"></i><span>T Singularity Diary</span></button>
+        <button class="hex-btn" id="btnNews"><i class="fas fa-newspaper"></i><span>FGP</span></button>
         <button class="hex-btn" id="btnAchievements"><i class="fas fa-trophy"></i><span data-i18n="ui.buttons.achievements">Conquistas</span></button>
         <button class="hex-btn" id="btnleng"><i class="fas fa-flag"></i><span data-i18n="ui.buttons.language"></span></button>
         <div id="achievementsSidebar" class="sidebar-overlay" style="display:none;">
@@ -320,24 +319,24 @@
         <div class="diary-book">
           <div class="diary-page left-page">
             <div class="page-content">
-              <h3>Planeta Terra</h3>
-              <img src="../assets/img/planets/earth.jpg" alt="Planeta Terra">
-              <p>O Planeta Terra é o terceiro planeta do Sistema Solar e o único conhecido a abrigar vida. Possui uma atmosfera rica em nitrogênio e oxigênio, e aproximadamente 71% de sua superfície é coberta por água.</p>
+              <h3></h3>
+              <img src="" alt="">
+              <p></p>
             </div>
           </div>
           <div class="diary-page right-page">
             <div class="page-content">
-              <h3>Marte</h3>
-              <img src="../assets/img/planets/mars.jpg" alt="Marte">
-              <p>Marte é o quarto planeta a partir do Sol, conhecido como "Planeta Vermelho" devido à sua aparência causada por óxido de ferro em sua superfície. Possui duas luas pequenas e irregulares: Fobos e Deimos.</p>
+              <h3></h3>
+              <img src="" alt="">
+              <p></p>
             </div>
           </div>
         </div>
         <div class="diary-controls">
           
-          <button class="diary-nav-btn" id="prevPage"><i class="fas fa-chevron-left"></i> Anterior</button>
-          <span class="page-indicator">Páginas <span id="currentPages">1-2</span> de <span id="totalPages">10</span></span>
-          <button class="diary-nav-btn" id="nextPage">Próxima <i class="fas fa-chevron-right"></i></button>
+          <button class="diary-nav-btn" id="prevPage"><i class="fas fa-chevron-left"></i> <-- </button>
+          <span class="page-indicator">Pg <span id="currentPages">1-2</span> of <span id="totalPages">10</span></span>
+          <button class="diary-nav-btn" id="nextPage"> --> <i class="fas fa-chevron-right"></i></button>
           <button class="close-diary" id="closeDiaryBtn" (onclick)="hideDiary">X</button>
         </div>
       </div>
@@ -348,33 +347,30 @@
       <div class="sidebar-panel news-panel">
         <button class="close-sidebar" id="closeNewsBtn" title="Fechar Notícias">&times;</button>
         <div class="sidebar-content">
-          <h2 style="color:#81d4fa; margin-bottom:1rem;">Notícias da FGP</h2>
+          <h2 style="color:#81d4fa; margin-bottom:1rem;">FGP news</h2>
           <div class="news-content">
             <div class="news-item">
-              <h3><i class="fas fa-rocket"></i> Nova Atualização Disponível!</h3>
-              <p class="news-date">15 de Março de 2025</p>
-              <p>Estamos animados em anunciar a nova atualização do SIU 2D! Adicionamos novos tipos de astros, melhorias de performance e correções de bugs.</p>
+              <h3><i class="fas fa-rocket"></i>There is no news for now..</h3>
+              <p class="news-date"></p>
+              <p></p>
             </div>
             <div class="news-item">
-              <h3><i class="fas fa-star"></i> Evento Especial de Aniversário</h3>
-              <p class="news-date">10 de Março de 2025</p>
-              <p>Participe do nosso evento especial de aniversário! Durante esta semana, astros raros terão chance aumentada de aparecerem no seu universo.</p>
+              <h3><i class="fas fa-star"></i></h3>
+              <p class="news-date"></p>
+              <p></p>
             </div>
             <div class="news-item">
-              <h3><i class="fas fa-globe"></i> Novos Idiomas Adicionados</h3>
-              <p class="news-date">5 de Março de 2025</p>
-              <p>Expandimos nosso suporte para mais idiomas! Agora o SIU 2D está disponível em 14 idiomas diferentes.</p>
+              <h3><i class="fas fa-globe"></i></h3>
+              <p class="news-date"></p>
+              <p></p>
             </div>
-            <!-- Adicione mais notícias conforme necessário -->
           </div>
         </div>
       </div>
     </div>
 
-    <!-- Código existente... -->
 </div>
 
-<!-- Estilos para os novos painéis -->
 <style>
 
 
@@ -384,7 +380,6 @@
   border: black;
   border-radius: 10px 10px 10px 10px;
 }
-/* Painéis em tela cheia */
 .fullscreen-sidebar.sidebar-overlay {
   position: fixed;
   top: 0;
@@ -440,7 +435,6 @@
   flex: 1;
 }
 
-/* Estilos específicos para o Diário (estilo de livro) */
 .diary-book {
   display: flex;
   width: 100%;
@@ -564,7 +558,6 @@
   font-family: 'Georgia', serif;
 }
 
-/* Estilos específicos para Notícias */
 .news-content {
   display: flex;
   flex-direction: column;
@@ -599,7 +592,6 @@
 </style>
 
 <script>
-// Script para controlar os novos painéis
 document.addEventListener('DOMContentLoaded', function() {
   // Diário do T Singularity
   const btnDiary = document.getElementById('btnDiary');
@@ -617,32 +609,31 @@ document.addEventListener('DOMContentLoaded', function() {
   const currentPagesEl = document.getElementById('currentPages');
   const totalPagesEl = document.getElementById('totalPages');
   
-  // Dados do diário (em uma aplicação real, isso viria de um arquivo JSON)
   const diaryPages = [
     {
-      title: "Planeta Terra",
-      image: "../assets/img/planets/earth.jpg",
-      content: "O Planeta Terra é o terceiro planeta do Sistema Solar e o único conhecido a abrigar vida. Possui uma atmosfera rica em nitrogênio e oxigênio, e aproximadamente 71% de sua superfície é coberta por água."
+      title: "Still in development",
+      image: "",
+      content: "coming soon.."
     },
     {
-      title: "Marte",
-      image: "../assets/img/planets/mars.jpg",
-      content: "Marte é o quarto planeta a partir do Sol, conhecido como 'Planeta Vermelho' devido à sua aparência causada por óxido de ferro em sua superfície. Possui duas luas pequenas e irregulares: Fobos e Deimos."
+      title: "",
+      image: "",
+      content: ""
     },
     {
-      title: "Júpiter",
-      image: "../assets/img/planets/jupiter.jpg",
-      content: "Júpiter é o maior planeta do Sistema Solar, um gigante gasoso com uma massa superior à de todos os outros planetas juntos. É conhecido por sua Grande Mancha Vermelha, uma tempestade gigante que dura séculos."
+      title: "",
+      image: "",
+      content: ""
     },
     {
-      title: "Saturno",
-      image: "../assets/img/planets/saturn.jpg",
-      content: "Saturno é o sexto planeta a partir do Sol e o segundo maior do Sistema Solar. É famoso por seus impressionantes anéis, compostos principalmente de partículas de gelo e poeira cósmica."
+      title: "",
+      image: "",
+      content: ""
     },
     {
-      title: "Vênus",
-      image: "../assets/img/planets/venus.jpg",
-      content: "Vênus é o segundo planeta do Sistema Solar, frequentemente chamado de 'estrela da manhã' ou 'estrela da tarde'. Possui uma atmosfera densa e tóxica que cria um intenso efeito estufa, tornando-o o planeta mais quente do sistema."
+      title: "",
+      image: "",
+      content: ""
     }
   ];
   
@@ -2318,7 +2309,6 @@ document.getElementById('tsingu').addEventListener('contextmenu', (e) => {
           });
         }
     </script>
-</body>
 <script>
 
 document.addEventListener('DOMContentLoaded', function() {
@@ -2623,6 +2613,5 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 </script>
 <div id="achievementNotification" style="display:none;"></div>
-</body>
 </body>
 </html>
