@@ -32,7 +32,6 @@
     </div>
   </div>
 </div>
-<!-- CUTSCENE OVERLAY: T SINGULARITY VIAGEM NO TEMPO -->
 <div id="cutsceneOverlay">
   <canvas id="wormholeCanvas"></canvas>
   <div id="cutsceneContent">
@@ -168,7 +167,7 @@
   <button class="close-config" id="closeConfigBtn" title="Fechar Configurações">&times;</button>
   <div class="sidebar-content">
     <div class="edit-panel" style="padding: 1.5rem 1rem;">
-      <h2 style="margin-bottom: 1.2rem; color: #81d4fa;">⚙️ Configurações do Universo</h2>
+      <h2 style="margin-bottom: 1.2rem; color: #81d4fa;" id="crazy">⚙️ Configurações do Universo</h2>
       <div class="edit-group">
         <div class="edit-label">Gravidade</div>
         <div class="edit-input">
@@ -228,6 +227,15 @@
         <div class="edit-input">
           <input type="range" id="sfxVolumeSlider" min="0" max="100" value="80" step="1">
           <span id="sfxVolumeValue">80</span>
+        </div>
+      </div>
+    <div class="edit-group">
+        <div class="edit-label" data-i18n="ui.config.withdrawalMode">Modo Retirada</div>
+        <div class="edit-input">
+          <label class="toggle-switch">
+            <input type="checkbox" id="modeRetirada">
+            <span class="slider"></span>
+          </label>
         </div>
       </div>
       <div class="edit-group" style="margin-top: 2rem;">
@@ -360,6 +368,9 @@
         <button id="gameMenuBtn">
             <i class="fas fa-bars"></i>
         </button>
+        <button id="btnResetAchievements" class="reset-btn" title="Resetar todas as conquistas">
+                    <i class="fas fa-trash-alt"></i> Reset
+                  </button>
         
         
         <div id="inGameMenu">
@@ -1324,20 +1335,20 @@
             </div>
             
             <div class="menu-section">
-                <h3 class="section-title"><i class="fas fa-hourglass-half"></i> Controle de Tempo</h3>
+                <h3 class="section-title"><i class="fas fa-hourglass-half"></i></h3>
                 <div class="time-control">
-                    <div class="time-btn active" id="" data-scale="">Parar (0x)</div>
-                    <div class="time-btn" id="" data-scale="">Lento (0.01x)</div>
-                    <div class="time-btn" id="" data-scale="">Lento (0.1x)</div>
-                    <div class="time-btn" id="timeFuture" data-scale="1">Normal (1x)</div>
-                    <div class="time-btn" id="timeDistantFuture" data-scale="10">Rápido (10x)</div>
+                    <div class="time-btn active" id="timeStop" data-scale="0" data-i18n="ui.inGameMenu.timeControl.stop">Parar (0x)</div>
+                    <div class="time-btn" id="timeDistantPast" data-scale="0.01" data-i18n="ui.inGameMenu.timeControl.distantPast">Lento (0.01x)</div>
+                    <div class="time-btn" id="timePast" data-scale="0.1" data-i18n="ui.inGameMenu.timeControl.past">Lento (0.1x)</div>
+                    <div class="time-btn" id="timeFuture" data-scale="1" data-i18n="ui.inGameMenu.timeControl.future">Normal (1x)</div>
+                    <div class="time-btn" id="timeDistantFuture" data-scale="10" data-i18n="ui.inGameMenu.timeControl.distantFuture">Rápido (10x)</div>
                 </div>
                 
                 <div style="display: flex; gap: 8px; margin-top: 10px; align-items: center;">
-                    <button type="button" class="time-btn" id="" data-scale="">Super Rápido (100x)</button>
-                    <button type="button" class="time-btn" id="" data-scale="">Hiper Rápido (1000x)</button>
-                    <button type="button" class="time-btn" id="" data-scale="">Ultra Rápido (10000x)</button>
-                    
+                    <button type="button" class="time-btn" id="btn100x" data-scale="100" data-i18n="ui.inGameMenu.timeControl.superFast">Super Rápido (100x)</button>
+                    <button type="button" class="time-btn" id="btn1000x" data-scale="1000" data-i18n="ui.inGameMenu.timeControl.megaFast">Mega Rápido (1000x)</button>
+                    <button type="button" class="time-btn" id="btn10000x" data-scale="10000" data-i18n="ui.inGameMenu.timeControl.hyperFast">Hiper Rápido (10000x)</button>
+                    <button type="button" class="time-btn" id="btn1000000x" data-scale="100000" data-i18n="ui.inGameMenu.timeControl.ultraFast">Ultra Rápido (100000x)</button>
                 </div>
             </div>
             
