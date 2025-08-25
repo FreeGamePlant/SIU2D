@@ -995,3 +995,8 @@
     /* Mantenha seu estilo existente */
     transition: opacity 0.3s, transform 0.3s;
 }
+
+body{
+    overflow-x: hidden;
+    overflow-y: hidden;
+}

@@ -10,9 +10,139 @@
     <link rel="icon" type="image/png" sizes="32x32" href="../assets/img/singularity.png">
     <link rel="stylesheet" href="../style/css/SIUD2.css">
 </head>
+ <style>
+        #btnConsole {
+            position: relative;
+            z-index: 100;
+        }
+        
+        #consoleSidebar {
+            position: fixed;
+            top: 0;
+            right: -100%;
+            width: 100%;
+            height: 100vh;
+            background: rgba(10, 20, 40, 0.95);
+            z-index: 1006;
+            transition: right 0.4s ease-out;
+            display: flex;
+            justify-content: flex-end;
+        }
+        
+        #consoleSidebar.open {
+            right: 0;
+        }
+        
+        .console-panel {
+            width: 85%;
+            max-width: 500px;
+            height: 100%;
+            background: #181f2a;
+            box-shadow: -5px 0 25px rgba(0, 0, 0, 0.5);
+            padding: 20px;
+            overflow-y: auto;
+        }
+        
+        .close-console {
+            position: absolute;
+            top: 15px;
+            right: 20px;
+            background: none;
+            border: none;
+            color: #fff;
+            font-size: 2rem;
+            cursor: pointer;
+            z-index: 10;
+        }
+        
+        .console-header {
+            text-align: center;
+            margin-bottom: 2rem;
+            padding-top: 1rem;
+        }
+        
+        .console-header h2 {
+            color: #81d4fa;
+            margin-bottom: 0.5rem;
+        }
+        
+        .console-options {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+            margin-top: 2rem;
+        }
+        
+        .console-option {
+            display: flex;
+            align-items: center;
+            padding: 1.5rem;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.3s;
+            border: 2px solid transparent;
+        }
+        
+        .console-option:hover {
+            background: rgba(129, 212, 250, 0.1);
+            border-color: #81d4fa;
+            transform: translateX(10px);
+        }
+        
+        .console-option i {
+            font-size: 2.5rem;
+            margin-right: 1.5rem;
+            width: 50px;
+            text-align: center;
+        }
+        
+        .console-option.pc i {
+            color: #64b5f6;
+        }
+        
+        .console-option.android i {
+            color: #a5d6a7;
+        }
+        
+        .console-option.ios i {
+            color: #90caf9;
+        }
+        
+        .option-content {
+            flex: 1;
+        }
+        
+        .option-content h3 {
+            color: #e0e0e0;
+            margin-bottom: 0.5rem;
+        }
+        
+        .option-content p {
+            color: #aaa;
+            font-size: 0.9rem;
+        }
+        
+        @media (max-width: 768px) {
+            .console-panel {
+                width: 100%;
+                max-width: 100%;
+            }
+            
+            .console-option {
+                flex-direction: column;
+                text-align: center;
+            }
+            
+            .console-option i {
+                margin-right: 0;
+                margin-bottom: 1rem;
+            }
+        }
+    </style>
 <body>
 <div id="configSidebar">
-  <button class="close-config" id="closeConfigBtn" title="Fechar Configurações">&times;</button>
+  <button class="close-config" id="closeConfigBtn" title="Close">&times;</button>
   <div class="sidebar-content">
     <div class="edit-panel" style="padding: 1.5rem 1rem;">
       <h2 data-i18n="ui.config.title" style="margin-bottom: 1.2rem; color: #81d4fa;"><div id="crazy">⚙️</div></h2>
@@ -93,7 +223,7 @@
   </div>
 </div>
 <div id="warningsSidebar">
-  <button class="close-warnings" id="closeWarningsBtn" title="Fechar">&times;</button>
+  <button class="close-warnings" id="closeWarningsBtn" title="Close">&times;</button>
   <div class="warnings-content">
     <h2 data-i18n="ui.warnings.title">Avisos Importantes</h2>
     <div id="warningsText">
@@ -119,10 +249,10 @@
     <div class="start-options">
         <button class="hex-btn" id="btnPlay"><i class="fas fa-play"></i><span data-i18n="ui.buttons.play">Jogar</span></button>
         <button class="hex-btn" id="btnSaves"><i class="fas fa-save"></i><span data-i18n="ui.buttons.saves">Saves</span></button>
-        <!-- Sidebar de Saves -->
+        
         <div id="savesSidebar" class="sidebar-overlay" style="display:none;">
           <div class="sidebar-panel saves-panel">
-            <button class="close-sidebar" id="closeSavesBtn" title="Fechar Saves">&times;</button>
+            <button class="close-sidebar" id="closeSavesBtn" title="Close Saves">&times;</button>
             <div class="sidebar-content">
               <h2 style="color:#81d4fa; margin-bottom:1rem;" data-i18n="ui.saves.title">Saves do Universo</h2>
               <div style="margin-bottom:1rem;">
@@ -300,14 +430,18 @@
         <button class="hex-btn" id="btnDiary"><i class="fas fa-book"></i><span>T Singularity Diary</span></button>
         <button class="hex-btn" id="btnNews"><i class="fas fa-newspaper"></i><span>FGP</span></button>
         <button class="hex-btn" id="btnAchievements"><i class="fas fa-trophy"></i><span data-i18n="ui.buttons.achievements">Conquistas</span></button>
+        <button class="hex-btn" id="btnConsole">
+         <i class="fas fa-gamepad"></i>
+           <span>Console</span>
+        </button>
         <button class="hex-btn" id="btnleng"><i class="fas fa-flag"></i><span data-i18n="ui.buttons.language"></span></button>
         <div id="achievementsSidebar" class="sidebar-overlay" style="display:none;">
           <div class="sidebar-panel achievements-panel">
-            <button class="close-sidebar" id="closeAchievementsBtn" title="Fechar Conquistas">&times;</button>
+            <button class="close-sidebar" id="closeAchievementsBtn" title="Close">&times;</button>
             <div class="sidebar-content">
               <h2 data-i18n="ui.achievements.title" style="color:#ffd700; margin-bottom:1rem;">Conquistas</h2>
                   <button id="btnResetAchievements" class="reset-btn" title="Resetar todas as conquistas">
-                    <i class="fas fa-trash-alt"></i> Resetar
+                    <i class="fas fa-trash-alt"></i> Reset
                   </button>
               <div id="achievementsList"></div>
             </div>
@@ -342,25 +476,30 @@
       </div>
     </div>
 
-    <!-- NOVO PAINEL: NOTÍCIAS DA FGP -->
+    
     <div id="newsSidebar" class="sidebar-overlay fullscreen-sidebar" style="display:none;">
       <div class="sidebar-panel news-panel">
-        <button class="close-sidebar" id="closeNewsBtn" title="Fechar Notícias">&times;</button>
+        <button class="close-sidebar" id="closeNewsBtn" title="close news">&times;</button>
         <div class="sidebar-content">
           <h2 style="color:#81d4fa; margin-bottom:1rem;">FGP news</h2>
           <div class="news-content">
             <div class="news-item">
-              <h3><i class="fas fa-rocket"></i>There is no news for now..</h3>
+              <h3><i class="fas fa-rocket"> &nbsp;FIRST NEWS - </i>CONSOLE</h3>
+              <p class="news-date">Console for Mobiles and iOS has been added!</p>
+              <p>08/22/2025</p>
+            </div>
+            <div class="news-item">
+              <h3><i class="fas fa-star"> &nbsp;SECOND NEWS - </i></h3>
               <p class="news-date"></p>
               <p></p>
             </div>
             <div class="news-item">
-              <h3><i class="fas fa-star"></i></h3>
+              <h3><i class="fas fa-globe"> &nbsp;THIRD NEWS - </i></h3>
               <p class="news-date"></p>
               <p></p>
             </div>
             <div class="news-item">
-              <h3><i class="fas fa-globe"></i></h3>
+              <h3><i class="fas fa-globe"> &nbsp;OLD NEWS - </i></h3>
               <p class="news-date"></p>
               <p></p>
             </div>
@@ -593,17 +732,17 @@
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-  // Diário do T Singularity
+  
   const btnDiary = document.getElementById('btnDiary');
   const diarySidebar = document.getElementById('diarySidebar');
   const closeDiaryBtn = document.getElementById('closeDiaryBtn');
   
-  // Notícias da FGP
+  
   const btnNews = document.getElementById('btnNews');
   const newsSidebar = document.getElementById('newsSidebar');
   const closeNewsBtn = document.getElementById('closeNewsBtn');
   
-  // Controles do diário
+  
   const prevPageBtn = document.getElementById('prevPage');
   const nextPageBtn = document.getElementById('nextPage');
   const currentPagesEl = document.getElementById('currentPages');
@@ -637,7 +776,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
   ];
   
-  // Funções para mostrar/ocultar painéis
+  
   function showDiary() {
     diarySidebar.style.display = '';
     setTimeout(() => diarySidebar.classList.add('open'), 10);
@@ -667,7 +806,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }, 300);
   }
   
-  // Navegação do diário
+  
   let currentSpread = 0;
   const totalSpreads = Math.ceil(diaryPages.length / 2);
   
@@ -678,7 +817,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const leftPageIndex = currentSpread * 2;
     const rightPageIndex = currentSpread * 2 + 1;
     
-    // Atualizar página esquerda
+    
     if (leftPageIndex < diaryPages.length) {
       leftPage.innerHTML = `
         <h3>${diaryPages[leftPageIndex].title}</h3>
@@ -689,7 +828,7 @@ document.addEventListener('DOMContentLoaded', function() {
       leftPage.innerHTML = `<div style="text-align:center;padding-top:40%;color:#8b4513;font-style:italic;">Página em branco</div>`;
     }
     
-    // Atualizar página direita
+    
     if (rightPageIndex < diaryPages.length) {
       rightPage.innerHTML = `
         <h3>${diaryPages[rightPageIndex].title}</h3>
@@ -700,16 +839,16 @@ document.addEventListener('DOMContentLoaded', function() {
       rightPage.innerHTML = `<div style="text-align:center;padding-top:40%;color:#8b4513;font-style:italic;">Página em branco</div>`;
     }
     
-    // Atualizar indicador de páginas
+    
     currentPagesEl.textContent = `${currentSpread * 2 + 1}-${Math.min(currentSpread * 2 + 2, diaryPages.length)}`;
     totalPagesEl.textContent = diaryPages.length;
     
-    // Atualizar estado dos botões
+    
     prevPageBtn.disabled = currentSpread === 0;
     nextPageBtn.disabled = currentSpread >= totalSpreads - 1;
   }
   
-  // Event listeners
+  
   btnDiary.addEventListener('click', showDiary);
   closeDiaryBtn.addEventListener('click', hideDiary);
   
@@ -730,7 +869,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
   });
   
-  // Fechar com ESC
+  
   document.addEventListener('keydown', function(e) {
     if (e.key === 'Escape') {
       if (diarySidebar.style.display !== 'none') hideDiary();
@@ -738,7 +877,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
   });
   
-  // Inicializar diário
+  
   updateDiaryPages();
 });
 </script>
@@ -841,10 +980,9 @@ document.addEventListener('DOMContentLoaded', function() {
         </style>
     </div>
     </div>
-<!-- Adicione este código dentro do <body> -->
 <div id="languageMenu" class="sidebar-overlay" style="display:none;">
   <div class="sidebar-panel language-panel">
-    <button class="close-language" id="closeLanguageBtn" title="Fechar">&times;</button>
+    <button class="close-language" id="closeLanguageBtn" title="Close">&times;</button>
     <div class="sidebar-content">
       <h2 style="color:#81d4fa; margin-bottom:1rem;">Selecione o Idioma</h2>
       <ul class="language-list">
@@ -868,7 +1006,6 @@ document.addEventListener('DOMContentLoaded', function() {
 </div>
 
 <style>
-/* Estilos para o menu de idiomas */
 #languageMenu.sidebar-overlay {
   position: fixed;
   top: 0; left: 0; width: 100vw; height: 100vh;
@@ -1007,9 +1144,9 @@ document.addEventListener('DOMContentLoaded', function() {
   });
 });
 </script>
-<!-- T Singularity Sidebar Overlay -->
+
 <div id="tsingularitySidebar">
-  <button class="close-tsingularity" id="closeTSingularityBtn" title="Fechar T Singularity">&times;</button>
+  <button class="close-tsingularity" id="closeTSingularityBtn" title="Close Chat T Singularity">&times;</button>
   <div class="tsingularity-content">
     <header>
       <h1>T Singularity</h1>
@@ -1020,7 +1157,7 @@ document.addEventListener('DOMContentLoaded', function() {
           <div class="star-core">
             <img id="tsingu" src="../assets/img/singularity.png" alt="Singularity" style="width: 100%; height: 100%; border-radius: 50%;">
           </div>
-          <!-- Pontas principais (8) -->
+          
           <div class="star-point main"></div>
           <div class="star-point main"></div>
           <div class="star-point main"></div>
@@ -1029,7 +1166,7 @@ document.addEventListener('DOMContentLoaded', function() {
           <div class="star-point main"></div>
           <div class="star-point main"></div>
           <div class="star-point main"></div>
-          <!-- Pontas secundárias (8) -->
+          
           <div class="star-point secondary"></div>
           <div class="star-point secondary"></div>
           <div class="star-point secondary"></div>
@@ -1103,7 +1240,7 @@ document.getElementById('tsingu').addEventListener('contextmenu', (e) => {
                   <span data-i18n="ui.inGameMenu.sections.createAstros"></span>
               </h3>
               <div class="options-grid">
-                  <!-- Radiação -->
+                  
                   <div class="option-card" data-type="radiation">
                       <h3>
                           <i class="fas fa-radiation"></i>
@@ -1131,7 +1268,7 @@ document.getElementById('tsingu').addEventListener('contextmenu', (e) => {
                       <div class="incomum" data-i18n="ui.common.uncommon"></div>
                   </div>
 
-                  <!-- Nebulosa -->
+                  
                   <div class="option-card" data-type="nebula">
                       <h3>
                           <i class="fas fa-cloud"></i>
@@ -1159,7 +1296,7 @@ document.getElementById('tsingu').addEventListener('contextmenu', (e) => {
                       <div class="comum" data-i18n="ui.common.common"></div>
                   </div>
 
-                  <!-- Poeira Espacial -->
+                  
                   <div class="option-card" data-type="spaceDust">
                       <h3>
                           <i class="fas fa-dot-circle"></i>
@@ -1187,7 +1324,7 @@ document.getElementById('tsingu').addEventListener('contextmenu', (e) => {
                       <div class="comum" data-i18n="ui.common.common"></div>
                   </div>
 
-                  <!-- Meteoróide -->
+                  
                   <div class="option-card" data-type="meteoroid">
                       <h3>
                           <i class="fas fa-shower"></i>
@@ -1215,7 +1352,7 @@ document.getElementById('tsingu').addEventListener('contextmenu', (e) => {
                       <div class="comum" data-i18n="ui.common.common"></div>
                   </div>
 
-                  <!-- Meteorito -->
+                  
                   <div class="option-card" data-type="meteorite">
                       <h3>
                           <i class="fas fa-meteor"></i>
@@ -1243,7 +1380,7 @@ document.getElementById('tsingu').addEventListener('contextmenu', (e) => {
                       <div class="comum" data-i18n="ui.common.common"></div>
                   </div>
 
-                  <!-- Cometa -->
+                  
                   <div class="option-card" data-type="comet">
                       <h3>
                           <i class="fas fa-water"></i>
@@ -1271,7 +1408,7 @@ document.getElementById('tsingu').addEventListener('contextmenu', (e) => {
                       <div class="comum" data-i18n="ui.common.common"></div>
                   </div>
 
-                  <!-- Asteroides -->
+                  
                   <div class="option-card" data-type="asteroid">
                       <h3>
                           <i class="fas fa-meteor"></i>
@@ -1299,7 +1436,7 @@ document.getElementById('tsingu').addEventListener('contextmenu', (e) => {
                       <div class="comum" data-i18n="ui.common.common"></div>
                   </div>
 
-                  <!-- Planetoides -->
+                  
                   <div class="option-card" data-type="planetoid">
                       <h3>
                           <i class="fas fa-moon"></i>
@@ -1327,7 +1464,7 @@ document.getElementById('tsingu').addEventListener('contextmenu', (e) => {
                       <div class="comum" data-i18n="ui.common.common"></div>
                   </div>
 
-                  <!-- Planeta Rochoso -->
+                  
                   <div class="option-card" data-type="rockyPlanet">
                       <h3>
                           <i class="fas fa-circle"></i>
@@ -1355,7 +1492,7 @@ document.getElementById('tsingu').addEventListener('contextmenu', (e) => {
                       <div class="comum" data-i18n="ui.common.common"></div>
                   </div>
 
-                  <!-- Planeta Gasoso -->
+                  
                   <div class="option-card" data-type="gasGiant">
                       <h3>
                           <i class="fas fa-wind"></i>
@@ -1386,7 +1523,7 @@ document.getElementById('tsingu').addEventListener('contextmenu', (e) => {
                       <div class="comum" data-i18n="ui.common.common"></div>
                   </div>
 
-                  <!-- Anã Marrom -->
+                  
                   <div class="option-card" data-type="brownDwarf">
                       <h3>
                           <i class="fas fa-star-half-alt"></i>
@@ -1408,7 +1545,7 @@ document.getElementById('tsingu').addEventListener('contextmenu', (e) => {
                       <div class="comum" data-i18n="ui.common.common"></div>
                   </div>
 
-                  <!-- Anã Vermelha -->
+                  
                   <div class="option-card" data-type="redDwarf">
                       <h3>
                           <i class="fas fa-star-half-alt"></i>
@@ -1430,7 +1567,7 @@ document.getElementById('tsingu').addEventListener('contextmenu', (e) => {
                       <div class="comum" data-i18n="ui.common.common"></div>
                   </div>
 
-                  <!-- Estrela T Tauri -->
+                  
                   <div class="option-card" data-type="ttauriStar">
                       <h3>
                           <i class="fas fa-star"></i>
@@ -1452,7 +1589,7 @@ document.getElementById('tsingu').addEventListener('contextmenu', (e) => {
                       <div class="incomum" data-i18n="ui.common.uncommon"></div>
                   </div>
 
-                  <!-- Estrela Comum -->
+                  
                   <div class="option-card" data-type="star">
                       <h3>
                           <i class="fas fa-sun"></i>
@@ -1474,7 +1611,7 @@ document.getElementById('tsingu').addEventListener('contextmenu', (e) => {
                       <div class="comum" data-i18n="ui.common.common"></div>
                   </div>
 
-                  <!-- Gigante Vermelha -->
+                  
                   <div class="option-card" data-type="redGiant">
                       <h3>
                           <i class="fas fa-sun"></i>
@@ -1496,7 +1633,7 @@ document.getElementById('tsingu').addEventListener('contextmenu', (e) => {
                       <div class="comum" data-i18n="ui.common.common"></div>
                   </div>
 
-                  <!-- Estrela de Carbono -->
+                  
                   <div class="option-card" data-type="carbonStar">
                       <h3>
                           <i class="fas fa-star"></i>
@@ -1518,7 +1655,7 @@ document.getElementById('tsingu').addEventListener('contextmenu', (e) => {
                       <div class="raro" data-i18n="ui.common.rare"></div>
                   </div>
 
-                  <!-- Estrela Gigante -->
+                  
                   <div class="option-card" data-type="giantStar">
                       <h3>
                           <i class="fas fa-sun"></i>
@@ -1540,7 +1677,7 @@ document.getElementById('tsingu').addEventListener('contextmenu', (e) => {
                       <div class="comum" data-i18n="ui.common.common"></div>
                   </div>
 
-                  <!-- Supergigante Vermelha -->
+                  
                   <div class="option-card" data-type="redSupergiant">
                       <h3>
                           <i class="fas fa-sun"></i>
@@ -1562,7 +1699,7 @@ document.getElementById('tsingu').addEventListener('contextmenu', (e) => {
                       <div class="incomum" data-i18n="ui.common.uncommon"></div>
                   </div>
 
-                  <!-- Hipergigante -->
+                  
                   <div class="option-card" data-type="hypergiant">
                       <h3>
                           <i class="fas fa-star"></i>
@@ -1584,7 +1721,7 @@ document.getElementById('tsingu').addEventListener('contextmenu', (e) => {
                       <div class="hiper-raro" data-i18n="ui.common.hyperRare"></div>
                   </div>
 
-                  <!-- Estrela Massiva -->
+                  
                   <div class="option-card" data-type="massiveStar">
                       <h3>
                           <i class="fas fa-star"></i>
@@ -1606,7 +1743,7 @@ document.getElementById('tsingu').addEventListener('contextmenu', (e) => {
                       <div class="ultra-raro" data-i18n="ui.common.ultraRare"></div>
                   </div>
 
-                  <!-- Supermassiva -->
+                  
                   <div class="option-card" data-type="supermassiveStar">
                       <h3>
                           <i class="fas fa-star"></i>
@@ -1628,7 +1765,7 @@ document.getElementById('tsingu').addEventListener('contextmenu', (e) => {
                       <div class="epico" data-i18n="ui.common.epic"></div>
                   </div>
 
-                  <!-- Anã Branca -->
+                  
                   <div class="option-card" data-type="whiteDwarf">
                       <h3>
                           <i class="fas fa-star"></i>
@@ -1650,7 +1787,7 @@ document.getElementById('tsingu').addEventListener('contextmenu', (e) => {
                       <div class="comum" data-i18n="ui.common.common"></div>
                   </div>
 
-                  <!-- Anã Branca de Hélio -->
+                  
                   <div class="option-card" data-type="HeliumWhiteDwarf">
                       <h3>
                           <i class="fas fa-star"></i>
@@ -1672,7 +1809,7 @@ document.getElementById('tsingu').addEventListener('contextmenu', (e) => {
                       <div class="comum" data-i18n="ui.common.common"></div>
                   </div>
 
-                  <!-- Anã Negra -->
+                  
                   <div class="option-card" data-type="blackDwarf">
                       <h3>
                           <i class="fas fa-moon"></i>
@@ -1694,7 +1831,7 @@ document.getElementById('tsingu').addEventListener('contextmenu', (e) => {
                       <div class="legendario" data-i18n="ui.common.legendary"></div>
                   </div>
 
-                  <!-- Estrela de Nêutrons -->
+                  
                   <div class="option-card" data-type="neutronStar">
                       <h3>
                           <i class="fas fa-star"></i>
@@ -1716,7 +1853,7 @@ document.getElementById('tsingu').addEventListener('contextmenu', (e) => {
                       <div class="comum" data-i18n="ui.common.common"></div>
                   </div>
 
-                  <!-- Pulsar -->
+                  
                   <div class="option-card" data-type="pulsar">
                       <h3>
                           <i class="fas fa-star"></i>
@@ -1738,7 +1875,7 @@ document.getElementById('tsingu').addEventListener('contextmenu', (e) => {
                       <div class="hiper-raro" data-i18n="ui.common.hyperRare"></div>
                   </div>
 
-                  <!-- Magnetar -->
+                  
                   <div class="option-card" data-type="magnetar">
                       <h3>
                           <i class="fas fa-star"></i>
@@ -1760,7 +1897,7 @@ document.getElementById('tsingu').addEventListener('contextmenu', (e) => {
                       <div class="ultra-raro" data-i18n="ui.common.ultraRare"></div>
                   </div>
 
-                  <!-- Pulsar de Quark -->
+                  
                   <div class="option-card" data-type="quarkStar">
                       <h3>
                           <i class="fas fa-star"></i>
@@ -1782,7 +1919,7 @@ document.getElementById('tsingu').addEventListener('contextmenu', (e) => {
                       <div class="epico" data-i18n="ui.common.epic"></div>
                   </div>
 
-                  <!-- Estrela Estranha -->
+                  
                   <div class="option-card" data-type="strangeStar">
                       <h3>
                           <i class="fas fa-radiation"></i>
@@ -1804,7 +1941,7 @@ document.getElementById('tsingu').addEventListener('contextmenu', (e) => {
                       <div class="exotico" data-i18n="ui.common.exotic"></div>
                   </div>
 
-                  <!-- Buraco Negro -->
+                  
                   <div class="option-card" data-type="blackHole">
                       <h3>
                           <i class="fas fa-circle-notch"></i>
@@ -1826,7 +1963,7 @@ document.getElementById('tsingu').addEventListener('contextmenu', (e) => {
                       <div class="incomum" data-i18n="ui.common.uncommon"></div>
                   </div>
 
-                  <!-- Quasar -->
+                  
                   <div class="option-card" data-type="quasar">
                       <h3>
                           <i class="fas fa-radiation"></i>
@@ -1848,7 +1985,7 @@ document.getElementById('tsingu').addEventListener('contextmenu', (e) => {
                       <div class="legendario" data-i18n="ui.common.legendary"></div>
                   </div>
 
-                  <!-- Buraco de Minhoca -->
+                  
                   <div class="option-card" data-type="wormhole">
                       <h3>
                           <i class="fas fa-ring"></i>
@@ -1870,7 +2007,7 @@ document.getElementById('tsingu').addEventListener('contextmenu', (e) => {
                       <div class="exotico" data-i18n="ui.common.exotic"></div>
                   </div>
 
-                  <!-- Buraco Branco -->
+                  
                   <div class="option-card" data-type="whiteHole">
                       <h3>
                           <i class="fas fa-radiation"></i>
@@ -2613,5 +2750,272 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 </script>
 <div id="achievementNotification" style="display:none;"></div>
+    <div id="consoleSidebar">
+        <div class="console-panel">
+            <button class="close-console" id="closeConsoleBtn" title="Fechar Console">&times;</button>
+            
+            <div class="console-header">
+                <h2>Emulador</h2>
+                <p>Selecione uma plataforma para emulação</p>
+            </div>
+            
+            <div class="console-options">
+                <div class="console-option pc" data-platform="pc">
+                    <i class="fas fa-desktop"></i>
+                    <div class="option-content">
+                        <h3>PC</h3>
+                        <p>Emulação para computadores pessoais</p>
+                    </div>
+                </div>
+                
+                <div class="console-option android" data-platform="android">
+                    <i class="fab fa-android"></i>
+                    <div class="option-content">
+                        <h3>Android</h3>
+                        <p>Emulação para dispositivos Android</p>
+                    </div>
+                </div>
+                
+                <div class="console-option ios" data-platform="ios">
+                    <i class="fab fa-apple"></i>
+                    <div class="option-content">
+                        <h3>iOS</h3>
+                        <p>Emulação para dispositivos Apple iOS</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const btnConsole = document.getElementById('btnConsole');
+            const consoleSidebar = document.getElementById('consoleSidebar');
+            const closeConsoleBtn = document.getElementById('closeConsoleBtn');
+            const consoleOptions = document.querySelectorAll('.console-option');
+            
+            function openConsole() {
+                consoleSidebar.classList.add('open');
+                document.body.style.overflow = 'hidden';
+            }
+            function closeConsole() {
+                consoleSidebar.classList.remove('open');
+                document.body.style.overflow = '';
+            }
+            
+            if (btnConsole) {
+                btnConsole.addEventListener('click', openConsole);
+            }
+            
+            if (closeConsoleBtn) {
+                closeConsoleBtn.addEventListener('click', closeConsole);
+            }
+            
+            document.addEventListener('keydown', function(e) {
+                if (e.key === 'Escape' && consoleSidebar.classList.contains('open')) {
+                    closeConsole();
+                }
+            });
+            
+            consoleSidebar.addEventListener('click', function(e) {
+                if (e.target === consoleSidebar) {
+                    closeConsole();
+                }
+            });
+            
+            consoleOptions.forEach(option => {
+                option.addEventListener('click', function() {
+                    const platform = this.getAttribute('data-platform');
+                    console.log(`Plataforma selecionada: ${platform}`);
+                    
+                    switch(platform) {
+                        case 'pc':
+                            alert('Emulação para PC selecionada');
+                            break;
+                        case 'android':
+                            alert('Emulação para Android selecionada');
+                            break;
+                        case 'ios':
+                            alert('Emulação para iOS selecionada');
+                            break;
+                    }
+                    
+                    closeConsole();
+                });
+            });
+        });
+    </script>
+<style>
+    #mobileControls {
+        position: fixed;
+        bottom: 20px;
+        left: 0;
+        right: 0;
+        display: none;
+        justify-content: space-between;
+        padding: 0 15px;
+        z-index: 1000;
+        pointer-events: none;
+    }
+
+    #mobileControls .control-group {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        pointer-events: auto;
+    }
+
+    #mobileControls .movement-controls {
+        display: grid;
+        grid-template-areas:
+            ". up ."
+            "left center right"
+            ". down .";
+        gap: 8px;
+    }
+
+    #mobileControls button {
+        width: 50px;
+        height: 50px;
+        border-radius: 50%;
+        background: rgba(255, 255, 255, 0.7);
+        border: 2px solid rgba(0, 0, 0, 0.3);
+        font-size: 18px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        touch-action: manipulation;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+    }
+
+    #mobileControls button:active {
+        background: rgba(200, 200, 200, 0.9);
+        transform: scale(0.95);
+    }
+
+    #upBtn { grid-area: up; }
+    #leftBtn { grid-area: left; }
+    #centerBtn { grid-area: center; background: rgba(255, 150, 150, 0.7); }
+    #rightBtn { grid-area: right; }
+    #downBtn { grid-area: down; }
+
+    #mobileControls .action-controls {
+        justify-content: flex-end;
+    }
+
+    #mobileControls .action-controls button {
+        width: 45px;
+        height: 45px;
+        font-size: 16px;
+        margin-bottom: 8px;
+    }
+
+    #modeToggleBtn {
+        background: rgba(150, 200, 255, 0.7);
+    }
+
+    #modeToggleBtn.edit-mode {
+        background: rgba(255, 200, 150, 0.9);
+    }
+
+    @media (max-width: 768px) {
+        #mobileControls button {
+            width: 45px;
+            height: 45px;
+            font-size: 16px;
+        }
+        
+        #mobileControls .action-controls button {
+            width: 40px;
+            height: 40px;
+        }
+    }
+
+    @media (max-width: 480px) {
+        #mobileControls {
+            padding: 0 10px;
+        }
+        
+        #mobileControls button {
+            width: 40px;
+            height: 40px;
+            font-size: 14px;
+        }
+        
+        #mobileControls .action-controls button {
+            width: 35px;
+            height: 35px;
+            font-size: 13px;
+        }
+    }
+
+    @media (max-height: 500px) {
+        #mobileControls {
+            bottom: 10px;
+        }
+        
+        #mobileControls button {
+            width: 35px;
+            height: 35px;
+        }
+    }
+
+    @media (orientation: landscape) {
+        #mobileControls {
+            flex-direction: row;
+        }
+    }
+
+    @media (orientation: portrait) {
+        #mobileControls {
+            flex-direction: row;
+            flex-wrap: wrap;
+        }
+        
+        #mobileControls .action-controls {
+            flex-direction: row;
+            gap: 8px;
+        }
+    }
+</style>
+<style>
+    #mobileControls button {
+        width: 50px;
+        height: 50px;
+        border-radius: 50%;
+        background: rgba(255, 255, 255, 0.7);
+        border: 2px solid rgba(0, 0, 0, 0.3);
+        font-size: 18px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        touch-action: manipulation;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+    }
+
+    #mobileControls button:active {
+        background: rgba(200, 200, 200, 0.9);
+        transform: scale(0.95);
+    }
+
+    #resetUniverseBtn {
+        background: rgba(255, 150, 150, 0.7);
+    }
+</style>
+
+<div id="mobileControls">
+    <div class="control-group movement-controls">
+        <button id="upBtn">↑</button>
+        <button id="leftBtn">←</button>
+        <button id="rightBtn">→</button>
+        <button id="downBtn">↓</button>
+    </div>
+    
+    <div class="control-group action-controls">
+        <button id="zoomInBtn">+</button>
+        <button id="zoomOutBtn">-</button>
+        <button id="centerBtn">F</button>
+        <button id="modeToggleBtn">R</button>
+    </div>
+</div>
 </body>
 </html>

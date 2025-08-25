@@ -322,7 +322,7 @@ function playNextTrack() {
 function generateRandomName() {
     const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789ÀÁáàéèÈÉóòÒÓùúÚÙçñÑãÃõÕüÜÍÌíìÂâÊêÎîÔôÛû*-$%¨#@!&_,.?´` °ºª²³£¢¬¹²³£¢¬!@#$%¨&*()[]{}/                            :3';
     let name = '';
-    const length = Math.max(3, Math.floor(Math.random() * 8) + 3); 
+    const length = Math.max(3, Math.floor(Math.random() * 8) + 3);
     
     for (let i = 0; i < length; i++) {
         name += chars.charAt(Math.floor(Math.random() * chars.length));
@@ -6102,7 +6102,7 @@ function handleKeyDown(e) {
 
     if (gameState !== 'playing' || isEditing || isMenuOpen) return;
     
-    const cameraSpeed = 100 / camera.zoom;
+    const cameraSpeed = 50 / camera.zoom;
     
     switch(e.key.toLowerCase()) {
         case 'w': 
@@ -6126,11 +6126,10 @@ function handleKeyDown(e) {
             break;
         case 'e': 
             camera.zoom /= 1.1;
-            break; 
+            break;
         case 'f': 
             if (!isEditing && !isMenuOpen) {
                 planets = [];
-                camera = { x: 0, y: 0, zoom: 1 };
                 universeAge = 0;
                 universeTime = 0;
                 showNotification('Universe reset');
@@ -6161,6 +6160,7 @@ function handleKeyDown(e) {
                 showNotification(`Names ${namesVisible ? 'activated' : 'deactivated'}`);
             }
             break;
+            
     }
 }
 function transformToGiantStar(planet) {
@@ -7020,6 +7020,165 @@ const contagem = setInterval(() => {
     console.log('Parabéns! Você alcançou o tempo máximo de jogo!');
   }
 }, 1000);
+
+
+
+
+ document.addEventListener('DOMContentLoaded', function() {
+        const mobileControls = document.getElementById('mobileControls');
+        const modeToggleBtn = document.getElementById('modeToggleBtn');
+        let isEditMode = false;
+        let moveInterval = null;
+        let currentDirection = null;
+        const cameraSpeed = 100;
+
+        modeToggleBtn.addEventListener('click', function() {
+            isEditMode = !isEditMode;
+            if (isEditMode) {
+                modeToggleBtn.classList.add('edit-mode');
+                showNotification('Modo edição ativado - Clique em um astro para editar');
+            } else {
+                modeToggleBtn.classList.remove('edit-mode');
+                showNotification('Modo criação ativado - Clique para criar astros');
+            }
+        });
+
+        document.addEventListener('touchstart', function(e) {
+            if (e.touches.length > 1) {
+                e.preventDefault();
+            }
+        }, { passive: false });
+
+        document.addEventListener('wheel', function(e) {
+            if (e.ctrlKey) {
+                e.preventDefault();
+            }
+        }, { passive: false });
+
+        function startMoving(direction) {
+            if (moveInterval) clearInterval(moveInterval);
+            currentDirection = direction;
+            
+            moveInterval = setInterval(() => {
+                switch(direction) {
+                    case 'up':
+                        camera.y -= cameraSpeed / camera.zoom;
+                        break;
+                    case 'down':
+                        camera.y += cameraSpeed / camera.zoom;
+                        break;
+                    case 'left':
+                        camera.x -= cameraSpeed / camera.zoom;
+                        break;
+                    case 'right':
+                        camera.x += cameraSpeed / camera.zoom;
+                        break;
+                }
+            }, 16);
+        }
+
+        function stopMoving() {
+            if (moveInterval) {
+                clearInterval(moveInterval);
+                moveInterval = null;
+                currentDirection = null;
+            }
+        }
+
+        function addMobileButtonListeners(buttonId, action) {
+            const button = document.getElementById(buttonId);
+            if (!button) return;
+            
+            button.addEventListener('touchstart', action, { passive: true });
+            button.addEventListener('touchend', stopMoving, { passive: true });
+            button.addEventListener('mousedown', action);
+            button.addEventListener('mouseup', stopMoving);
+            button.addEventListener('mouseleave', stopMoving);
+        }
+
+        addMobileButtonListeners('upBtn', () => startMoving('up'));
+        addMobileButtonListeners('downBtn', () => startMoving('down'));
+        addMobileButtonListeners('leftBtn', () => startMoving('left'));
+        addMobileButtonListeners('rightBtn', () => startMoving('right'));
+
+        document.getElementById('centerBtn').addEventListener('click', () => {
+            planets = [];
+            universeAge = 0;
+            universeTime = 0;
+            showNotification('Universo reiniciado');
+            Fcount += 1;
+            if (Fcount >= 20) {
+                unlockAchievement(45);
+            }
+        });
+
+        document.getElementById('zoomInBtn').addEventListener('click', () => {
+            camera.zoom *= 1.1;
+        });
+        
+        document.getElementById('zoomOutBtn').addEventListener('click', () => {
+            camera.zoom /= 1.1;
+        });
+
+        const originalHandleMouseDown = handleMouseDown;
+        handleMouseDown = function(e) {
+            if (gameState !== 'playing') return;
+            
+            if (e.button === 0 || e.type === 'touchstart') { 
+                if (isEditMode) {
+                    for (let i = planets.length - 1; i >= 0; i--) {
+                        const planet = planets[i];
+                        const dx = (mouse.x - planet.x) * camera.zoom;
+                        const dy = (mouse.y - planet.y) * camera.zoom;
+                        const distance = Math.sqrt(dx * dx + dy * dy);
+                        
+                        if (distance < planet.radius * camera.zoom) {
+                            openEditPanel(planet);
+                            break;
+                        }
+                    }
+                    return;
+                }
+                
+                mouse.down = true;
+                mouse.downX = mouse.x;
+                mouse.downY = mouse.y;
+                
+                if (creationMode) {
+                    return;
+                }
+            } else if (e.button === 2) { 
+                mouse.rightDown = true;
+                
+                for (let i = planets.length - 1; i >= 0; i--) {
+                    const planet = planets[i];
+                    const dx = (mouse.x - planet.x) * camera.zoom;
+                    const dy = (mouse.y - planet.y) * camera.zoom;
+                    const distance = Math.sqrt(dx * dx + dy * dy);
+                    
+                    if (distance < planet.radius * camera.zoom) {
+                        openEditPanel(planet);
+                        break;
+                    }
+                }
+            }
+        };
+        const consoleOptions = document.querySelectorAll('.console-option');
+        consoleOptions.forEach(option => {
+            option.addEventListener('click', function() {
+                const platform = this.getAttribute('data-platform');
+                
+                if (platform === 'android' || platform === 'ios') {
+                    mobileControls.style.display = 'flex';
+                    showNotification(`Modo ${platform.toUpperCase()} ativado. Controles touch habilitados.`);
+                } else {
+                    mobileControls.style.display = 'none';
+                    showNotification('Modo PC ativado.');
+                }
+            });
+        });
+    });
+
 //#endregion
 
 
