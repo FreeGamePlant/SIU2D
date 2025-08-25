@@ -7074,7 +7074,7 @@ const contagem = setInterval(() => {
                         camera.x += cameraSpeed / camera.zoom;
                         break;
                 }
-            }, 16);
+            }, 100);
         }
 
         function stopMoving() {
@@ -7190,4 +7190,5 @@ const contagem = setInterval(() => {
     //  in the game.
     //Thank for gaming :D
 //  FGP WORKS  // BRASIL //
+
 //#endregion
