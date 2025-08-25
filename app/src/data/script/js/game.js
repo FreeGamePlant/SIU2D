@@ -7190,5 +7190,4 @@ const contagem = setInterval(() => {
     //  in the game.
     //Thank for gaming :D
 //  FGP WORKS  // BRASIL //
-
 //#endregion
