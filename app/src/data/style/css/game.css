@@ -181,7 +181,7 @@
         .options-grid {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-            gap: 15px;
+            gap: 25px;
         }
         
         .option-card {
@@ -628,7 +628,6 @@
             color: rgb(63, 95, 0);
         }
 
-        /* Painel de edição */
         #editPanel {
             position: absolute;
             top: 50%;
@@ -919,7 +918,6 @@
             z-index: 10;
         }
         
-        /* Painel de informações */
         #infoPanel {
             position: absolute;
             top: 20px;
@@ -992,11 +990,132 @@
 }
 
 .class-options {
-    /* Mantenha seu estilo existente */
     transition: opacity 0.3s, transform 0.3s;
 }
 
 body{
     overflow-x: hidden;
     overflow-y: hidden;
+}
+
+@media (max-width: 1200px) {
+    .options-grid {
+        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+        gap: 20px;
+    }
+}
+
+@media (max-width: 992px) {
+    .options-grid {
+        grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+        gap: 18px;
+    }
+    
+    .option-card {
+        padding: 12px;
+    }
+    
+    .option-card h3 {
+        font-size: 1.1rem;
+    }
+}
+
+@media (max-width: 768px) {
+    .game-title {
+        font-size: 3rem;
+    }
+    
+    .options-grid {
+        grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+        gap: 15px;
+    }
+    
+    .option-card {
+        padding: 10px;
+    }
+    
+    .option-card h3 {
+        font-size: 1rem;
+        flex-direction: column;
+        text-align: center;
+        gap: 5px;
+    }
+    
+    .option-card h3 i {
+        font-size: 1.4rem;
+    }
+    
+    .progress-bar, 
+    .progress-bar-c, 
+    .progress-bar-cs, 
+    .progress-bar-w, 
+    .progress-bar-p, 
+    .progress-bar-v {
+        height: 5px;
+    }
+    
+    .mass-label {
+        font-size: 0.75rem;
+    }
+    
+    .comum, .incomum, .raro, .super-raro, 
+    .hiper-raro, .ultra-raro, .epico, .exotico, .legendario {
+        padding: 8px;
+        font-size: 0.8rem;
+    }
+}
+
+@media (max-width: 576px) {
+    .options-grid {
+        grid-template-columns: 1fr;
+        gap: 12px;
+    }
+    
+    .option-card {
+        padding: 12px;
+    }
+    
+    .menu-section {
+        padding: 15px;
+    }
+    
+    .section-title {
+        font-size: 1.3rem;
+    }
+    
+    #inGameMenu {
+        padding: 15px;
+    }
+}
+
+@media (max-width: 400px) {
+    .option-card {
+        padding: 10px 8px;
+    }
+    
+    .option-card h3 {
+        font-size: 0.95rem;
+    }
+    
+    .option-card p {
+        font-size: 0.85rem;
+        line-height: 1.3;
+    }
+    
+    .menu-section {
+        padding: 12px 10px;
+    }
+}
+
+.option-card {
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.option-card:active {
+    transform: scale(0.98);
+}
+
+.option-card img {
+    max-width: 100%;
+    height: auto;
 }
