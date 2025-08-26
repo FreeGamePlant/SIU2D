@@ -9,6 +9,7 @@
     <link rel="stylesheet" href="../style/css/singu.css">
     <link rel="icon" type="image/png" sizes="32x32" href="../assets/img/singularity.png">
     <link rel="stylesheet" href="../style/css/SIUD2.css">
+
     <style>
     * {
         -webkit-user-select: none;
@@ -38,9 +39,90 @@
             user-select: text;
         }
     </style>
-<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <style>
+@media (max-width: 768px) {
+    body, html {
+        overflow: hidden;
+        position: fixed;
+        width: 100%;
+        height: 100%;
+    }
+    
+    #gameContainer {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100vw;
+        height: 100vh;
+        overflow: hidden;
+    }
+    
+    .start-options {
+        flex-direction: row;
+        flex-wrap: nowrap;
+        overflow-x: auto;
+        overflow-y: hidden;
+        justify-content: flex-start;
+        padding-bottom: 15px;
+        margin-top: 30px;
+        width: 100%;
+        -webkit-overflow-scrolling: touch;
+    }
+    
+    .start-options::-webkit-scrollbar {
+        display: none;
+    }
+    
+    .hex-btn {
+        flex: 0 0 auto;
+        width: 90px;
+        height: 105px;
+        margin: 0 8px;
+    }
+    
+    .hex-btn i {
+        font-size: 1.5rem;
+        margin-bottom: 5px;
+    }
+    
+    .hex-btn span {
+        font-size: 0.75rem;
+    }
+    
+    .game-title {
+        font-size: 2.5rem;
+        margin-bottom: 1rem;
+    }
+}
 
-</head>
+@media (max-width: 480px) {
+    .hex-btn {
+        width: 80px;
+        height: 95px;
+    }
+    
+    .game-title {
+        font-size: 2rem;
+    }
+    
+    .start-options {
+        gap: 5px;
+    }
+}
+
+@media (max-width: 768px) {
+    input, select, textarea {
+        font-size: 16px; 
+    }
+}
+@media (max-width: 768px) {
+    .hex-btn {
+        -webkit-tap-highlight-color: transparent;
+        touch-action: manipulation;
+    }
+}
+</style>
 </head>
  <style>
         #btnConsole {
