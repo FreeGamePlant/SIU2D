@@ -221,24 +221,6 @@
         </div>
       </div>
       <div class="edit-group">
-        <div class="edit-label">Zonas de Temperatura</div>
-        <div class="edit-input">
-          <label class="toggle-switch">
-            <input type="checkbox" id="showTempZones" checked>
-            <span class="slider"></span>
-          </label>
-        </div>
-      </div>
-      <div class="edit-group">
-        <div class="edit-label">Mostrar Nomes</div>
-        <div class="edit-input">
-          <label class="toggle-switch">
-            <input type="checkbox" id="showNames" checked>
-            <span class="slider"></span>
-          </label>
-        </div>
-      </div>
-      <div class="edit-group">
         <div class="edit-label">Cor do Espaço</div>
         <div class="edit-input">
           <input type="color" id="spaceColor" value="#050a30">
@@ -365,26 +347,26 @@
 </div>
         
         <div id="creationModeIndicator">
-            <i class="fas fa-plus-circle"></i> Modo criação: <span id="creationModeText">Planeta</span>
+            <i class="fas fa-plus-circle"></i><div data-i18n="ui.game.creationMode"></div> <span id="creationModeText"></span>
         </div>
         
 
         <div id="infoPanel">
-            <h3>Informações do Universo</h3>
+            <h3 data-i18n="ui.game.universeInfo.title"></h3>
             <div class="info-row">
-                <div class="info-label">Tempo:</div>
-                <div class="info-value" id="universeTime">0 anos</div>
+                <div class="info-label" data-i18n="ui.game.universeInfo.time"></div>
+                <div class="info-value" id="universeTime">0</div>
             </div>
             <div class="info-row">
-                <div class="info-label">Astros:</div>
+                <div class="info-label" data-i18n="ui.game.universeInfo.astroCount"></div>
                 <div class="info-value" id="astroCount">0</div>
             </div>
             <div class="info-row">
-                <div class="info-label">Velocidade:</div>
+                <div class="info-label" data-i18n="ui.game.universeInfo.speed"></div>
                 <div class="info-value" id="timeScale">0x</div>
             </div>
             <div class="info-row">
-                <div class="info-label">Tipos:</div>
+                <div class="info-label" data-i18n="ui.game.universeInfo.types"></div>
                 <div class="info-value" id="astroTypes"></div>
             </div>
         </div>
@@ -404,815 +386,825 @@
         
         <div id="inGameMenu">
             <button class="close-menu"><i class="fas fa-times"></i></button>
-            <h2 class="menu-title">Menu do Universo</h2>
+            <h2 class="menu-title" data-i18n="ui.inGameMenu.title"></h2>
             
-            <div class="menu-section">
-                <h3 class="section-title"><i class="fas fa-plus-circle"></i> Criar Astros</h3>
-                <div class="options-grid">
+          <div class="menu-section">
+              <h3 class="section-title">
+                  <i class="fas fa-plus-circle" data-i18n="ui.inGameMenu.sections.createAstros"></i>
+                  <span data-i18n="ui.inGameMenu.sections.createAstros"></span>
+              </h3>
+              <div class="options-grid">
                   
-                    <div class="option-card" data-type="">
-                        <h3><i class="fas fa-radiation"></i> Radiação</h3>
-                        <p>Partículas energéticas emitidas por buracos negros e quasares. Muito menores que poeira espacial.</p>
-                        <div class="progress-bar">
-                            <div class="progress-fill" style="width: 0.5%"></div>
-                        </div>
-                        <div class="mass-label">Massa: 0.005 - 0.5</div>
-                        <div class="progress-bar-c">
-                            <div class="progress-fill-c" style="width: 100%;">
-                            </div>
-                        </div>
-                        <div class="progress-bar-p">
-                            <div class="progress-fill-p" style="width: 0%;">
-                            </div>
-                        </div>
-                        <div class="progress-bar-w">
-                            <div class="progress-fill-w" style="width: 0%;">
-                            </div>
-                        </div>
-                        <div class="progress-bar-v">
-                            <div class="progress-fill-v" style="width: 0%;">
-                            </div>
-                        </div>
-                        <div class="incomum">
-                            Incomum
-                        </div>
-                    </div>
+                  <div class="option-card" data-type="radiation">
+                      <h3>
+                          <i class="fas fa-radiation"></i>
+                          <span data-i18n="ui.astroTypes.radiation.name"></span>
+                      </h3>
+                      <p data-i18n="ui.astroTypes.radiation.description"></p>
+                      <div class="progress-bar">
+                          <div class="progress-fill" style="width: 0.5%"></div>
+                      </div>
+                      <div class="mass-label">
+                          <span data-i18n="ui.inGameMenu.physicalProperties.mass"></span> 0.005 - 0.5
+                      </div>
+                      <div class="progress-bar-c">
+                          <div class="progress-fill-c" style="width: 100%;"></div>
+                      </div>
+                      <div class="progress-bar-p">
+                          <div class="progress-fill-p" style="width: 0%;"></div>
+                      </div>
+                      <div class="progress-bar-w">
+                          <div class="progress-fill-w" style="width: 0%;"></div>
+                      </div>
+                      <div class="progress-bar-v">
+                          <div class="progress-fill-v" style="width: 0%;"></div>
+                      </div>
+                      <div class="incomum" data-i18n="ui.common.uncommon"></div>
+                  </div>
 
-                
-                    <div class="option-card" data-type="">
-                        <h3><i class="fas fa-cloud"></i> Nebulosa</h3>
-                        <p>Nuvens de gás e poeira que formam estrelas e planetas.</p>
-                        <div class="progress-bar">
-                            <div class="progress-fill" style="width: 2%"></div>
-                        </div>
-                        <div class="mass-label">Massa: 0.1 - 1.000</div>
-                        <div class="progress-bar-c">
-                            <div class="progress-fill-c" style="width: 80%;">
-                            </div>
-                        </div>
-                        <div class="progress-bar-p">
-                            <div class="progress-fill-p" style="width: 100%;">
-                            </div>
-                        </div>
-                        <div class="progress-bar-w">
-                            <div class="progress-fill-w" style="width: 100%;">
-                            </div>
-                        </div>
-                        <div class="progress-bar-v">
-                            <div class="progress-fill-v" style="width: 0%;">
-                            </div>
-                        </div>
-                        <div class="comum">
-                            Comum
-                        </div>
-                    </div>
+                  
+                  <div class="option-card" data-type="nebula">
+                      <h3>
+                          <i class="fas fa-cloud"></i>
+                          <span data-i18n="ui.astroTypes.nebula.name"></span>
+                      </h3>
+                      <p data-i18n="ui.astroTypes.nebula.description"></p>
+                      <div class="progress-bar">
+                          <div class="progress-fill" style="width: 2%"></div>
+                      </div>
+                      <div class="mass-label">
+                          <span data-i18n="ui.inGameMenu.physicalProperties.mass"></span> 0.1 - 1.000
+                      </div>
+                      <div class="progress-bar-c">
+                          <div class="progress-fill-c" style="width: 80%;"></div>
+                      </div>
+                      <div class="progress-bar-p">
+                          <div class="progress-fill-p" style="width: 100%;"></div>
+                      </div>
+                      <div class="progress-bar-w">
+                          <div class="progress-fill-w" style="width: 100%;"></div>
+                      </div>
+                      <div class="progress-bar-v">
+                          <div class="progress-fill-v" style="width: 0%;"></div>
+                      </div>
+                      <div class="comum" data-i18n="ui.common.common"></div>
+                  </div>
 
-                    
-                    <div class="option-card" data-type="">
-                        <h3><i class="fas fa-dot-circle"></i> Poeira Espacial</h3>
-                        <p>Partículas microscópicas que formam a base dos astros.</p>
-                        <div class="progress-bar">
-                            <div class="progress-fill" style="width: 1%"></div>
-                        </div>
-                        <div class="mass-label">Massa: 0.01 - 1</div>
-                        
-                        <div class="progress-bar-c">
-                            <div class="progress-fill-c" style="width: 95%;">
-                            </div>
-                        </div>
-                        <div class="progress-bar-p">
-                            <div class="progress-fill-p" style="width: 5%;">
-                            </div>
-                        </div>
-                        <div class="progress-bar-w">
-                            <div class="progress-fill-w" style="width: 2%;">
-                            </div>
-                        </div>
-                        <div class="progress-bar-v">
-                            <div class="progress-fill-v" style="width: 0.05%;">
-                            </div>
-                        </div>
-                        <div class="comum">
-                            Comum
-                        </div>
-                    </div>
-                    
-                    
-                    <div class="option-card" data-type="">
-                        <h3><i class="fas fa-shower"></i> Meteoróide</h3>
-                        <p>Fragmentos de rocha ou metal no espaço.</p>
-                        <div class="progress-bar">
-                            <div class="progress-fill" style="width: 6%"></div>
-                        </div>
-                        <div class="mass-label">Massa: 0.01 - 1</div>
-                        <div class="progress-bar-c">
-                            <div class="progress-fill-c" style="width: 80%;">
-                            </div>
-                        </div>
-                        <div class="progress-bar-p">
-                            <div class="progress-fill-p" style="width: 10%;">
-                            </div>
-                        </div>
-                        <div class="progress-bar-w">
-                            <div class="progress-fill-w" style="width: 20%;">
-                            </div>
-                        </div>
-                        <div class="progress-bar-v">
-                            <div class="progress-fill-v" style="width: 0.15%;">
-                            </div>
-                        </div>
-                        <div class="comum">
-                            Comum
-                        </div>
-                    </div>
-                    
-                    
-                    <div class="option-card" data-type="">
-                        <h3><i class="fas fa-meteor"></i> Meteorito</h3>
-                        <p>Meteoróides que sobreviveram à entrada na atmosfera.</p>
-                        <div class="progress-bar">
-                            <div class="progress-fill" style="width: 7%"></div>
-                        </div>
-                        <div class="mass-label">Massa: 0.1 - 10</div>
-                        <div class="progress-bar-c">
-                            <div class="progress-fill-c" style="width: 98.5%;">
-                            </div>
-                        </div>
-                        <div class="progress-bar-p">
-                            <div class="progress-fill-p" style="width: 95%;">
-                            </div>
-                        </div>
-                        <div class="progress-bar-w">
-                            <div class="progress-fill-w" style="width: 20%;">
-                            </div>
-                        </div>
-                        <div class="progress-bar-v">
-                            <div class="progress-fill-v" style="width: 0.08%;">
-                            </div>
-                        </div>
-                        <div class="comum">
-                            comum
-                        </div>
-                    </div>
+                  
+                  <div class="option-card" data-type="spaceDust">
+                      <h3>
+                          <i class="fas fa-dot-circle"></i>
+                          <span data-i18n="ui.astroTypes.spaceDust.name"></span>
+                      </h3>
+                      <p data-i18n="ui.astroTypes.spaceDust.description"></p>
+                      <div class="progress-bar">
+                          <div class="progress-fill" style="width: 1%"></div>
+                      </div>
+                      <div class="mass-label">
+                          <span data-i18n="ui.inGameMenu.physicalProperties.mass"></span> 0.01 - 1
+                      </div>
+                      <div class="progress-bar-c">
+                          <div class="progress-fill-c" style="width: 95%;"></div>
+                      </div>
+                      <div class="progress-bar-p">
+                          <div class="progress-fill-p" style="width: 5%;"></div>
+                      </div>
+                      <div class="progress-bar-w">
+                          <div class="progress-fill-w" style="width: 2%;"></div>
+                      </div>
+                      <div class="progress-bar-v">
+                          <div class="progress-fill-v" style="width: 0.05%;"></div>
+                      </div>
+                      <div class="comum" data-i18n="ui.common.common"></div>
+                  </div>
 
+                  
+                  <div class="option-card" data-type="meteoroid">
+                      <h3>
+                          <i class="fas fa-shower"></i>
+                          <span data-i18n="ui.astroTypes.meteoroid.name"></span>
+                      </h3>
+                      <p data-i18n="ui.astroTypes.meteoroid.description"></p>
+                      <div class="progress-bar">
+                          <div class="progress-fill" style="width: 6%"></div>
+                      </div>
+                      <div class="mass-label">
+                          <span data-i18n="ui.inGameMenu.physicalProperties.mass"></span> 0.01 - 1
+                      </div>
+                      <div class="progress-bar-c">
+                          <div class="progress-fill-c" style="width: 80%;"></div>
+                      </div>
+                      <div class="progress-bar-p">
+                          <div class="progress-fill-p" style="width: 10%;"></div>
+                      </div>
+                      <div class="progress-bar-w">
+                          <div class="progress-fill-w" style="width: 20%;"></div>
+                      </div>
+                      <div class="progress-bar-v">
+                          <div class="progress-fill-v" style="width: 0.15%;"></div>
+                      </div>
+                      <div class="comum" data-i18n="ui.common.common"></div>
+                  </div>
 
-                                        
-                    
-                    <div class="option-card" data-type="">
-                        <h3><i class="fas fa-water"></i> Cometa</h3>
-                        <p>Corpos gelados com caudas que se formam perto de estrelas.</p>
-                        <div class="progress-bar">
-                            <div class="progress-fill" style="width: 5%"></div>
-                        </div>
-                        <div class="mass-label">Massa: 0.1 - 10</div>
-                        <div class="progress-bar-c">
-                            <div class="progress-fill-c" style="width: 50%;">
-                            </div>
-                        </div>
-                        <div class="progress-bar-p">
-                            <div class="progress-fill-p" style="width: 85%;">
-                            </div>
-                        </div>
-                        <div class="progress-bar-w">
-                            <div class="progress-fill-w" style="width: 100%;">
-                            </div>
-                        </div>
-                        <div class="progress-bar-v">
-                            <div class="progress-fill-v" style="width: 5%;">
-                            </div>
-                        </div>
-                        <div class="comum">
-                            Comum
-                        </div>
-                    </div>
-                    
-                    
-                    <div class="option-card" data-type="">
-                        <h3><i class="fas fa-meteor"></i> Asteroides</h3>
-                        <p>Pequenos corpos rochosos com formatos irregulares.</p>
-                        <div class="progress-bar">
-                            <div class="progress-fill" style="width: 10%"></div>
-                        </div>
-                        <div class="mass-label">Massa: 1 - 100</div>
-                        <div class="progress-bar-c">
-                            <div class="progress-fill-c" style="width: 75%;">
-                            </div>
-                        </div>
-                        <div class="progress-bar-p">
-                            <div class="progress-fill-p" style="width: 65%;">
-                            </div>
-                        </div>
-                        <div class="progress-bar-w">
-                            <div class="progress-fill-w" style="width: 60%;">
-                            </div>
-                        </div>
-                        <div class="progress-bar-v">
-                            <div class="progress-fill-v" style="width: 13%;">
-                            </div>
-                        </div>
-                        <div class="comum">
-                            Comum
-                        </div>
-                    </div>
-                    
-                    
-                    <div class="option-card" data-type="">
-                        <h3><i class="fas fa-moon"></i> Planetoides</h3>
-                        <p>Corpos celestes menores que planetas, mas maiores que asteroides.</p>
-                        <div class="progress-bar">
-                            <div class="progress-fill" style="width: 15%"></div>
-                        </div>
-                        <div class="mass-label">Massa: 300 - 500</div>
-                        <div class="progress-bar-c">
-                            <div class="progress-fill-c" style="width: 78%;">
-                            </div>
-                        </div>
-                        <div class="progress-bar-p">
-                            <div class="progress-fill-p" style="width: 65%;">
-                            </div>
-                        </div>
-                        <div class="progress-bar-w">
-                            <div class="progress-fill-w" style="width: 78.96%;">
-                            </div>
-                        </div>
-                        <div class="progress-bar-v">
-                            <div class="progress-fill-v" style="width: 70%;">
-                            </div>
-                        </div>
-                        <div class="comum">
-                            Comum
-                        </div>
-                    </div>
-                    
-                    
-                    <div id="rocky-tut" class="option-card" data-type="rockyPlanet">
-                        <h3><i class="fas fa-circle"></i> Planeta Rochoso</h3>
-                        <p>Planetas Rochosos , com continentes, atmosfera e oceanos.</p>
-                        <div class="progress-bar">
-                            <div class="progress-fill" style="width: 30%"></div>
-                        </div>
-                        <div class="mass-label">Massa: 5K - 30.5K</div>
-                        <div class="progress-bar-c">
-                            <div class="progress-fill-c" style="width: 79%;">
-                            </div>
-                        </div>
-                        <div class="progress-bar-p">
-                            <div class="progress-fill-p" style="width: 95%;">
-                            </div>
-                        </div>
-                        <div class="progress-bar-w">
-                            <div class="progress-fill-w" style="width: 100%;">
-                            </div>
-                        </div>
-                        <div class="progress-bar-v">
-                            <div class="progress-fill-v" style="width: 100%;">
-                            </div>
-                        </div>
-                        <div class="comum">
-                            comum
-                        </div>
-                    </div>
-                    
-                    
-                    <div class="option-card" data-type="">
-                        <h3><i class="fas fa-wind"></i> Planeta Gasoso</h3>
-                        <p>Gigantes gasosos com faixas atmosféricas e tempestades.</p>
-                        <div class="progress-bar">
-                            <div class="progress-fill" style="width: 45%"></div>
-                        </div>
-                        <div class="mass-label">Massa: 105K - 2.5M</div>
-                        <div class="progress-bar-c">
-                            <div class="progress-fill-c" style="width: 99.5%;">
-                            </div>
-                        </div>
-                        <div class="progress-bar-p">
-                            <div class="progress-fill-p" style="width: 100%;">
-                            </div>
-                        </div>
-                        <div class="progress-bar-w">
-                            <div class="progress-fill-w" style="width: 100%;">
-                            </div>
-                        </div>
-                        <div class="progress-bar-v">
-                            <div class="progress-fill-v" style="width: 2.8%;">
-                            </div>
-                        </div>
-                        <div class="progress-bar-cs">
-                            <div class="progress-fill-cs" style="width: 2%;">
-                            </div>
-                        </div>
-                        <div class="comum">
-                            Comum
-                        </div>
-                    </div>
-                    
-                    
-                    <div class="option-card" data-type="">
-                        <h3><i class="fas fa-star-half-alt"></i> Anã Marrom</h3>
-                        <p>Estrelas fracassadas que não atingiram massa suficiente.</p>
-                        <div class="progress-bar">
-                            <div class="progress-fill" style="width: 55%"></div>
-                        </div>
-                        <div class="mass-label">Massa: 2.55M - 10M</div>
-                        <div class="progress-bar-c">
-                            <div class="progress-fill-c" style="width: 100%;">
-                            </div>
-                        </div>
-                        <div class="progress-bar-cs">
-                            <div class="progress-fill-cs" style="width: 10%;">
-                            </div>
-                        </div>
-                        <div class="comum">
-                            Comum
-                        </div>
-                    </div>
+                  
+                  <div class="option-card" data-type="meteorite">
+                      <h3>
+                          <i class="fas fa-meteor"></i>
+                          <span data-i18n="ui.astroTypes.meteorite.name"></span>
+                      </h3>
+                      <p data-i18n="ui.astroTypes.meteorite.description"></p>
+                      <div class="progress-bar">
+                          <div class="progress-fill" style="width: 7%"></div>
+                      </div>
+                      <div class="mass-label">
+                          <span data-i18n="ui.inGameMenu.physicalProperties.mass"></span> 0.1 - 10
+                      </div>
+                      <div class="progress-bar-c">
+                          <div class="progress-fill-c" style="width: 98.5%;"></div>
+                      </div>
+                      <div class="progress-bar-p">
+                          <div class="progress-fill-p" style="width: 95%;"></div>
+                      </div>
+                      <div class="progress-bar-w">
+                          <div class="progress-fill-w" style="width: 20%;"></div>
+                      </div>
+                      <div class="progress-bar-v">
+                          <div class="progress-fill-v" style="width: 0.08%;"></div>
+                      </div>
+                      <div class="comum" data-i18n="ui.common.common"></div>
+                  </div>
 
-                    
-                    <div class="option-card" data-type="">
-                        <h3><i class="fas fa-star-half-alt"></i> Anã Vermelha</h3>
-                        <p>Estrelas que quase fracassaram, más são um pouco eternas e quentes.</p>
-                        <div class="progress-bar">
-                            <div class="progress-fill" style="width: 55%"></div>
-                        </div>
-                        <div class="mass-label">Massa: 10M - 15M</div>
-                        <div class="progress-bar-c">
-                            <div class="progress-fill-c" style="width: 100%;">
-                            </div>
-                        </div>
-                        <div class="progress-bar-cs">
-                            <div class="progress-fill-cs" style="width: 15%;">
-                            </div>
-                        </div>
-                        <div class="comum">
-                            Comum
-                        </div>
-                    </div>
-                    
-                    
-                    <div id="tauri-tut" class="option-card" data-type="ttauriStar">
-                        <h3><i class="fas fa-star"></i> Estrela T Tauri</h3>
-                        <p>Estrela jovem em fase de contração, muito ativa.</p>
-                        <div class="progress-bar">
-                            <div class="progress-fill" style="width: 58%"></div>
-                        </div>
-                        <div class="mass-label">Massa: 15M - 500B</div>
-                        <div class="progress-bar-c">
-                            <div class="progress-fill-c" style="width: 100%;">
-                            </div>
-                        </div>
-                        <div class="progress-bar-cs">
-                            <div class="progress-fill-cs" style="width: 21.5%;">
-                            </div>
-                        </div>
-                        <div class="incomum">
-                            Incomum
-                        </div>
-                    </div>
-                    
-                    
-                    <div id="star-tut" class="option-card" data-type="star">
-                        <h3><i class="fas fa-sun"></i> Estrela Comum</h3>
-                        <p>Estrela de massa comum, tipo sol, estrelas exenciais para a vida.</p>
-                        <div class="progress-bar">
-                            <div class="progress-fill" style="width: 70%"></div>
-                        </div>
-                        <div class="mass-label">Massa: 15M - 10.95B</div>
-                        <div class="progress-bar-c">
-                            <div class="progress-fill-c" style="width: 100%;">
-                            </div>
-                        </div>
-                        <div class="progress-bar-cs">
-                            <div class="progress-fill-cs" style="width: 30%;">
-                            </div>
-                        </div>
-                        <div class="comum">
-                            Comum
-                        </div>
-                    </div>
+                  
+                  <div class="option-card" data-type="comet">
+                      <h3>
+                          <i class="fas fa-water"></i>
+                          <span data-i18n="ui.astroTypes.comet.name"></span>
+                      </h3>
+                      <p data-i18n="ui.astroTypes.comet.description"></p>
+                      <div class="progress-bar">
+                          <div class="progress-fill" style="width: 5%"></div>
+                      </div>
+                      <div class="mass-label">
+                          <span data-i18n="ui.inGameMenu.physicalProperties.mass"></span> 0.1 - 10
+                      </div>
+                      <div class="progress-bar-c">
+                          <div class="progress-fill-c" style="width: 50%;"></div>
+                      </div>
+                      <div class="progress-bar-p">
+                          <div class="progress-fill-p" style="width: 85%;"></div>
+                      </div>
+                      <div class="progress-bar-w">
+                          <div class="progress-fill-w" style="width: 100%;"></div>
+                      </div>
+                      <div class="progress-bar-v">
+                          <div class="progress-fill-v" style="width: 5%;"></div>
+                      </div>
+                      <div class="comum" data-i18n="ui.common.common"></div>
+                  </div>
 
-                    
-                    
-                    <div class="option-card" data-type="">
-                        <h3><i class="fas fa-sun"></i> Gigante Vermelha</h3>
-                        <p>A Pedúltima Fase de uma estrela comum</p>
-                        <div class="progress-bar">
-                            <div class="progress-fill" style="width: 70%"></div>
-                        </div>
-                        <div class="mass-label">Massa: 15M - 10.95B</div>
-                        <div class="progress-bar-c">
-                            <div class="progress-fill-c" style="width: 100%;">
-                            </div>
-                        </div>
-                        <div class="progress-bar-cs">
-                            <div class="progress-fill-cs" style="width: 30%;">
-                            </div>
-                        </div>
-                        <div class="comum">
-                            Comum
-                        </div>
-                    </div>
-                    
-                    
-                    <div class="option-card" data-type="">
-                        <h3><i class="fas fa-star"></i> Estrela de Carbono</h3>
-                        <p>Estrela fria com alta concentração de carbono.</p>
-                        <div class="progress-bar">
-                            <div class="progress-fill" style="width: 72%"></div>
-                        </div>
-                        <div class="mass-label">Massa: 20M - 50M</div>
-                        <div class="progress-bar-c">
-                            <div class="progress-fill-c" style="width: 100%;">
-                            </div>
-                        </div>
-                        <div class="progress-bar-cs">
-                            <div class="progress-fill-cs" style="width: 13.95%;">
-                            </div>
-                        </div>
-                        <div class="raro">
-                            Raro
-                        </div>
-                    </div>
-                    
-                    
-                    <div class="option-card" data-type="">
-                        <h3><i class="fas fa-sun"></i> Estrela Gigante</h3>
-                        <p>Uma Estrela maior que estrelas comuns.</p>
-                        <div class="progress-bar">
-                            <div class="progress-fill" style="width: 75%"></div>
-                        </div>
-                        <div class="mass-label">Massa: 50M - 100M</div>
-                        <div class="progress-bar-c">
-                            <div class="progress-fill-c" style="width: 100%;">
-                            </div>
-                        </div>
-                        <div class="progress-bar-cs">
-                            <div class="progress-fill-cs" style="width: 34.5%;">
-                            </div>
-                        </div>
-                        <div class="comum">
-                            Comum
-                        </div>
-                    </div>
+                  
+                  <div class="option-card" data-type="asteroid">
+                      <h3>
+                          <i class="fas fa-meteor"></i>
+                          <span data-i18n="ui.astroTypes.asteroid.name"></span>
+                      </h3>
+                      <p data-i18n="ui.astroTypes.asteroid.description"></p>
+                      <div class="progress-bar">
+                          <div class="progress-fill" style="width: 10%"></div>
+                      </div>
+                      <div class="mass-label">
+                          <span data-i18n="ui.inGameMenu.physicalProperties.mass"></span> 1 - 100
+                      </div>
+                      <div class="progress-bar-c">
+                          <div class="progress-fill-c" style="width: 75%;"></div>
+                      </div>
+                      <div class="progress-bar-p">
+                          <div class="progress-fill-p" style="width: 65%;"></div>
+                      </div>
+                      <div class="progress-bar-w">
+                          <div class="progress-fill-w" style="width: 60%;"></div>
+                      </div>
+                      <div class="progress-bar-v">
+                          <div class="progress-fill-v" style="width: 13%;"></div>
+                      </div>
+                      <div class="comum" data-i18n="ui.common.common"></div>
+                  </div>
 
-                    
-                    <div class="option-card" data-type="">
-                        <h3><i class="fas fa-sun"></i> Supergigante Vermelha</h3>
-                        <p>Pedúltima Fase de uma Estrela Gigante</p>
-                        <div class="progress-bar">
-                            <div class="progress-fill" style="width: 74%"></div>
-                        </div>
-                        <div class="mass-label">Massa: 20M - 50M</div>
-                        <div class="progress-bar-c">
-                            <div class="progress-fill-c" style="width: 100%;">
-                            </div>
-                        </div>
-                        <div class="progress-bar-cs">
-                            <div class="progress-fill-cs" style="width: 23.95%;">
-                            </div>
-                        </div>
-                        <div class="incomum">
-                            Incomum
-                        </div>
-                    </div>
-                    
-                    
-                    <div class="option-card" data-type="">
-                        <h3><i class="fas fa-star"></i> Hipergigante</h3>
-                        <p>Estrela gigante extremamente luminosa e massiva.</p>
-                        <div class="progress-bar">
-                            <div class="progress-fill" style="width: 78%"></div>
-                        </div>
-                        <div class="mass-label">Massa: 100M - 500M</div>
-                        <div class="progress-bar-c">
-                            <div class="progress-fill-c" style="width: 100%;">
-                            </div>
-                        </div>
-                        <div class="progress-bar-cs">
-                            <div class="progress-fill-cs" style="width: 42.5%;">
-                            </div>
-                        </div>
-                        <div class="hiper-raro">
-                            Hiper Raro
-                        </div>
-                    </div>
-                    
-                    
-                    
-                    <div class="option-card" data-type="">
-                        <h3><i class="fas fa-star"></i> Estrela Massiva</h3>
-                        <p>Estrela com massa superior a 8 vezes a do Sol.</p>
-                        <div class="progress-bar">
-                            <div class="progress-fill" style="width: 80%"></div>
-                        </div>
-                        <div class="mass-label">Massa: 500M - 1B</div>
-                        <div class="progress-bar-c">
-                            <div class="progress-fill-c" style="width: 100%;">
-                            </div>
-                        </div>
-                        <div class="progress-bar-cs">
-                            <div class="progress-fill-cs" style="width: 52.9%;">
-                            </div>
-                        </div>
-                        <div class="ultra-raro">
-                            Ultra Raro
-                        </div>
-                    </div>
+                  
+                  <div class="option-card" data-type="planetoid">
+                      <h3>
+                          <i class="fas fa-moon"></i>
+                          <span data-i18n="ui.astroTypes.planetoid.name"></span>
+                      </h3>
+                      <p data-i18n="ui.astroTypes.planetoid.description"></p>
+                      <div class="progress-bar">
+                          <div class="progress-fill" style="width: 15%"></div>
+                      </div>
+                      <div class="mass-label">
+                          <span data-i18n="ui.inGameMenu.physicalProperties.mass"></span> 300 - 500
+                      </div>
+                      <div class="progress-bar-c">
+                          <div class="progress-fill-c" style="width: 78%;"></div>
+                      </div>
+                      <div class="progress-bar-p">
+                          <div class="progress-fill-p" style="width: 65%;"></div>
+                      </div>
+                      <div class="progress-bar-w">
+                          <div class="progress-fill-w" style="width: 78.96%;"></div>
+                      </div>
+                      <div class="progress-bar-v">
+                          <div class="progress-fill-v" style="width: 70%;"></div>
+                      </div>
+                      <div class="comum" data-i18n="ui.common.common"></div>
+                  </div>
 
+                  
+                  <div class="option-card" data-type="rockyPlanet">
+                      <h3>
+                          <i class="fas fa-circle"></i>
+                          <span data-i18n="ui.astroTypes.rockyPlanet.name"></span>
+                      </h3>
+                      <p data-i18n="ui.astroTypes.rockyPlanet.description"></p>
+                      <div class="progress-bar">
+                          <div class="progress-fill" style="width: 30%"></div>
+                      </div>
+                      <div class="mass-label">
+                          <span data-i18n="ui.inGameMenu.physicalProperties.mass"></span> 5K - 30.5K
+                      </div>
+                      <div class="progress-bar-c">
+                          <div class="progress-fill-c" style="width: 79%;"></div>
+                      </div>
+                      <div class="progress-bar-p">
+                          <div class="progress-fill-p" style="width: 95%;"></div>
+                      </div>
+                      <div class="progress-bar-w">
+                          <div class="progress-fill-w" style="width: 100%;"></div>
+                      </div>
+                      <div class="progress-bar-v">
+                          <div class="progress-fill-v" style="width: 100%;"></div>
+                      </div>
+                      <div class="comum" data-i18n="ui.common.common"></div>
+                  </div>
 
-                    
-                    <div class="option-card" data-type="">
-                        <h3><i class="fas fa-star"></i> Hipermassiva</h3>
-                        <p>Estrela com massa superior a 8 vezes a do Sol.</p>
-                        <div class="progress-bar">
-                            <div class="progress-fill" style="width: 80%"></div>
-                        </div>
-                        <div class="mass-label">Massa: 500M - 1B</div>
-                        <div class="progress-bar-c">
-                            <div class="progress-fill-c" style="width: 100%;">
-                            </div>
-                        </div>
-                        <div class="progress-bar-cs">
-                            <div class="progress-fill-cs" style="width: 71.5%;">
-                            </div>
-                        </div>
-                        <div class="epico">
-                            Épico
-                        </div>
-                    </div>
-                    
-                    
-                    <div class="option-card" data-type="">
-                        <h3><i class="fas fa-star"></i> Anã Branca</h3>
-                        <p>Resto de estrelas de baixa massa após a fase de gigante vermelha.</p>
-                        <div class="progress-bar">
-                            <div class="progress-fill" style="width: 85%"></div>
-                        </div>
-                        <div class="mass-label">Massa: 20.5B</div>
-                        <div class="progress-bar-c">
-                            <div class="progress-fill-c" style="width: 100%;">
-                            </div>
-                        </div>
-                        <div class="progress-bar-cs">
-                            <div class="progress-fill-cs" style="width: 12.4%;">
-                            </div>
-                        </div>
-                        <div>
-                            <div class="comum">
-                                Comum
-                            </div>
-                        </div>
-                    </div>
+                  
+                  <div class="option-card" data-type="gasGiant">
+                      <h3>
+                          <i class="fas fa-wind"></i>
+                          <span data-i18n="ui.astroTypes.gasGiant.name"></span>
+                      </h3>
+                      <p data-i18n="ui.astroTypes.gasGiant.description"></p>
+                      <div class="progress-bar">
+                          <div class="progress-fill" style="width: 45%"></div>
+                      </div>
+                      <div class="mass-label">
+                          <span data-i18n="ui.inGameMenu.physicalProperties.mass"></span> 105K - 2.5M
+                      </div>
+                      <div class="progress-bar-c">
+                          <div class="progress-fill-c" style="width: 99.5%;"></div>
+                      </div>
+                      <div class="progress-bar-p">
+                          <div class="progress-fill-p" style="width: 100%;"></div>
+                      </div>
+                      <div class="progress-bar-w">
+                          <div class="progress-fill-w" style="width: 100%;"></div>
+                      </div>
+                      <div class="progress-bar-v">
+                          <div class="progress-fill-v" style="width: 2.8%;"></div>
+                      </div>
+                      <div class="progress-bar-cs">
+                          <div class="progress-fill-cs" style="width: 2%;"></div>
+                      </div>
+                      <div class="comum" data-i18n="ui.common.common"></div>
+                  </div>
 
-                    <div class="option-card" data-type="">
-                        <h3><i class="fas fa-star"></i> Anã Branca de Hélio</h3>
-                        <p>Resto de estrelas de alta quantidade de hélio.</p>
-                        <div class="progress-bar">
-                            <div class="progress-fill" style="width: 85%"></div>
-                        </div>
-                        <div class="mass-label">Massa: 20.5B</div>
-                        <div class="progress-bar-c">
-                            <div class="progress-fill-c" style="width: 100%;">
-                            </div>
-                        </div>
-                        <div class="progress-bar-cs">
-                            <div class="progress-fill-cs" style="width: 11%;">
-                            </div>
-                        </div>
-                        <div class="comum">
-                            Comum
-                        </div>
-                    </div>
+                  
+                  <div class="option-card" data-type="brownDwarf">
+                      <h3>
+                          <i class="fas fa-star-half-alt"></i>
+                          <span data-i18n="ui.astroTypes.brownDwarf.name"></span>
+                      </h3>
+                      <p data-i18n="ui.astroTypes.brownDwarf.description"></p>
+                      <div class="progress-bar">
+                          <div class="progress-fill" style="width: 55%"></div>
+                      </div>
+                      <div class="mass-label">
+                          <span data-i18n="ui.inGameMenu.physicalProperties.mass"></span> 2.55M - 10M
+                      </div>
+                      <div class="progress-bar-c">
+                          <div class="progress-fill-c" style="width: 100%;"></div>
+                      </div>
+                      <div class="progress-bar-cs">
+                          <div class="progress-fill-cs" style="width: 10%;"></div>
+                      </div>
+                      <div class="comum" data-i18n="ui.common.common"></div>
+                  </div>
 
-                    
-                    <div class="option-card" data-type="">
-                        <h3><i class="fas fa-moon"></i> Anã Negra</h3>
-                        <p>O estágio final de uma anã branca, completamente fria e escura.</p>
-                        <div class="progress-bar">
-                            <div class="progress-fill" style="width: 86%"></div>
-                        </div>
-                        <div class="mass-label">Massa: 20.5B</div>
-                        <div class="progress-bar-c">
-                            <div class="progress-fill-c" style="width: 100%;">
-                            </div>
-                        </div>
-                        <div class="progress-bar-cs">
-                            <div class="progress-fill-cs" style="width: 0.00001%;">
-                            </div>
-                        </div>
-                        <div class="legendario">
-                            Lengendário
-                        </div>
-                    </div>
-                    
-                    
+                  
+                  <div class="option-card" data-type="redDwarf">
+                      <h3>
+                          <i class="fas fa-star-half-alt"></i>
+                          <span data-i18n="ui.astroTypes.redDwarf.name"></span>
+                      </h3>
+                      <p data-i18n="ui.astroTypes.redDwarf.description"></p>
+                      <div class="progress-bar">
+                          <div class="progress-fill" style="width: 55%"></div>
+                      </div>
+                      <div class="mass-label">
+                          <span data-i18n="ui.inGameMenu.physicalProperties.mass"></span> 10M - 15M
+                      </div>
+                      <div class="progress-bar-c">
+                          <div class="progress-fill-c" style="width: 100%;"></div>
+                      </div>
+                      <div class="progress-bar-cs">
+                          <div class="progress-fill-cs" style="width: 15%;"></div>
+                      </div>
+                      <div class="comum" data-i18n="ui.common.common"></div>
+                  </div>
 
-                    <div class="option-card" data-type="">
-                        <h3><i class="fas fa-star"></i> Estrela de Nêutrons</h3>
-                        <p>Remanescentes ultra-densos de estrelas massivas.</p>
-                        <div class="progress-bar">
-                            <div class="progress-fill" style="width: 95%"></div>
-                        </div>
-                        <div class="mass-label">Massa: 50.5B - 500B</div>
-                        <div class="progress-bar-c">
-                            <div class="progress-fill-c" style="width: 100%;">
-                            </div>
-                        </div>
-                        <div class="progress-bar-cs">
-                            <div class="progress-fill-cs" style="width: 80.44%;">
-                            </div>
-                        </div>
-                        <div class="comum">
-                            Comum
-                        </div>
-                    </div>
+                  
+                  <div class="option-card" data-type="ttauriStar">
+                      <h3>
+                          <i class="fas fa-star"></i>
+                          <span data-i18n="ui.astroTypes.ttauriStar.name"></span>
+                      </h3>
+                      <p data-i18n="ui.astroTypes.ttauriStar.description"></p>
+                      <div class="progress-bar">
+                          <div class="progress-fill" style="width: 58%"></div>
+                      </div>
+                      <div class="mass-label">
+                          <span data-i18n="ui.inGameMenu.physicalProperties.mass"></span> 15M - 500B
+                      </div>
+                      <div class="progress-bar-c">
+                          <div class="progress-fill-c" style="width: 100%;"></div>
+                      </div>
+                      <div class="progress-bar-cs">
+                          <div class="progress-fill-cs" style="width: 21.5%;"></div>
+                      </div>
+                      <div class="incomum" data-i18n="ui.common.uncommon"></div>
+                  </div>
 
-                    <div class="option-card" data-type="">
-                        <h3><i class="fas fa-star"></i> Pulsar</h3>
-                        <p>Um Tipo de estrela ne neutrons, com faixes de radiação cósmica, um farol cósmico!</p>
-                        <div class="progress-bar">
-                            <div class="progress-fill" style="width: 95%"></div>
-                        </div>
-                        <div class="mass-label">Massa: 50.5B - 500B</div>
-                        <div class="progress-bar-c">
-                            <div class="progress-fill-c" style="width: 100%;">
-                            </div>
-                        </div>
-                        <div class="progress-bar-cs">
-                            <div class="progress-fill-cs" style="width: 82.44%;">
-                            </div>
-                        </div>
-                        <div class="hiper-raro">
-                            Hiper Raro
-                        </div>
-                    </div>
+                  
+                  <div class="option-card" data-type="star">
+                      <h3>
+                          <i class="fas fa-sun"></i>
+                          <span data-i18n="ui.astroTypes.star.name"></span>
+                      </h3>
+                      <p data-i18n="ui.astroTypes.star.description"></p>
+                      <div class="progress-bar">
+                          <div class="progress-fill" style="width: 70%"></div>
+                      </div>
+                      <div class="mass-label">
+                          <span data-i18n="ui.inGameMenu.physicalProperties.mass"></span> 15M - 10.95B
+                      </div>
+                      <div class="progress-bar-c">
+                          <div class="progress-fill-c" style="width: 100%;"></div>
+                      </div>
+                      <div class="progress-bar-cs">
+                          <div class="progress-fill-cs" style="width: 30%;"></div>
+                      </div>
+                      <div class="comum" data-i18n="ui.common.common"></div>
+                  </div>
 
-                    <div class="option-card" data-type="">
-                        <h3><i class="fas fa-star"></i> Magnetar</h3>
-                        <p>Estrelas de Neutrons extremamente densas.</p>
-                        <div class="progress-bar">
-                            <div class="progress-fill" style="width: 96%"></div>
-                        </div>
-                        <div class="mass-label">Massa: 50.5B - 500B</div>
-                        <div class="progress-bar-c">
-                            <div class="progress-fill-c" style="width: 100%;">
-                            </div>
-                        </div>
-                        <div class="progress-bar-cs">
-                            <div class="progress-fill-cs" style="width: 84.98%;">
-                            </div>
-                        </div>
-                        <div class="ultra-raro">
-                            Ultra Raro
-                        </div>
-                    </div>
+                  
+                  <div class="option-card" data-type="redGiant">
+                      <h3>
+                          <i class="fas fa-sun"></i>
+                          <span data-i18n="ui.astroTypes.redGiant.name"></span>
+                      </h3>
+                      <p data-i18n="ui.astroTypes.redGiant.description"></p>
+                      <div class="progress-bar">
+                          <div class="progress-fill" style="width: 70%"></div>
+                      </div>
+                      <div class="mass-label">
+                          <span data-i18n="ui.inGameMenu.physicalProperties.mass"></span> 15M - 10.95B
+                      </div>
+                      <div class="progress-bar-c">
+                          <div class="progress-fill-c" style="width: 100%;"></div>
+                      </div>
+                      <div class="progress-bar-cs">
+                          <div class="progress-fill-cs" style="width: 30%;"></div>
+                      </div>
+                      <div class="comum" data-i18n="ui.common.common"></div>
+                  </div>
 
-                    <div class="option-card" data-type="">
-                        <h3><i class="fas fa-star"></i> Pulsar de Quark</h3>
-                        <p>Estrelas de Neutrons com Núcleo Estranho, bem condensado.</p>
-                        <div class="progress-bar">
-                            <div class="progress-fill" style="width: 97%"></div>
-                        </div>
-                        <div class="mass-label">Massa: 500.5B - 900B</div>
-                        <div class="progress-bar-c">
-                            <div class="progress-fill-c" style="width: 100%;">
-                            </div>
-                        </div>
-                        <div class="progress-bar-cs">
-                            <div class="progress-fill-cs" style="width: 90.98%;">
-                            </div>
-                        </div>
-                        <div class="epico">
-                            Épico
-                        </div>
-                    </div>
-                    
-                    
-                    <div class="option-card" data-type="">
-                        <h3><i class="fas fa-radiation"></i> Estrela Estranha</h3>
-                        <p>Hipotética estrela feita de matéria quark.</p>
-                        <div class="progress-bar">
-                            <div class="progress-fill" style="width: 98%"></div>
-                        </div>
-                        <div class="mass-label">Massa: 500B - 800B</div>
-                        <div class="progress-bar-c">
-                            <div class="progress-fill-c" style="width: 100%;">
-                            </div>
-                        </div>
-                        <div class="progress-bar-cs">
-                            <div class="progress-fill-cs" style="width: 92.567%;">
-                            </div>
-                        </div>
-                        <div class="exotico">
-                            Exótico
-                        </div>
-                    </div>
-                    
-                    
-                    <div class="option-card" data-type="">
-                        <h3><i class="fas fa-circle-notch"></i> Buraco Negro</h3>
-                        <p>Regiões do espaço com gravidade extrema. Estelares/Intermediarios</p>
-                        <div class="progress-bar">
-                            <div class="progress-fill" style="width: 99%"></div>
-                        </div>
-                        <div class="mass-label">Massa: 1T - 200Sextilhões</div>
-                        <div class="progress-bar-c">
-                            <div class="progress-fill-c" style="width: 100%;">
-                            </div>
-                        </div>
-                        <div class="progress-bar-cs">
-                            <div class="progress-fill-cs" style="width: 94%;">
-                            </div>
-                        </div>
-                        <div class="incomum">
-                            Incomum
-                        </div>
-                    </div>
-                    
-                    
-                    <div class="option-card" data-type="">
-                        <h3><i class="fas fa-radiation"></i> Quasar</h3>
-                        <p>Buracos negros supermassivos ativos com jatos de energia.</p>
-                        <div class="progress-bar">
-                            <div class="progress-fill" style="width: 100%"></div>
-                        </div>
-                        <div class="mass-label">Massa: 500Sextilhões - 1Septilhão</div>
-                        <div class="progress-bar-c">
-                            <div class="progress-fill-c" style="width: 100%;">
-                            </div>
-                        </div>
-                        <div class="progress-bar-cs">
-                            <div class="progress-fill-cs" style="width: 99.5%;">
-                            </div>
-                        </div>
-                        <div class="legendario">
-                            Legendário
-                        </div>
-                    </div>
-                    
-                    
-                    <div class="option-card" data-type="">
-                        <h3><i class="fas fa-ring"></i> Buraco de Minhoca</h3>
-                        <p>Hipotético túnel no espaço-tempo conectando dois pontos.</p>
-                        <div class="progress-bar">
-                            <div class="progress-fill" style="width: 100%"></div>
-                        </div>
-                        <div class="mass-label">Massa: 1T - 10T</div>
-                        <div class="progress-bar-c">
-                            <div class="progress-fill-c" style="width: 100%;">
-                            </div>
-                        </div>
-                        <div class="progress-bar-cs">
-                            <div class="progress-fill-cs" style="width: 0%;">
-                            </div>
-                        </div>
-                        <div class="exotico">
-                            Exótico
-                        </div>
-                    </div>
-                    
-                    
-                    <div class="option-card" data-type="">
-                        <h3><i class="fas fa-radiation"></i> Buraco Branco</h3>
-                        <p>Teórica região que expele matéria.</p>
-                        <div class="progress-bar">
-                            <div class="progress-fill" style="width: 100%"></div>
-                        </div>
-                        <div class="mass-label">Massa: 1Septilhão - Infinito</div>
-                        <div class="progress-bar-c">
-                            <div class="progress-fill-c" style="width: 100%;">
-                            </div>
-                        </div>
-                        <div class="progress-bar-cs">
-                            <div class="progress-fill-cs" style="width: 100%;">
-                            </div>
-                        </div>
-                        <div class="legendario">
-                            Legendário
-                        </div>
-                    </div>
-                </div>
-            </div>
+                  
+                  <div class="option-card" data-type="carbonStar">
+                      <h3>
+                          <i class="fas fa-star"></i>
+                          <span data-i18n="ui.astroTypes.carbonStar.name"></span>
+                      </h3>
+                      <p data-i18n="ui.astroTypes.carbonStar.description"></p>
+                      <div class="progress-bar">
+                          <div class="progress-fill" style="width: 72%"></div>
+                      </div>
+                      <div class="mass-label">
+                          <span data-i18n="ui.inGameMenu.physicalProperties.mass"></span> 20M - 50M
+                      </div>
+                      <div class="progress-bar-c">
+                          <div class="progress-fill-c" style="width: 100%;"></div>
+                      </div>
+                      <div class="progress-bar-cs">
+                          <div class="progress-fill-cs" style="width: 13.95%;"></div>
+                      </div>
+                      <div class="raro" data-i18n="ui.common.rare"></div>
+                  </div>
+
+                  
+                  <div class="option-card" data-type="giantStar">
+                      <h3>
+                          <i class="fas fa-sun"></i>
+                          <span data-i18n="ui.astroTypes.giantStar.name"></span>
+                      </h3>
+                      <p data-i18n="ui.astroTypes.giantStar.description"></p>
+                      <div class="progress-bar">
+                          <div class="progress-fill" style="width: 75%"></div>
+                      </div>
+                      <div class="mass-label">
+                          <span data-i18n="ui.inGameMenu.physicalProperties.mass"></span> 50M - 100M
+                      </div>
+                      <div class="progress-bar-c">
+                          <div class="progress-fill-c" style="width: 100%;"></div>
+                      </div>
+                      <div class="progress-bar-cs">
+                          <div class="progress-fill-cs" style="width: 34.5%;"></div>
+                      </div>
+                      <div class="comum" data-i18n="ui.common.common"></div>
+                  </div>
+
+                  
+                  <div class="option-card" data-type="redSupergiant">
+                      <h3>
+                          <i class="fas fa-sun"></i>
+                          <span data-i18n="ui.astroTypes.redSupergiant.name"></span>
+                      </h3>
+                      <p data-i18n="ui.astroTypes.redSupergiant.description"></p>
+                      <div class="progress-bar">
+                          <div class="progress-fill" style="width: 74%"></div>
+                      </div>
+                      <div class="mass-label">
+                          <span data-i18n="ui.inGameMenu.physicalProperties.mass"></span> 20M - 50M
+                      </div>
+                      <div class="progress-bar-c">
+                          <div class="progress-fill-c" style="width: 100%;"></div>
+                      </div>
+                      <div class="progress-bar-cs">
+                          <div class="progress-fill-cs" style="width: 23.95%;"></div>
+                      </div>
+                      <div class="incomum" data-i18n="ui.common.uncommon"></div>
+                  </div>
+
+                  
+                  <div class="option-card" data-type="hypergiant">
+                      <h3>
+                          <i class="fas fa-star"></i>
+                          <span data-i18n="ui.astroTypes.hypergiant.name"></span>
+                      </h3>
+                      <p data-i18n="ui.astroTypes.hypergiant.description"></p>
+                      <div class="progress-bar">
+                          <div class="progress-fill" style="width: 78%"></div>
+                      </div>
+                      <div class="mass-label">
+                          <span data-i18n="ui.inGameMenu.physicalProperties.mass"></span> 100M - 500M
+                      </div>
+                      <div class="progress-bar-c">
+                          <div class="progress-fill-c" style="width: 100%;"></div>
+                      </div>
+                      <div class="progress-bar-cs">
+                          <div class="progress-fill-cs" style="width: 42.5%;"></div>
+                      </div>
+                      <div class="hiper-raro" data-i18n="ui.common.hyperRare"></div>
+                  </div>
+
+                  
+                  <div class="option-card" data-type="massiveStar">
+                      <h3>
+                          <i class="fas fa-star"></i>
+                          <span data-i18n="ui.astroTypes.massiveStar.name"></span>
+                      </h3>
+                      <p data-i18n="ui.astroTypes.massiveStar.description"></p>
+                      <div class="progress-bar">
+                          <div class="progress-fill" style="width: 80%"></div>
+                      </div>
+                      <div class="mass-label">
+                          <span data-i18n="ui.inGameMenu.physicalProperties.mass"></span> 500M - 1B
+                      </div>
+                      <div class="progress-bar-c">
+                          <div class="progress-fill-c" style="width: 100%;"></div>
+                      </div>
+                      <div class="progress-bar-cs">
+                          <div class="progress-fill-cs" style="width: 52.9%;"></div>
+                      </div>
+                      <div class="ultra-raro" data-i18n="ui.common.ultraRare"></div>
+                  </div>
+
+                  
+                  <div class="option-card" data-type="supermassiveStar">
+                      <h3>
+                          <i class="fas fa-star"></i>
+                          <span data-i18n="ui.astroTypes.supermassiveStar.name"></span>
+                      </h3>
+                      <p data-i18n="ui.astroTypes.supermassiveStar.description"></p>
+                      <div class="progress-bar">
+                          <div class="progress-fill" style="width: 80%"></div>
+                      </div>
+                      <div class="mass-label">
+                          <span data-i18n="ui.inGameMenu.physicalProperties.mass"></span> 500M - 1B
+                      </div>
+                      <div class="progress-bar-c">
+                          <div class="progress-fill-c" style="width: 100%;"></div>
+                      </div>
+                      <div class="progress-bar-cs">
+                          <div class="progress-fill-cs" style="width: 71.5%;"></div>
+                      </div>
+                      <div class="epico" data-i18n="ui.common.epic"></div>
+                  </div>
+
+                  
+                  <div class="option-card" data-type="whiteDwarf">
+                      <h3>
+                          <i class="fas fa-star"></i>
+                          <span data-i18n="ui.astroTypes.whiteDwarf.name"></span>
+                      </h3>
+                      <p data-i18n="ui.astroTypes.whiteDwarf.description"></p>
+                      <div class="progress-bar">
+                          <div class="progress-fill" style="width: 85%"></div>
+                      </div>
+                      <div class="mass-label">
+                          <span data-i18n="ui.inGameMenu.physicalProperties.mass"></span> 20.5B
+                      </div>
+                      <div class="progress-bar-c">
+                          <div class="progress-fill-c" style="width: 100%;"></div>
+                      </div>
+                      <div class="progress-bar-cs">
+                          <div class="progress-fill-cs" style="width: 12.4%;"></div>
+                      </div>
+                      <div class="comum" data-i18n="ui.common.common"></div>
+                  </div>
+
+                  
+                  <div class="option-card" data-type="HeliumWhiteDwarf">
+                      <h3>
+                          <i class="fas fa-star"></i>
+                          <span data-i18n="ui.astroTypes.HeliumWhiteDwarf.name"></span>
+                      </h3>
+                      <p data-i18n="ui.astroTypes.HeliumWhiteDwarf.description"></p>
+                      <div class="progress-bar">
+                          <div class="progress-fill" style="width: 85%"></div>
+                      </div>
+                      <div class="mass-label">
+                          <span data-i18n="ui.inGameMenu.physicalProperties.mass"></span> 20.5B
+                      </div>
+                      <div class="progress-bar-c">
+                          <div class="progress-fill-c" style="width: 100%;"></div>
+                      </div>
+                      <div class="progress-bar-cs">
+                          <div class="progress-fill-cs" style="width: 11%;"></div>
+                      </div>
+                      <div class="comum" data-i18n="ui.common.common"></div>
+                  </div>
+
+                  
+                  <div class="option-card" data-type="blackDwarf">
+                      <h3>
+                          <i class="fas fa-moon"></i>
+                          <span data-i18n="ui.astroTypes.blackDwarf.name"></span>
+                      </h3>
+                      <p data-i18n="ui.astroTypes.blackDwarf.description"></p>
+                      <div class="progress-bar">
+                          <div class="progress-fill" style="width: 86%"></div>
+                      </div>
+                      <div class="mass-label">
+                          <span data-i18n="ui.inGameMenu.physicalProperties.mass"></span> 20.5B
+                      </div>
+                      <div class="progress-bar-c">
+                          <div class="progress-fill-c" style="width: 100%;"></div>
+                      </div>
+                      <div class="progress-bar-cs">
+                          <div class="progress-fill-cs" style="width: 0.00001%;"></div>
+                      </div>
+                      <div class="legendario" data-i18n="ui.common.legendary"></div>
+                  </div>
+
+                  
+                  <div class="option-card" data-type="neutronStar">
+                      <h3>
+                          <i class="fas fa-star"></i>
+                          <span data-i18n="ui.astroTypes.neutronStar.name"></span>
+                      </h3>
+                      <p data-i18n="ui.astroTypes.neutronStar.description"></p>
+                      <div class="progress-bar">
+                          <div class="progress-fill" style="width: 95%"></div>
+                      </div>
+                      <div class="mass-label">
+                          <span data-i18n="ui.inGameMenu.physicalProperties.mass"></span> 50.5B - 500B
+                      </div>
+                      <div class="progress-bar-c">
+                          <div class="progress-fill-c" style="width: 100%;"></div>
+                      </div>
+                      <div class="progress-bar-cs">
+                          <div class="progress-fill-cs" style="width: 80.44%;"></div>
+                      </div>
+                      <div class="comum" data-i18n="ui.common.common"></div>
+                  </div>
+
+                  
+                  <div class="option-card" data-type="pulsar">
+                      <h3>
+                          <i class="fas fa-star"></i>
+                          <span data-i18n="ui.astroTypes.pulsar.name"></span>
+                      </h3>
+                      <p data-i18n="ui.astroTypes.pulsar.description"></p>
+                      <div class="progress-bar">
+                          <div class="progress-fill" style="width: 95%"></div>
+                      </div>
+                      <div class="mass-label">
+                          <span data-i18n="ui.inGameMenu.physicalProperties.mass"></span> 50.5B - 500B
+                      </div>
+                      <div class="progress-bar-c">
+                          <div class="progress-fill-c" style="width: 100%;"></div>
+                      </div>
+                      <div class="progress-bar-cs">
+                          <div class="progress-fill-cs" style="width: 82.44%;"></div>
+                      </div>
+                      <div class="hiper-raro" data-i18n="ui.common.hyperRare"></div>
+                  </div>
+
+                  
+                  <div class="option-card" data-type="magnetar">
+                      <h3>
+                          <i class="fas fa-star"></i>
+                          <span data-i18n="ui.astroTypes.magnetar.name"></span>
+                      </h3>
+                      <p data-i18n="ui.astroTypes.magnetar.description"></p>
+                      <div class="progress-bar">
+                          <div class="progress-fill" style="width: 96%"></div>
+                      </div>
+                      <div class="mass-label">
+                          <span data-i18n="ui.inGameMenu.physicalProperties.mass"></span> 50.5B - 500B
+                      </div>
+                      <div class="progress-bar-c">
+                          <div class="progress-fill-c" style="width: 100%;"></div>
+                      </div>
+                      <div class="progress-bar-cs">
+                          <div class="progress-fill-cs" style="width: 84.98%;"></div>
+                      </div>
+                      <div class="ultra-raro" data-i18n="ui.common.ultraRare"></div>
+                  </div>
+
+                  
+                  <div class="option-card" data-type="quarkStar">
+                      <h3>
+                          <i class="fas fa-star"></i>
+                          <span data-i18n="ui.astroTypes.quarkStar.name"></span>
+                      </h3>
+                      <p data-i18n="ui.astroTypes.quarkStar.description"></p>
+                      <div class="progress-bar">
+                          <div class="progress-fill" style="width: 97%"></div>
+                      </div>
+                      <div class="mass-label">
+                          <span data-i18n="ui.inGameMenu.physicalProperties.mass"></span> 500.5B - 900B
+                      </div>
+                      <div class="progress-bar-c">
+                          <div class="progress-fill-c" style="width: 100%;"></div>
+                      </div>
+                      <div class="progress-bar-cs">
+                          <div class="progress-fill-cs" style="width: 90.98%;"></div>
+                      </div>
+                      <div class="epico" data-i18n="ui.common.epic"></div>
+                  </div>
+
+                  
+                  <div class="option-card" data-type="strangeStar">
+                      <h3>
+                          <i class="fas fa-radiation"></i>
+                          <span data-i18n="ui.astroTypes.strangeStar.name"></span>
+                      </h3>
+                      <p data-i18n="ui.astroTypes.strangeStar.description"></p>
+                      <div class="progress-bar">
+                          <div class="progress-fill" style="width: 98%"></div>
+                      </div>
+                      <div class="mass-label">
+                          <span data-i18n="ui.inGameMenu.physicalProperties.mass"></span> 500B - 800B
+                      </div>
+                      <div class="progress-bar-c">
+                          <div class="progress-fill-c" style="width: 100%;"></div>
+                      </div>
+                      <div class="progress-bar-cs">
+                          <div class="progress-fill-cs" style="width: 92.567%;"></div>
+                      </div>
+                      <div class="exotico" data-i18n="ui.common.exotic"></div>
+                  </div>
+
+                  
+                  <div class="option-card" data-type="blackHole">
+                      <h3>
+                          <i class="fas fa-circle-notch"></i>
+                          <span data-i18n="ui.astroTypes.blackHole.name"></span>
+                      </h3>
+                      <p data-i18n="ui.astroTypes.blackHole.description"></p>
+                      <div class="progress-bar">
+                          <div class="progress-fill" style="width: 99%"></div>
+                      </div>
+                      <div class="mass-label">
+                          <span data-i18n="ui.inGameMenu.physicalProperties.mass"></span> 1T - 200Sx
+                      </div>
+                      <div class="progress-bar-c">
+                          <div class="progress-fill-c" style="width: 100%;"></div>
+                      </div>
+                      <div class="progress-bar-cs">
+                          <div class="progress-fill-cs" style="width: 94%;"></div>
+                      </div>
+                      <div class="incomum" data-i18n="ui.common.uncommon"></div>
+                  </div>
+
+                  
+                  <div class="option-card" data-type="quasar">
+                      <h3>
+                          <i class="fas fa-radiation"></i>
+                          <span data-i18n="ui.astroTypes.quasar.name"></span>
+                      </h3>
+                      <p data-i18n="ui.astroTypes.quasar.description"></p>
+                      <div class="progress-bar">
+                          <div class="progress-fill" style="width: 100%"></div>
+                      </div>
+                      <div class="mass-label">
+                          <span data-i18n="ui.inGameMenu.physicalProperties.mass"></span> 500Sx - 1Sp
+                      </div>
+                      <div class="progress-bar-c">
+                          <div class="progress-fill-c" style="width: 100%;"></div>
+                      </div>
+                      <div class="progress-bar-cs">
+                          <div class="progress-fill-cs" style="width: 99.5%;"></div>
+                      </div>
+                      <div class="legendario" data-i18n="ui.common.legendary"></div>
+                  </div>
+
+                  
+                  <div class="option-card" data-type="wormhole">
+                      <h3>
+                          <i class="fas fa-ring"></i>
+                          <span data-i18n="ui.astroTypes.wormhole.name"></span>
+                      </h3>
+                      <p data-i18n="ui.astroTypes.wormhole.description"></p>
+                      <div class="progress-bar">
+                          <div class="progress-fill" style="width: 100%"></div>
+                      </div>
+                      <div class="mass-label">
+                          <span data-i18n="ui.inGameMenu.physicalProperties.mass"></span> 1T - 10T
+                      </div>
+                      <div class="progress-bar-c">
+                          <div class="progress-fill-c" style="width: 100%;"></div>
+                      </div>
+                      <div class="progress-bar-cs">
+                          <div class="progress-fill-cs" style="width: 0%;"></div>
+                      </div>
+                      <div class="exotico" data-i18n="ui.common.exotic"></div>
+                  </div>
+
+                  
+                  <div class="option-card" data-type="whiteHole">
+                      <h3>
+                          <i class="fas fa-radiation"></i>
+                          <span data-i18n="ui.astroTypes.whiteHole.name"></span>
+                      </h3>
+                      <p data-i18n="ui.astroTypes.whiteHole.description"></p>
+                      <div class="progress-bar">
+                          <div class="progress-fill" style="width: 100%"></div>
+                      </div>
+                      <div class="mass-label">
+                          <span data-i18n="ui.inGameMenu.physicalProperties.mass"></span> 1Sp +
+                      </div>
+                      <div class="progress-bar-c">
+                          <div class="progress-fill-c" style="width: 100%;"></div>
+                      </div>
+                      <div class="progress-bar-cs">
+                          <div class="progress-fill-cs" style="width: 100%;"></div>
+                      </div>
+                      <div class="legendario" data-i18n="ui.common.legendary"></div>
+                  </div>
+              </div>
+          </div>
             
             <div class="menu-section" id="astroDetailsSection">
-                <h3 class="section-title"><i class="fas fa-cog"></i> Configurações do Astro</h3>
+                <h3 class="section-title" data-i18n="ui.inGameMenu.sections.astroSettings"><i class="fas fa-cog"></i></h3>
                 <div class="planet-preview" id="planetPreview"></div>
                 
                 <div class="detail-group">
-                    <div class="detail-title"><i class="fas fa-palette"></i> Aparência</div>
+                    <div class="detail-title"><i class="fas fa-palette" data-i18n="ui.inGameMenu.appearance.title"></i></div>
                     <div class="detail-row">
-                        <div class="detail-label">Cor Principal:</div>
+                        <div class="detail-label" data-i18n="ui.inGameMenu.appearance.primaryColor"></div>
                         <div class="detail-value">
                             <input type="color" id="primaryColor" value="#888888">
                         </div>
                     </div>
                     <div class="detail-row">
-                        <div class="detail-label">Cor Secundária:</div>
+                        <div class="detail-label" data-i18n="ui.inGameMenu.appearance.secondaryColor"></div>
                         <div class="detail-value">
                             <input type="color" id="secondaryColor" value="#888888">
                         </div>
                     </div>
                     <div class="detail-row">
-                        <div class="detail-label">Cor dos Anéis:</div>
+                        <div class="detail-label" data-i18n="ui.inGameMenu.appearance.ringColor"></div>
                         <div class="detail-value">
                             <input type="color" id="ringColor" value="#888888">
                         </div>
@@ -1220,30 +1212,30 @@
                 </div>
                 
                 <div class="detail-group">
-                    <div class="detail-title"><i class="fas fa-weight-hanging"></i> Propriedades Físicas</div>
+                    <div class="detail-title"><i class="fas fa-weight-hanging" data-i18n="ui.inGameMenu.physicalProperties.title"></i></div>
                     <div class="detail-row">
-                        <div class="detail-label">Massa:</div>
+                        <div class="detail-label" data-i18n="ui.inGameMenu.physicalProperties.mass">Massa:</div>
                         <div class="detail-value">
                             <input type="range" min="10" max="1000" value="50" id="massSlider">
                             <span id="massValue">50</span>
                         </div>
                     </div>
                     <div class="detail-row">
-                        <div class="detail-label">Gravidade:</div>
+                        <div class="detail-label" data-i18n="ui.inGameMenu.physicalProperties.gravity">Gravidade:</div>
                         <div class="detail-value">
                             <input type="range" min="1" max="100" value="9.8" step="0.1" id="gravitySlider">
                             <span id="gravityValue">9.8</span>
                         </div>
                     </div>
                     <div class="detail-row">
-                        <div class="detail-label">Temperatura:</div>
+                        <div class="detail-label" data-i18n="ui.inGameMenu.physicalProperties.temperature"></div>
                         <div class="detail-value">
                             <input type="range" min="-273" max="1000" value="20" id="tempSlider">
                             <span id="tempValue"></span>
                         </div>
                     </div>
                     <div class="detail-row">
-                        <div class="detail-label">Velocidade de Rotação:</div>
+                        <div class="detail-label" data-i18n="ui.inGameMenu.physicalProperties.rotation">Velocidade de Rotação:</div>
                         <div class="detail-value">
                             <input type="range" min="-0.05" max="0.05" value="0.01" step="0.001" id="rotationSlider">
                             <span id="rotationValue">0.01</span>
@@ -1252,30 +1244,30 @@
                 </div>
                 
                 <div class="detail-group">
-                    <div class="detail-title"><i class="fas fa-water"></i> Características</div>
+                    <div class="detail-title" data-i18n="ui.inGameMenu.characteristics.title"><i class="fas fa-water"></i></div>
                     <div class="detail-row">
-                        <div class="detail-label">Água:</div>
+                        <div class="detail-label" data-i18n="ui.inGameMenu.characteristics.water"></div>
                         <div class="detail-value">
                             <input type="range" min="0" max="100" value="0" id="waterSlider">
                             <span id="waterValue">0%</span>
                         </div>
                     </div>
                     <div class="detail-row">
-                        <div class="detail-label">Nuvens:</div>
+                        <div class="detail-label" data-i18n="ui.inGameMenu.characteristics.clouds"></div>
                         <div class="detail-value">
                             <input type="range" min="0" max="100" value="0" id="cloudsSlider">
                             <span id="cloudsValue">0%</span>
                         </div>
                     </div>
                     <div class="detail-row">
-                        <div class="detail-label">Gases:</div>
+                        <div class="detail-label" data-i18n="ui.inGameMenu.characteristics.gases"></div>
                         <div class="detail-value">
                             <input type="range" min="0" max="100" value="0" id="gasSlider">
                             <span id="gasValue">0%</span>
                         </div>
                     </div>
                     <div class="detail-row">
-                        <div class="detail-label">Anéis:</div>
+                        <div class="detail-label" data-i18n="ui.inGameMenu.characteristics.rings"></div>
                         <div class="detail-value">
                             <label class="toggle-switch">
                                 <input type="checkbox" id="hasRings" >
@@ -1284,7 +1276,7 @@
                         </div>
                     </div>
                     <div class="detail-row">
-                        <div class="detail-label">Massa do Anel:</div>
+                        <div class="detail-label" data-i18n="ui.inGameMenu.characteristics.ringMass"></div>
                         <div class="detail-value">
                             <input type="range" min="1" max="100" value="0" id="ringMassSlider">
                             <span id="ringMassValue">30</span>
@@ -1293,34 +1285,29 @@
                 </div>
                 
                 <div class="btn-group">
-                    <button class="action-btn" id="applySettings">Aplicar Configurações</button>
-                    <button class="action-btn secondary" id="resetSettings">Redefinir</button>
+                    <button class="action-btn" id="applySettings" data-i18n="ui.inGameMenu.apply"></button>
+                    <button class="action-btn secondary" id="resetSettings"></button>
                 </div>
             </div>
             
             <div class="menu-section">
-                <h3 class="section-title"><i class="fas fa-sliders-h"></i> Opções</h3>
+                <h3 class="section-title"><i class="fas fa-sliders-h"></i></h3>
                 <div class="slider-container">
-                    <label>Volume:(Conversor de Rádio) <span id="volumeValue">70</span>%</label>
+                    <label data-i18n="ui.inGameMenu.options.volume"><span id="volumeValue">70</span>%</label>
                     <input type="range" min="0" max="100" value="70" id="volumeSlider">
                 </div>
                 
                 <div class="slider-container">
-                    <label>Qualidade Gráfica:</label>
+                    <label data-i18n="ui.inGameMenu.options.graphicsQuality"></label>
                     <select id="graphicsQuality">
-                        <option value="low">Baixa</option>
-                        <option value="medium" selected>Média</option>
-                        <option value="high">Alta</option>
+                        <option value="low" data-i18n="ui.inGameMenu.options.low"></option>
+                        <option value="medium" selected  data-i18n="ui.inGameMenu.options.medium"></option>
+                        <option value="high" data-i18n="ui.inGameMenu.options.high"></option>
                     </select>
                 </div>
                 
-                <div class="color-picker">
-                    <label>Cor do Espaço:</label>
-                    <input type="color" id="spaceColor" value="#050a30">
-                </div>
-                
                 <div style="display: flex; align-items: center; margin-top: 15px;">
-                    <label style="margin-right: 15px;">Sombras:</label>
+                    <label style="margin-right: 15px;"  data-i18n="ui.inGameMenu.options.shadows"></label>
                     <label class="toggle-switch">
                         <input type="checkbox" id="shadowsToggle" checked>
                         <span class="slider"></span>
@@ -1328,16 +1315,16 @@
                 </div>
                 
                 <div style="display: flex; align-items: center; margin-top: 15px;">
-                    <label style="margin-right: 15px;">Mostrar zonas de temperatura:</label>
+                    <label style="margin-right: 15px;" ></label>
                     <label class="toggle-switch">
-                        <input type="checkbox" id="showTempZones" checked>
+                        <input type="checkbox" id="showTempZones" checked  data-i18n="ui.inGameMenu.options.tempZones">
                         <span class="slider"></span>
                     </label>
                 </div>
 
                         
                 <div style="display: flex; align-items: center; margin-top: 15px;">
-                    <label style="margin-right: 15px;"><i class="fas fa-font"></i> Mostrar nomes:</label>
+                    <label style="margin-right: 15px;" data-i18n="ui.inGameMenu.options.showNames"><i class="fas fa-font"></i></label>
                     <label class="toggle-switch">
                         <input type="checkbox" id="showNames" checked>
                         <span class="slider"></span>
@@ -1346,20 +1333,20 @@
             </div>
             
             <div class="menu-section">
-                <h3 class="section-title"><i class="fas fa-atom"></i> Física</h3>
+                <h3 class="section-title"><i class="fas fa-atom"></i></h3>
                 <div class="slider-container">
-                    <label>Força Gravitacional: <span id="gravityFactorValue">500</span>%</label>
+                    <label data-i18n="ui.inGameMenu.physics.gravity"><span id="gravityFactorValue">500</span>%</label>
                     <input type="range" min="1" max="500" value="500" id="gravityFactorSlider">
                 </div>
                 
                 <div class="slider-container">
-                    <label>Resistência do Espaço: <span id="dragFactorValue">0</span>%</label>
+                    <label data-i18n="ui.inGameMenu.physics.drag"><span id="dragFactorValue">0</span>%</label>
                     <input type="range" min="0" max="20" value="0" id="dragFactorSlider">
                 </div>
                 
                 <div class="btn-group">
-                    <button class="action-btn" id="btnPhysicsPresets">Predefinições</button>
-                    <button class="action-btn secondary" id="btnResetPhysics">Redefinir</button>
+                    <button class="action-btn" id="btnPhysicsPresets" data-i18n="ui.inGameMenu.presets"></button>
+                    <button class="action-btn secondary" id="btnResetPhysics" data-i18n="ui.inGameMenu.resetPhysics"></button>
                 </div>
             </div>
             
@@ -1382,165 +1369,169 @@
             </div>
             
             <div class="menu-section">
-                <h3 class="section-title"><i class="fas fa-save"></i> Saves</h3>
+                <h3 class="section-title"><i class="fas fa-save"></i></h3>
                 <div class="btn-group">
-                    <button class="action-btn" id="">Salvar Universo</button>
-
+                    <button class="action-btn" id="btnSaveUniverse" data-i18n="ui.inGameMenu.saveUniverse"></button>
                 </div>
             </div>
 
-            
-            
 
             <div class="menu-section">
-                <h3 class="section-title"><i class="fas fa-gamepad"></i> Controles</h3>
+                <h3 class="section-title"><i class="fas fa-gamepad"></i></h3>
                 <div class="detail-row">
-                    <div class="detail-label"><i class="fas fa-mouse-pointer"></i> Clique Esquerdo:</div>
-                    <div class="detail-value">Criar astro</div>
+                    <div class="detail-label" data-i18n="ui.inGameMenu.controls.leftClick"><i class="fas fa-mouse-pointer"></i> Clique Esquerdo:</div>
+                    <div class="detail-value" data-i18n="ui.inGameMenu.controls.leftClickDesc"></div>
                 </div>
                 <div class="detail-row">
-                    <div class="detail-label"><i class="fas fa-mouse"></i> Arrastar:</div>
-                    <div class="detail-value">Definir velocidade inicial</div>
+                    <div class="detail-label" data-i18n="ui.inGameMenu.controls.drag"><i class="fas fa-mouse"></i></div>
+                    <div class="detail-value" data-i18n="ui.inGameMenu.controls.dragDesc"></div>
                 </div>
                 <div class="detail-row">
-                    <div class="detail-label"><i class="fas fa-backspace"></i> Clique Direito:</div>
-                    <div class="detail-value">Editar astro</div>
+                    <div class="detail-label" data-i18n="ui.inGameMenu.controls.rightClick"><i class="fas fa-backspace"></i></div>
+                    <div class="detail-value" data-i18n="ui.inGameMenu.controls.rightClickDesc"></div>
                 </div>
                 <div class="detail-row">
-                    <div class="detail-label"><i class="fas fa-keyboard"></i> WASD:</div>
-                    <div class="detail-value">Mover câmera</div>
+                    <div class="detail-label" data-i18n="ui.inGameMenu.controls.wasd"><i class="fas fa-keyboard"></i></div>
+                    <div class="detail-value" data-i18n="ui.inGameMenu.controls.wasdDesc"></div>
                 </div>
                 <div class="detail-row">
-                    <div class="detail-label"><i class="fas fa-search-plus"></i> Q / E:</div>
-                    <div class="detail-value">Zoom in / Zoom out</div>
+                    <div class="detail-label" data-i18n="ui.inGameMenu.controls.zoomInOut"><i class="fas fa-search-plus"></i></div>
+                    <div class="detail-value" data-i18n="ui.inGameMenu.controls.zoomInOutDesc"></div>
                 </div>
                 <div class="detail-row">
-                    <div class="detail-label"><i class="fas fa-sync-alt"></i> F:</div>
-                    <div class="detail-value">Resetar universo</div>
+                    <div class="detail-label" data-i18n="ui.inGameMenu.controls.resetUniverse"><i class="fas fa-sync-alt"></i></div>
+                    <div class="detail-value" data-i18n="ui.inGameMenu.controls.resetUniverseDesc"></div>
                 </div>
                 <div class="detail-row">
-                    <div class="detail-label"><i class="fas fa-thermometer-half"></i> T:</div>
-                    <div class="detail-value">Alternar zonas de temperatura</div>
+                    <div class="detail-label"><i class="fas fa-thermometer-half" data-i18n="ui.inGameMenu.controls.toggleTempZones"></i> T:</div>
+                    <div class="detail-value" data-i18n="ui.inGameMenu.controls.toggleTempZonesDesc"></div>
                 </div>
+                <p>Exit Tutorial?</p>
                 <div style="display:flex;justify-content:center;margin-top:24px;">
-                  <button class="action-btn secondary" id="btnBackToStart">VOLTAR</button>
+                  <a href="SIU2Dgame.html" class="action-btn secondary">Exit</a>
                 </div>
-
             </div>
         </div>
         
         <div id="editPanel">
             <div class="edit-header">
-                <h2 class="edit-title">Editar Astro</h2>
+                <h2 class="edit-title" data-i18n="ui.editPanel.title"></h2>
                 <button class="close-menu"><i class="fas fa-times"></i></button>
             </div>
             
             <div class="edit-grid">
                 <div class="edit-group">
-                    <label class="edit-label">Nome:</label>
+                    <label class="edit-label" data-i18n="ui.editPanel.name"></label>
                     <input type="text" id="editName" class="edit-input" placeholder="Nome do astro">
                 </div>
                 
                 <div class="edit-group">
-                    <label class="edit-label">Tipo:</label>
+                    <label class="edit-label" data-i18n="ui.editPanel.type"></label>
                     <input type="text" id="editType" class="edit-input" readonly>
                 </div>
                 
                 <div class="edit-group">
-                    <label class="edit-label">Classe:</label>
+                    <label class="edit-label" data-i18n="ui.editPanel.class"></label>
                     <input type="text" id="editClass" class="edit-input" readonly>
                 </div>
 
 
 
                 <div class="edit-group">
-                    <label class="edit-label">Temperatura:</label>
+                    <label class="edit-label" data-i18n="ui.editPanel.temperature"></label>
                     <input type="text" id="editTemperature" class="edit-input" readonly>
                 </div>
                 
                 <div class="edit-group">
-                    <label class="edit-label">Cor Principal:</label>
+                    <label class="edit-label" data-i18n="ui.editPanel.primaryColor"></label>
                     <input type="color" id="editColor" class="edit-color" value="#3498db">
                 </div>
                 
                 <div class="edit-group">
-                    <label class="edit-label">Cor Secundária:</label>
+                    <label class="edit-label" data-i18n="ui.editPanel.secondaryColor"></label>
                     <input type="color" id="editSecondaryColor" class="edit-color" value="#2ecc71">
                 </div>
                 
                 <div class="edit-group">
-                    <label class="edit-label">Massa:</label>
+                    <label class="edit-label" data-i18n="ui.editPanel.mass"></label>
                     <input type="number" id="editMass" class="edit-input" min="1" step="0.1">
                 </div>
                 
                 <div class="edit-group">
-                    <label class="edit-label">Gravidade:</label>
+                    <label class="edit-label" data-i18n="ui.editPanel.gravity"></label>
                     <input type="number" id="editGravity" class="edit-input" min="0.1" step="0.1">
                 </div>
                 
                 <div class="edit-group">
-                    <label class="edit-label">Velocidade de Rotação:</label>
+                    <label class="edit-label" data-i18n="ui.editPanel.rotation"></label>
                     <input type="number" id="editRotation" class="edit-input" min="-1" max="1" step="0.001">
                 </div>
                 
                 <div class="edit-group">
-                    <label class="edit-label">Água:</label>
+                    <label class="edit-label" data-i18n="ui.editPanel.water"></label>
                     <input type="number" id="editWater" class="edit-input" min="0" max="100" step="1">
                 </div>
                 
                 <div class="edit-group">
-                    <label class="edit-label">Nuvens:</label>
+                    <label class="edit-label" data-i18n="ui.editPanel.clouds"></label>
                     <input type="number" id="editClouds" class="edit-input" min="0" max="100" step="1">
                 </div>
                 
                 <div class="edit-group">
-                    <label class="edit-label">Gases:</label>
+                    <label class="edit-label" data-i18n="ui.editPanel.gases"></label>
                     <input type="number" id="editGas" class="edit-input" min="0" max="100" step="1">
                 </div>
                 
                 <div class="edit-group">
-                    <label class="edit-label">Massa do Anel:</label>
+                    <label class="edit-label" data-i18n="ui.editPanel.ringMass"></label>
                     <input type="number" id="editRingMass" class="edit-input" min="1" max="100" step="1">
                 </div>
                 
                 <div class="edit-group">
-                    <label class="edit-label">Descrição:</label>
+                    <label class="edit-label" data-i18n="ui.editPanel.description"></label>
                     <textarea id="editDescription" class="edit-input" rows="3" placeholder="Descrição do astro"></textarea>
+                </div>
+            </div>
+
+            <div class="detail-row">
+                <div class="detail-label" data-i18n="ui.editPanel.locked"></div>
+                <div class="detail-value">
+                    <button type="checkbox" id="btnLock"></button>
                 </div>
             </div>
             
             <div class="edit-btn-group">
-                <button class="edit-btn delete" id="btnDeleteAstro"><i class="fas fa-trash"></i> Deletar Astro</button>
-                <button class="edit-btn primary" id="btnApplyChanges"><i class="fas fa-check"></i> Aplicar Alterações</button>
+                <button class="edit-btn delete" id="btnDeleteAstro" data-i18n="ui.editPanel.delete"><i class="fas fa-trash"></i></button>
+                <button class="edit-btn primary" id="btnApplyChanges" data-i18n="ui.editPanel.apply"><i class="fas fa-check"></i></button>
             </div>
         </div>
         
-        <div class="notification" id="notification">Planeta criado com sucesso!</div>
+        <div class="notification" id="notification"></div>
         <div class="temperature-info" id="temperatureInfo">
-            <h3>Zonas de Temperatura:</h3>
+            <h3 data-i18n="ui.temperatureZones.title"></h3>
             <div class="zone-info">
                 <div class="zone-color" style="background-color: #ff3300;"></div>
-                <span>To Hot Zone (&gt; 500°C)</span>
+                <span data-i18n="ui.temperatureZones.tooHot">To Hot Zone (&gt; 500°C)</span>
             </div>
             <div class="zone-info">
                 <div class="zone-color" style="background-color: #ff6600;"></div>
-                <span>Hot Zone (300-500°C)</span>
+                <span data-i18n="ui.temperatureZones.hot">Hot Zone (300-500°C)</span>
             </div>
             <div class="zone-info">
                 <div class="zone-color" style="background-color: #ff9900;"></div>
-                <span>Warm Zone (100-300°C)</span>
+                <span data-i18n="ui.temperatureZones.warm">Warm Zone (100-300°C)</span>
             </div>
             <div class="zone-info">
                 <div class="zone-color" style="background-color: #33cc33;"></div>
-                <span>Habitable Zone (0-100°C)</span>
+                <span data-i18n="ui.temperatureZones.habitable">Habitable Zone (0-100°C)</span>
             </div>
             <div class="zone-info">
                 <div class="zone-color" style="background-color: #3399ff;"></div>
-                <span>Cold Zone (-100-0°C)</span>
+                <span data-i18n="ui.temperatureZones.cold">Cold Zone (-100-0°C)</span>
             </div>
             <div class="zone-info">
                 <div class="zone-color" style="background-color: #0000cc;"></div>
-                <span>Freeze Zone (&lt; -100°C)</span>
+                <span data-i18n="ui.temperatureZones.freeze">Freeze Zone (&lt; -100°C)</span>
             </div>
         </div>
     </div>
@@ -1549,5 +1540,639 @@
     <link rel="stylesheet" href="../style/css/editPanelOverride.css">
 <script src="../script/js/game.js"></script>
 <script src="../script/js/tut.js"></script>
+    <script>
+        const gravitySliderConfig = document.getElementById('gravityFactor');
+        const gravityValueConfig = document.getElementById('gravityValue');
+        if (gravitySliderConfig && gravityValueConfig) {
+          function updateGravityValueConfig() {
+            gravityValueConfig.textContent = (gravitySliderConfig.value * 100).toFixed(0) + '%';
+          }
+          gravitySliderConfig.addEventListener('input', updateGravityValueConfig);
+          updateGravityValueConfig();
+        }
+        document.querySelectorAll('.setting-control input[type="range"]').forEach(function(slider) {
+          slider.classList.add('slider');
+        });
+        document.querySelectorAll('.tab').forEach(tab => {
+          tab.addEventListener('click', function() {
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(tc => tc.classList.remove('active'));
+            tab.classList.add('active');
+            document.getElementById(tab.getAttribute('data-tab')).classList.add('active');
+          });
+        });
+        document.getElementById('btnWarnings').addEventListener('click', function() {
+          document.getElementById('warningsSidebar').classList.add('active');
+        });
+        document.getElementById('closeWarningsBtn').addEventListener('click', function() {
+          document.getElementById('warningsSidebar').classList.remove('active');
+        });
+        document.getElementById('btnPlay').addEventListener('click', () => {
+          const startScreen = document.getElementById('startScreen');
+          if (startScreen) startScreen.style.display = 'none';
+          if (typeof startGame === 'function') startGame();
+        });
+        document.getElementById('btnOptions').addEventListener('click', () => {
+          document.getElementById('configSidebar').classList.add('active');
+        });
+        document.getElementById('closeConfigBtn').addEventListener('click', () => {
+          document.getElementById('configSidebar').classList.remove('active');
+        });
+        document.getElementById('exitBtn').addEventListener('click', () => {
+          if (confirm('Do you really want to leave SIU 2D?')) {
+            window.close();
+          }
+        });
+
+        
+        const btnInstruction = document.getElementById('btnInstruction');
+        if (btnInstruction) {
+          btnInstruction.addEventListener('click', function() {
+            const startScreen = document.getElementById('startScreen');
+            if (startScreen) {
+              startScreen.style.transition = 'opacity 0.7s';
+              startScreen.style.opacity = '0';
+              setTimeout(() => {
+                window.location.href = 'tut.html';
+              }, 700);
+            } else {
+              window.location.href = 'tut.html';
+            }
+          });
+        }
+    </script>
+<script>
+
+document.addEventListener('DOMContentLoaded', function() {
+  
+  const btnTSingularity = document.getElementById('btnTSingularity');
+  const tsingularitySidebar = document.getElementById('tsingularitySidebar');
+  const closeTSingularityBtn = document.getElementById('closeTSingularityBtn');
+  
+  if (btnTSingularity && tsingularitySidebar) {
+    btnTSingularity.addEventListener('click', function() {
+      tsingularitySidebar.classList.add('active');
+      document.body.style.overflow = 'hidden';
+    });
+  }
+  
+  if (closeTSingularityBtn && tsingularitySidebar) {
+    closeTSingularityBtn.addEventListener('click', function() {
+      tsingularitySidebar.classList.remove('active');
+      document.body.style.overflow = '';
+    });
+  }
+  
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape' && tsingularitySidebar.classList.contains('active')) {
+      tsingularitySidebar.classList.remove('active');
+      document.body.style.overflow = '';
+    }
+  });
+  const btnBackToStart = document.getElementById('btnBackToStart');
+  if (btnBackToStart) {
+    btnBackToStart.onclick = function() {
+      const startScreen = document.getElementById('startScreen');
+      if (startScreen) startScreen.style.display = '';
+      const inGameMenu = document.getElementById('inGameMenu');
+      if (inGameMenu) {
+        inGameMenu.classList.remove('active');
+        inGameMenu.style.display = 'none';
+      }
+    };
+  }
+});
+</script>
+<script>
+class I18n {
+  constructor() {
+    this.locale = 'pt';
+    this.translations = {};
+    this.scriptElement = null;
+  }
+
+  async loadLocale(lang) {
+    try {
+      const response = await fetch(`../assets/locales/${lang}.json`);
+      this.translations[lang] = await response.json();
+      this.locale = lang;
+      this.applyTranslations();
+      
+      this.loadLanguageScript(lang);
+      
+      localStorage.setItem('siu2d_lang', lang);
+    } catch (error) {
+      console.error(`Failed to load ${lang} translations:`, error);
+    }
+  }
+
+  loadLanguageScript(lang) {
+    if (this.scriptElement) {
+      this.scriptElement.remove();
+    }
+    
+    this.scriptElement = document.createElement('script');
+    this.scriptElement.id = 'language-script';
+    this.scriptElement.src = `../script/js/singu.${lang}.js`;
+    document.head.appendChild(this.scriptElement);
+  }
+
+  t(key) {
+    const keys = key.split('.');
+    let value = this.translations[this.locale];
+    
+    for (const k of keys) {
+      value = value?.[k];
+      if (value === undefined) {
+        console.warn(`Translation missing for ${key} in ${this.locale}`);
+        return key;
+      }
+    }
+    return value;
+  }
+
+  applyTranslations() {
+    document.querySelectorAll('[data-i18n]').forEach(el => {
+      const key = el.getAttribute('data-i18n');
+      el.textContent = this.t(key);
+    });
+
+    document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
+      const key = el.getAttribute('data-i18n-placeholder');
+      el.placeholder = this.t(key);
+    });
+  }
+}
+
+const i18n = new I18n();
+window.i18n = i18n;
+
+document.addEventListener('DOMContentLoaded', () => {
+  const savedLang = localStorage.getItem('siu2d_lang') || 'pt';
+  
+  i18n.loadLocale(savedLang);
+  
+  const btnLanguage = document.getElementById('btnleng');
+  const languageMenu = document.getElementById('languageMenu');
+  const closeLanguageBtn = document.getElementById('closeLanguageBtn');
+  
+  const confirmationModal = document.createElement('div');
+  confirmationModal.id = 'confirmation-modal';
+  confirmationModal.innerHTML = `
+    <div class="modal-content">
+      <h3>lenguage Change</h3>
+      <p>To apply the new language, the game needs to be restarted. Do you want to continue?</p>
+      <div class="modal-buttons">
+        <button id="confirm-restart"">Yes, change.</button>
+        <button id="cancel-restart">Cancel</button>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(confirmationModal);
+  
+  let selectedLang = null;
+  
+  function showLanguageMenu() {
+    languageMenu.style.display = '';
+    setTimeout(() => languageMenu.classList.add('open'), 10);
+    document.body.style.overflow = 'hidden';
+  }
+  
+  function hideLanguageMenu() {
+    languageMenu.classList.remove('open');
+    setTimeout(() => {
+      languageMenu.style.display = 'none';
+      document.body.style.overflow = '';
+    }, 300);
+  }
+  
+  function showConfirmationModal() {
+    confirmationModal.style.display = 'flex';
+    document.body.style.overflow = 'hidden';
+  }
+  
+  function hideConfirmationModal() {
+    confirmationModal.style.display = 'none';
+    document.body.style.overflow = '';
+  }
+  
+  btnLanguage.addEventListener('click', showLanguageMenu);
+  closeLanguageBtn.addEventListener('click', hideLanguageMenu);
+  
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+      if (languageMenu.style.display !== 'none') {
+        hideLanguageMenu();
+      }
+      if (confirmationModal.style.display === 'flex') {
+        hideConfirmationModal();
+      }
+    }
+  });
+  
+  const langItems = document.querySelectorAll('.language-list li');
+  langItems.forEach(item => {
+    item.addEventListener('click', function() {
+      const lang = this.getAttribute('data-lang');
+      const currentLang = localStorage.getItem('siu2d_lang') || 'pt';
+      
+      if (lang === currentLang) {
+        hideLanguageMenu();
+        return;
+      }
+      
+      selectedLang = lang;
+      showConfirmationModal();
+      hideLanguageMenu();
+    });
+  });
+  
+  document.getElementById('confirm-restart')?.addEventListener('click', () => {
+    localStorage.setItem('siu2d_lang', selectedLang);
+    location.reload();
+  });
+  
+  document.getElementById('cancel-restart')?.addEventListener('click', hideConfirmationModal);
+});
+</script>
+<style>
+#confirmation-modal {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.7);
+  z-index: 1000;
+  justify-content: center;
+  align-items: center;
+}
+
+#confirmation-modal .modal-content {
+  background: linear-gradient(135deg, #1a2a4a, #0c1427);
+  padding: 30px;
+  border-radius: 15px;
+  width: 90%;
+  max-width: 500px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+  border: 1px solid #2a3a5a;
+  text-align: center;
+}
+
+#confirmation-modal h3 {
+  color: #64b5f6;
+  font-size: 24px;
+  margin-bottom: 20px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+#confirmation-modal p {
+  color: #e0f7fa;
+  font-size: 18px;
+  line-height: 1.6;
+  margin-bottom: 30px;
+}
+
+#confirmation-modal .modal-buttons {
+  display: flex;
+  justify-content: center;
+  gap: 20px;
+}
+
+#confirmation-modal button {
+  padding: 12px 30px;
+  border: none;
+  border-radius: 50px;
+  font-size: 16px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+#confirm-restart {
+  background: linear-gradient(135deg, #4caf50, #2e7d32);
+  color: white;
+  box-shadow: 0 4px 15px rgba(76, 175, 80, 0.4);
+}
+
+#confirm-restart:hover {
+  background: linear-gradient(135deg, #66bb6a, #388e3c);
+  transform: translateY(-3px);
+  box-shadow: 0 6px 20px rgba(76, 175, 80, 0.6);
+}
+
+#cancel-restart {
+  background: linear-gradient(135deg, #f44336, #c62828);
+  color: white;
+  box-shadow: 0 4px 15px rgba(244, 67, 54, 0.4);
+}
+
+#cancel-restart:hover {
+  background: linear-gradient(135deg, #ef5350, #d32f2f);
+  transform: translateY(-3px);
+  box-shadow: 0 6px 20px rgba(244, 67, 54, 0.6);
+}
+</style>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+
+  document.addEventListener('keydown', function(e) {
+    const inGameMenu = document.getElementById('inGameMenu');
+    const startScreen = document.getElementById('startScreen');
+    
+    if (inGameMenu && window.getComputedStyle(inGameMenu).display !== 'none' && 
+        (e.key === 'x' || e.key === 'X')) {
+      
+      const btnBackToStart = document.getElementById('btnBackToStart');
+      if (btnBackToStart) {
+        btnBackToStart.click();
+        
+        const notification = document.getElementById('notification');
+        if (notification) {
+          notification.textContent = 'Bk...';
+          notification.style.display = 'block';
+          setTimeout(() => {
+            notification.style.display = 'none';
+          }, 2000);
+        }
+      }
+    }
+  });
+});
+</script>
+<div id="achievementNotification" style="display:none;"></div>
+    <div id="consoleSidebar">
+        <div class="console-panel">
+            <button class="close-console" id="closeConsoleBtn" title="Fechar Console">&times;</button>
+            
+            <div class="console-header">
+                <h2>Emulador</h2>
+                <p>Selecione uma plataforma para emulação</p>
+            </div>
+            
+            <div class="console-options">
+                <div class="console-option pc" data-platform="pc">
+                    <i class="fas fa-desktop"></i>
+                    <div class="option-content">
+                        <h3>PC</h3>
+                        <p>Emulação para computadores pessoais</p>
+                    </div>
+                </div>
+                
+                <div class="console-option android" data-platform="android">
+                    <i class="fab fa-android"></i>
+                    <div class="option-content">
+                        <h3>Android</h3>
+                        <p>Emulação para dispositivos Android</p>
+                    </div>
+                </div>
+                
+                <div class="console-option ios" data-platform="ios">
+                    <i class="fab fa-apple"></i>
+                    <div class="option-content">
+                        <h3>iOS</h3>
+                        <p>Emulação para dispositivos Apple iOS</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const btnConsole = document.getElementById('btnConsole');
+            const consoleSidebar = document.getElementById('consoleSidebar');
+            const closeConsoleBtn = document.getElementById('closeConsoleBtn');
+            const consoleOptions = document.querySelectorAll('.console-option');
+            
+            function openConsole() {
+                consoleSidebar.classList.add('open');
+                document.body.style.overflow = 'hidden';
+            }
+            function closeConsole() {
+                consoleSidebar.classList.remove('open');
+                document.body.style.overflow = '';
+            }
+            
+            if (btnConsole) {
+                btnConsole.addEventListener('click', openConsole);
+            }
+            
+            if (closeConsoleBtn) {
+                closeConsoleBtn.addEventListener('click', closeConsole);
+            }
+            
+            document.addEventListener('keydown', function(e) {
+                if (e.key === 'Escape' && consoleSidebar.classList.contains('open')) {
+                    closeConsole();
+                }
+            });
+            
+            consoleSidebar.addEventListener('click', function(e) {
+                if (e.target === consoleSidebar) {
+                    closeConsole();
+                }
+            });
+            
+            consoleOptions.forEach(option => {
+                option.addEventListener('click', function() {
+                    const platform = this.getAttribute('data-platform');
+                    console.log(`Plataforma selecionada: ${platform}`);
+                    
+                    switch(platform) {
+                        case 'pc':
+                            alert('Emulação para PC selecionada');
+                            break;
+                        case 'android':
+                            alert('Emulação para Android selecionada');
+                            break;
+                        case 'ios':
+                            alert('Emulação para iOS selecionada');
+                            break;
+                    }
+                    
+                    closeConsole();
+                });
+            });
+        });
+    </script>
+<style>
+    #mobileControls {
+        position: fixed;
+        bottom: 20px;
+        left: 0;
+        right: 0;
+        display: none;
+        justify-content: space-between;
+        padding: 0 15px;
+        z-index: 1000;
+        pointer-events: none;
+    }
+
+    #mobileControls .control-group {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        pointer-events: auto;
+    }
+
+    #mobileControls .movement-controls {
+        display: grid;
+        grid-template-areas:
+            ". up ."
+            "left center right"
+            ". down .";
+        gap: 8px;
+    }
+
+    #mobileControls button {
+        width: 20px;
+        height: 20px;
+        border-radius: 50%;
+        background: rgba(255, 255, 255, 0.7);
+        border: 2px solid rgba(0, 0, 0, 0.3);
+        font-size: 18px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        touch-action: manipulation;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+    }
+
+    #mobileControls button:active {
+        background: rgba(200, 200, 200, 0.9);
+        transform: scale(0.95);
+    }
+
+    #upBtn { grid-area: up; }
+    #leftBtn { grid-area: left; }
+    #centerBtn { grid-area: center; background: rgba(255, 150, 150, 0.7); }
+    #rightBtn { grid-area: right; }
+    #downBtn { grid-area: down; }
+
+    #mobileControls .action-controls {
+        justify-content: flex-end;
+    }
+
+    #mobileControls .action-controls button {
+        width: 25px;
+        height: 25px;
+        font-size: 16px;
+        margin-bottom: 8px;
+    }
+
+    #modeToggleBtn {
+        background: rgba(150, 200, 255, 0.7);
+    }
+
+    #modeToggleBtn.edit-mode {
+        background: rgba(255, 200, 150, 0.9);
+    }
+
+    @media (max-width: 768px) {
+        #mobileControls button {
+            width: 25px;
+            height: 25px;
+            font-size: 16px;
+        }
+        
+        #mobileControls .action-controls button {
+            width: 20px;
+            height: 20px;
+        }
+    }
+
+    @media (max-width: 480px) {
+        #mobileControls {
+            padding: 0 10px;
+        }
+        
+        #mobileControls button {
+            width: 20px;
+            height: 20px;
+            font-size: 14px;
+        }
+        
+        #mobileControls .action-controls button {
+            width: 35px;
+            height: 35px;
+            font-size: 13px;
+        }
+    }
+
+    @media (max-height: 500px) {
+        #mobileControls {
+            bottom: 10px;
+        }
+        
+        #mobileControls button {
+            width: 35px;
+            height: 35px;
+        }
+    }
+
+    @media (orientation: landscape) {
+        #mobileControls {
+            flex-direction: row;
+        }
+    }
+
+    @media (orientation: portrait) {
+        #mobileControls {
+            flex-direction: row;
+            flex-wrap: wrap;
+        }
+        
+        #mobileControls .action-controls {
+            flex-direction: row;
+            gap: 8px;
+        }
+    }
+</style>
+<style>
+    #mobileControls button {
+        width: 50px;
+        height: 50px;
+        border-radius: 50%;
+        background: rgba(255, 255, 255, 0.7);
+        border: 2px solid rgba(0, 0, 0, 0.3);
+        font-size: 18px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        touch-action: manipulation;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+    }
+
+    #mobileControls button:active {
+        background: rgba(200, 200, 200, 0.9);
+        transform: scale(0.95);
+    }
+
+    #resetUniverseBtn {
+        background: rgba(255, 150, 150, 0.7);
+    }
+</style>
+
+<div id="mobileControls">
+    <div class="control-group movement-controls">
+        <button id="upBtn">↑</button>
+        <button id="leftBtn">←</button>
+        <button id="rightBtn">→</button>
+        <button id="downBtn">↓</button>
+    </div>
+    
+    <div class="control-group action-controls">
+        <button id="zoomInBtn">+</button>
+        <button id="zoomOutBtn">-</button>
+        <button id="centerBtn">F</button>
+        <button id="modeToggleBtn">R</button>
+    </div>
+</div>
+</body>
+</html>
 </body>
 </html>
