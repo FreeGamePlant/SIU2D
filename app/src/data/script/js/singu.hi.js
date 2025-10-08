@@ -9,7 +9,6 @@ function displayMessage(text, sender) {
 const responseHistory = new Map();
 const MAX_HISTORY_PER_TERM = 100;
 const STAR_EMOJI = 'T Singularity ';
-
 const responseDatabase = {
 "धूमकेतु": [
     "☄️ धूमकेतु बर्फीले पिंड हैं जो तारों के पास आने पर पूँछ विकसित करते हैं! SIU 2D में, आप इन्हें 'Create Astros' मेन्यू में बना सकते हैं",
@@ -38,7 +37,6 @@ const responseDatabase = {
     "💧 धूमकेतुओं का पानी वाष्पित होने पर ग्रह के संसाधन प्रणाली में गिना जाता है - ग्रह पैनल में देखें",
     "🌟 सर्वोत्तम परिणामों के लिए धूमकेतु 'Minor Bodies' मेन्यू में -100°C से -50°C के बीच प्रारंभिक तापमान पर बनाएँ"
 ],
-
 "ब्लैक होल": [
     "🕳️ ब्लैक होल का न्यूनतम द्रव्यमान 1 ट्रिलियन (1e12) यूनिट होता है - इन्हें 'Exotic Bodies' मेन्यू में बनाएँ",
     "🌀 खेल में त्रिज्या R = ∛(द्रव्यमान)/1000 के रूप में गणना की जाती है - यह गेमप्ले के लिए श्वार्ज़स्चिल्ड रेडियस को सरल करता है",
@@ -66,7 +64,6 @@ const responseDatabase = {
     "🌌 टिप: स्थानांतरण वास्तविक समय में देखने के लिए ब्लैक होल और तारे की द्विक प्रणाली बनाएँ",
     "✨ पूर्ण अनुभव के लिए Options > Audio में 'Singularity' एम्बिएंट संगीत सक्रिय करें"
 ],
-
 "गुरुत्वाकर्षण": [
     "⚖️ वैश्विक समायोजन 0% से 500% तक Menu > Physics > Gravitational Constant में",
     "📏 डिफ़ॉल्ट G स्थिरांक: 6.67430e-11 N·m²/kg² - वैकल्पिक ब्रह्मांड अनुकरण के लिए परिवर्तनीय",
@@ -94,7 +91,6 @@ const responseDatabase = {
     "💥 टक्करों में गुरुत्वाकर्षण मुक्त ऊर्जा निर्धारित करता है - सीधे प्रभावों के लिए E ∝ M²/R",
     "✨ टिप: स्थिर कक्षाओं के लिए प्रारंभिक वेग स्थानीय पलायन वेग का ≈80% होना चाहिए"
 ],
-
 "तारा": [
     "⭐ न्यूनतम द्रव्यमान: 15 मिलियन यूनिट - 'Stellar Bodies' मेन्यू में बनाएँ",
     "🌞 सूर्य जैसे तारे के लिए: द्रव्यमान ~1.989e30 किग्रा (खेल में 1 सौर यूनिट)",
@@ -121,7 +117,6 @@ const responseDatabase = {
     "🔭 विवरण देखने के लिए, ज़ूम (माउस व्हील) का उपयोग करें और समय की गति कम करें",
     "✨ टिप: द्विक तारों में P-प्रकार (जोड़े के चारों ओर) या S-प्रकार (एक के चारों ओर) कक्षाओं में ग्रह हो सकते हैं"
 ],
-
 "ग्रह": [
     "🪐 द्रव्यमान: 5K-30.5K (चट्टानी), 105K-2.5M (गैसीय) - 'Planetary Bodies' मेन्यू में बनाएँ",
     "🌍 वर्ग: चट्टानी (1-11), गैसीय (1-6), बौने - द्रव्यमान/तापमान द्वारा स्वचालित रूप से निर्धारित",
@@ -149,7 +144,6 @@ const responseDatabase = {
     "✨ टिप: कक्षीय अनुनाद (जैसे 2:3) वाले ग्रह लंबी अवधि में स्थिरता बनाए रखते हैं",
     "🔭 ग्रहों की सतह विवरण देखने के लिए 'Observatory' मोड (O) का उपयोग करें"
 ],
-
 "उल्कापिंड": [
     "🌠 उल्कापिंड क्षुद्रग्रहों से छोटे चट्टानी टुकड़े होते हैं (1mm-1m) - टक्करों में स्वचालित रूप से उत्पन्न",
     "💫 औसत गति: 20-70 किमी/से - वास्तविक समय मोड में तेज़ धारियों के रूप में दृश्यमान",
@@ -172,7 +166,6 @@ const responseDatabase = {
     "🌠 रोचक तथ्य: बैरिंगर क्रेटर बनाने वाले उल्कापिंड का व्यास केवल 50 मीटर था",
     "🌟 दृश्य प्रभाव: उच्च गति प्रक्षेपवक्र देखने के लिए 'Bright Trails' सक्रिय करें"
 ],
-
 "उल्का": [
     "☄️ उल्का उल्कापिंड हैं जो वायुमंडल में जल रहे हैं - खेल में 'टूटते तारे'",
     "🔥 प्लाज्मा तापमान: 1,500-3,000°C - रंगीन चिंगारियों के रूप में दृश्यमान",
@@ -195,7 +188,6 @@ const responseDatabase = {
     "💧 जलीय उल्का: महासागर मोड में दृश्यमान जलमग्न गड्ढे बनाते हैं",
     "🌌 स्क्रीनशॉट के लिए: P दबाकर सही क्षण पर रोकें और F12 का उपयोग करें"
 ],
-
 "क्षुद्रग्रह": [
     "🪨 क्षुद्रग्रह: चट्टानी पिंड 1m-1000km - 'Minor Bodies' मेन्यू में बनाएँ",
     "🌌 वर्ग: C (कार्बोनेसस), S (सिलिकेट), M (धात्विक) - पैनल में चयन करें",
@@ -218,7 +210,6 @@ const responseDatabase = {
     "🌠 रोचक तथ्य: क्षुद्रग्रह सेरेस बौने ग्रह के रूप में वर्गीकृत है",
     "🌟 ग्रह रक्षा: 'Impact Mode' के साथ रक्षा प्रणालियों का परीक्षण करें"
 ],
-
 "ग्रहिका": [
     "🌑 ग्रहिका: 100-500km के बीच पिंड - क्षुद्रग्रहों और ग्रहों के बीच मध्यवर्ती चरण",
     "🌌 'Minor Bodies' > 'Planetoids' मेन्यू में द्रव्यमान 1e18-1e20 किग्रा के साथ बनाएँ",
@@ -241,7 +232,6 @@ const responseDatabase = {
     "🌠 वलय: कुछ ग्रहिकाओं में महीन वलय हो सकते हैं - 'Features' में सक्रिय करें",
     "🌟 अन्वेषण मोड: सतह मैप करने के लिए सोंडे भेजें"
 ],
-
 "गैसीय ग्रह": [
     "🪐 गैसीय विशाल: ठोस सतह के बिना विशाल ग्रह - द्रव्यमान > 100K यूनिट",
     "🌪️ 'Planetary Bodies' > 'Gaseous' मेन्यू में न्यूनतम द्रव्यमान 105K के साथ बनाएँ",
@@ -264,7 +254,6 @@ const responseDatabase = {
     "🌟 मिनी-नेपच्यून के लिए: द्रव्यमान 10-20 पृथ्वी द्रव्यमान तक घटाएँ",
     "💥 टकराव: टकराते गैसीय विशाल हाइड्रोजन की क्षणिक तारे बनाते हैं"
 ],
-
 "ब्राउन ड्वार्फ": [
     "🟤 ब्राउन ड्वार्फ: 'असफल तारे' 13-80 बृहस्पति द्रव्यमान के साथ",
     "🌡️ तापमान: 300-3000K - स्थिर हाइड्रोजन संलयन के लिए बहुत ठंडे",
@@ -287,7 +276,6 @@ const responseDatabase = {
     "🌌 उदाहरण: WISE 0855 - पूर्वनिर्धारित मॉडल",
     "📉 निचली सीमा: 13 MJup से नीचे वस्तुएँ ग्रहों के रूप में वर्गीकृत होती हैं"
 ],
-
 "रेड ड्वार्फ": [
     "🔴 रेड ड्वार्फ: छोटे, ठंडे तारे (M-प्रकार) - द्रव्यमान 0.08-0.5 सौर",
     "🌡️ तापमान: 2,400-3,700K - विशेषता लाल रंग",
@@ -310,7 +298,6 @@ const responseDatabase = {
     "💫 रोचक तथ्य: प्रॉक्सिमा सेंटॉरी सूर्य के सबसे निकट का तारा है",
     "🌡️ सतही तापमान: पैनल में समायोज्य - डिफ़ॉल्ट 3300K"
 ],
-
 "विशाल तारा": [
     "🌟 विशाल तारे: मध्यम तारों का मुख्य अनुक्रम के बाद विकासवादी चरण",
     "🌡️ वर्ग: लाल विशाल (K, M), नीले विशाल (B, A) - दुर्लभ",
@@ -696,7 +683,6 @@ const responseDatabase = {
     "कंप्यूटर: ब्रह्मांड साफ़ करने के लिए F दबाएँ, चयन और बनाने के लिए माउस बाएँ क्लिक करें, बनाए गए खगोलीय पिंड पर माउस दाएँ क्लिक करने से जानकारी स्क्रीन दिखाई देगी, चलने के लिए WASD कुंजियाँ, ज़ूम के लिए QE कुंजियाँ, मोबाइल उपकरण: सामान्य रूप से चलने के लिए जॉयस्टिक का उपयोग करें, और ज़ूम के लिए + और - बटन का उपयोग करें, मेन्यू खोलने के लिए, ऊपरी कोने में बटन दबाएँ, और सब कुछ रीसेट करने के लिए 'F' बटन दबाएँ, और क्रिया बदलने के लिए 'O' बटन दबाएँ, दो क्रियाएँ हैं, नीला 'O' बटन निर्माण मोड पर है, मेन्यू में चुनने के लिए कई खगोलीय पिंड हैं, किसी एक पर क्लिक करें और अंतरिक्ष में रखें और अनुकरण करें, लाल दोबारा क्लिक करने पर सूचना मोड पर है किसी खगोलीय पिंड पर क्लिक करने से उसकी जानकारी दिखाई देती है, खगोलीय पिंड का मार्ग प्रोग्राम करने के लिए क्लिक करें या टैप करें और खींचें, आपकी अंतरिक्ष यात्रा शुभ हो! 🌌"
 ]  
 };
- 
 const followUpDatabase = {
     "धूमकेतु": [
         "☄️ अद्भुत, है ना? क्या आप अभी एक बनाना चाहेंगे?",
@@ -1271,7 +1257,6 @@ const followUpDatabase = {
         "✨ क्या आप और जानना चाहेंगे कि क्वार्क तारे कैसे सिद्धांतित हैं और उनके निहितार्थ क्या हैं?"
     ]
 };
-
 const contextFollowUps = {
     "default": [
         "✨ इस ब्रह्मांडीय व्याख्या के बारे में कैसा लगा?",
@@ -1296,14 +1281,11 @@ const contextFollowUps = {
         "🌈 ब्रह्मांड आपकी जिज्ञासा के लिए आभारी है!"
     ]
 };
-
 const contextSystem = {
     lastTopic: null,
     lastFollowUp: null,
-    
     affirmativeResponses: ["हाँ", "हां", "हा", "ह", "बिल्कुल", "जरूर", "ठीक", "चलो", "हो सकता है", "कृपया"],
     negativeResponses: ["नहीं", "न", "ना", "नो", "नकारात्मक", "नही", "शायद बाद में", "अभी नहीं"],
-    
     positiveResponses: {
         "ब्लैक होल": [
             "🌌 आओ सिम्युलेट करें! पहले ब्लैक होल के पास 1e30 द्रव्यमान का तारा बनाएँ...",
@@ -1666,7 +1648,6 @@ const contextSystem = {
             "✨ निर्माण विकल्प देखने के लिए किसी भी समय 'मदद' टाइप करें"
         ]
     },
-    
     negativeResponses: {
         "ब्लैक होल": [
             "🕳️ कोई बात नहीं! ब्लैक होल इंतजार कर सकते हैं...",
@@ -1960,35 +1941,25 @@ const contextSystem = {
             "🪐 हम सभी तारकीय धूल से बने हैं!"
         ]
     },
-    
     isAffirmative: (input) => contextSystem.affirmativeResponses.includes(input.toLowerCase()),
     isNegative: (input) => contextSystem.negativeResponses.includes(input.toLowerCase()),
-    
     getPositiveResponse: () => {
         if (!contextSystem.lastTopic) return contextSystem.positiveResponses.default[0];
-        
         const responses = contextSystem.positiveResponses[contextSystem.lastTopic] || 
                           contextSystem.positiveResponses.default;
-        
         return responses[Math.floor(Math.random() * responses.length)];
     },
-    
     getNegativeResponse: () => {
         if (!contextSystem.lastTopic) return contextSystem.negativeResponses.default[0];
-        
         const responses = contextSystem.negativeResponses[contextSystem.lastTopic] || 
                           contextSystem.negativeResponses.default;
-        
         return responses[Math.floor(Math.random() * responses.length)];
     },
-    
     resetContext: () => {
         contextSystem.lastTopic = null;
         contextSystem.lastFollowUp = null;
     }
 };
-
- 
 const mathSystem = {
     responses: [
         "🧮 परिणाम: {expression} = {result}",
@@ -2059,46 +2030,35 @@ const mathSystem = {
         "🌠 पल्सर हल हुआ: {expression} = {result}",
         "🛰️ प्लाज्मा गोला संगणित: {expression} = {result}"
     ],
-    
     usedResponses: [],
-    
     isMathQuery: (input) => {
         return /[0-9+\-*/\^().]/.test(input) && 
                !/[a-z]/.test(input) && 
                input.split('').filter(char => '0123456789'.includes(char)).length >= 2;
     },
-    
     calculate: (expression) => {
         try {
             const sanitized = expression
                 .replace(/\^/g, '**')
                 .replace(/[^0-9+\-*/\s().]/g, '');
-            
             if (!/^[\d\s+\-*/().]+$/.test(sanitized)) {
                 throw new Error("अमान्य अभिव्यक्ति");
             }
-            
             const result = eval(sanitized);
-            
-             
             let availableResponses = mathSystem.responses;
             if (mathSystem.usedResponses.length > 0) {
                 availableResponses = mathSystem.responses.filter(r => 
                     !mathSystem.usedResponses.includes(r)
                 );
             }
-            
             if (availableResponses.length === 0) {
                 mathSystem.usedResponses = [];
                 availableResponses = mathSystem.responses;
             }
-            
             const responseTemplate = availableResponses[
                 Math.floor(Math.random() * availableResponses.length)
             ];
-            
             mathSystem.usedResponses.push(responseTemplate);
-            
             return responseTemplate
                 .replace("{expression}", expression)
                 .replace("{result}", result);
@@ -2107,12 +2067,9 @@ const mathSystem = {
         }
     }
 };
-
- 
 const greetingsSystem = {
     greetings: ["नमस्ते", "नमस्कार", "हैलो", "हाय", "सुप्रभात", "शुभ दोपहर", "शुभ रात्रि", "अभिवादन", "हे", "अरे", "ब्रह्मांडीय अभिवादन", "तारकीय सुप्रभात", "नमस्ते सिंगुलैरिटी", "ओला", "ईएई", "स्वागत"],
     farewells: ["अलविदा", "विदा", "फिर मिलेंगे", "बाय", "समाप्त", "बाहर निकलना", "बंद करना", "एग्ज़िट", "चलते हैं", "जल्द मिलते हैं", "डिस्कनेक्ट", "सत्र समाप्त", "सिंगुलैरिटी को विदा", "टाटा", "शुभ रात्रि"],
-    
     greetingsResponses: [
         "✨ नमस्ते, ब्रह्मांडीय अन्वेषक! मैं आपकी तारकीय यात्रा में कैसे सहायता कर सकता हूँ?",
         "🚀 सिंगुलैरिटी यू 2डी में आपका स्वागत है! अद्भुत ब्रह्मांड बनाने के लिए तैयार हैं?",
@@ -2140,7 +2097,6 @@ const greetingsSystem = {
         "🪐 ग्रहीय वलय अभिवादन में दोलन! स्वागत है!",
         "✨ तारकीय ऊर्जा चैनलाइज़्ड! सिंगुलैरिटी आपकी सेवा में!"
     ],
-    
     farewellResponses: [
         "🌠 अगली बार मिलते हैं, तारों के यात्री! आपकी यात्रा महाकाव्य हो!",
         "🛸 ब्रह्मांड में शुभ यात्रा! नए सवाल आने पर वापस आएं!",
@@ -2168,111 +2124,75 @@ const greetingsSystem = {
         "🛸 विदाई यान कक्षा में! शीघ्र लौटें!",
         "✨ अंतिम तारकीय स्पंदन! डिस्कनेक्टिंग..."
     ],
-    
     isGreeting: (input) => greetingsSystem.greetings.includes(input.toLowerCase()),
     isFarewell: (input) => greetingsSystem.farewells.includes(input.toLowerCase()),
-    
     getRandomGreeting: () => {
         return greetingsSystem.greetingsResponses[
             Math.floor(Math.random() * greetingsSystem.greetingsResponses.length)
         ];
     },
-    
     getRandomFarewell: () => {
         return greetingsSystem.farewellResponses[
             Math.floor(Math.random() * greetingsSystem.farewellResponses.length)
         ];
     }
 };
-
- 
 function getUniqueResponse(term) {
     if (!responseHistory.has(term)) {
         responseHistory.set(term, []);
     }
-    
     const usedResponses = responseHistory.get(term);
     let availableResponses = responseDatabase[term];
-    
-     
     if (usedResponses.length > 0) {
         availableResponses = availableResponses.filter(r => !usedResponses.includes(r));
     }
-    
-     
     const response = availableResponses.length > 0 
         ? availableResponses[Math.floor(Math.random() * availableResponses.length)]
         : responseDatabase[term][0];
-    
-     
     usedResponses.push(response);
-    
-     
     if (usedResponses.length > MAX_HISTORY_PER_TERM) {
         usedResponses.shift();
     }
-    
     return response;
 }
-
-
-
-
 const responseExpander = {
-     
     probabilities: {
         single: 0.2,        
         withFollowUp: 0.3,   
         expanded: 0.4,       
         fullCombo: 0.1       
     },
-    
-     
     getExpandedResponse: (term, baseResponse) => {
         const responses = [...responseDatabase[term]];
-        
-         
         const baseIndex = responses.indexOf(baseResponse);
         if (baseIndex !== -1) {
             responses.splice(baseIndex, 1);
         }
-        
-         
         const additionalCount = Math.floor(Math.random() * 3) + 1;
         const additionalResponses = [];
-        
-         
         for (let i = 0; i < additionalCount && responses.length > 0; i++) {
             const randomIndex = Math.floor(Math.random() * responses.length);
             additionalResponses.push(responses[randomIndex]);
             responses.splice(randomIndex, 1);
         }
-        
-         
         return [baseResponse, ...additionalResponses].join(' ');
     },
-    
-     
     selectResponseType: (term, baseResponse) => {
         const rand = Math.random();
         let cumulative = 0;
-        
         for (const [type, prob] of Object.entries(responseExpander.probabilities)) {
             cumulative += prob;
             if (rand < cumulative) {
                 switch(type) {
                     case 'single':
                         return [baseResponse];
-                    
                     case 'withFollowUp':
                         return [
                             baseResponse,
                             ...responseExpander.getFollowUp(term)
                         ];
-                    
                     case 'expanded':
                         return [responseExpander.getExpandedResponse(term, baseResponse)];
-                    
                     case 'fullCombo':
                         return [
                             responseExpander.getExpandedResponse(term, baseResponse),
@@ -2281,87 +2201,62 @@ const responseExpander = {
                 }
             }
         }
-        
         return [baseResponse];  
     },
-    
-     
     getFollowUp: (term) => {
         const followUps = followUpDatabase[term] || contextFollowUps.default;
         return [followUps[Math.floor(Math.random() * followUps.length)]];
     }
 };
-
-
- 
 async function getBotResponse(input) {
     const cleanInput = input.toLowerCase().trim();
     let responses = [];
-    
-     
     if (contextSystem.lastFollowUp) {
         if (contextSystem.isAffirmative(cleanInput)) {
             responses.push(contextSystem.getPositiveResponse());
             contextSystem.resetContext();
             return responses;
         }
-        
         if (contextSystem.isNegative(cleanInput)) {
             responses.push(contextSystem.getNegativeResponse());
             contextSystem.resetContext();
             return responses;
         }
     }
-    
-     
     if (greetingsSystem.isGreeting(cleanInput)) {
         responses.push(greetingsSystem.getRandomGreeting());
         contextSystem.resetContext();
         return responses;
     }
-    
     if (greetingsSystem.isFarewell(cleanInput)) {
         responses.push(greetingsSystem.getRandomFarewell());
         contextSystem.resetContext();
         return responses;
     }
-    
-     
     if (mathSystem.isMathQuery(cleanInput)) {
         responses.push(mathSystem.calculate(cleanInput));
         contextSystem.resetContext();
         return responses;
     }
-    
     let matchedTerm = null;
     for (const term in responseDatabase) {
         if (cleanInput.includes(term)) {
             matchedTerm = term;
             const baseResponse = getUniqueResponse(term);
-            
-             
             const expandedResponses = responseExpander.selectResponseType(term, baseResponse);
             responses.push(...expandedResponses);
-            
-             
             if (expandedResponses.length > 1) {
                 const lastMessage = expandedResponses[expandedResponses.length - 1];
-                
-                 
                 const isFollowUp = (followUpDatabase[term] || []).includes(lastMessage) || 
                                    contextFollowUps.default.includes(lastMessage);
-                
                 if (isFollowUp) {
                     contextSystem.lastTopic = term;
                     contextSystem.lastFollowUp = lastMessage;
                 }
             }
-            
             return responses;
         }
     }
-    
-     
 const fallbacks = [
     "🌌 मेरे तारकीय डेटाबेस में यह नहीं मिला... 'धूमकेतु', 'ब्लैक होल' या 'नियंत्रण' के बारे में पूछें!",
     "🛸 मेरा ज्ञान ब्रह्मांडीय है - खेल भौतिकी या ब्रह्मांडीय तत्वों के बारे में पूछने का प्रयास करें",
@@ -2371,23 +2266,15 @@ const fallbacks = [
     "🪐 ब्रह्मांडीय संकेत: 'गुरुत्वाकर्षण', 'तारा', 'ग्रह' या 'विकास' जैसे शब्द आज़माएँ!",
     "⚡ नया तारकीय संदेश मिला! 'क्वासर कैसे बनाएं?' या 'रहने योग्य क्षेत्र क्या है?' के रूप में पूछें"
 ];
-    
     responses.push(fallbacks[Math.floor(Math.random() * fallbacks.length)]);
-    
-     
     if (Math.random() < 0.2) {
         const followUp = followUpDatabase.default[Math.floor(Math.random() * followUpDatabase.default.length)];
         responses.push(followUp);
-        
-         
         contextSystem.lastTopic = "default";
         contextSystem.lastFollowUp = followUp;
     }
-    
     return responses;
 }
-
- 
 function toggleStarPulse(active) {
     const star = document.getElementById('star');
     if (star) {
@@ -2398,86 +2285,63 @@ function toggleStarPulse(active) {
         }
     }
 }
-
 function createMessage(text, className) {
     const message = document.createElement('div');
     message.classList.add(className);
-    
-     
     if (className === 'bot-message') {
         const starSpan = document.createElement('span');
         starSpan.textContent = STAR_EMOJI + ' ';
         starSpan.classList.add('star-emoji');
         message.appendChild(starSpan);
     }
-    
     const textSpan = document.createElement('span');
     textSpan.textContent = text;
     message.appendChild(textSpan);
-    
     return message;
 }
-
- 
 function initializeChat() {
     const chatBox = document.getElementById('chat-box');
     if (!chatBox) {
         console.error('Erro #20fgp');
         return;
     }
-    
     const botMessage = createMessage(
         greetingsSystem.getRandomGreeting(),
         'bot-message'
     );
     chatBox.appendChild(botMessage);
 }
-
- 
 async function showThinking(chatBox) {
     return new Promise(async (resolve) => {
-         
         const thinkingMsg = createMessage(' : Pensando', 'bot-message');
         chatBox.appendChild(thinkingMsg);
         const thinkingText = thinkingMsg.querySelector('span:last-child');
-        
         let dots = 0;
         const thinkDuration = Math.floor(Math.random() * 3000) + 3000;  
-        
         const thinkInterval = setInterval(() => {
             dots = (dots + 1) % 4;
             thinkingText.textContent = ` : Pensando${'.'.repeat(dots)}`;
             chatBox.scrollTop = chatBox.scrollHeight;
         }, 500);
-        
-         
         await new Promise(r => setTimeout(r, thinkDuration));
         clearInterval(thinkInterval);
         chatBox.removeChild(thinkingMsg);
-        
-         
         const searchingMsg = createMessage('Buscando', 'bot-message');
         chatBox.appendChild(searchingMsg);
         const searchingText = searchingMsg.querySelector('span:last-child');
-        
         dots = 0;
         const searchDuration = Math.floor(Math.random() * 2000) + 2000;  
-        
         const searchInterval = setInterval(() => {
             dots = (dots + 1) % 4;
             searchingText.textContent = ` : Buscando dados${'.'.repeat(dots)}`;
             chatBox.scrollTop = chatBox.scrollHeight;
         }, 500);
-        
-         
         await new Promise(r => setTimeout(r, searchDuration));
         clearInterval(searchInterval);
         chatBox.removeChild(searchingMsg);
-        
         resolve();
     });
 }
- 
 function humanTypeWriter(element, text, speed = 30) {
     return new Promise((resolve) => {
         let i = 0;
@@ -2485,19 +2349,15 @@ function humanTypeWriter(element, text, speed = 30) {
         let isPaused = false;
         let pauseEnd = 0;
         let dotsInterval = null;
-        
         toggleStarPulse(true);
-        
         function startDotsAnimation() {
             let dots = 0;
             const originalText = currentText;
-            
             dotsInterval = setInterval(() => {
                 dots = (dots + 1) % 4;
                 element.textContent = originalText + '.'.repeat(dots);
             }, 300);
         }
-        
         function stopDotsAnimation() {
             if (dotsInterval) {
                 clearInterval(dotsInterval);
@@ -2505,7 +2365,6 @@ function humanTypeWriter(element, text, speed = 30) {
                 element.textContent = currentText;
             }
         }
-        
         function type() {
             if (i >= text.length) {
                 if (dotsInterval) clearInterval(dotsInterval);
@@ -2513,15 +2372,11 @@ function humanTypeWriter(element, text, speed = 30) {
                 resolve();
                 return;
             }
-            
-             
             if (!isPaused && Math.random() < 0.03) {
                 isPaused = true;
                 pauseEnd = Date.now() + Math.random() * 2000 + 2000;  
                 startDotsAnimation();
             }
-            
-             
             if (isPaused) {
                 if (Date.now() >= pauseEnd) {
                     isPaused = false;
@@ -2530,83 +2385,56 @@ function humanTypeWriter(element, text, speed = 30) {
                 setTimeout(type, 100);
                 return;
             }
-            
-             
             currentText += text[i];
             element.textContent = currentText;
             i++;
-            
             setTimeout(type, speed);
         }
-        
         type();
     });
 }
-
-
- 
 function isOnline() {
     return navigator.onLine;
 }
-
- 
 async function handleUserInput() {
     const inputEl = document.getElementById('user-input');
     const chatBox = document.getElementById('chat-box');
     const text = inputEl.value.trim();
-    
     if (!text || !chatBox) return;
-
-     
     const userMsg = createMessage(`Você: ${text}`, 'user-message');
     chatBox.appendChild(userMsg);
     inputEl.value = '';
     chatBox.scrollTop = chatBox.scrollHeight;
-
-     
     if (!isOnline()) {
         const errorMsg = createMessage('error : कनेक्शन त्रुटि. अपना इंटरनेट कनेक्शन जांचें और पुनः प्रयास करें.', 'error-message');
         chatBox.appendChild(errorMsg);
         chatBox.scrollTop = chatBox.scrollHeight;
         return;
     }
-
-     
     await showThinking(chatBox);
-    
-     
     const replies = await getBotResponse(text);
-    
-     
     for (const reply of replies) {
         const botMsg = createMessage('', 'bot-message');
         chatBox.appendChild(botMsg);
         const textElement = botMsg.querySelector('span:last-child');
-        
-         
         await humanTypeWriter(textElement, `: ${reply}`);
         chatBox.scrollTop = chatBox.scrollHeight;
-        
-         
         if (replies.length > 1) {
             await new Promise(resolve => setTimeout(resolve, Math.random() * 1500 + 500));
         }
     }
 }
-
 setInterval(() => {
     if (Math.random() < 0.2) {
         const topics = Object.keys(responseDatabase);
         const randomTopic = topics[Math.floor(Math.random() * topics.length)];
         const messages = responseDatabase[randomTopic];
         const randomMessage = messages[Math.floor(Math.random() * messages.length)];
-        
         setTimeout(() => {
             displayMessage(randomMessage, 'bot');
         }, 3000);
     }
 }, 30000);
- 
 document.getElementById('send-btn').addEventListener('click', handleUserInput);
 document.getElementById('user-input').addEventListener('keypress', e => {
     if (e.key === 'Enter' && !e.shiftKey) {
@@ -2614,9 +2442,6 @@ document.getElementById('user-input').addEventListener('keypress', e => {
         handleUserInput();
     }
 });
-
 console.log("T Singularity: Sistema de IA carregado com sucesso!");
 console.log("(c) 2025 Free Game Plant. Todos os direitos reservados.");
-
- 
 window.addEventListener('load', initializeChat);

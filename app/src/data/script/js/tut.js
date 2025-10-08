@@ -1,10 +1,14 @@
+function tutT(key) {
+  if (window.i18n && typeof window.i18n.t === 'function') {
+    return window.i18n.t(key);
+  }
+  return key;
+}
 let tutorialStep = 0;
 let tutorialAstroCreated = false;
 let tutorialSecondAstroCreated = false;
 let tutorialStarCreated = false;
 const tutorialSingularity = document.getElementById('tutorialSingularity');
-
-
 if (tutorialSingularity && !document.getElementById('tutorialSingularityText')) {
   tutorialSingularity.innerHTML = `
     <div style="display:flex;align-items:center;gap:18px;">
@@ -14,23 +18,18 @@ if (tutorialSingularity && !document.getElementById('tutorialSingularityText')) 
     <div id="tutorialSingularityAction" style="margin-top:18px;text-align:right;"></div>
   `;
 }
-
 const tutorialSingularityText = document.getElementById('tutorialSingularityText');
 const tutorialSingularityAction = document.getElementById('tutorialSingularityAction');
-
 let tutTypewriterTimeout = null;
 let tutTypewriterId = 0;
-
-function showTutorialSingularity(msg, actionHtml = '', highlight = null) {
+function showTutorialSingularity(msgKey, actionHtml = '', highlight = null) {
+  const msg = tutT(msgKey) || msgKey;
   tutorialSingularity.style.display = 'block';
   tutorialSingularityText.textContent = '';
-  
   if (tutTypewriterTimeout) clearTimeout(tutTypewriterTimeout);
   tutTypewriterId++;
-  
   const thisId = tutTypewriterId;
   let i = 0;
-  
   function typeChar() {
     if (thisId !== tutTypewriterId) return;
     if (i < msg.length) {
@@ -39,19 +38,15 @@ function showTutorialSingularity(msg, actionHtml = '', highlight = null) {
       tutTypewriterTimeout = setTimeout(typeChar, msg[i-1]===' ' ? 18 : 32 + Math.random()*18);
     }
   }
-  
   typeChar();
   tutorialSingularityAction.innerHTML = actionHtml;
-  
   if (highlight) {
     highlight.classList.add('tut-highlight');
   }
 }
-
 function hideTutorialSingularity() {
   tutorialSingularity.style.display = 'none';
 }
-
 function startTutorialSequence() {
   tutorialStep = 0;
   tutorialAstroCreated = false;
@@ -59,32 +54,24 @@ function startTutorialSequence() {
   tutorialStarCreated = false;
   nextTutorialStep();
 }
-
-
 function isAnyStarCreated() {
-  
-  
   return typeof window.isAnyStarPresent === 'function' 
     ? window.isAnyStarPresent() 
     : false;
 }
-
-function nextTutorialStep() {
+function nextTutorialStep(forceReload = false) {
   switch(tutorialStep) {
     case 0:
-      showTutorialSingularity('Bem-vindo ao Universo!');
+      showTutorialSingularity('welcome');
       setTimeout(() => {
         tutorialStep = 1;
         showTutorialSingularity(
-          ' Eu sou o T Singularity, seu Treinador, vamos começar?.', 
-          '<button id="btnTutContinue1" class="cutscene-btn">Ok!</button>'
+          'intro',
+          `<button id=\"btnTutContinue1\" class=\"cutscene-btn\">${tutT('buttons.ok')}</button>`
         );
-        
         document.getElementById('btnTutContinue1').onclick = () => {
-          showTutorialSingularity('Clique em qualquer lugar do universo para criar seu primeiro astro.',)
-          tutorialSingularityAction.innerHTML = '<span style="color:#aaa;font-size:0.98rem;">Aguardando você criar um astro...</span>';
-          
-          
+          showTutorialSingularity('click_to_create');
+          tutorialSingularityAction.innerHTML = `<span style=\"color:#aaa;font-size:0.98rem;\">${tutI18n.t('waiting_astro')}</span>`;
           const gameCanvas = document.getElementById('gameCanvas');
           function handleFirstAstroClick(e) {
             if (e.button === 0) {
@@ -93,40 +80,33 @@ function nextTutorialStep() {
               setTimeout(nextTutorialStep, 300);
             }
           }
-          
           if (gameCanvas) {
             gameCanvas.addEventListener('mousedown', handleFirstAstroClick, true);
           }
         };
       }, 2200);
       break;
-      
     case 1:
-      if (tutorialAstroCreated) {
+      if (tutorialAstroCreated || forceReload) {
         showTutorialSingularity(
-          'Muito bem! Agora experimente dar zoom usando as teclas Q e E, use para se aproximar do astro criado.', 
-          '<button id="btnTutContinue2" class="cutscene-btn">Próximo</button>'
+          'zoom_instructions',
+          `<button id=\"btnTutContinue2\" class=\"cutscene-btn\">${tutT('buttons.next')}</button>`
         );
-        
         document.getElementById('btnTutContinue2').onclick = () => {
           tutorialStep = 2;
           showTutorialSingularity(
-            'Você também pode mover a câmera com as teclas W, A, S e D, use eles para ajustar a posição da câmera.', 
-            '<button id="btnTutContinue3" class="cutscene-btn">Próximo</button>'
+            'move_camera',
+            `<button id=\"btnTutContinue3\" class=\"cutscene-btn\">${tutT('buttons.next')}</button>`
           );
-          
           document.getElementById('btnTutContinue3').onclick = () => {
             tutorialStep = 3;
             showTutorialSingularity(
-              'Perfeito! você já ajustou a câmera perto do astro né? se sim avance para o próximo passo.', 
-              '<button id="btnTutContinue4" class="cutscene-btn">Ok!</button>'
+              'camera_adjusted',
+              `<button id=\"btnTutContinue4\" class=\"cutscene-btn\">${tutT('buttons.ok')}</button>`
             );
-            
             document.getElementById('btnTutContinue4').onclick = () => {
-              showTutorialSingularity('Agora, crie outro astro perto do primeiro para ver a interação gravitacional e colisão!'),
-              tutorialSingularityAction.innerHTML = '<span style="color:#aaa;font-size:0.98rem;">Aguardando você criar outro astro próximo...</span>';
-              
-              
+              showTutorialSingularity('create_second');
+              tutorialSingularityAction.innerHTML = `<span style=\"color:#aaa;font-size:0.98rem;\">${tutT('waiting_second')}</span>`;
               const gameCanvas = document.getElementById('gameCanvas');
               function handleSecondAstroClick(e) {
                 if (e.button === 0) {
@@ -135,7 +115,6 @@ function nextTutorialStep() {
                   setTimeout(nextTutorialStep, 300);
                 }
               }
-              
               if (gameCanvas) {
                 gameCanvas.addEventListener('mousedown', handleSecondAstroClick, true);
               }
@@ -144,27 +123,21 @@ function nextTutorialStep() {
         };
       }
       break;
-      
     case 3:
       if (tutorialSecondAstroCreated) {
         tutorialStep = 4;
         showTutorialSingularity(
-          'Pronto, espere eles se colidirem para ver o que acontece, se eles se colidirem, você pode avançar para o próximo passo.', 
-          '<button id="btnTutContinue5" class="cutscene-btn">Ok!</button>'
+          'wait_collision',
+          `<button id="btnTutContinue5" class="cutscene-btn">${tutT('buttons.ok')}</button>`
         );
-        
         document.getElementById('btnTutContinue5').onclick = () => {
-          showTutorialSingularity('Agora, crie mais um astro, mas pressione e arraste na tela para definir uma órbita ao redor do outro astro.');
-          tutorialSingularityAction.innerHTML = '<span style="color:#aaa;font-size:0.98rem;">Aguardando você criar um astro em órbita (pressione e arraste)...</span>';
-          
-          
+          showTutorialSingularity('create_orbit');
+          tutorialSingularityAction.innerHTML = `<span style=\"color:#aaa;font-size:0.98rem;\">${tutT('waiting_orbit')}</span>`;
           const gameCanvas = document.getElementById('gameCanvas');
           let dragStarted = false;
-          
           function handleOrbitAstroDown(e) {
             if (e.button === 0) dragStarted = true;
           }
-          
           function handleOrbitAstroUp(e) {
             if (e.button === 0 && dragStarted) {
               dragStarted = false;
@@ -173,11 +146,9 @@ function nextTutorialStep() {
               setTimeout(() => {
                 tutorialStep = 5;
                 showTutorialSingularity(
-                  'Perfeito! Agora clique com o botão direito em um astro para abrir o painel de edição.', 
-                  '<span style="color:#aaa;font-size:0.98rem;">Aguardando você abrir o painel de edição...</span>'
+                  'open_edit_panel',
+                  `<span style=\"color:#aaa;font-size:0.98rem;\">${tutT('waiting_edit')}</span>`
                 );
-                
-                
                 const editPanel = document.getElementById('editPanel');
                 if (editPanel) {
                   const observer = new MutationObserver(() => {
@@ -186,11 +157,9 @@ function nextTutorialStep() {
                       setTimeout(() => {
                         tutorialStep = 6;
                         showTutorialSingularity(
-                          'Ótimo! Agora altere o nome do astro para o que quiser.', 
-                          '<span style="color:#aaa;font-size:0.98rem;">Aguardando você mudar o nome...</span>'
+                          'change_astro_name',
+                          `<span style=\"color:#aaa;font-size:0.98rem;\">${tutT('waiting_name')}</span>`
                         );
-                        
-                        
                         const editName = document.getElementById('editName');
                         if (editName) {
                           editName.addEventListener('input', () => {
@@ -198,36 +167,30 @@ function nextTutorialStep() {
                               setTimeout(() => {
                                 tutorialStep = 7;
                                 showTutorialSingularity(
-                                  'Muito bem! Você pode alterar atributos como Água, Gás, Massa e outros.', 
-                                  '<button id="btnTutContinueAtributos" class="cutscene-btn">Ok</button>'
+                                  'edit_attributes',
+                                  `<button id="btnTutContinueAtributos" class="cutscene-btn">${tutT('buttons.ok')}</button>`
                                 );
-                                
                                 document.getElementById('btnTutContinueAtributos').onclick = () => {
                                   tutorialStep = 8;
                                   showTutorialSingularity(
-                                    'Você também pode alterar a descrição do astro para personalizá-lo.', 
-                                    '<button id="btnTutContinueDescricao" class="cutscene-btn">Ok</button>'
+                                    'edit_description',
+                                    `<button id="btnTutContinueDescricao" class="cutscene-btn">${tutT('buttons.ok')}</button>`
                                   );
-                                  
                                   document.getElementById('btnTutContinueDescricao').onclick = () => {
                                     tutorialStep = 9;
                                     showTutorialSingularity(
-                                      'Quando terminar, feche o painel de edição, se quiser pode escolher a opção de salvar a alteração ou deletar ele, más, por enquanto feche o painel para continuar o tutorial.', 
-                                      '<span style="color:#aaa;font-size:0.98rem;">Aguardando você fechar o painel...</span>'
+                                      'close_edit_panel',
+                                      `<span style=\"color:#aaa;font-size:0.98rem;\">${tutT('waiting_close')}</span>`
                                     );
-                                    
-                                    
                                     const closeBtn = document.querySelector('#editPanel .close-menu');
                                     function closeHandler() {
                                       closeBtn.removeEventListener('click', closeHandler);
                                       setTimeout(() => {
                                         tutorialStep = 10;
                                         showTutorialSingularity(
-                                          'Excelente! Agora abra o Menu do Universo.', 
-                                          '<span style="color:#aaa;font-size:0.98rem;">Aguardando você abrir o menu...</span>'
+                                          'open_universe_menu',
+                                          `<span style=\"color:#aaa;font-size:0.98rem;\">${tutT('waiting_menu')}</span>`
                                         );
-                                        
-                                        
                                         const inGameMenu = document.getElementById('inGameMenu');
                                         if (inGameMenu) {
                                           const menuObserver = new MutationObserver(() => {
@@ -236,18 +199,15 @@ function nextTutorialStep() {
                                               setTimeout(() => {
                                                 tutorialStep = 11;
                                                 showTutorialSingularity(
-                                                  'Veja a diversidade de astros disponíveis! Role para baixo para ver mais.', 
-                                                  '<button id="btnTutContinueScrollAstros" class="cutscene-btn">Ok</button>'
+                                                  'scroll_astro_menu',
+                                                  `<button id="btnTutContinueScrollAstros" class="cutscene-btn">${tutT('buttons.ok')}</button>`
                                                 );
-                                                
                                                 document.getElementById('btnTutContinueScrollAstros').onclick = () => {
                                                   tutorialStep = 12;
                                                   showTutorialSingularity(
-                                                    'Agora, escolha a estrela comum no menu e clique no universo para criar sua estrela.', 
-                                                    '<span style="color:#aaa;font-size:0.98rem;">Aguardando você criar uma estrela...</span>'
+                                                    'create_common_star',
+                                                    `<span style=\"color:#aaa;font-size:0.98rem;\">${tutT('waiting_star')}</span>`
                                                   );
-                                                  
-                                                  
                                                   const gameCanvas = document.getElementById('gameCanvas');
                                                   function handleCreateStar(e) {
                                                     if (e.button === 0) {
@@ -256,13 +216,11 @@ function nextTutorialStep() {
                                                       setTimeout(nextTutorialStep, 300);
                                                     }
                                                   }
-                                                  
                                                   gameCanvas.addEventListener('mousedown', handleCreateStar, true);
                                                 };
                                               }, 600);
                                             }
                                           });
-                                          
                                           menuObserver.observe(inGameMenu, { 
                                             attributes: true, 
                                             attributeFilter: ['style'] 
@@ -270,7 +228,6 @@ function nextTutorialStep() {
                                         }
                                       }, 600);
                                     }
-                                    
                                     if (closeBtn) {
                                       closeBtn.addEventListener('click', closeHandler);
                                     }
@@ -283,7 +240,6 @@ function nextTutorialStep() {
                       }, 600);
                     }
                   });
-                  
                   observer.observe(editPanel, { 
                     attributes: true, 
                     attributeFilter: ['style'] 
@@ -292,35 +248,31 @@ function nextTutorialStep() {
               }, 600);
             }
           }
-          
           gameCanvas.addEventListener('mousedown', handleOrbitAstroDown, true);
           gameCanvas.addEventListener('mouseup', handleOrbitAstroUp, true);
         };
       }
       break;
     case 12:
-      
       showTutorialSingularity(
-        'Abra o Menu do Universo para continuar.',
-        '<span style="color:#aaa;font-size:0.98rem;">Aguardando você abrir o menu...</span>'
+        'open_universe_menu',
+              `<span style=\"color:#aaa;font-size:0.98rem;\">${tutT('waiting_menu')}</span>`
       );
       const inGameMenu = document.getElementById('inGameMenu');
       function advanceIfMenuOpenRocky() {
         if (inGameMenu && inGameMenu.style.display !== 'none') {
           setTimeout(() => {
-            
             showTutorialSingularity(
-              'Escolha o planeta Rochoso no menu e clique próximo à estrela para colocá-lo em órbita.',
+              'create_rocky_planet',
               '<span style="color:#aaa;font-size:0.98rem;">Aguardando você criar o planeta Rochoso...</span>'
             );
             const gameCanvas = document.getElementById('gameCanvas');
             function handleCreateRocky(e) {
               if (e.button === 0) {
                 gameCanvas.removeEventListener('mousedown', handleCreateRocky, true);
-                
                 showTutorialSingularity(
-                  'Observe as alterações climáticas no planeta Rochoso após colocá-lo em órbita.',
-                  '<button id="btnTutContinueClima" class="cutscene-btn">Próximo</button>'
+                  'observe_climate_changes',
+                  `<button id="btnTutContinueClima" class="cutscene-btn">${tutI18n.t('buttons.next')}</button>`
                 );
                 document.getElementById('btnTutContinueClima').onclick = () => {
                   tutorialStarCreated = true;
@@ -337,7 +289,6 @@ function nextTutorialStep() {
         }
         return false;
       }
-      
       if (!advanceIfMenuOpenRocky() && inGameMenu) {
         const menuObserverRocky = new MutationObserver(() => {
           if (advanceIfMenuOpenRocky()) {
@@ -350,12 +301,11 @@ function nextTutorialStep() {
         });
       }
       break;
-      
     case 13:
       if (tutorialStarCreated) {
         tutorialStep = 14;
         showTutorialSingularity(
-          'Pressione a tecla F , observe que ela limpa todo o universo.',
+          'press_f_key',
           '<span style="color:#aaa;font-size:0.98rem;">Aguardando você pressionar F...</span>'
         );
         function handleFKey(e) {
@@ -364,20 +314,18 @@ function nextTutorialStep() {
             setTimeout(() => {
               tutorialStep = 15;
               showTutorialSingularity(
-                'Agora, abra novamente o menu do universo.',
+                'open_universe_menu',
                 '<span style="color:#aaa;font-size:0.98rem;">Aguardando você abrir o menu...</span>'
               );
-              
               const inGameMenu = document.getElementById('inGameMenu');
               function advanceIfMenuOpen() {
                 if (inGameMenu && inGameMenu.style.display !== 'none') {
                   setTimeout(() => {
                     tutorialStep = 16;
                     showTutorialSingularity(
-                      'Selecione a estrela T Tauri Star no menu.',
-                      '<span style="color:#aaa;font-size:0.98rem;">Aguardando você criar a T Tauri Star...</span>'
+                      'select_t_tauri_star',
+                      `<span style=\"color:#aaa;font-size:0.98rem;\">${tutT('create_tauri')}</span>`
                     );
-                    
                     const gameCanvas = document.getElementById('gameCanvas');
                     function handleCreateTauri(e) {
                       if (e.button === 0) {
@@ -385,20 +333,18 @@ function nextTutorialStep() {
                         setTimeout(() => {
                           tutorialStep = 18;
                           showTutorialSingularity(
-                            'Abra novamente o menu do universo.',
+                            'open_universe_menu',
                             '<span style="color:#aaa;font-size:0.98rem;">Aguardando você abrir o menu...</span>'
                           );
-                          
                           const inGameMenu = document.getElementById('inGameMenu');
                           function advanceIfMenuOpen2() {
                             if (inGameMenu && inGameMenu.style.display !== 'none') {
                               setTimeout(() => {
                                 tutorialStep = 19;
                                 showTutorialSingularity(
-                                  'Role o menu até encontrar a sessão Controle de Tempo. Veja os fluxos: Parar(0x), Muito Lento(0.01x), Lento(0.1x), Normal(1x), Rápido(10x), Super Rápido(100x), Hiper Rápido (1000x), Ultra Rápido (10000x).',
+                                  'time_control_section',
                                   'Aguardando você escolher 10x de tempo...'
                                 );
-                                
                                 const fastBtn = document.getElementById('timeDistantFuture');
                                 if (fastBtn) {
                                   fastBtn.addEventListener('click', function selectFast() {
@@ -406,7 +352,7 @@ function nextTutorialStep() {
                                     setTimeout(() => {
                                       tutorialStep = 20;
                                       showTutorialSingularity(
-                                        'volte ao topo do menu e clique no botão X para fechar o menu.',
+                                        'close_menu',
                                         '<span style="color:#aaa;font-size:0.98rem;">Aguardando você fechar o menu...</span>'
                                       );
                                       const closeBtn = inGameMenu.querySelector('.close-menu');
@@ -416,13 +362,13 @@ function nextTutorialStep() {
                                           setTimeout(() => {
                                             tutorialStep = 21;
                                             showTutorialSingularity(
-                                              'Veja as mudanças na T Tauri Star! Ela, como qualquer estrela comum, tem estágios evolutivos.',
-                                              '<button id="btnTutContinueEvolucao" class="cutscene-btn">Próximo</button>'
+                                              'observe_t_tauri_changes',
+                                              `<button id="btnTutContinueEvolucao" class="cutscene-btn">${tutI18n.t('buttons.next')}</button>`
                                             );
                                             document.getElementById('btnTutContinueEvolucao').onclick = () => {
                                               tutorialStep = 22;
                                               showTutorialSingularity(
-                                                'Pressione N para alternar nomes dos astros.',
+                                                'toggle_names',
                                                 '<span style="color:#aaa;font-size:0.98rem;">Aguardando você pressionar N...</span>'
                                               );
                                               function handleNKey(e) {
@@ -431,7 +377,7 @@ function nextTutorialStep() {
                                                   setTimeout(() => {
                                                     tutorialStep = 22.5;
                                                     showTutorialSingularity(
-                                                      'Agora pressione T para alternar zonas de temperatura das estrelas.',
+                                                      'toggle_temperature_zones',
                                                       '<span style="color:#aaa;font-size:0.98rem;">Aguardando você pressionar T...</span>'
                                                     );
                                                     function handleTKey(e) {
@@ -439,18 +385,15 @@ function nextTutorialStep() {
                                                         window.removeEventListener('keydown', handleTKey, true);
                                                         setTimeout(() => {
                                                           tutorialStep = 23;
-                                                          showAchievementNotification(1, 'O Básico');
-                                                          unlockAchievement(1);
                                                           showTutorialSingularity(
-                                                            'Tutorial básico concluído! Boa sorte!',
-                                                            '<button id="btnTutFinalOk" class="cutscene-btn">OK</button>'
+                                                            'tutorial_concluded',
+                                                            `<button id="btnTutFinalOk" class="cutscene-btn">${tutI18n.t('buttons.ok')}</button>`
                                                           );
                                                           document.getElementById('btnTutFinalOk').onclick = () => {
                                                             showTutorialSingularity(
                                                               'Encaminhando...',
                                                               ''
                                                             );
-                                                            
                                                             const fadeDiv = document.createElement('div');
                                                             fadeDiv.style.position = 'fixed';
                                                             fadeDiv.style.left = '0';
@@ -489,7 +432,6 @@ function nextTutorialStep() {
                             }
                             return false;
                           }
-                          
                           if (!advanceIfMenuOpen2() && inGameMenu) {
                             const menuObserver2 = new MutationObserver(() => {
                               if (advanceIfMenuOpen2()) {
@@ -510,7 +452,6 @@ function nextTutorialStep() {
                   }, 600);
                 }
               }
-              
               if (!advanceIfMenuOpen() && inGameMenu) {
                 const menuObserver = new MutationObserver(() => {
                   if (advanceIfMenuOpen()) {
@@ -530,8 +471,6 @@ function nextTutorialStep() {
       break;
   }
 }
-
-
 window.tutorialNotifyAstroCreated = function(type) {
   if (tutorialStep === 1 && !tutorialAstroCreated) {
     tutorialAstroCreated = true;
@@ -546,24 +485,17 @@ window.tutorialNotifyAstroCreated = function(type) {
     setTimeout(nextTutorialStep, 300);
   }
 };
-
-
 function startTutorialAfterCutscene() {
   setTimeout(() => {
     startTutorialSequence();
   }, 100);
 }
-
-
-
-
 const cutsceneOverlay = document.getElementById('cutsceneOverlay');
 const cutsceneDialogue = document.getElementById('cutsceneDialogue');
 const cutsceneChoices = document.getElementById('cutsceneChoices');
 let cutsceneStep = 0;
 let cutsceneFadeTimeout = null;
 let typingTimeout = null;
-
 function typeText(element, text, speed = 28, callback) {
   if (!element) return;
   let i = 0;
@@ -579,8 +511,6 @@ function typeText(element, text, speed = 28, callback) {
   }
   typeChar();
 }
-
-
 let warpCanvas = null;
 let warpCtx = null;
 let warpAnimId = null;
@@ -590,7 +520,6 @@ let warpSpeedMultiplier = 1;
 let whiteFadeAlpha = 0;
 let whiteFadeDirection = 0; 
 let whiteFadeCallback = null;
-
 function createWarpElements() {
   if (warpCanvas) return;
   warpCanvas = document.createElement('canvas');
@@ -607,20 +536,16 @@ function createWarpElements() {
   warpCtx = warpCanvas.getContext('2d');
   window.addEventListener('resize', resizeWarpCanvas);
 }
-
 function resizeWarpCanvas() {
   if (!warpCanvas) return;
   warpCanvas.width = window.innerWidth;
   warpCanvas.height = window.innerHeight;
 }
-
 function initWarpObjects() {
   const w = warpCanvas.width, h = warpCanvas.height;
   warpStripes = [];
   warpStars = [];
-  
   for (let i = 0; i < 32; i++) {
-    
     const angle = Math.random() * Math.PI * 2;
     warpStripes.push({
       x: w/2,
@@ -632,7 +557,6 @@ function initWarpObjects() {
       alpha: 0.18 + Math.random()*0.22
     });
   }
-  
   for (let i = 0; i < 38; i++) {
     const angle = Math.random() * Math.PI * 2;
     warpStars.push({
@@ -645,12 +569,10 @@ function initWarpObjects() {
     });
   }
 }
-
 function drawWarp() {
   if (!warpCanvas || !warpCtx) return;
   const w = warpCanvas.width, h = warpCanvas.height;
   warpCtx.clearRect(0,0,w,h);
-  
   for (let s of warpStripes) {
     warpCtx.save();
     warpCtx.globalAlpha = s.alpha;
@@ -663,10 +585,8 @@ function drawWarp() {
     warpCtx.lineTo(ex, ey);
     warpCtx.stroke();
     warpCtx.restore();
-    
     s.x += Math.cos(s.angle) * s.speed * warpSpeedMultiplier;
     s.y += Math.sin(s.angle) * s.speed * warpSpeedMultiplier;
-    
     if (s.x < -100 || s.x > w+100 || s.y < -100 || s.y > h+100) {
       s.x = w/2; s.y = h/2;
       s.angle = Math.random() * Math.PI * 2;
@@ -676,7 +596,6 @@ function drawWarp() {
       s.alpha = 0.18 + Math.random()*0.22;
     }
   }
-  
   for (let star of warpStars) {
     warpCtx.save();
     warpCtx.globalAlpha = star.alpha;
@@ -687,10 +606,8 @@ function drawWarp() {
     warpCtx.shadowBlur = 8;
     warpCtx.fill();
     warpCtx.restore();
-    
     star.x += Math.cos(star.angle) * star.speed * warpSpeedMultiplier;
     star.y += Math.sin(star.angle) * star.speed * warpSpeedMultiplier;
-    
     if (star.x < -20 || star.x > w+20 || star.y < -20 || star.y > h+20) {
       star.x = w/2; star.y = h/2;
       star.angle = Math.random() * Math.PI * 2;
@@ -699,7 +616,6 @@ function drawWarp() {
       star.alpha = 0.25 + Math.random()*0.5;
     }
   }
-  
   if (whiteFadeAlpha > 0) {
     warpCtx.save();
     warpCtx.globalAlpha = whiteFadeAlpha;
@@ -707,7 +623,6 @@ function drawWarp() {
     warpCtx.fillRect(0,0,w,h);
     warpCtx.restore();
   }
-  
   if (whiteFadeDirection === 1) { 
     whiteFadeAlpha += 0.025;
     if (whiteFadeAlpha >= 1) {
@@ -725,7 +640,6 @@ function drawWarp() {
   }
   warpAnimId = requestAnimationFrame(drawWarp);
 }
-
 function startWarpAnimation() {
   createWarpElements();
   resizeWarpCanvas();
@@ -733,7 +647,6 @@ function startWarpAnimation() {
   if (warpAnimId) cancelAnimationFrame(warpAnimId);
   warpAnimId = requestAnimationFrame(drawWarp);
 }
-
 function stopWarpAnimation() {
   if (warpAnimId) cancelAnimationFrame(warpAnimId);
   warpAnimId = null;
@@ -744,31 +657,27 @@ function stopWarpAnimation() {
   }
   window.removeEventListener('resize', resizeWarpCanvas);
 }
-
 function startCutscene() {
   cutsceneOverlay.style.opacity = '1';
   cutsceneOverlay.style.display = 'flex';
   cutsceneStep = 0;
   startWarpAnimation();
   if (typingTimeout) clearTimeout(typingTimeout);
-  typeText(cutsceneDialogue, 'Saudações, viajante do tempo! Você está pronto para explorar o universo comigo?', 28, () => {
-    cutsceneChoices.innerHTML = `
-      <button class="cutscene-btn" data-choice="1">Estou pronto, T Singularity!</button>
-      <button class="cutscene-btn" data-choice="2">Quem é você?</button>
-      <button class="cutscene-btn" data-choice="3">O que está acontecendo?</button>
-    `;
+  typeText(cutsceneDialogue, tutT(':D'), 28, () => {
+    cutsceneChoices.innerHTML =
+      `<p class="cutscene-btn" data-choice="1">${tutT('cutscene_greeting')}</p>` +
+      `<br class="cutscene-btn" data-choice="1">${tutT('')}</br>` +
+      `<button class="cutscene-btn" data-choice="1">${tutT('cutscene_btn_ready')}</button>` +
+      `<button class="cutscene-btn" data-choice="2">${tutT('cutscene_btn_who')}</button>` +
+      `<button class="cutscene-btn" data-choice="3">${tutT('cutscene_btn_happening')}</button>`;
     Array.from(cutsceneChoices.querySelectorAll('button')).forEach(btn => {
       btn.onclick = handleCutsceneChoice;
     });
   });
 }
-
-
 function dramaticCutsceneEnd() {
   warpSpeedMultiplier = 6;
-  
   const avatar = document.querySelector('#cutsceneOverlay img');
-  
   const starPoints = document.querySelectorAll('#cutsceneOverlay .star-point.main');
   const starCore = document.querySelector('#cutsceneOverlay .star-core');
   if (avatar) {
@@ -787,14 +696,12 @@ function dramaticCutsceneEnd() {
     starCore.style.transform = 'scale(0.1)';
     starCore.style.opacity = '0';
   }
-  
   setTimeout(() => {
     if (cutsceneDialogue) cutsceneDialogue.style.opacity = '0';
     if (cutsceneChoices) cutsceneChoices.style.opacity = '0';
     whiteFadeDirection = 1;
     whiteFadeCallback = () => {
       setTimeout(() => {
-        
         cutsceneOverlay.style.display = 'none';
         whiteFadeDirection = 2;
         whiteFadeCallback = () => {
@@ -815,10 +722,8 @@ function dramaticCutsceneEnd() {
             starCore.style.transform = '';
             starCore.style.opacity = '';
           }
-          
           if (cutsceneDialogue) cutsceneDialogue.style.opacity = '';
           if (cutsceneChoices) cutsceneChoices.style.opacity = '';
-          
           const cutsceneContent = document.getElementById('cutsceneContent');
           if (cutsceneContent) cutsceneContent.style.display = 'none';
           stopWarpAnimation();
@@ -828,25 +733,115 @@ function dramaticCutsceneEnd() {
     };
   }, 900);
 }
-
 function handleCutsceneChoice(e) {
   const choice = e.target.getAttribute('data-choice');
-  cutsceneStep = 1;
-  cutsceneChoices.innerHTML = '';
-  let response = '';
   if (choice === '1') {
-    response = 'Excelente! Prepare-se para viajar na velocidade da luz pelo universo.';
-  } else if (choice === '2') {
-    response = 'Sou T Singularity, sua inteligência guia nesta jornada cósmica.';
-  } else {
-    response = 'Estamos prestes a atravessar o tempo e o espaço juntos!';
+    cutsceneStep = 1;
+    const response = tutT('cutscene_response1');
+    updateCutsceneDialogue(response, () => {
+  setTimeout(dramaticCutsceneEnd, 10000);
+    });
+  } 
+  else if (choice === '2') {
+    cutsceneStep = 2;
+    const response = tutT('cutscene_response2');
+    updateCutsceneDialogue(response, () => {
+      showCutsceneOptions([
+        { key: 'cutscene_btn_speak', next: '2a' },
+        { key: 'cutscene_btn_why_name', next: '2b' },
+        { key: 'cutscene_btn_nicknames', next: '2c' }
+      ]);
+    });
   }
+  else if (choice === '3') {
+    cutsceneStep = 3;
+    const response = tutT('cutscene_response3');
+    updateCutsceneDialogue(response, () => {
+      setTimeout(dramaticCutsceneEnd, 10000);
+    });
+  }
+  else if (choice === '2a') {
+    const response = tutT('cutscene_speak');
+    updateCutsceneDialogue(response, () => {
+      setTimeout(dramaticCutsceneEnd, 10000);
+    });
+  }
+  else if (choice === '2b') {
+    const response = tutT('cutscene_why_name');
+    updateCutsceneDialogue(response, () => {
+      showCutsceneOptions([
+        { key: 'cutscene_btn_letsgo', next: '2b1' },
+        { key: 'cutscene_btn_origin', next: '2b2' }
+      ]);
+    });
+  }
+  else if (choice === '2c') {
+    const response = tutT('cutscene_nicknames');
+    updateCutsceneDialogue(response, () => {
+      setTimeout(dramaticCutsceneEnd, 10000);
+    });
+  }
+  else if (choice === '2b1') {
+    const response = tutT('cutscene_final');
+    updateCutsceneDialogue(response, () => {
+      setTimeout(dramaticCutsceneEnd, 10000);
+    });
+  }
+  else if (choice === '2b2') {
+    const response = tutT('cutscene_origin');
+    updateCutsceneDialogue(response, () => {
+      setTimeout(dramaticCutsceneEnd, 10000);
+    });
+  }
+}
+function updateCutsceneDialogue(text, callback) {
   if (typingTimeout) clearTimeout(typingTimeout);
-  typeText(cutsceneDialogue, response, 28, () => {
-    setTimeout(dramaticCutsceneEnd, 1200);
+  cutsceneChoices.innerHTML = '';
+  cutsceneDialogue.textContent = '';
+  let dotCount = 0;
+  const dotsSpan = document.createElement('span');
+  dotsSpan.style.fontSize = '2.2rem';
+  dotsSpan.style.letterSpacing = '0.3em';
+  cutsceneDialogue.appendChild(dotsSpan);
+  let dotsInterval = setInterval(() => {
+    dotCount = (dotCount + 1) % 4;
+    dotsSpan.textContent = '.'.repeat(dotCount);
+  }, 400);
+  setTimeout(() => {
+    clearInterval(dotsInterval);
+    cutsceneDialogue.innerHTML = `<button class="cutscene-btn" disabled style="pointer-events:none;opacity:1;">${text}</button>`;
+    if (callback) callback();
+  }, 2000);
+}
+function showCutsceneOptions(options) {
+  cutsceneChoices.innerHTML = '';
+  options.forEach((option, idx) => {
+    const button = document.createElement('button');
+    button.className = 'cutscene-btn';
+    button.setAttribute('data-choice', option.next);
+    button.textContent = tutT(option.key);
+    button.onclick = handleCutsceneChoice;
+    cutsceneChoices.appendChild(button);
+    if (idx === 0 && option.key === 'cutscene_greeting') {
+      cutsceneChoices.appendChild(document.createElement('br'));
+    }
   });
 }
-
+function startCutscene() {
+  cutsceneOverlay.style.opacity = '1';
+  cutsceneOverlay.style.display = 'flex';
+  cutsceneStep = 0;
+  startWarpAnimation();
+  if (typingTimeout) clearTimeout(typingTimeout);
+  typeText(cutsceneDialogue, tutT(':D'), 28, () => {
+    showCutsceneOptions([
+      { key: 'cutscene_greeting', next: '0' },
+      { key: 'cutscene_btn_ready', next: '1' },
+      { key: 'cutscene_btn_who', next: '2' },
+      { key: 'cutscene_btn_happening', next: '3' }
+    ]);
+  });
+}
 window.addEventListener('DOMContentLoaded', startCutscene);
         const gravitySliderConfig = document.getElementById('gravityFactor');
         const gravityValueConfig = document.getElementById('gravityValue');
@@ -874,7 +869,6 @@ window.addEventListener('DOMContentLoaded', startCutscene);
         document.getElementById('closeWarningsBtn').addEventListener('click', function() {
           document.getElementById('warningsSidebar').classList.remove('active');
         });
-        
         window.addEventListener('DOMContentLoaded', function() {
           if (typeof startGame === 'function') startGame();
           if (typeof startTutorial === 'function') startTutorial();
@@ -890,8 +884,6 @@ window.addEventListener('DOMContentLoaded', startCutscene);
             window.close();
           }
         });
-
-        
         const btnInstruction = document.getElementById('btnInstruction');
         if (btnInstruction) {
           btnInstruction.addEventListener('click', function() {
@@ -907,55 +899,42 @@ window.addEventListener('DOMContentLoaded', startCutscene);
             }
           });
         }
-
-
 document.addEventListener('DOMContentLoaded', function() {
-  
   const btnTSingularity = document.getElementById('btnTSingularity');
   const tsingularitySidebar = document.getElementById('tsingularitySidebar');
   const closeTSingularityBtn = document.getElementById('closeTSingularityBtn');
-  
   if (btnTSingularity && tsingularitySidebar) {
     btnTSingularity.addEventListener('click', function() {
       tsingularitySidebar.classList.add('active');
       document.body.style.overflow = 'hidden';
     });
   }
-  
   if (closeTSingularityBtn && tsingularitySidebar) {
     closeTSingularityBtn.addEventListener('click', function() {
       tsingularitySidebar.classList.remove('active');
       document.body.style.overflow = '';
     });
   }
-  
   document.addEventListener('keydown', function(e) {
     if (e.key === 'Escape' && tsingularitySidebar.classList.contains('active')) {
       tsingularitySidebar.classList.remove('active');
       document.body.style.overflow = '';
     }
   });
-
-  
   const btnBackToStart = document.getElementById('btnBackToStart');
   if (btnBackToStart) {
     btnBackToStart.onclick = function() {
-      
       if (typeof hideTutorialSingularity === 'function') hideTutorialSingularity();
       const cutsceneOverlay = document.getElementById('cutsceneOverlay');
       if (cutsceneOverlay) cutsceneOverlay.style.display = 'none';
-      
       window.removeEventListener('keydown', window.handleFKey, true);
       window.removeEventListener('keydown', window.handleNKey, true);
       window.removeEventListener('keydown', window.handleTKey, true);
-      
       window.tutorialStep = -1;
       window.tutorialAstroCreated = false;
       window.tutorialSecondAstroCreated = false;
       window.tutorialStarCreated = false;
-      
       if (typeof stopWarpAnimation === 'function') stopWarpAnimation();
-      
       window.location.href = '../html/SIU2Dgame.html';
     };
   }

@@ -1,9 +1,10 @@
-//#region GAME.JS
-//#region consts
+//#region game.js
+//#region const
 const TitleGame = ('SIUD2D');
 console.log('SEJA BEM VINDO AO ' + TitleGame)
 console.log('Todos Os direitos reservados da FGP.')
 const canvas = document.getElementById('gameCanvas');
+const versionGame = ('0.0.3');
 const ctx = canvas.getContext('2d');
 const startScreen = document.getElementById('startScreen');
 const gameMenuBtn = document.getElementById('gameMenuBtn');
@@ -73,18 +74,21 @@ const musicTracks = [
 const musicInterval = 30000; 
 const MAX_ASTROS_RETIRADA = 600;
 const btnLock = document.getElementById('btnLock');
+const DEBUG_EVOLUTION = true;
+function debugLog(...args) {
+    if (DEBUG_EVOLUTION) {
+        console.log(...args);
+    }
+}
 const astroPool = (function() {
     const pool = {};
     const DEFAULT_POOL_SIZE = 1000;
-    
-    
     function initPools() {
-        const types = ['spaceDust', 'nebula', 'asteroid', /*...outros tipos...*/];
+        const types = ['spaceDust', 'nebula', 'asteroid', 'rockyPlanet'];
         types.forEach(type => {
             pool[type] = Array(DEFAULT_POOL_SIZE).fill().map(() => createBaseAstro(type));
         });
     }
-    
     function createBaseAstro(type) {
         return {
             type,
@@ -93,42 +97,31 @@ const astroPool = (function() {
             mass: 0,
             radius: 0,
             markedForRemoval: false,
-            
         };
     }
-    
     function acquire(type, config) {
         if (!pool[type] || pool[type].length === 0) {
             console.warn(`Pool esgotada para ${type}, criando novo objeto`);
             return { ...createBaseAstro(type), ...config };
         }
-        
         const astro = pool[type].pop();
         return Object.assign(astro, config, { markedForRemoval: false });
     }
-    
     function release(astro) {
         if (!pool[astro.type]) {
             pool[astro.type] = [];
         }
-        
-        
         const baseAstro = createBaseAstro(astro.type);
         Object.assign(astro, baseAstro);
-        
         pool[astro.type].push(astro);
     }
-    
-    
     initPools();
-    
     return { acquire, release };
 })();
 const astroLogger = {
     errors: [],
     warnings: [],
     physicsLog: [],
-    
     logError: function(context, error) {
         const entry = {
             timestamp: Date.now(),
@@ -137,16 +130,12 @@ const astroLogger = {
         };
         this.errors.push(entry);
         console.error(`[Astro Error] ${entry.context}: ${entry.error}`);
-        
-        
         if (this.errors.length > 100) this.errors.shift();
     },
-    
     logPhysics: function(action, details) {
         if (this.physicsLog.length > 50) this.physicsLog.shift();
         this.physicsLog.push({ timestamp: Date.now(), action, details });
     },
-    
     getStatus: function() {
         return {
             lastError: this.errors[this.errors.length - 1],
@@ -156,7 +145,8 @@ const astroLogger = {
     }
 };
 //#endregion
-//#region lets
+//#region let
+let customColorEnabled = false;
 let gameState = 'menu'; 
 let camera = { x: 0, y: 0, zoom: 1 };
 let planets = [];
@@ -196,7 +186,12 @@ let astroSettings = {
     gas: 80,
     hasRings: false,
     ringMass: 0,
-    planetClass: null
+    planetClass: null,
+    biomass: 0,
+    lifeChance: 0,
+    population: 0,
+    intelligentSpecies: ("None"),
+    knowledgePoints: 0,
 };
 let backgroundMusic = null;
 let currentTrackIndex = 0;
@@ -206,52 +201,77 @@ let gameStartCount = parseInt(localStorage.getItem('gameStartCount') || '0');
 let playTimer = 0;
 let playTimerInterval;
 let spaceDustCreated = 0;
+let spectateMode = false;
+let spectatedAstro = null;
+let controlMode = false;
+let controlledShip = null;
+let keys = {};
 //#endregion
 if (btnLock) {
     btnLock.addEventListener('click', toggleLock);
 }
+function showConsoleInstructions(type) {
+    const instructions = document.getElementById('console-instructions');
+    if (!instructions) return;
+    if (type === 'pc') {
+        instructions.innerHTML = `
+            <b>PC:</b><br>
+            - WASD or arrow keys to move the camera<br>
+            - Mouse to create Astros<br>
+            - Double-click on the Astro to configure it<br>
+            - Scroll to zoom<br>
+            - Delete key to delete the universe
+        `;
+    } else if (type === 'android') {
+        instructions.innerHTML = `
+            <b>Android / iOS (Buttons):</b><br>
+            - Use the on-screen buttons to move the camera<br>
+            - Tap to create Astros<br>
+            - Double-tap the Astro to set it<br>
+            - Zoom buttons to zoom in/out<br>
+            - Delete button to remove the universe
+        `;
+    } else if (type === 'toque') {
+        instructions.innerHTML = `
+            <b>Android / iOS / Mobile Devices (Touch):</b><br>
+            <ul style="text-align: left; margin-left: 1em;">
+            <li><b>Movement:</b> Single tap and drag with <b>two fingers</b></li>
+            <li><b>Create Universes:</b> Single tap and drag with <b>one finger</b> or just one tap</li>
+            <li><b>Configure Universe:</b> Double tap on the universe</li>
+            <li><b>Zoom in:</b> Tap the screen with two fingers and drag outwards</li>
+            <li><b>Zoom out:</b> Tap the screen with two fingers and drag inwards</li>
+            <li><b>Delete Universe:</b> Double-tap the universe with two fingers</li>
+            </ul>
+        `;
+    } else {
+        instructions.innerHTML = 'Unknown platform. No instructions available.';
+    }
+}
 function initBackgroundMusic() {
-    
     const musicVolumeSlider = document.getElementById('musicVolumeSlider');
     const musicVolumeValue = document.getElementById('musicVolumeValue');
-    
-    
     backgroundMusic = new Audio();
     backgroundMusic.loop = false;
     backgroundMusic.volume = musicVolumeSlider.value / 100;
-    
-    
     musicVolumeValue.textContent = musicVolumeSlider.value;
-    
-    
     musicVolumeSlider.addEventListener('input', () => {
         const volume = musicVolumeSlider.value;
         musicVolumeValue.textContent = volume;
         backgroundMusic.volume = volume / 100;
     });
-    
-    
-    
     backgroundMusic.addEventListener('loadedmetadata', () => {
         console.log(`Duração da faixa: ${backgroundMusic.duration} segundos`);
     });
-
-    
     backgroundMusic.addEventListener('ended', () => {
         console.log('Música finalizada. Reiniciando após intervalo.');
         musicTimeout = setTimeout(playNextTrack, musicInterval);
     });
-
-    
     backgroundMusic.addEventListener('error', (e) => {
         console.error('Erro no áudio:', e);
         console.error('Detalhes:', backgroundMusic.error);
         musicTimeout = setTimeout(playNextTrack, 5000);
     });
-
     playNextTrack();
-    
-    
     playNextTrack();
 }
 function toggleLock() {
@@ -259,12 +279,8 @@ function toggleLock() {
         showNotification("Select a celestial body first!");
         return;
     }
-    
-    
     selectedPlanet.locked = !selectedPlanet.locked;
-    
     if (selectedPlanet.locked) {
-        
         if (selectedPlanet.originalVx === undefined) {
             selectedPlanet.originalVx = selectedPlanet.vx;
             selectedPlanet.originalVy = selectedPlanet.vy;
@@ -273,37 +289,66 @@ function toggleLock() {
         selectedPlanet.vy = 0;
         btnLock.textContent = "🔒 Lock";
     } else {
-        
         selectedPlanet.vx = selectedPlanet.originalVx || 0;
         selectedPlanet.vy = selectedPlanet.originalVy || 0;
         btnLock.textContent = "🔒 Lock";
     }
-    
     showNotification(`Astro ${selectedPlanet.locked ? 'Locked' : 'Unlocked'}: ${selectedPlanet.name}`);
+}
+function toggleCustomColor() {
+    if (!selectedPlanet) return;
+    selectedPlanet.ignoreColorChanges = !selectedPlanet.ignoreColorChanges;
+    customColorEnabled = selectedPlanet.ignoreColorChanges;
+    const btn = document.getElementById('btnCustomColor');
+    if (selectedPlanet.ignoreColorChanges) {
+        btn.textContent = '🎨 CCOn';
+        btn.style.backgroundColor = '#4CAF50';
+        showNotification("Custom color enabled - climate colors ignored");
+    } else {
+        btn.textContent = '🎨 CCA';
+        btn.style.backgroundColor = '';
+        showNotification("Custom color disabled - following climate colors");
+    }
+    fgpAstroPreview();
+}
+function toggleControlMode() {
+    if (!selectedPlanet) {
+        showNotification("Select a spaceship, rocket or super ship to control!");
+        return;
+    }
+    const controllableTypes = ['spaceship', 'rocket', 'superShip'];
+    if (!controllableTypes.includes(selectedPlanet.type)) {
+        showNotification("Only spaceships, rockets and super ships can be controlled!");
+        return;
+    }
+    controlMode = !controlMode;
+    if (controlMode) {
+        controlledShip = selectedPlanet;
+        btnControl.style.backgroundColor = '#4CAF50';
+        showNotification(`Controlling ${controlledShip.name}. Use WASD to move. Press B to stop.`);
+        if (spectateMode) {
+            toggleSpectateMode();
+        }
+    } else {
+        controlledShip = null;
+        btnControl.style.backgroundColor = '';
+        showNotification("Control mode deactivated.");
+    }
 }
 function playNextTrack() {
     if (!backgroundMusic) return;
-    
-    
     backgroundMusic.pause();
     backgroundMusic.src = '';
     backgroundMusic.load();
-    
-    
     backgroundMusic = new Audio(musicTracks[currentTrackIndex]);
     backgroundMusic.volume = document.getElementById('musicVolumeSlider').value / 100;
-    
-    
     const MIN_PLAY_TIME = 120; 
-
     backgroundMusic.play().catch(error => {
         console.log("Reprodução bloqueada:", error);
         document.addEventListener('click', () => {
             backgroundMusic.play().catch(e => console.log("Erro ao reproduzir:", e));
         }, { once: true });
     });
-
-    
     const checkInterval = setInterval(() => {
         if (backgroundMusic.currentTime > 0 && 
             backgroundMusic.currentTime < MIN_PLAY_TIME && 
@@ -313,7 +358,6 @@ function playNextTrack() {
             clearInterval(checkInterval);
             backgroundMusic.play().catch(e => console.log("Tentativa de retomada falhou:", e));
         }
-        
         if (backgroundMusic.ended) {
             clearInterval(checkInterval);
         }
@@ -323,11 +367,9 @@ function generateRandomName() {
     const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789ÀÁáàéèÈÉóòÒÓùúÚÙçñÑãÃõÕüÜÍÌíìÂâÊêÎîÔôÛû*-$%¨#@!&_,.?´` °ºª²³£¢¬¹²³£¢¬!@#$%¨&*()[]{}/                            :3';
     let name = '';
     const length = Math.max(3, Math.floor(Math.random() * 8) + 3);
-    
     for (let i = 0; i < length; i++) {
         name += chars.charAt(Math.floor(Math.random() * chars.length));
     }
-    
     return name || 'Unnamed'; 
 }
 document.addEventListener('keydown', function(e) {
@@ -349,37 +391,28 @@ function init() {
     canvas.addEventListener('contextmenu', handleContextMenu);
     canvas.addEventListener('wheel', handleScroll);
     document.addEventListener('keydown', handleKeyDown);
-    
-
     document.getElementById('btnResetAchievements').addEventListener('click', resetAchievements);
-    
     document.getElementById('btnPlay').addEventListener('click', startGame);
     gameMenuBtn.addEventListener('click', toggleGameMenu);
     closeMenuBtn.addEventListener('click', toggleGameMenu);
     volumeSlider.addEventListener('input', fgpVolume);
     showTempZones.addEventListener('change', toggleTemperatureZones);
     tempSlider.addEventListener('input', fgpTemperature);
-    
-    
     showNames.addEventListener('change', toggleNamesVisibility);
-    
-    
-    gravityFactorSlider.value = 500;
+    gravityFactorSlider.value = 100;
     dragFactorSlider.value = 0;
-    gravityFactorValue.textContent = 500;
+    gravityFactorValue.textContent = 100;
     dragFactorValue.textContent = 0;
+    gravityFactor = 1.0;
+    dragFactor = 0.0;
     ringMassSlider.value = 30;
     ringMassValue.textContent = 30;
-    
     gravityFactorSlider.addEventListener('input', fgpGravityFactor);
     dragFactorSlider.addEventListener('input', fgpDragFactor);
     document.getElementById('shadowsToggle').addEventListener('change', toggleShadows);
     document.getElementById('spaceColor').addEventListener('input', fgpSpaceColor);
     document.getElementById('graphicsQuality').addEventListener('change', fgpGraphicsQuality);
     document.getElementById('btnResetPhysics').addEventListener('click', resetPhysics);
-    
-    
-    
     window.selectedType = null;
     document.querySelectorAll('.option-card').forEach(card => {
         card.addEventListener('click', () => {
@@ -391,8 +424,7 @@ function init() {
             showNotification(`Creation Mode: ${getTypeName(creationMode)}. Click and drag to set the velocity.`);
         });
     });
-    
-    
+    document.getElementById('btnCustomColor').addEventListener('click', toggleCustomColor);
     primaryColor.addEventListener('input', fgpAstroPreview);
     secondaryColor.addEventListener('input', fgpAstroPreview);
     ringColor.addEventListener('input', fgpAstroPreview);
@@ -406,203 +438,229 @@ function init() {
     ringMassSlider.addEventListener('input', fgpRingMass);
     applySettings.addEventListener('click', applyAstroSettings);
     resetSettings.addEventListener('click', resetAstroSettings);
-    
-    
+    document.getElementById('btnSpectate').addEventListener('click', toggleSpectateMode);
+    document.addEventListener('keydown', handleKeyDown);
+    document.addEventListener('keyup', handleKeyUp);
     const editPanelCloseBtn = editPanel.querySelector('.close-menu');
     if (editPanelCloseBtn) {
         editPanelCloseBtn.addEventListener('click', () => {
             editPanel.style.display = 'none';
         });
     }
-    
-    
     btnDeleteAstro.addEventListener('click', deleteSelectedAstro);
-    
-    
-
     btnApplyChanges.addEventListener('click', () => {
         if (selectedPlanet && selectedPlanet.type === 'comet') {
             unlockAchievement(42);
         }
         applyAstroChanges();
     });
-
-
-
     document.querySelectorAll('.time-btn').forEach(btn => {
         btn.addEventListener('click', () => {
             const scale = parseFloat(btn.getAttribute('data-scale'));
             setTimeScale(scale);
         });
     });
-    
-    
     fgpAstroPreview();
-    
-    
     requestAnimationFrame(gameLoop);
 }
 function resizeCanvas() {
     canvas.width = window.innerWidth;
     canvas.height = window.innerHeight;
 }
-function getClassColor(type, classId) {
-    const colorMap = {
-        'rockyPlanet': {
-            1: '#8d6e63',  
-            2: '#4fc3f7',  
-            3: '#ffb74d',  
-            4: '#95b74d',  
-            5: '#90a4ae',  
-            6: '#66bb6a',  
-            7: '#e57373',  
-            8: '#bbdefb',  
-            9: '#e0f7fa',  
-            10: '#ffcc80', 
-            11: '#ba68c8'  
-        },
-        'gasGiant': {
-            1: '#ff8a65',  
-            2: '#ffb74d',  
-            3: '#4fc3f7',  
-            4: '#bbdefb',  
-            5: '#4db6ac',  
-            6: '#9575cd'   
-        },
-        'planetoid': {
-            1: '#a1887f',  
-            2: '#e0f7fa',  
-            3: '#e0e0e0',  
-            4: '#ba68c8'   
-        }
-    };
-    
-    return colorMap[type]?.[classId] || '#3498db';
+function calculateMovementDirection(obj) {
+    if (obj.vx !== 0 || obj.vy !== 0) {
+        obj.direction = Math.atan2(obj.vy, obj.vx);
+    }
+    return obj.direction || 0;
+}
+function roundRect(ctx, x, y, width, height, radius, fill, stroke) {
+    if (typeof radius === 'undefined') radius = 5;
+    if (typeof radius === 'number') radius = {tl: radius, tr: radius, br: radius, bl: radius};
+    ctx.beginPath();
+    ctx.moveTo(x + radius.tl, y);
+    ctx.lineTo(x + width - radius.tr, y);
+    ctx.quadraticCurveTo(x + width, y, x + width, y + radius.tr);
+    ctx.lineTo(x + width, y + height - radius.br);
+    ctx.quadraticCurveTo(x + width, y + height, x + width - radius.br, y + height);
+    ctx.lineTo(x + radius.bl, y + height);
+    ctx.quadraticCurveTo(x, y + height, x, y + height - radius.bl);
+    ctx.lineTo(x, y + radius.tl);
+    ctx.quadraticCurveTo(x, y, x + radius.tl, y);
+    ctx.closePath();
+    if (fill) ctx.fill();
+    if (stroke) ctx.stroke();
+}
+function drawSatellite(satellite, ctx, screenRadius) {
+    const x = (satellite.x - camera.x) * camera.zoom + canvas.width / 2;
+    const y = (satellite.y - camera.y) * camera.zoom + canvas.height / 2;
+    const radius = (typeof screenRadius === 'number') ? screenRadius : (satellite.radius * camera.zoom);
+    if (!isFinite(x) || !isFinite(y) || !isFinite(radius) || radius <= 0) {
+            return; 
+    }
+    if (x + radius < 0 || x - radius > canvas.width || 
+        y + radius < 0 || y - radius > canvas.height) {
+        return;
+    }
+    ctx.save();
+    ctx.translate(x, y);
+    const direction = calculateMovementDirection(satellite);
+    ctx.rotate(direction);
+    if (satellite.modules && Array.isArray(satellite.modules)) {
+        satellite.modules.forEach((mod, idx) => {
+            ctx.save();
+            ctx.rotate(mod.angle || 0);
+            if (mod.type === 'panel') {
+                    const w = Math.max(0.6, radius * (0.9 + Math.min(4, mod.size || 1)));
+                    const h = Math.max(0.25, radius * 0.35);
+                    const gx = radius * 1.05;
+                    const gy = -h/2;
+                    const grad = ctx.createLinearGradient(gx, gy, gx + w, gy + h);
+                    grad.addColorStop(0, '#2aa3ff');
+                    grad.addColorStop(0.5, mod.color || '#1f8fff');
+                    grad.addColorStop(1, '#063b5a');
+                    ctx.fillStyle = grad;
+                    roundRect(ctx, radius * 1.05, -h/2, w, h, Math.max(0.5, 0.18 * radius), true, false);
+                    ctx.strokeStyle = 'rgba(0,0,0,0.4)';
+                    ctx.lineWidth = Math.max(0.4, 0.08 * radius);
+                    ctx.strokeRect(radius * 1.05, -h/2, w, h);
+            } else if (mod.type === 'antenna') {
+                ctx.fillStyle = mod.color || '#999999';
+                ctx.beginPath();
+                ctx.moveTo(radius * 1.05, 0);
+                ctx.lineTo(radius * 1.6, -radius * 0.4);
+                ctx.lineTo(radius * 1.6, radius * 0.4);
+                ctx.closePath();
+                ctx.fill();
+            } else if (mod.type === 'dish') {
+                ctx.beginPath();
+                ctx.arc(radius * 1.2, 0, Math.max(0.3, radius * 0.5), -Math.PI/3, Math.PI/3);
+                ctx.fillStyle = mod.color || '#bbbbbb';
+                ctx.fill();
+                ctx.strokeStyle = '#666';
+                ctx.lineWidth = Math.max(0.3, 0.06 * radius);
+                ctx.stroke();
+            } else if (mod.type === 'radar') {
+                ctx.beginPath();
+                ctx.rect(radius * 1.05, -radius * 0.25, Math.max(0.4, radius * 0.6), Math.max(0.25, radius * 0.5));
+                ctx.fillStyle = mod.color || '#666666';
+                ctx.fill();
+            }
+            ctx.restore();
+        });
+    }
+    ctx.beginPath();
+    ctx.arc(0, 0, radius, 0, Math.PI * 2);
+    ctx.shadowColor = '#222';
+    ctx.fillStyle = satellite.color || '#cccccc';
+    ctx.fill();
+    ctx.shadowBlur = 0;
+    ctx.lineWidth = 0.000000005 * camera.zoom;
+    ctx.stroke();
+    ctx.restore();
 }
 function drawPlanet(planet) {
-
-
 function calculateLightIntensity() {
     let intensity = 0.2;
     const MAX_LIGHT_DISTANCE = 10000;
-    
     planets.forEach(other => {
         if (other === planet) return;
-        
         const isStar = [
             'star', 'redDwarf', 'brownDwarf', 'ttauriStar', 'carbonStar',
             'giantStar', 'hypergiant', 'massiveStar', 'redGiant', 
             'redSupergiant', 'redHypergiant', 'pulsar', 'quarkStar'
         ].includes(other.type);
-        
         if (isStar) {
             const dx = planet.x - other.x;
             const dy = planet.y - other.y;
             const distance = Math.sqrt(dx*dx + dy*dy);
-            
             if (distance < MAX_LIGHT_DISTANCE) {
                 const normalizedDistance = distance / MAX_LIGHT_DISTANCE;
                 const proximityFactor = 1 - Math.log(1 + 10 * normalizedDistance) / Math.log(11);
                 const starIntensity = proximityFactor * (other.radius / 30);
-                
                 intensity = Math.min(1, intensity + starIntensity);
             }
         }
     });
-    
     return Math.min(1, intensity);
 }
-
   const x = (planet.x - camera.x) * camera.zoom + canvas.width / 2;
   const y = (planet.y - camera.y) * camera.zoom + canvas.height / 2;
   let radius = planet.radius * camera.zoom;
-  
-  
-  if (!isFinite(radius) || radius <= 0) {
-    console.warn(`Invalid Radius For ${planet.type}: ${radius} (mass: ${planet.mass})`);
-    return;
-  }
-  
-  
-  if (x + radius < 0 || x - radius > canvas.width || 
-      y + radius < 0 || y - radius > canvas.height) {
-    return;
-  }
-
-  ctx.save();
-  ctx.translate(x, y);
-    
-    
+    if (isSpaceshipType(planet.type)) {
+        radius = Math.max(2, (planet.originalRadius || planet.radius) * camera.zoom);
+    } else {
+        radius = planet.radius * camera.zoom;
+    }
+    if (!isFinite(radius) || radius <= 0) {
+        console.warn(`Invalid Radius For ${planet.type}: ${radius}`);
+        return;
+    }
+    if (!isFinite(radius) || radius <= 0) {
+        console.warn(`Invalid Radius For ${planet.type}: ${radius} (mass: ${planet.mass})`);
+        return;
+    }
+    if (x + radius < 0 || x - radius > canvas.width || 
+        y + radius < 0 || y - radius > canvas.height) {
+        return;
+    }
+    ctx.save();
+    ctx.translate(x, y);
     let pulseFactor = 0.1; 
     let visualTimeScale = 1; 
-
-    
     pulseFactor = (Math.sin(Date.now() * 0.001) + 1) * 0.5;
     visualTimeScale = getTimeScaleFactor() / 1000;
-
-  
   const drawGravitationalLens = () => {
     const lensRadius = radius * 1.5;
     const gradient = ctx.createRadialGradient(0, 0, 0, 0, 0, lensRadius);
     gradient.addColorStop(0, 'rgba(255, 255, 255, 0.1)');
     gradient.addColorStop(0.8, 'rgba(255, 255, 255, 0)');
     gradient.addColorStop(1, 'rgba(255, 255, 255, 0.05)');
-    
     ctx.beginPath();
     ctx.arc(0, 0, lensRadius, 0, Math.PI * 2);
     ctx.fillStyle = gradient;
     ctx.fill();
   };
-
-  
-
 const drawAccretionDisk = (innerRadius, outerRadius, colors) => {
     ctx.save();
-    
-    
     const scaledInner = innerRadius * camera.zoom;
     const scaledOuter = outerRadius * camera.zoom;
-    
     ctx.rotate((planet.rotation || 0) * visualTimeScale);
     const diskGradient = ctx.createRadialGradient(0, 0, scaledInner, 0, 0, scaledOuter);
-    
     colors.forEach((color, i) => {
         const stopPosition = i / (colors.length - 1);
         diskGradient.addColorStop(stopPosition, color);
     });
-    
     ctx.beginPath();
     ctx.arc(0, 0, scaledOuter, 0, Math.PI * 2);
     ctx.fillStyle = diskGradient;
     ctx.fill();
-    
     ctx.restore();
 };
-
-
-  
-  const lightenColor = (color, percent) => {
-    const num = parseInt(color.replace('#', ''), 16);
-    const amt = Math.round(2.55 * percent);
-    const R = Math.min(255, (num >> 16) + amt);
-    const G = Math.min(255, (num >> 8 & 0x00FF) + amt);
-    const B = Math.min(255, (num & 0x0000FF) + amt);
-    return `#${((1 << 24) + (R << 16) + (G << 8) + B).toString(16).slice(1)}`;
-  };
-
-  
+    const lightenColor = (color, percent) => {
+        let hex = color.replace('#', '');
+        if (hex.length === 3) {
+            hex = hex[0] + hex[0] + hex[1] + hex[1] + hex[2] + hex[2];
+        }
+        const num = parseInt(hex, 16);
+        const amt = Math.round(2.55 * percent);
+        let R = (num >> 16) + amt;
+        let G = (num >> 8 & 0x00FF) + amt;
+        let B = (num & 0x0000FF) + amt;
+        R = Math.min(255, Math.max(0, R));
+        G = Math.min(255, Math.max(0, G));
+        B = Math.min(255, Math.max(0, B));
+        const result = (1 << 24) + (R << 16) + (G << 8) + B;
+        return `#${result.toString(16).slice(1).toUpperCase()}`;
+    };
   const drawJet = (length, startWidth, endWidth, colorStops) => {
-    
     const jetGradient = ctx.createLinearGradient(0, 0, 0, -length);
     colorStops.forEach(stop => {
       jetGradient.addColorStop(stop.position, stop.color);
     });
-
     if (planet.jetRotationSpeed > 1.5) {
         const blurIntensity = Math.min(10, planet.jetRotationSpeed * 2);
         ctx.filter = `blur(${blurIntensity}px)`;
     }
-    
     ctx.beginPath();
     ctx.moveTo(-startWidth/2, 0);
     ctx.lineTo(startWidth/2, 0);
@@ -613,18 +671,73 @@ const drawAccretionDisk = (innerRadius, outerRadius, colors) => {
     ctx.fill();
     ctx.filter = 'none';
   };
-
-  
   switch(planet.type) {
-    case 'spaceDust':
+case 'rocket':
+    ctx.save();
+    let angleRocket = Math.atan2(planet.vy, planet.vx);
+    ctx.rotate(angleRocket);
+    ctx.beginPath();
+    ctx.moveTo(radius * 1.5, 0);
+    ctx.lineTo(-radius * 1.5, -radius);
+    ctx.lineTo(-radius * 1.5, radius);
+    ctx.closePath();
+    ctx.fillStyle = planet.color || '#ff0000';
+    ctx.fill();
+    drawRocketDetails(planet, ctx, radius);
+    ctx.restore();
+    break;
+case 'spaceship':
+    ctx.save();
+    const angleShip = Math.atan2(planet.vy, planet.vx);
+    ctx.rotate(angleShip);
+    ctx.beginPath();
+    ctx.moveTo(radius * 1.5, 0);
+    ctx.lineTo(-radius * 1.5, -radius);
+    ctx.lineTo(-radius * 1.5, radius);
+    ctx.closePath();
+    ctx.fillStyle = planet.color || '#00ff00';
+    ctx.fill();
+    drawSpaceshipDetails(planet, ctx, radius);
+    ctx.restore();
+    break;
+case 'satellite':
+    ctx.restore();
+    drawSatellite(planet, ctx, radius);
+    break;
+case 'superShip':
+    ctx.restore();
+    const sX = (planet.x - camera.x) * camera.zoom + canvas.width / 2;
+    const sY = (planet.y - camera.y) * camera.zoom + canvas.height / 2;
+    ctx.save();
+    ctx.translate(sX, sY);
+    const superAngle = Math.atan2(planet.vy, planet.vx);
+    ctx.rotate(superAngle || 0);
+    drawSuperShipDetails(planet, ctx, radius);
+    ctx.restore();
+    if (planet.originPlanet) {
+        const oX = (planet.originPlanet.x - camera.x) * camera.zoom + canvas.width / 2;
+        const oY = (planet.originPlanet.y - camera.y) * camera.zoom + canvas.height / 2;
+        ctx.beginPath();
+        ctx.moveTo(sX, sY);
+        ctx.strokeStyle = 'rgba(200,255,255,0.08)';
+        ctx.lineWidth = Math.max(1, 2 * camera.zoom);
+        const midX = sX + (oX - sX) * 0.5;
+        const midY = sY + (oY - sY) * 0.5;
+        ctx.quadraticCurveTo(midX, midY, oX, oY);
+        ctx.stroke();
+    }
+    break;
+case 'spaceDust':
       ctx.beginPath();
       ctx.arc(0, 0, Math.max(1, radius), 0, Math.PI * 2);
       ctx.fillStyle = planet.color || '#888888';
       ctx.fill();
+      ctx.strokeStyle = '#000000';
+      ctx.lineWidth = 2;
+      ctx.stroke();
       break;
-
-    case 'asteroid':
-    case 'meteoroid':
+case 'asteroid':
+case 'meteoroid':
       if (!planet.shape || planet.shape.length < 3) {
         const points = 12 + Math.floor(Math.random() * 6);
         const irregularity = 0.4;
@@ -651,68 +764,107 @@ const drawAccretionDisk = (innerRadius, outerRadius, colors) => {
       gradient.addColorStop(0, '#ffffff');
       ctx.fillStyle = gradient;
       ctx.fill();
+      ctx.strokeStyle = '#000000';
+      ctx.lineWidth = 2;
+      ctx.stroke();
       break;
-
-    case 'planetoid':
-      ctx.rotate((planet.rotation || 0) * visualTimeScale);
-      ctx.beginPath();
-      const safeRx = Math.max(1, (planet.rx || planet.radius) * camera.zoom);
-      const safeRy = Math.max(1, (planet.ry || planet.radius) * camera.zoom);
-      ctx.ellipse(0, 0, safeRx, safeRy, 0, 0, Math.PI * 2);
-      const ellipseGradient = ctx.createRadialGradient(0, 0, 0, 0, 0, Math.max(safeRx, safeRy));
-      ellipseGradient.addColorStop(0, planet.highlight || lightenColor(planet.color || '#555555', 30));
-      
-      ctx.fillStyle = ellipseGradient;
-      ctx.fill();
-      break;
-    case 'rockyPlanet':
-    
+case 'planetoid':
+if (!planet.craters) {
+    planet.craters = [];
+    const numCraters = 3 + Math.floor(Math.random() * 6); 
+    for (let i = 0; i < numCraters; i++) {
+        let x, y, distance;
+        do {
+            x = (Math.random() - 0.5) * 1.8; 
+            y = (Math.random() - 0.5) * 1.8;
+            distance = Math.sqrt(x*x + y*y);
+        } while (distance > 0.8); 
+        planet.craters.push({
+            x: x,
+            y: y,
+            radius: Math.random() * 0.15 + 0.05 
+        });
+    }
+}
+ctx.rotate((planet.rotation || 0) * visualTimeScale);
+ctx.beginPath();
+const safeRx = Math.max(1, (planet.rx || planet.radius) * camera.zoom);
+const safeRy = Math.max(1, (planet.ry || planet.radius) * camera.zoom);
+ctx.ellipse(0, 0, safeRx, safeRy, 0, 0, Math.PI * 2);
+const safeColor = (color) => {
+    return /^#([A-Fa-f0-9]{3}){1,2}$/.test(color) ? color : '#555555';
+};
+const ellipseGradient = ctx.createRadialGradient(0, 0, 0, 0, 0, Math.max(safeRx, safeRy));
+ellipseGradient.addColorStop(0, safeColor(planet.highlight || lightenColor(planet.color || '#555555', 30)));
+ctx.fillStyle = ellipseGradient;
+ctx.fill();
+ctx.strokeStyle = '#000000';
+ctx.lineWidth = 2 / radius;
+ctx.stroke();
+planet.craters.forEach(crater => {
+    const craterX = crater.x * safeRx;
+    const craterY = crater.y * safeRy;
+    const craterRadius = crater.radius * Math.min(safeRx, safeRy);
+    const maxDistance = Math.min(safeRx, safeRy) - craterRadius;
+    const currentDistance = Math.sqrt(craterX*craterX + craterY*craterY);
+    if (currentDistance + craterRadius <= Math.min(safeRx, safeRy)) {
+        ctx.beginPath();
+        ctx.arc(craterX, craterY, craterRadius, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.strokeStyle = '#000000';
+        ctx.lineWidth = 2 / radius;
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.arc(craterX, craterY, craterRadius * 0.7, 0, Math.PI * 2);
+        ctx.lineWidth = 2 / radius;
+        ctx.stroke();
+    }
+});
+break;
+case 'rockyPlanet':
     ctx.beginPath();
     ctx.arc(0, 0, radius, 0, Math.PI * 2);
     ctx.fillStyle = planet.color || '#3498db';
     ctx.fill();
-
-    
+    ctx.strokeStyle = '#000000';
+    ctx.lineWidth = 2;
+    ctx.stroke();
     if (planet.continents && planet.continents.length > 0) {
         ctx.save();
         ctx.rotate((planet.rotation || 0) * visualTimeScale);
-        ctx.scale(radius, radius); 
-
+        ctx.scale(radius, radius);
         planet.continents.forEach(continent => {
-            ctx.beginPath();
-            ctx.moveTo(continent[0].x, continent[0].y);
-            for (let i = 1; i < continent.length; i++) {
-                ctx.lineTo(continent[i].x, continent[i].y);
-            }
-            ctx.closePath();
-            ctx.fillStyle = planet.landColor || astroSettings.secondaryColor || '#2ecc71';
-            ctx.fill();
+        ctx.beginPath();
+        ctx.moveTo(continent[0].x, continent[0].y);
+        for (let i = 1; i < continent.length; i++) {
+            ctx.lineTo(continent[i].x, continent[i].y);
+        }
+        ctx.closePath();
+        ctx.fillStyle = planet.landColor || astroSettings.secondaryColor || '#2ecc71';
+        ctx.fill();
+        ctx.strokeStyle = '#000000';
+        ctx.lineWidth = 2 / radius;
+        ctx.stroke();
         });
         ctx.restore();
     }
-
-    
     if (planet.clouds && planet.clouds > 0 && graphicsQuality !== 'low') {
         ctx.beginPath();
         ctx.arc(0, 0, radius * 1.02, 0, Math.PI * 2);
         ctx.fillStyle = `rgba(255, 255, 255, ${planet.clouds/100 * 0.7})`;
         ctx.fill();
     }
-
-            
         if (planet.waterValue > 0) {
             const oceanLevel = planet.waterValue / 100;
-            
         }
-        
-        
         if (planet.cloudsValue > 0 && graphicsQuality !== 'low') {
             const cloudCover = planet.cloudsValue / 100 * 0.7;
             ctx.fillStyle = `rgba(255, 255, 255, ${cloudCover})`;
-            
         }
+      ctx.strokeStyle = '#000000';
+      ctx.lineWidth = 2;
+      ctx.stroke();
     break;
-
     case 'nebula':
       ctx.globalAlpha = 0.3;
       ctx.beginPath();
@@ -730,24 +882,22 @@ const drawAccretionDisk = (innerRadius, outerRadius, colors) => {
       ctx.fillStyle = nebulaGradient;
       ctx.fill();
       ctx.globalAlpha = 1;
+      ctx.strokeStyle = '#000000';
+      ctx.lineWidth = 2;
+      ctx.stroke();
       break;
-
     case 'comet':
     case 'meteorite':
-      
       ctx.beginPath();
       ctx.arc(0, 0, radius * 0.5, 0, Math.PI * 2);
       ctx.fillStyle = planet.color || '#CCCCCC';
       ctx.fill();
-      
-      
       let tailAngle = 0;
       if (planet.vx !== 0 || planet.vy !== 0) {
         tailAngle = Math.atan2(planet.vy, planet.vx) + Math.PI;
       } else if (planet.tailDirection) {
         tailAngle = planet.tailDirection + Math.PI;
       }
-      
       ctx.save();
       ctx.rotate(tailAngle);
       const tailGradient = ctx.createLinearGradient(0, 0, radius * 10, 0);
@@ -763,6 +913,9 @@ const drawAccretionDisk = (innerRadius, outerRadius, colors) => {
       ctx.closePath();
       ctx.fill();
       ctx.restore();
+      ctx.strokeStyle = '#000000';
+      ctx.lineWidth = 2;
+      ctx.stroke();
       break;
     case 'ttauriStar':
     const scaledRadiusTauri = planet.radius * camera.zoom;
@@ -770,7 +923,6 @@ const drawAccretionDisk = (innerRadius, outerRadius, colors) => {
         'rgba(255, 165, 0, 0.3)',
         'rgba(255, 69, 0, 0.1)'
         ]);
-        
         ctx.beginPath();
         ctx.arc(0, 0, radius * (1 + pulseFactor * 0.2), 0, Math.PI * 2);
         const ttauriGradient = ctx.createRadialGradient(0, 0, 0, 0, 0, radius);
@@ -778,7 +930,6 @@ const drawAccretionDisk = (innerRadius, outerRadius, colors) => {
         ttauriGradient.addColorStop(1, '#FF8C00');
         ctx.fillStyle = ttauriGradient;
         ctx.fill();
-        
         ctx.strokeStyle = 'rgba(255, 255, 255, 0.35)';
         ctx.lineWidth = 2;
         ctx.beginPath();
@@ -787,8 +938,10 @@ const drawAccretionDisk = (innerRadius, outerRadius, colors) => {
         ctx.moveTo(0, radius);
         ctx.lineTo(0, radius * 3);
         ctx.stroke();
+        ctx.strokeStyle = '#000000';
+        ctx.lineWidth = 2;
+        ctx.stroke();
         break;
-
     case 'star':
     case 'redDwarf':
     case 'brownDwarf':
@@ -797,14 +950,9 @@ const drawAccretionDisk = (innerRadius, outerRadius, colors) => {
     case 'giantStar':
     case 'hypergiant':
     case 'massiveStar':
-    
     case 'redGiant':
     case 'redSupergiant':
     case 'redHypergiant':
-    
-    
-    
-      
       const starConfigs = {
         star: { colors: ['#FFD700', '#FF8C00'], scale: 1 },
         redDwarf: { colors: ['#FF6347', '#8B0000'], scale: 1.2 },
@@ -822,11 +970,8 @@ const drawAccretionDisk = (innerRadius, outerRadius, colors) => {
         quarkStar: { colors: ['#3A2BE2', '#000080'], scale: 0.3 },
         magnetar: { colors: ['#FFFFFF', '#E0F082'], scale: 0.3 }
       };
-      
       const config = starConfigs[planet.type] || starConfigs.star;
       const scaledRadius = Math.max(1, radius * config.scale);
-      
-      
       ctx.beginPath();
       ctx.arc(0, 0, scaledRadius, 0, Math.PI * 2);
       const starGradient = ctx.createRadialGradient(0, 0, 0, 0, 0, scaledRadius);
@@ -834,31 +979,26 @@ const drawAccretionDisk = (innerRadius, outerRadius, colors) => {
       starGradient.addColorStop(1, config.colors[1]);
       ctx.fillStyle = starGradient;
       ctx.fill();
-      
-      
+      ctx.strokeStyle = '#000000';
+      ctx.lineWidth = 2;
+      ctx.stroke();
       if (planet.type === 'pulsar' || planet.type === 'quarkStar') {
         ctx.globalAlpha = 0.3 + pulseFactor * 0.7;
         ctx.rotate(Date.now() * 0.001);
-        
-        
         const beamLength = scaledRadius * 15; 
         const beamWidthStart = scaledRadius * 0.1;
         const beamWidthEnd = scaledRadius * 2; 
-        
-        
         drawJet(beamLength, beamWidthStart, beamWidthEnd, [
         { position: 0, color: 'rgb(255, 255, 255)' },
         { position: 0.7, color: 'rgba(239, 255, 255, 0.5)' },
         { position: 1, color: 'rgba(0, 255, 255, 0)' }
         ], planet.jetAngle);
-        
         ctx.rotate(Math.PI);
         drawJet(beamLength, beamWidthStart, beamWidthEnd, [
           { position: 0, color: 'rgb(255, 255, 255)' },
           { position: 0.7, color: 'rgba(255, 255, 255, 0.5)' },
           { position: 1, color: 'rgba(0, 255, 255, 0)' }
         ]);
-        
         ctx.globalAlpha = 1;
       }
       else if (planet.type === 'magnetar') {
@@ -883,37 +1023,26 @@ const drawAccretionDisk = (innerRadius, outerRadius, colors) => {
         }
         ctx.globalAlpha = 1;
       }
-      
-      
       if (['pulsar', 'quarkStar', 'magnetar', 'strangeStar'].includes(planet.type)) {
         drawGravitationalLens();
       }
       break;
-
     case 'blackHole':
-      
     drawGravitationalLens(radius, 'attractive', 1.2);
       ctx.beginPath();
       ctx.arc(0, 0, radius, 0, Math.PI * 2);
       ctx.fillStyle = '#000000';
       ctx.fill();
-
-      
       ctx.beginPath();
       ctx.arc(0, 0, radius * 1.2, 0, Math.PI * 2);
       ctx.strokeStyle = 'rgba(255, 255, 255, 0.5)';
       ctx.lineWidth = 1;
       ctx.stroke();
       break;
-
-
-        
         break;
     case 'wormhole':
       const safeRadius = Math.max(1, radius);
       const safeInnerRadius = Math.max(0.1, safeRadius * 0.7);
-      
-      
       ctx.beginPath();
       ctx.arc(0, 0, safeRadius, 0, Math.PI * 2);
       const ringGradient = ctx.createRadialGradient(0, 0, safeRadius * 0.8, 0, 0, safeRadius);
@@ -921,8 +1050,6 @@ const drawAccretionDisk = (innerRadius, outerRadius, colors) => {
       ringGradient.addColorStop(1, '#00FFFF');
       ctx.fillStyle = ringGradient;
       ctx.fill();
-      
-      
       ctx.beginPath();
       ctx.arc(0, 0, safeInnerRadius, 0, Math.PI * 2);
       const portalGradient = ctx.createRadialGradient(0, 0, 0, 0, 0, safeInnerRadius);
@@ -930,8 +1057,6 @@ const drawAccretionDisk = (innerRadius, outerRadius, colors) => {
       portalGradient.addColorStop(1, '#000066');
       ctx.fillStyle = portalGradient;
       ctx.fill();
-      
-      
       if (graphicsQuality !== 'low') {
         ctx.strokeStyle = 'rgba(0, 255, 255, 0.7)';
         ctx.lineWidth = 1;
@@ -942,35 +1067,29 @@ const drawAccretionDisk = (innerRadius, outerRadius, colors) => {
             const r = safeInnerRadius * (0.8 + Math.sin(a * 5 + (planet.rotation || 0) * visualTimeScale) * 0.2);
             ctx.lineTo(Math.cos(startAngle + a) * r, Math.sin(startAngle + a) * r);
           }
-
-          
         drawGravitationalLens(radius, 'attractive', 0.7);
           ctx.stroke();
         }
       }
+      ctx.strokeStyle = '#000000';
+      ctx.lineWidth = 2;
+      ctx.stroke();
       break;
-
 case 'quasar':
-    
     ctx.beginPath();
     ctx.arc(0, 0, radius, 0, Math.PI * 2);
     ctx.fillStyle = '#000000';
     ctx.fill();
-    
-    
     const scaledRadiusQuasar = planet.radius * camera.zoom;
     drawAccretionDisk(scaledRadiusQuasar * 1.2, scaledRadiusQuasar * 4, [
         'rgba(255, 215, 0, 0.6)',
         'rgba(255, 140, 0, 0.4)',
         'rgba(255, 69, 0, 0.2)'
     ]);
-    
-    
     if (graphicsQuality !== 'low' && planet.jets) {
         const jetLength = radius * 20;
         const jetWidthStart = radius * 0.1;
         const jetWidthEnd = radius * 2.5;
-        
         ctx.save();
         ctx.rotate(planet.jetAngle + (planet.rotation || 0));
         drawJet(jetLength, jetWidthStart, jetWidthEnd, [
@@ -978,7 +1097,6 @@ case 'quasar':
             { position: 0.5, color: 'rgba(255,255,150,0.5)' },
             { position: 1, color: 'rgba(255,255,100,0.01)' }
         ]);
-        
         ctx.rotate(Math.PI);
         drawJet(jetLength, jetWidthStart, jetWidthEnd, [
             { position: 0, color: 'rgba(255,255,255,1)' },
@@ -987,13 +1105,9 @@ case 'quasar':
         ]);
         ctx.restore();
     }
-    
-    
     drawGravitationalLens(radius, 'attractive', 1.5);
     break;
-
 case 'whiteHole':
-    
     ctx.beginPath();
     ctx.arc(0, 0, radius, 0, Math.PI * 2);
     const whiteHoleGradient = ctx.createRadialGradient(0, 0, 0, 0, 0, radius);
@@ -1001,8 +1115,6 @@ case 'whiteHole':
     whiteHoleGradient.addColorStop(1, '#e0ffff');
     ctx.fillStyle = whiteHoleGradient;
     ctx.fill();
-    
-    
     if (graphicsQuality !== 'low') {
         ctx.beginPath();
         ctx.arc(0, 0, radius * 1.5, 0, Math.PI * 2);
@@ -1012,13 +1124,10 @@ case 'whiteHole':
         ctx.fillStyle = glowGradient;
         ctx.fill();
     }
-    
-    
     if (graphicsQuality !== 'low' && planet.jets) {
         const jetLength = radius * 5;
         const jetWidthStart = radius * 0.1;
         const jetWidthEnd = radius * 1.2;
-        
         ctx.save();
         ctx.rotate(planet.jetAngle + (planet.rotation || 0));
         drawJet(jetLength, jetWidthStart, jetWidthEnd, [
@@ -1026,7 +1135,6 @@ case 'whiteHole':
             { position: 0.5, color: 'rgba(200,220,255,0.6)' },
             { position: 1, color: 'rgba(150,200,255,0.01)' }
         ]);
-        
         ctx.rotate(Math.PI);
         drawJet(jetLength, jetWidthStart, jetWidthEnd, [
             { position: 0, color: 'rgba(255,255,255,1)' },
@@ -1035,11 +1143,7 @@ case 'whiteHole':
         ]);
         ctx.restore();
     }
-    
-    
     drawGravitationalLens(radius, 'repulsive', 1.0);
-    
-    
     const expansionFactor = 1 + Math.sin(Date.now() * 0.005) * 0.1;
     ctx.beginPath();
     ctx.arc(0, 0, radius * 1.8 * expansionFactor, 0, Math.PI * 2);
@@ -1051,104 +1155,82 @@ case 'whiteHole':
     expansionGradient.addColorStop(1, 'rgba(100, 180, 255, 0)');
     ctx.fillStyle = expansionGradient;
     ctx.fill();
+    ctx.strokeStyle = '#000000';
+    ctx.lineWidth = 2;
+    ctx.stroke();
     break;
-
 case 'neutronStar':
-    
     const neutronRadius = planet.radius * camera.zoom;
     const neutronGradient = ctx.createRadialGradient(0, 0, 0, 0, 0, neutronRadius);
     neutronGradient.addColorStop(0, '#6ae1f7');
     neutronGradient.addColorStop(1, '#3498db');
-    
-    
     ctx.beginPath();
     ctx.arc(0, 0, neutronRadius, 0, Math.PI * 2);
     ctx.fillStyle = neutronGradient;
     ctx.fill();
-    
-    
     const pulseSize = neutronRadius * (1 + Math.sin(Date.now() * 0.005) * 0.1);
     ctx.beginPath();
     ctx.arc(0, 0, pulseSize, 0, Math.PI * 2);
     ctx.strokeStyle = 'rgba(255, 255, 255, 0.4)';
     ctx.lineWidth = 3;
     ctx.stroke();
-    
-    
     drawGravitationalLens(neutronRadius, 'attractive', 0.9);
+    ctx.strokeStyle = '#000000';
+    ctx.lineWidth = 2;
+    ctx.stroke();
     break;
-
-
 case 'pulsar':
-    
     const pulsarRadius = planet.radius * camera.zoom;
     const pulsarGradient = ctx.createRadialGradient(0, 0, 0, 0, 0, pulsarRadius);
     pulsarGradient.addColorStop(0, '#E0FFFF');
     pulsarGradient.addColorStop(1, '#E0FFFF');
-    
-    
     ctx.beginPath();
     ctx.arc(0, 0, pulsarRadius, 0, Math.PI * 2);
     ctx.fillStyle = pulsarGradient;
     ctx.fill();
-    
-    
     ctx.globalAlpha = 0.7;
     ctx.rotate(planet.jetAngle);
-    
     const beamLength = pulsarRadius * 115;
     const beamWidthStart = pulsarRadius * 0.1;
     const beamWidthEnd = pulsarRadius * 2;
-    
     drawJet(beamLength, beamWidthStart, beamWidthEnd, [
         { position: 0, color: 'rgba(220, 225, 225, 1)' },
         { position: 0.7, color: 'rgba(220, 255, 255, 0.5)' },
         { position: 1, color: 'rgba(0, 255, 255, 0)' }
     ]);
-    
     ctx.rotate(Math.PI);
     drawJet(beamLength, beamWidthStart, beamWidthEnd, [
         { position: 0, color: 'rgba(220, 255, 255, 1)' },
         { position: 0.7, color: 'rgba(220, 255, 255, 0.5)' },
         { position: 1, color: 'rgba(0, 255, 255, 0)' }
     ]);
-    
     ctx.globalAlpha = 1;
     drawGravitationalLens(radius, 'attractive', 0.8);
+    ctx.strokeStyle = '#000000';
+    ctx.lineWidth = 2;
+    ctx.stroke();
     break;
-
 case 'quarkStar': {
-    
     const quarkScaledRadius = planet.radius * camera.zoom;
-    
-    
     drawGravitationalLens(quarkScaledRadius, 'attractive', 1.2);
-    
-    
     const quarkGradient = ctx.createRadialGradient(0, 0, 0, 0, 0, quarkScaledRadius);
     quarkGradient.addColorStop(0, '#8A2BE2');
     quarkGradient.addColorStop(0.7, '#4B0082');
     quarkGradient.addColorStop(1, '#2E0854');
-    
     ctx.beginPath();
     ctx.arc(0, 0, quarkScaledRadius, 0, Math.PI * 2);
     ctx.fillStyle = quarkGradient;
     ctx.fill();
-    
-    
     const quarkPulseSize = quarkScaledRadius * (1 + Math.sin(Date.now() * 0.005) * 0.15);
     ctx.beginPath();
     ctx.arc(0, 0, quarkPulseSize, 0, Math.PI * 2);
     ctx.strokeStyle = 'rgba(255, 255, 255, 0.4)';
     ctx.lineWidth = 3;
     ctx.stroke();
-    
-    
     if (graphicsQuality !== 'low') {
         for (let i = 0; i < 12; i++) {
             const ringSize = quarkScaledRadius * (1.5 + i * 0.25);
             const alpha = 0.4 - i * 0.05;
-            
             ctx.beginPath();
             ctx.arc(0, 0, ringSize, 0, Math.PI * 2);
             ctx.strokeStyle = `rgba(138, 43, 226, ${alpha})`;
@@ -1156,19 +1238,12 @@ case 'quarkStar': {
             ctx.stroke();
         }
     }
-    
-    
     ctx.globalAlpha = 0.85;
-    
-    
     const rotationSpeed = planet.jetRotationSpeed || 3.0;
     planet.jetAngle = (planet.jetAngle || 0) + rotationSpeed * visualTimeScale;
-    
-    
     const beamLength = quarkScaledRadius * 25;
     const beamWidthStart = quarkScaledRadius * 0.15;
     const beamWidthEnd = quarkScaledRadius * 3.5;
-    
     ctx.save();
     ctx.rotate(planet.jetAngle);
     drawJet(beamLength, beamWidthStart, beamWidthEnd, [
@@ -1177,8 +1252,6 @@ case 'quarkStar': {
         { position: 0.6, color: 'rgba(75, 0, 130, 0.6)' },
         { position: 1, color: 'rgba(46, 8, 84, 0)' }
     ]);
-    
-    
     ctx.rotate(Math.PI);
     drawJet(beamLength, beamWidthStart, beamWidthEnd, [
         { position: 0, color: 'rgba(138, 43, 226, 1)' },
@@ -1187,15 +1260,12 @@ case 'quarkStar': {
         { position: 1, color: 'rgba(46, 8, 84, 0)' }
     ]);
     ctx.restore();
-    
-    
     if (graphicsQuality !== 'low') {
         ctx.globalAlpha = 0.7;
         for (let i = 0; i < 6; i++) {
             const angle = i * Math.PI/3;
             ctx.save();
             ctx.rotate(planet.jetAngle * 0.5 + angle);
-            
             drawJet(
                 beamLength * 0.8, 
                 beamWidthStart * 0.3, 
@@ -1206,13 +1276,10 @@ case 'quarkStar': {
                     { position: 1, color: 'rgba(0, 0, 255, 0)' }
                 ]
             );
-            
             ctx.restore();
         }
         ctx.globalAlpha = 1;
     }
-    
-    
     ctx.beginPath();
     ctx.arc(0, 0, quarkScaledRadius * 1.5, 0, Math.PI * 2);
     const auraGradient = ctx.createRadialGradient(
@@ -1223,40 +1290,32 @@ case 'quarkStar': {
     auraGradient.addColorStop(1, 'rgba(46, 8, 84, 0)');
     ctx.fillStyle = auraGradient;
     ctx.fill();
+    ctx.strokeStyle = '#000000';
+    ctx.lineWidth = 2;
+    ctx.stroke();
     break;
 }
 case 'strangeStar': {
-    
     const strangeScaledRadius = planet.radius * camera.zoom;
-    
-    
     drawGravitationalLens(strangeScaledRadius, 'attractive', 1.5);
-    
-    
     const strangeGradient = ctx.createRadialGradient(0, 0, 0, 0, 0, strangeScaledRadius);
     strangeGradient.addColorStop(0, '#8A00FF');  
     strangeGradient.addColorStop(0.3, '#FF00FF'); 
     strangeGradient.addColorStop(0.7, '#00FFFF'); 
     strangeGradient.addColorStop(1, '#0000FF');   
-    
     ctx.beginPath();
     ctx.arc(0, 0, strangeScaledRadius, 0, Math.PI * 2);
     ctx.fillStyle = strangeGradient;
     ctx.fill();
-    
-    
     if (graphicsQuality !== 'low') {
         ctx.globalAlpha = 0.8;
         for (let i = 0; i < 36; i++) {
             const angle = (i / 36) * Math.PI * 2;
             const distance = strangeScaledRadius * (0.6 + Math.random() * 0.3);
             const size = strangeScaledRadius * 0.05 * (0.8 + Math.random() * 0.4);
-            
             ctx.save();
             ctx.rotate(angle);
             ctx.translate(distance, 0);
-            
-            
             ctx.beginPath();
             ctx.moveTo(0, 0);
             for (let j = 0; j < 6; j++) {
@@ -1264,26 +1323,20 @@ case 'strangeStar': {
                 ctx.lineTo(Math.cos(hexAngle) * size, Math.sin(hexAngle) * size);
             }
             ctx.closePath();
-            
             const patternColor = i % 3 === 0 ? '#FF00FF' : 
                                i % 3 === 1 ? '#00FFFF' : '#FFFF00';
             ctx.fillStyle = patternColor;
             ctx.fill();
-            
             ctx.restore();
         }
         ctx.globalAlpha = 1;
     }
-    
-    
     const pulseSize = strangeScaledRadius * (1 + Math.sin(Date.now() * 0.003) * 0.25);
     ctx.beginPath();
     ctx.arc(0, 0, pulseSize, 0, Math.PI * 2);
     ctx.strokeStyle = 'rgba(255, 255, 255, 0.6)';
     ctx.lineWidth = 5;
     ctx.stroke();
-    
-    
     ctx.beginPath();
     ctx.arc(0, 0, strangeScaledRadius * 1.8, 0, Math.PI * 2);
     const fluorescenceGradient = ctx.createRadialGradient(
@@ -1295,19 +1348,12 @@ case 'strangeStar': {
     fluorescenceGradient.addColorStop(1, 'rgba(0, 255, 255, 0)');
     ctx.fillStyle = fluorescenceGradient;
     ctx.fill();
-    
-    
     ctx.globalAlpha = 0.9;
-    
-    
     const rotationSpeed = (planet.jetRotationSpeed || 2.0) + Math.sin(Date.now() * 0.001) * 1.5;
     planet.jetAngle = (planet.jetAngle || 0) + rotationSpeed * visualTimeScale;
-    
-    
     const beamLength = strangeScaledRadius * 30;
     const beamWidthStart = strangeScaledRadius * 0.2;
     const beamWidthEnd = strangeScaledRadius * 4;
-    
     ctx.save();
     ctx.rotate(planet.jetAngle);
     drawJet(beamLength, beamWidthStart, beamWidthEnd, [
@@ -1317,8 +1363,6 @@ case 'strangeStar': {
         { position: 0.6, color: 'rgba(255, 255, 0, 0.6)' },
         { position: 1, color: 'rgba(0, 0, 0, 0)' }
     ]);
-    
-    
     ctx.rotate(Math.PI);
     drawJet(beamLength, beamWidthStart, beamWidthEnd, [
         { position: 0, color: 'rgba(138, 43, 226, 1)' },
@@ -1328,15 +1372,12 @@ case 'strangeStar': {
         { position: 1, color: 'rgba(0, 0, 0, 0)' }
     ]);
     ctx.restore();
-    
-    
     if (graphicsQuality !== 'low') {
         ctx.globalAlpha = 0.7;
         for (let i = 0; i < 4; i++) {
             const angle = i * Math.PI/2;
             ctx.save();
             ctx.rotate(planet.jetAngle * 0.5 + angle);
-            
             drawJet(
                 beamLength * 0.8, 
                 beamWidthStart * 0.3, 
@@ -1347,13 +1388,10 @@ case 'strangeStar': {
                     { position: 1, color: 'rgba(0, 0, 255, 0)' }
                 ]
             );
-            
             ctx.restore();
         }
         ctx.globalAlpha = 1;
     }
-    
-    
     ctx.beginPath();
     ctx.arc(0, 0, strangeScaledRadius * 1.5, 0, Math.PI * 2);
     const auraGradient = ctx.createRadialGradient(
@@ -1364,17 +1402,16 @@ case 'strangeStar': {
     auraGradient.addColorStop(1, 'rgba(46, 8, 84, 0)');
     ctx.fillStyle = auraGradient;
     ctx.fill();
+    ctx.strokeStyle = '#000000';
+    ctx.lineWidth = 2;
+    ctx.stroke();
     break;
 }
     case 'magnetar':
-        
         drawGravitationalLens(radius, 'attractive', 1.1);
-        
-        
         for (let i = 0; i < 8; i++) {
             const ringSize = radius * (1.5 + i * 0.3);
             const alpha = 0.4 - i * 0.05;
-            
             ctx.beginPath();
             ctx.arc(0, 0, ringSize, 0, Math.PI * 2);
             ctx.strokeStyle = `rgba(138, 43, 226, ${alpha})`;
@@ -1386,27 +1423,27 @@ case 'strangeStar': {
             ctx.strokeStyle = 'rgba(255, 255, 255, 0.4)';
             ctx.lineWidth = 3;
             ctx.stroke();
-            
             drawGravitationalLens(radius, 'attractive', 1.1);
         }
+        ctx.strokeStyle = '#000000';
+        ctx.lineWidth = 2;
+        ctx.stroke();
         break;
-
     default:
-      
       const safeRadiusDefault = Math.max(1, radius);
       ctx.beginPath();
       ctx.arc(0, 0, safeRadiusDefault, 0, Math.PI * 2);
       ctx.fillStyle = planet.color || '#cccccc';
       ctx.fill();
+      ctx.strokeStyle = '#000000';
+      ctx.lineWidth = 2;
+      ctx.stroke();
   }
-
-  
 if ([
     'blackHole', 'quasar', 'supermassiveStar', 'quarkStar'
 ].includes(planet.type) && graphicsQuality === 'high') {
     const distortionStrength = Math.min(1.5, planet.mass / 1e15);
     const timeFactor = Date.now() * 0.0005;
-    
     ctx.beginPath();
     for (let i = 0; i < 36; i++) {
         const angle = (i / 36) * Math.PI * 2;
@@ -1414,29 +1451,25 @@ if ([
         const pointRadius = radius * 1.8 * (1 + distortion);
         const x = Math.cos(angle) * pointRadius;
         const y = Math.sin(angle) * pointRadius;
-        
         if (i === 0) ctx.moveTo(x, y);
         else ctx.lineTo(x, y);
     }
     ctx.closePath();
-    
     const distortionGradient = ctx.createRadialGradient(0, 0, 0, 0, 0, radius * 2);
     distortionGradient.addColorStop(0, 'rgba(255, 255, 255, 0.1)');
     distortionGradient.addColorStop(1, 'rgba(255, 255, 255, 0)');
     ctx.fillStyle = distortionGradient;
     ctx.fill();
 }
-
   ctx.restore();
-
   if (shadowsEnabled && graphicsQuality ==='medium' && ![
     'star', 'brownDwarf', 'whiteDwarf', 'blackHole', 'quasar',
     'pulsar', 'quarkStar', 'magnetar'
-  ].includes(planet.type)) {
+].includes(planet.type)) {
+    if (isFinite(x) && isFinite(y) && isFinite(radius) && radius > 0) {
         const lightIntensity = calculateLightIntensity();
         const shadowIntensity = 1 - lightIntensity;
         const shadowAlpha = 0.7 * shadowIntensity;
-        
         ctx.beginPath();
         ctx.arc(x, y, radius, 0, Math.PI * 2);
         const shadowGradient = ctx.createRadialGradient(
@@ -1447,23 +1480,21 @@ if ([
             y, 
             radius * 3.2
         );
-        
         shadowGradient.addColorStop(0, `rgba(0, 0, 0, ${0.8 * shadowAlpha})`);
         shadowGradient.addColorStop(0.7, `rgba(0, 0, 0, ${0.4 * shadowAlpha})`);
         shadowGradient.addColorStop(1, 'transparent');
-        
         ctx.fillStyle = shadowGradient;
         ctx.fill();
     }
-
-    if (shadowsEnabled && graphicsQuality ==='high' && ![
+}
+if (shadowsEnabled && graphicsQuality ==='high' && ![
     'star', 'brownDwarf', 'whiteDwarf', 'blackHole', 'quasar',
     'pulsar', 'quarkStar', 'magnetar'
-  ].includes(planet.type)) {
+].includes(planet.type)) {
+    if (isFinite(x) && isFinite(y) && isFinite(radius) && radius > 0) {
         const lightIntensity = calculateLightIntensity();
         const shadowIntensity = 1 - lightIntensity;
         const shadowAlpha = 10.7 * shadowIntensity;
-        
         ctx.beginPath();
         ctx.arc(x, y, radius, 0, Math.PI * 2);
         const shadowGradient = ctx.createRadialGradient(
@@ -1474,15 +1505,13 @@ if ([
             y, 
             radius * 3.2
         );
-    
         shadowGradient.addColorStop(0, `rgba(0, 0, 0, ${0.8 * shadowAlpha})`);
         shadowGradient.addColorStop(0.7, `rgba(0, 0, 0, ${100.4 * shadowAlpha})`);
         shadowGradient.addColorStop(1, 'transparent');
-        
         ctx.fillStyle = shadowGradient;
         ctx.fill();
     }
-
+}
   if ([
     'star', 'brownDwarf', 'whiteDwarf', 'redDwarf', 'ttauriStar',
     'carbonStar', 'giantStar', 'hypergiant', 'massiveStar', 'strangeStar',
@@ -1500,14 +1529,11 @@ if ([
     ctx.fillStyle = glowGradient;
     ctx.fill();
   }
-
-  
   if (planet.rings && graphicsQuality !== 'low') {
     const safeRadius = Math.max(1, radius);
     ctx.save();
     ctx.translate(x, y);
     ctx.rotate(planet.ringRotation || 0);
-
     let ringThickness, ringRadius;
     if (planet.type === 'asteroid') {
       ringThickness = Math.max(1, Math.min(4, (planet.ringMass || 5) * 0.05)) * camera.zoom;
@@ -1519,13 +1545,11 @@ if ([
       ringThickness = Math.max(2, Math.min(20, planet.ringMass * 0.1)) * camera.zoom;
       ringRadius = safeRadius * 1.8;
     }
-
     ctx.beginPath();
     ctx.arc(0, 0, ringRadius, 0, Math.PI * 2);
     ctx.strokeStyle = planet.ringColor || 'rgba(180,180,180,0.5)';
     ctx.lineWidth = ringThickness;
     ctx.stroke();
-
     if (graphicsQuality === 'high') {
       ctx.beginPath();
       ctx.arc(0, 0, ringRadius, 0, Math.PI * 2);
@@ -1535,25 +1559,223 @@ if ([
     }
     ctx.restore();
   }
-
-  
   if (namesVisible && planet.name && graphicsQuality !== 'low') {
     ctx.fillStyle = '#ffffff';
     ctx.font = '12px Arial';
     ctx.textAlign = 'center';
     ctx.fillText(planet.name, x, y - radius - 10);
-    
     if (planet.planetClass && camera.zoom > 0.3) {
       ctx.font = '10px Arial';
       ctx.fillStyle = '#cccccc';
       ctx.fillText(planet.planetClass, x, y - radius - 25);
     }
   }
-
+}
+function drawRocketDetails(rocket, ctx, screenRadius) {
+    const radius = (typeof screenRadius === 'number') ? screenRadius : (rocket.radius * camera.zoom);
+    ctx.fillStyle = lightenColor(rocket.color || '#ff4444', -10);
+    ctx.fillRect(-radius * 1.3, -radius * 0.45, Math.max(0.3, radius * 0.6), Math.max(0.3, radius * 0.9));
+    ctx.fillRect(-radius * 0.6, -radius * 0.35, Math.max(0.2, radius * 0.4), Math.max(0.25, radius * 0.7));
+    ctx.strokeStyle = 'rgba(0,0,0,0.25)';
+    ctx.lineWidth = Math.max(0.2, 0.08 * radius);
+    ctx.beginPath();
+    ctx.moveTo(-radius * 1.05, -radius * 0.3);
+    ctx.lineTo(-radius * 1.05, radius * 0.3);
+    ctx.moveTo(-radius * 0.45, -radius * 0.25);
+    ctx.lineTo(-radius * 0.45, radius * 0.25);
+    ctx.stroke();
+    const flameStart = -radius * 1.4;
+    const flameEnd = -radius * (2.6 + Math.random() * 0.8);
+    const g = ctx.createLinearGradient(flameStart, 0, flameEnd, 0);
+    g.addColorStop(0, 'rgba(255,200,40,0.9)');
+    g.addColorStop(0.4, 'rgba(255,120,20,0.8)');
+    g.addColorStop(0.7, 'rgba(255,60,0,0.6)');
+    g.addColorStop(1, 'rgba(255,20,0,0)');
+    ctx.fillStyle = g;
+    ctx.beginPath();
+    ctx.moveTo(flameStart, -radius * 0.6);
+    ctx.lineTo(flameEnd, 0);
+    ctx.lineTo(flameStart, radius * 0.6);
+    ctx.closePath();
+    ctx.fill();
+    ctx.globalAlpha = 0.6;
+    ctx.fillStyle = 'rgba(255,180,60,0.25)';
+    ctx.beginPath();
+    ctx.arc(flameEnd, 0, Math.max(0.6, radius * 0.9), 0, Math.PI * 2);
+    ctx.fill();
+    ctx.globalAlpha = 1;
+}
+function drawSpaceshipDetails(spaceship, ctx, screenRadius) {
+    const radius = (typeof screenRadius === 'number') ? screenRadius : (spaceship.radius * camera.zoom);
+    const variant = spaceship.designVariant || 1;
+    if (variant === 1) {
+        ctx.beginPath();
+        ctx.arc(0, 0, radius * 0.35, 0, Math.PI * 2);
+        ctx.fillStyle = lightenColor(spaceship.color || '#88ff88', -10);
+        ctx.fill();
+    const sqSize = Math.max(0.3, radius * 0.8);
+    const sqX = radius * 0.9;
+    const sqY = -sqSize / 2;
+        ctx.save();
+        ctx.fillStyle = spaceship.color || '#88ff88';
+    ctx.fillRect(sqX - sqSize/2, sqY, sqSize, sqSize);
+    ctx.strokeStyle = 'rgba(255,255,255,0.2)';
+    ctx.lineWidth = Math.max(0.2, 0.06 * radius);
+    ctx.strokeRect(sqX - sqSize/2, sqY, sqSize, sqSize);
+        ctx.restore();
+    } else if (variant === 2) {
+        ctx.fillStyle = lightenColor(spaceship.color || '#88ff88', -5);
+    ctx.fillRect(-radius * 0.2, -radius * 0.6, Math.max(0.4, radius * 1.2), Math.max(0.4, radius * 1.2));
+        ctx.beginPath();
+        ctx.moveTo(radius * 0.9, 0);
+        ctx.lineTo(radius * 1.6, -radius * 0.6);
+        ctx.lineTo(radius * 1.6, radius * 0.6);
+        ctx.closePath();
+        ctx.fillStyle = spaceship.color || '#88ff88';
+        ctx.fill();
+    } else if (variant === 3) {
+        ctx.beginPath();
+        ctx.arc(0, 0, radius * 0.6, 0, Math.PI * 2);
+        ctx.fillStyle = spaceship.color || '#88ff88';
+        ctx.fill();
+        ctx.beginPath();
+        ctx.moveTo(radius * 0.4, 0);
+        ctx.lineTo(radius * 1.2, -radius * 0.4);
+        ctx.lineTo(radius * 1.2, radius * 0.4);
+        ctx.closePath();
+        ctx.fillStyle = '#666';
+        ctx.fill();
+    } else {
+        ctx.beginPath();
+        ctx.moveTo(radius * 1.2, 0);
+        ctx.lineTo(-radius * 0.8, -radius * 0.8);
+        ctx.lineTo(-radius * 0.8, radius * 0.8);
+        ctx.closePath();
+        ctx.fillStyle = spaceship.color || '#88ff88';
+        ctx.fill();
+    }
+    if (spaceship.subType === 2) {
+        ctx.strokeStyle = '#00aaff';
+        ctx.lineWidth = Math.max(0.2, 0.08 * radius);
+        ctx.beginPath();
+        ctx.moveTo(-radius * 0.7, -radius * 0.7);
+        ctx.lineTo(radius * 0.7, radius * 0.7);
+        ctx.moveTo(radius * 0.7, -radius * 0.7);
+        ctx.lineTo(-radius * 0.7, radius * 0.7);
+        ctx.stroke();
+    } else if (spaceship.subType === 3) {
+        ctx.beginPath();
+        ctx.arc(0, 0, radius * 0.5, 0, Math.PI * 2);
+        ctx.fillStyle = '#ff0000';
+        ctx.fill();
+    }
+    ctx.lineWidth = Math.max(0.15, 0.05 * radius);
+    ctx.beginPath();
+    ctx.moveTo(-radius * 0.4, -radius * 0.3);
+    ctx.lineTo(-radius * 0.4, radius * 0.3);
+    ctx.moveTo(radius * 0.4, -radius * 0.3);
+    ctx.lineTo(radius * 0.4, radius * 0.3);
+    ctx.stroke();
+}
+function drawSuperShipDetails(superShip, ctx, screenRadius) {
+    const radius = screenRadius ? Math.max(2, screenRadius) : Math.max(4, superShip.radius * camera.zoom);
+    ctx.beginPath();
+    ctx.arc(0, 0, radius * 0.5, 0, Math.PI * 2);
+    ctx.fillStyle = superShip.color || '#8A2BE2';
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(255,255,255,0.12)';
+    ctx.lineWidth = Math.max(1, 1 * camera.zoom);
+    ctx.beginPath();
+    ctx.arc(0, 0, radius * 0.7, 0, Math.PI * 2);
+    ctx.stroke();
+    const ringOuter = radius * 3.0;
+    const ringInner = radius * 2.4;
+    ctx.save();
+    ctx.rotate((Date.now() * 0.0002) % (Math.PI * 2));
+    ctx.beginPath();
+    ctx.arc(0, 0, ringOuter, 0, Math.PI * 2);
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.06)';
+    ctx.lineWidth = Math.max(2, 6 * camera.zoom);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.arc(0, 0, ringInner, 0, Math.PI * 2);
+    ctx.strokeStyle = 'rgba(0, 200, 255, 0.08)';
+    ctx.lineWidth = Math.max(1, 3 * camera.zoom);
+    ctx.setLineDash([8, 6]);
+    ctx.stroke();
+    ctx.setLineDash([]);
+    const segments = 24;
+    for (let i = 0; i < segments; i++) {
+        const a = (i / segments) * Math.PI * 2;
+        const sx = Math.cos(a) * ((ringInner + ringOuter) / 2);
+        const sy = Math.sin(a) * ((ringInner + ringOuter) / 2);
+        ctx.save();
+        ctx.translate(sx, sy);
+        ctx.rotate(a + Math.PI/2);
+        ctx.fillStyle = 'rgba(30,120,200,0.9)';
+        ctx.fillRect(-radius*0.6, -radius*0.12, radius*1.2, radius*0.24);
+        ctx.restore();
+    }
+    ctx.restore();
+    ctx.globalAlpha = 0.18;
+    ctx.fillStyle = '#00bfff';
+    ctx.beginPath();
+    ctx.arc(0, 0, ringOuter * 1.05, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.globalAlpha = 1;
+}
+function drawRocket(planet, ctx, x, y, radius) {
+    ctx.save();
+    ctx.translate(x, y);
+    let angle = 0;
+    if (planet.vx !== 0 || planet.vy !== 0) {
+        angle = Math.atan2(planet.vy, planet.vx);
+    }
+    ctx.rotate(angle);
+    ctx.fillStyle = planet.color || '#ff4444';
+    ctx.beginPath();
+    ctx.moveTo(radius * 2, 0);
+    ctx.lineTo(-radius * 1.5, -radius);
+    ctx.lineTo(-radius * 1.5, radius);
+    ctx.closePath();
+    ctx.fill();
+    drawRocketDetails(planet, ctx, radius);
+    ctx.restore();
+    if (planet.name) {
+        drawShipName(planet, ctx, x, y, radius);
+    }
+}
+function drawSpaceship(planet, ctx, x, y, radius) {
+    ctx.save();
+    ctx.translate(x, y);
+    let angle = 0;
+    if (planet.vx !== 0 || planet.vy !== 0) {
+        angle = Math.atan2(planet.vy, planet.vx);
+    }
+    ctx.rotate(angle);
+    ctx.fillStyle = planet.color || '#44ff44';
+    ctx.beginPath();
+    ctx.arc(0, 0, radius, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = '#88ff88';
+    ctx.fillRect(-radius * 0.5, -radius * 1.5, radius * 0.3, radius * 3);
+    ctx.fillRect(radius * 0.2, -radius * 1.5, radius * 0.3, radius * 3);
+    ctx.restore();
+    if (planet.name) {
+        drawShipName(planet, ctx, x, y, radius);
+    }
+}
+function drawShipName(planet, ctx, x, y, radius) {
+    ctx.fillStyle = '#ffffff';
+    ctx.font = '10px Arial';
+    ctx.textAlign = 'center';
+    ctx.fillText(planet.name, x, y - radius - 12);
+}
+function isSpaceshipType(type) {
+    return ['rocket', 'spaceship', 'superShip', 'satellite'].includes(type);
 }
 function drawRing(astro, ctx) {
     if (!astro.rings) return; 
-
     const { x, y, radius, ringColor, ringHighlight, ringRotation } = astro;
     ctx.save(); 
     ctx.globalAlpha = 0.5; 
@@ -1573,19 +1795,13 @@ function drawRing(astro, ctx) {
 }
 function drawTemperatureZones() {
     planets.forEach(planet => {
-        
         const heatEmittingTypes = [
             'star', 'ttauriStar', 'carbonStar', 'giantStar', 'hypergiant',
             'massiveStar', 'brownDwarf', 'whiteDwarf', 'redDwarf', 'redGiant',
             'redSupergiant', 'quasar', 'whiteHole', 'pulsar', 'neutronStar', 'quarkStar', 'strangeStar'
         ];
-        
         if (!heatEmittingTypes.includes(planet.type)) return;
-
-        
         const starRadius = calculateRadiusForType(planet.type, planet.mass);
-        
-        
         const zoneMultipliers = [
             2,  
             5,  
@@ -1594,16 +1810,10 @@ function drawTemperatureZones() {
             20, 
             30  
         ];
-
-        
         const baseZoneSizes = zoneMultipliers.map(multiplier => 
             Math.max(starRadius * 2, 50) * multiplier
         );
-
-        
         const scaledZoneSizes = baseZoneSizes.map(size => size * camera.zoom);
-
-        
         const zoneColors = [
             'rgba(255, 0, 0, 0.6)',    
             'rgba(255, 81, 0, 0.6)',   
@@ -1612,39 +1822,25 @@ function drawTemperatureZones() {
             'rgba(51, 153, 255, 0.6)',  
             'rgba(0, 0, 204, 0.6)'      
         ];
-
-        
         const screenX = (planet.x - camera.x) * camera.zoom + canvas.width / 2;
         const screenY = (planet.y - camera.y) * camera.zoom + canvas.height / 2;
-
-        
         const minVisibleRadius = 10; 
         const zoneSizes = scaledZoneSizes.map(size => 
             Math.max(minVisibleRadius, size)
         );
-
-        
         const maxZoneRadius = Math.max(...zoneSizes);
         const margin = maxZoneRadius * 2;
-        
         if (screenX < -margin || screenX > canvas.width + margin || 
             screenY < -margin || screenY > canvas.height + margin) return;
-
-        
         for (let i = 0; i < zoneSizes.length; i++) {
             const radius = zoneSizes[i];
-            
-            
             if (screenX - radius > canvas.width || screenX + radius < 0 ||
                 screenY - radius > canvas.height || screenY + radius < 0) continue;
-
             ctx.beginPath();
             ctx.arc(screenX, screenY, radius, 0, Math.PI * 2);
             ctx.strokeStyle = zoneColors[i];
             ctx.lineWidth = 2;
             ctx.stroke();
-            
-            
             if (i === 3 && camera.zoom > 0.1) {
                 ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
                 ctx.font = '12px Arial';
@@ -1656,59 +1852,42 @@ function drawTemperatureZones() {
 }
 function fgpPlanetsTemperature(deltaTime) {
     planets.forEach(planet => {
-        
         const water = planet.waterValue;
         const gas = planet.gasValue;
         const clouds = planet.cloudsValue;
-
-        
         if (!['rockyPlanet', 'gasGiant', 'planetoid', 'asteroid', 'meteoroid', 'spaceDust', 'comet', 'meteorite'].includes(planet.type)) return;
-        
         let totalHeat = 0;
-        
-        
         planets.forEach(heatSource => {
             if (heatSource === planet) return;
-            
             const heatEmittingTypes = [
                 'star', 'ttauriStar', 'carbonStar', 'giantStar', 'hypergiant',
                 'massiveStar', 'brownDwarf', 'whiteDwarf', 'redDwarf', 'redGiant',
                 'redSupergiant', 'quasar', 'whiteHole'
             ];
-            
             if (heatEmittingTypes.includes(heatSource.type)) {
                 const dx = planet.x - heatSource.x;
                 const dy = planet.y - heatSource.y;
                 const distance = Math.hypot(dx, dy);
                 const minDistance = 100;
                 const effectiveDistance = Math.max(distance, minDistance);
-                
-                
                 const normalizedMass = Math.log(heatSource.mass || 1) * 10;
                 const heatIntensity = (heatSource.temperature || 5000) * normalizedMass / effectiveDistance;
                 totalHeat += heatIntensity;
             }
         });
-
-        
         const coolingRate = 0.05;
         const heatingRate = 0.1;
         const targetTemp = totalHeat > 0 ? totalHeat * 0.1 : -273.15;
-        
         planet.temperature = Math.max(-273.15, planet.temperature) + 
             (targetTemp - planet.temperature) * 
             (totalHeat > 0 ? heatingRate : coolingRate) * 
-            (deltaTime / 1000);
-
-                
+            (deltaTime / 1000) * timeScale;
         function hasConditionsChanged() {
             if (!planet.lastConditionCheck) return false;
-            
             const prevTemp = planet.lastConditionCheck.temperature ?? 0;
             const prevWater = planet.lastConditionCheck.waterValue ?? 0;
             const prevGas = planet.lastConditionCheck.gasValue ?? 0;
             const prevClouds = planet.lastConditionCheck.cloudsValue ?? 0;
-            
             return (
                 Math.abs(planet.temperature - prevTemp) > 5 ||
                 Math.abs(planet.waterValue - prevWater) > 10 ||
@@ -1716,8 +1895,6 @@ function fgpPlanetsTemperature(deltaTime) {
                 Math.abs(planet.cloudsValue - prevClouds) > 10
             );
         }
-
-        
         function initExoticProperties() {
             if (!planet.currentClassTime) planet.currentClassTime = 0;
             if (!planet.originalClass) {
@@ -1725,14 +1902,10 @@ function fgpPlanetsTemperature(deltaTime) {
             }
             if (!planet.exoticAcquired) planet.exoticAcquired = false;
         }
-
-        
         function checkExoticTransformation(prefixes, cores, suffixes) {
-
             if (!planet.exoticAcquired && planet.planetClass === planet.originalClass) {
                 planet.currentClassTime += deltaTime / 1000 * getTimeScaleFactor();
                 const exoticThreshold = 5e6; 
-                
                 if (planet.currentClassTime >= exoticThreshold && Math.random() < 0.01) {
                     planet.exoticAcquired = true;
                     planet.exoticColor = '#' + Math.floor(Math.random()*16777215).toString(16);
@@ -1741,16 +1914,12 @@ function fgpPlanetsTemperature(deltaTime) {
                 }
             }
         }
-
-        
         function applyExoticClass() {
             if (planet.exoticAcquired) {
                 planet.color = planet.exoticColor;
                 planet.planetClass = planet.exoticName;
             }
         }
-
-        
         function saveCurrentConditions() {
             const conditionProps = {
                 rockyPlanet: ['temperature', 'waterValue', 'gasValue', 'cloudsValue'],
@@ -1762,7 +1931,6 @@ function fgpPlanetsTemperature(deltaTime) {
                 comet: ['temperature', 'waterValue', 'gasValue', 'cloudsValue'],
                 meteorite: ['temperature', 'waterValue', 'gasValue', 'cloudsValue']
             };
-
             planet.lastConditionCheck = {};
             if (conditionProps[planet.type]) {
                 conditionProps[planet.type].forEach(prop => {
@@ -1770,172 +1938,176 @@ function fgpPlanetsTemperature(deltaTime) {
                 });
             }
         }
-
-        
         initExoticProperties();
         const conditionsChanged = hasConditionsChanged();
-        
         if (conditionsChanged) {
             planet.exoticAcquired = false;
             planet.currentClassTime = 0;
         }
-
         saveCurrentConditions();
-
-        
+    if (!planet.ignoreColorChanges){ 
         if (planet.type === 'rockyPlanet') {
             planet.waterValue = planet.waterValue || 0;
             planet.gasValue = planet.gasValue || 0;
             planet.cloudsValue = planet.cloudsValue || 0;
-
             checkExoticTransformation(
                 ['Crystalline', 'Magnetic', 'Radioative', 'Vibrational', 'Quantum'],
                 ['Cerium', 'Zirconium', 'Tantalum', 'Ruthenium', 'Hafnium'],
                 ['-X', '-Ω', '-Δ', '-Σ', '-Φ']
             );
-            
+            fgpPlanetConditions(planet);
             if (planet.temperature > 100 && planet.cloudsValue < 10 && graphicsQuality != 'high' && planet.cloudsValue < 100 && planet.gasValue <= 99){  
-                planet.planetClass = 'Lava Planet'; //verificado
+                planet.planetClass = 'Lava Planet'; 
                 planet.color = '#da1600';
                 planet.landColor = '#000000ff';
+                planet.lifeChance = 0;
                 unlockAchievement(4)
             } else if (planet.temperature > 100 && planet.cloudsValue >= 0 && planet.cloudsValue < 20 && graphicsQuality === 'high' && planet.gasValue <= 99){  
-                planet.planetClass = 'Lava Planet'; //verificado
+                planet.planetClass = 'Lava Planet'; 
                 planet.color = '#da1600';
                 planet.landColor = '#000000ff';
+                planet.lifeChance = 0;
                 unlockAchievement(4)
             } else if (planet.temperature > 100 && planet.cloudsValue >= 0 && planet.cloudsValue < 99 && planet.gasValue > 99){  
-                planet.planetClass = 'Carbon Lava Planet'; //verificado
+                planet.planetClass = 'Carbon Lava Planet'; 
                 planet.color = '#681f17ff';
                 planet.landColor = '#3f0000ff';
                 unlockAchievement(4)
             } else if (planet.temperature > 100 && planet.cloudsValue >= 20 && planet.cloudsValue < 30 && graphicsQuality === 'high' && planet.gasValue <= 99){  
-                planet.planetClass = 'Lava Planet'; //verificado
+                planet.planetClass = 'Lava Planet'; 
                 planet.color = '#8b261aff';
                 planet.landColor = '#130606ff';
+                planet.lifeChance = 0;
                 unlockAchievement(4)
             } else if (planet.temperature > 100 && planet.cloudsValue >= 20 && planet.cloudsValue < 40 && graphicsQuality === 'high' && planet.gasValue <= 99){  
-                planet.planetClass = 'Lava Planet'; //verificado
+                planet.planetClass = 'Lava Planet'; 
                 planet.color = '#a54338ff';
                 planet.landColor = '#422020ff';
+                planet.lifeChance = 0;
                 unlockAchievement(4)
             } else if (planet.temperature > 100 && planet.cloudsValue >= 40 && planet.cloudsValue < 50 && graphicsQuality === 'high' && planet.gasValue <= 99){  
-                planet.planetClass = 'Lava Planet'; //verificado
+                planet.planetClass = 'Lava Planet'; 
                 planet.color = '#b4554bff';
                 planet.landColor = '#492626ff';
+                planet.lifeChance = 0;
                 unlockAchievement(4)
             } else if (planet.temperature > 100 && planet.cloudsValue >= 50 && planet.cloudsValue < 60 && graphicsQuality === 'high' && planet.gasValue <= 99){  
-                planet.planetClass = 'Lava Planet'; //verificado
+                planet.planetClass = 'Lava Planet'; 
                 planet.color = '#ad675fff';
                 planet.landColor = '#5c3939ff';
+                planet.lifeChance = 0;
                 unlockAchievement(4)
             } else if (planet.temperature > 100 && planet.cloudsValue >= 60 && planet.cloudsValue < 70 && graphicsQuality === 'high' && planet.gasValue <= 99){  
-                planet.planetClass = 'Lava Planet'; //verificado
+                planet.planetClass = 'Lava Planet'; 
                 planet.color = '#b89a97ff';
                 planet.landColor = '#725454ff';
+                planet.lifeChance = 0;
                 unlockAchievement(4)
             } else if (planet.temperature > 100 && planet.cloudsValue >= 70 && planet.cloudsValue < 80 && graphicsQuality === 'high' && planet.gasValue <= 99){  
-                planet.planetClass = 'Lava Planet'; //verificado
+                planet.planetClass = 'Lava Planet'; 
                 planet.color = '#755d5bff';
                 planet.landColor = '#3f2929ff';
+                planet.lifeChance = 0;
                 unlockAchievement(4)
             } else if (planet.temperature > 100 && planet.cloudsValue >= 80 && planet.cloudsValue <= 99 && graphicsQuality === 'high' && planet.gasValue <= 99){  
-                planet.planetClass = 'Lava Planet'; //verificado
+                planet.planetClass = 'Lava Planet'; 
                 planet.color = '#362a29ff';
                 planet.landColor = '#201717ff';
+                planet.lifeChance = 0;
                 unlockAchievement(4)
             } else if (planet.temperature > 100 && planet.cloudsValue >= 100) {  
-                planet.planetClass = 'Cloudy Lava Planet'; //verificado
+                planet.planetClass = 'Cloudy Lava Planet'; 
                 planet.color = '#180200ff';
                 planet.landColor = '#180200ff';
+                planet.lifeChance = 0;
                 unlockAchievement(4)
                 if (planet.gasValue > 99) {
-                planet.planetClass = 'Acidic Cloudy Lava Planet'; //verificado
+                planet.planetClass = 'Acidic Cloudy Lava Planet'; 
                 planet.color = '#ffa600ff';
                 planet.landColor = '#ffa600ff';
             }
             } else if (planet.temperature >= 10 && planet.temperature <= 50 &&  
                     planet.waterValue > 99 && planet.gasValue <= 99 &&
                     planet.cloudsValue > 99 && graphicsQuality != 'high') {
-                planet.planetClass = 'Cloudy Oceanic Planet'; //verificado
+                planet.planetClass = 'Cloudy Oceanic Planet'; 
                 planet.color = '#94caffff';
                 planet.landColor = '#94caffff';
             } else if (planet.temperature >= 10 && planet.temperature <= 50 &&  
                     planet.waterValue > 99 && planet.gasValue > 99 &&
                     planet.cloudsValue <= 99 && graphicsQuality != 'high') {
-                planet.planetClass = 'Oxygenated Oceanic Planet'; //verificado
+                planet.planetClass = 'Oxygenated Oceanic Planet'; 
                 planet.color = '#20ff7dff';
                 planet.landColor = '#20ff7dff';
             } else if (planet.temperature >= 10 && planet.temperature <= 50 &&  
                     planet.waterValue > 99 && planet.gasValue > 99 &&
                     planet.cloudsValue > 99 && graphicsQuality != 'high') {
-                planet.planetClass = 'Oxygenated Cloudy Oceanic Planet'; //verificado
+                planet.planetClass = 'Oxygenated Cloudy Oceanic Planet'; 
                 planet.color = '#a9ff94ff';
                 planet.landColor = '#a9ff94ff';
             } else if (planet.temperature >= 10 && planet.temperature <= 50 &&  
                     planet.waterValue > 99 && planet.gasValue <= 99 &&
                     planet.cloudsValue <= 99 && graphicsQuality != 'high') {
-                planet.planetClass = 'Oceanic Planet'; //verificado
+                planet.planetClass = 'Oceanic Planet'; 
                 planet.color = '#004e9c';
                 planet.landColor = '#004e9c';
             } else if (planet.temperature >= 10 && planet.temperature <= 50 &&  
                     planet.waterValue > 99 && planet.gasValue <= 99 &&
                     planet.cloudsValue > 0 && planet.cloudsValue <= 40 && graphicsQuality === 'high') {
-                planet.planetClass = 'Oceanic Planet'; //verificado
+                planet.planetClass = 'Oceanic Planet'; 
                 planet.color = '#004e9c';
                 planet.landColor = '#004e9c';
             } else if (planet.temperature >= 10 && planet.temperature <= 50 &&  
                     planet.waterValue > 99 && planet.gasValue <= 99 &&
                     planet.cloudsValue > 40 && planet.cloudsValue <= 50 && graphicsQuality === 'high') {
-                planet.planetClass = 'Oceanic Planet'; //verificado
+                planet.planetClass = 'Oceanic Planet'; 
                 planet.color = '#1f61a3ff';
                 planet.landColor = '#1f61a3ff';
             } else if (planet.temperature >= 10 && planet.temperature <= 50 &&  
                     planet.waterValue > 99 && planet.gasValue <= 99 &&
                     planet.cloudsValue > 50 && planet.cloudsValue <= 70 && graphicsQuality === 'high') {
-                planet.planetClass = 'Oceanic Planet'; //verificado
+                planet.planetClass = 'Oceanic Planet'; 
                 planet.color = '#58a5f1ff';
                 planet.landColor = '#58a5f1ff';
             } else if (planet.temperature >= 10 && planet.temperature <= 50 &&  
                     planet.waterValue > 99 && planet.gasValue <= 99 &&
                     planet.cloudsValue > 70 && planet.cloudsValue <= 90 && graphicsQuality === 'high') {
-                planet.planetClass = 'Oceanic Planet'; //verificado
+                planet.planetClass = 'Oceanic Planet'; 
                 planet.color = '#7397bbff';
                 planet.landColor = '#7397bbff';
             } else if (planet.temperature >= 10 && planet.temperature <= 50 &&  
                     planet.waterValue > 99 && planet.gasValue <= 99 &&
                     planet.cloudsValue > 90 && graphicsQuality === 'high') {
-                planet.planetClass = 'Cloudy Oceanic Planet'; //verificado
+                planet.planetClass = 'Cloudy Oceanic Planet'; 
                 planet.color = '#9accffff';
                 planet.landColor = '#9accffff';
             } else if (planet.temperature >= 10 && planet.temperature <= 50 &&  
                     planet.waterValue > 99 && planet.gasValue >= 100 &&
                     planet.cloudsValue <= 99) {
-                planet.planetClass = 'Oxygenated Oceanic Planet'; //verificado
+                planet.planetClass = 'Oxygenated Oceanic Planet'; 
                 planet.color = '#009c4eff';
                 planet.landColor = '#009c4eff';
             } else if (planet.temperature >= 10 && planet.temperature <= 50 &&  
                     planet.waterValue > 99 && planet.gasValue >= 100 &&
                     planet.cloudsValue > 90 && graphicsQuality === 'high') {
-                planet.planetClass = 'Cloudy Oxygenated Oceanic Planet'; //verificado
+                planet.planetClass = 'Cloudy Oxygenated Oceanic Planet'; 
                 planet.color = '#d8ff49ff';
                 planet.landColor = '#d8ff49ff';
             } else if (planet.temperature > -50 && planet.temperature < 10 &&  
                     planet.waterValue > 99 && planet.gasValue <= 99 &&
                     planet.cloudsValue > 0 && graphicsQuality != 'high') {
-                planet.planetClass = 'Storm Planet'; //verificado
+                planet.planetClass = 'Storm Planet'; 
                 planet.color = '#00109cff';
                 planet.landColor = '#00109cff';
             } else if (planet.temperature > -50 && planet.temperature < 10 &&  
                     planet.waterValue > 99 && planet.gasValue > 99 &&
                     planet.cloudsValue <= 99 && graphicsQuality != 'high') {
-                planet.planetClass = 'Oxygenated Storm Planet'; //verificado
+                planet.planetClass = 'Oxygenated Storm Planet'; 
                 planet.color = '#009c60ff';
                 planet.landColor = '#009c60ff';
             } else if (planet.temperature > -50 && planet.temperature <= 10 &&  
                     planet.waterValue > 99 && planet.gasValue <= 99 &&
                     planet.cloudsValue > 0 && planet.cloudsValue <= 30 && graphicsQuality === 'high') {
-                planet.planetClass = 'Storm Planet'; //verificado
+                planet.planetClass = 'Storm Planet'; 
                 planet.color = '#0e1874ff';
                 planet.landColor = '#0e1874ff';
             } else if (planet.temperature > -50 && planet.temperature < 10 &&  
@@ -1947,64 +2119,71 @@ function fgpPlanetsTemperature(deltaTime) {
             } else if (planet.temperature > -50 && planet.temperature <= 10 &&  
                     planet.waterValue > 99 && planet.gasValue <= 99 &&
                     planet.cloudsValue > 30 && planet.cloudsValue <= 60 && graphicsQuality === 'high') {
-                planet.planetClass = 'Storm Planet'; //verificado
+                planet.planetClass = 'Storm Planet'; 
                 planet.color = '#0c1355ff';
                 planet.landColor = '#0c1355ff';
             } else if (planet.temperature > -50 && planet.temperature <= 10 &&  
                     planet.waterValue > 99 && planet.gasValue <= 99 &&
                     planet.cloudsValue > 60 && planet.cloudsValue <= 99 && graphicsQuality === 'high') {
-                planet.planetClass = 'Storm Planet'; //verificado
+                planet.planetClass = 'Storm Planet'; 
                 planet.color = '#060a3aff';
                 planet.landColor = '#060a3aff';
             } else if (planet.temperature > -50 && planet.temperature <= 10 &&  
                     planet.waterValue > 99 && planet.gasValue <= 99 &&
                     planet.cloudsValue > 99) {
-                planet.planetClass = 'Super Storm Planet'; //verificado
+                planet.planetClass = 'Super Storm Planet'; 
                 planet.color = '#000538ff';
                 planet.landColor = '#000538ff';
             } else if (planet.temperature > -50 && planet.temperature <= 10 &&  
                     planet.waterValue > 99 && planet.gasValue > 99 &&
                     planet.cloudsValue > 99) {
-                planet.planetClass = 'Super Oxygenated Storm Planet'; //verificado
+                planet.planetClass = 'Super Oxygenated Storm Planet'; 
                 planet.color = '#003827ff';
                 planet.landColor = '#003827ff';
             } else if (planet.temperature >= - 269 && planet.temperature < 0 && planet.waterValue >= 20 && planet.cloudsValue <= 99 && planet.gasValue <= 99) {
-                planet.planetClass = 'Frozen Planet'; //verificado
+                planet.planetClass = 'Frozen Planet'; 
                 planet.color = '#70aeaf';
                 planet.landColor = '#ffffffff';
+                planet.lifeChance = 0;
             } else if (planet.temperature >= - 269 && planet.temperature < 0 && planet.waterValue >= 20 && planet.cloudsValue > 99 && planet.gasValue <= 99) {  
-                planet.planetClass = 'Cloudy Frozen Planet'; //verificado
+                planet.planetClass = 'Cloudy Frozen Planet'; 
                 planet.color = '#ffffffff';
                 planet.landColor = '#ffffffff';
+                planet.lifeChance = 0;
             } else if (planet.temperature >= - 269 && planet.temperature < 0 && planet.waterValue >= 20 && planet.cloudsValue <= 99 && planet.gasValue > 99) {
-                planet.planetClass = 'Condensed Air Frozen Planet'; //verificado
+                planet.planetClass = 'Condensed Air Frozen Planet'; 
                 planet.color = '#a3af70ff';
                 planet.landColor = '#ffef95ff';
             } else if (planet.temperature >= - 269 && planet.temperature < 0 && planet.waterValue >= 20 && planet.cloudsValue > 99 && planet.gasValue > 99) {  
-                planet.planetClass = 'Cloudy Condensed Air Frozen Planet'; //verificado
+                planet.planetClass = 'Cloudy Condensed Air Frozen Planet'; 
                 planet.color = '#eeffa2ff';
                 planet.landColor = '#fdff92ff';
+                planet.lifeChance = 0;
             } else if (planet.temperature >= - 269 && planet.temperature < 0 && planet.waterValue < 20 && planet.cloudsValue <= 99 && planet.gasValue <= 99) {  
-                planet.planetClass = 'Frozen and Arid Planet'; //verificado
+                planet.planetClass = 'Frozen and Arid Planet'; 
                 planet.color = '#aaaaaaff';
                 planet.landColor = '#ffffff';
+                planet.lifeChance = 0;
             } else if (planet.temperature >= - 269 && planet.temperature < 0 && planet.waterValue < 20 && planet.cloudsValue <= 99 && planet.gasValue > 99) {  
-                planet.planetClass = 'Condensed Air Frozen and Arid Planet'; //verificado
+                planet.planetClass = 'Condensed Air Frozen and Arid Planet'; 
                 planet.color = '#f1f8afff';
                 planet.landColor = '#fffc62ff';
+                planet.lifeChance = 0;
             } else if (planet.temperature >= - 269 && planet.temperature < 0 && planet.waterValue < 20 && planet.cloudsValue > 99 && planet.gasValue <= 99) {  
-                planet.planetClass = 'Cloudy Frozen and Arid Planet'; //verificado
+                planet.planetClass = 'Cloudy Frozen and Arid Planet'; 
                 planet.color = '#ffffffff';
                 planet.landColor = '#cacacaff';
+                planet.lifeChance = 0;
             } else if (planet.temperature >= - 269 && planet.temperature < 0 && planet.waterValue < 20 && planet.cloudsValue > 99 && planet.gasValue > 99) {  
-                planet.planetClass = 'Condensed Air Cloudy Frozen and Arid Planet'; //verificado
+                planet.planetClass = 'Condensed Air Cloudy Frozen and Arid Planet'; 
                 planet.color = '#aaaaaaff';
                 planet.landColor = '#ffffff';
+                planet.lifeChance = 0;
             } else if (planet.temperature >= 20 && planet.temperature <= 30 &&  
                     planet.waterValue >= 30 && planet.waterValue <= 80 &&
                     planet.gasValue >= 50 && planet.gasValue <= 80 &&
                     planet.cloudsValue >= 20 && planet.cloudsValue <= 90 && graphicsQuality != 'high') {
-                planet.planetClass = 'Habitable Planet';//verificado
+                planet.planetClass = 'Habitable Planet';
                 planet.color = '#0088e2ff';
                 planet.landColor = '#099900';
                 unlockAchievement(5)
@@ -2013,7 +2192,7 @@ function fgpPlanetsTemperature(deltaTime) {
                     planet.waterValue >= 30 && planet.waterValue <= 80 &&
                     planet.gasValue > 80 &&
                     planet.cloudsValue >= 20 && planet.cloudsValue <= 90 && graphicsQuality != 'high') {
-                planet.planetClass = 'Oxygenated Planet';//verificado
+                planet.planetClass = 'Oxygenated Planet';
                 planet.color = '#00e284ff';
                 planet.landColor = '#529900ff';
                 unlockAchievement(5)
@@ -2022,7 +2201,7 @@ function fgpPlanetsTemperature(deltaTime) {
                     planet.waterValue >= 30 && planet.waterValue <= 80 &&
                     planet.gasValue >= 50 && planet.gasValue <= 80 &&
                     planet.cloudsValue >= 20 && planet.cloudsValue <= 30 && graphicsQuality === 'high') {
-                planet.planetClass = 'Habitable Planet';//verificado
+                planet.planetClass = 'Habitable Planet';
                 planet.color = '#0088e2ff';
                 planet.landColor = '#099900';
                 unlockAchievement(5)
@@ -2031,7 +2210,7 @@ function fgpPlanetsTemperature(deltaTime) {
                     planet.waterValue >= 30 && planet.waterValue <= 80 &&
                     planet.gasValue > 80 &&
                     planet.cloudsValue >= 20 && planet.cloudsValue <= 30 && graphicsQuality === 'high') {
-                planet.planetClass = 'Oxygenated Planet';//verificado
+                planet.planetClass = 'Oxygenated Planet';
                 planet.color = '#4af7afff';
                 planet.landColor = '#529900ff';
                 unlockAchievement(5)
@@ -2040,7 +2219,7 @@ function fgpPlanetsTemperature(deltaTime) {
                     planet.waterValue >= 30 && planet.waterValue <= 80 &&
                     planet.gasValue > 80 &&
                     planet.cloudsValue >= 30 && planet.cloudsValue <= 60 && graphicsQuality === 'high') {
-                planet.planetClass = 'Oxygenated Planet';//verificado
+                planet.planetClass = 'Oxygenated Planet';
                 planet.color = '#87f7c8ff';
                 planet.landColor = '#69a02bff';
                 unlockAchievement(5)
@@ -2049,7 +2228,7 @@ function fgpPlanetsTemperature(deltaTime) {
                     planet.waterValue >= 30 && planet.waterValue <= 80 &&
                     planet.gasValue > 80 &&
                     planet.cloudsValue >= 60 && planet.cloudsValue <= 90 && graphicsQuality === 'high') {
-                planet.planetClass = 'Oxygenated Cloudy Planet';//verificado
+                planet.planetClass = 'Oxygenated Cloudy Planet';
                 planet.color = '#a8ecd0ff';
                 planet.landColor = '#b6b851ff';
                 unlockAchievement(5)
@@ -2058,7 +2237,7 @@ function fgpPlanetsTemperature(deltaTime) {
                     planet.waterValue >= 30 && planet.waterValue <= 80 &&
                     planet.gasValue >= 50 && planet.gasValue <= 80 &&
                     planet.cloudsValue >= 30 && planet.cloudsValue <= 40 && graphicsQuality === 'high') {
-                planet.planetClass = 'Habitable Planet';//verificado
+                planet.planetClass = 'Habitable Planet';
                 planet.color = '#1a95e7ff';
                 planet.landColor = '#20a017ff';
                 unlockAchievement(5)
@@ -2067,7 +2246,7 @@ function fgpPlanetsTemperature(deltaTime) {
                     planet.waterValue >= 30 && planet.waterValue <= 80 &&
                     planet.gasValue >= 50 && planet.gasValue <= 80 &&
                     planet.cloudsValue >= 40 && planet.cloudsValue <= 50 && graphicsQuality === 'high') {
-                planet.planetClass = 'Habitable Planet';//verificado
+                planet.planetClass = 'Habitable Planet';
                 planet.color = '#3da6ecff';
                 planet.landColor = '#3ea737ff';
                 unlockAchievement(5)
@@ -2076,7 +2255,7 @@ function fgpPlanetsTemperature(deltaTime) {
                     planet.waterValue >= 30 && planet.waterValue <= 80 &&
                     planet.gasValue >= 50 && planet.gasValue <= 80 &&
                     planet.cloudsValue >= 50 && planet.cloudsValue <= 60 && graphicsQuality === 'high') {
-                planet.planetClass = 'Habitable Planet';//verificado
+                planet.planetClass = 'Habitable Planet';
                 planet.color = '#57aee9ff';
                 planet.landColor = '#5ab353ff';
                 unlockAchievement(5)
@@ -2085,7 +2264,7 @@ function fgpPlanetsTemperature(deltaTime) {
                     planet.waterValue >= 30 && planet.waterValue <= 80 &&
                     planet.gasValue >= 50 && planet.gasValue <= 80 &&
                     planet.cloudsValue >= 60 && planet.cloudsValue <= 70 && graphicsQuality === 'high') {
-                planet.planetClass = 'Habitable Planet';//verificado
+                planet.planetClass = 'Habitable Planet';
                 planet.color = '#75b7e4ff';
                 planet.landColor = '#7bc276ff';
                 unlockAchievement(5)
@@ -2094,7 +2273,7 @@ function fgpPlanetsTemperature(deltaTime) {
                     planet.waterValue >= 30 && planet.waterValue <= 80 &&
                     planet.gasValue >= 50 && planet.gasValue <= 80 &&
                     planet.cloudsValue >= 70 && planet.cloudsValue <= 80 && graphicsQuality === 'high') {
-                planet.planetClass = 'Semi Cloudy Habitable Planet';//verificado
+                planet.planetClass = 'Semi Cloudy Habitable Planet';
                 planet.color = '#94ccf1ff';
                 planet.landColor = '#9fd49bff';
                 unlockAchievement(5)
@@ -2103,7 +2282,7 @@ function fgpPlanetsTemperature(deltaTime) {
                     planet.waterValue >= 30 && planet.waterValue <= 80 &&
                     planet.gasValue >= 50 && planet.gasValue <= 80 &&
                     planet.cloudsValue === 90 && graphicsQuality === 'high') {
-                planet.planetClass = 'Cloudy Habitable Planet';//verificado
+                planet.planetClass = 'Cloudy Habitable Planet';
                 planet.color = '#91d3ffff';
                 planet.landColor = '#adfca8ff';
                 unlockAchievement(5)
@@ -2112,21 +2291,21 @@ function fgpPlanetsTemperature(deltaTime) {
                     planet.cloudsValue >= 70 &&
                     planet.waterValue >= 30 && planet.waterValue <= 60 &&
                     planet.gasValue >= 40 && planet.gasValue <= 70) {
-                planet.planetClass = 'Cloudy Planet';//verificado
+                planet.planetClass = 'Cloudy Planet';
                 planet.color = '#add896'; 
                 planet.landColor = '#add896';
             } else if (planet.temperature > 20 && planet.temperature <= 30 &&   
                     planet.cloudsValue >= 70 &&
                     planet.waterValue >= 30 && planet.waterValue <= 60 &&
                     planet.gasValue > 70) {
-                planet.planetClass = 'Oxygenated Cloudy Planet';//verificado
+                planet.planetClass = 'Oxygenated Cloudy Planet';
                 planet.color = '#d8d496ff'; 
                 planet.landColor = '#ccd896ff';
             } else if (planet.temperature > 30 && planet.temperature <= 50 &&  
                     planet.waterValue >= 30 && planet.waterValue <= 80 &&
                     planet.gasValue >= 50 && planet.gasValue <= 80 &&
                     planet.cloudsValue >= 20 && planet.cloudsValue <= 90 && graphicsQuality != 'high') {
-                planet.planetClass = 'Temperate Planet';//verificado
+                planet.planetClass = 'Temperate Planet';
                 planet.color = '#00ffd5ff';
                 planet.landColor = '#9bd105ff';
                 unlockAchievement(5)
@@ -2134,7 +2313,7 @@ function fgpPlanetsTemperature(deltaTime) {
                     planet.waterValue >= 30 && planet.waterValue <= 80 &&
                     planet.gasValue >= 50 && planet.gasValue <= 80 &&
                     planet.cloudsValue >= 20 && planet.cloudsValue <= 30 && graphicsQuality === 'high') {
-                planet.planetClass = 'Temperate Planet';//verificado
+                planet.planetClass = 'Temperate Planet';
                 planet.color = '#00ffd5ff';
                 planet.landColor = '#9bd105ff';
                 unlockAchievement(5)
@@ -2142,7 +2321,7 @@ function fgpPlanetsTemperature(deltaTime) {
                     planet.waterValue >= 30 && planet.waterValue <= 80 &&
                     planet.gasValue >= 50 && planet.gasValue <= 80 &&
                     planet.cloudsValue >= 30 && planet.cloudsValue <= 50 && graphicsQuality === 'high') {
-                planet.planetClass = 'Temperate Planet';//verificado
+                planet.planetClass = 'Temperate Planet';
                 planet.color = '#2ffcffff';
                 planet.landColor = '#05d161ff';
                 unlockAchievement(5)
@@ -2150,7 +2329,7 @@ function fgpPlanetsTemperature(deltaTime) {
                     planet.waterValue >= 30 && planet.waterValue <= 80 &&
                     planet.gasValue >= 50 && planet.gasValue <= 80 &&
                     planet.cloudsValue >= 50 && planet.cloudsValue <= 70 && graphicsQuality === 'high') {
-                planet.planetClass = 'Semi Cloudy Temperate Planet';//verificado
+                planet.planetClass = 'Semi Cloudy Temperate Planet';
                 planet.color = '#17eef1ff';
                 planet.landColor = '#05d18dff';
                 unlockAchievement(5)
@@ -2158,59 +2337,59 @@ function fgpPlanetsTemperature(deltaTime) {
                     planet.cloudsValue >= 70 &&
                     planet.waterValue >= 30 && planet.waterValue <= 60 &&
                     planet.gasValue >= 40 && planet.gasValue <= 70) {
-                planet.planetClass = 'Temperate Cloudy Planet';//verificado
+                planet.planetClass = 'Temperate Cloudy Planet';
                 planet.color = '#00CED1';
                 planet.landColor = '#00CED1';
             } else if (planet.temperature > 50 && planet.waterValue < 40 && planet.cloudsValue <= 99 && planet.gasValue <= 99 && graphicsQuality != 'high') {  
-                planet.planetClass = 'Desert Planet';//verificado
+                planet.planetClass = 'Desert Planet';
                 planet.color = '#ff7b00ff';
                 planet.landColor = '#FFA500';
             } else if (planet.temperature > 50 && planet.waterValue < 40 && graphicsQuality != 'high' && planet.cloudsValue <= 99 && planet.gasValue > 99) {  
-                planet.planetClass = 'Oxygenated Desert Planet';//verificado
+                planet.planetClass = 'Oxygenated Desert Planet';
                 planet.color = '#ff1100ff';
                 planet.landColor = '#ff5e00ff';
             } else if (planet.temperature > 50 && planet.waterValue < 40 && graphicsQuality === 'high' && planet.cloudsValue <= 20 && planet.gasValue <= 99) {  
-                planet.planetClass = 'Desert Planet';//verificado
+                planet.planetClass = 'Desert Planet';
                 planet.color = '#ff7b00ff';
                 planet.landColor = '#FFA500';
             } else if (planet.temperature > 50 && planet.waterValue < 40 && graphicsQuality === 'high' && planet.cloudsValue <= 20 && planet.gasValue > 99) {  
-                planet.planetClass = 'Oxygenated Desert Planet';//verificado
+                planet.planetClass = 'Oxygenated Desert Planet';
                 planet.color = '#ff1100ff';
                 planet.landColor = '#ff5e00ff';
             } else if (planet.temperature > 50 && planet.waterValue < 40 && graphicsQuality === 'high' && planet.cloudsValue > 20 && planet.cloudsValue <= 50 && planet.gasValue > 99) {  
-                planet.planetClass = 'Oxygenated Desert Planet';//verificado
+                planet.planetClass = 'Oxygenated Desert Planet';
                 planet.color = '#ff4c3fff';
                 planet.landColor = '#ff3232ff';
             } else if (planet.temperature > 50 && planet.waterValue < 40 && graphicsQuality === 'high' &&  planet.cloudsValue > 50 && planet.cloudsValue <= 99 && planet.gasValue > 99) {  
-                planet.planetClass = 'Semi Cloudy Oxygenated Desert Planet';//verificado
+                planet.planetClass = 'Semi Cloudy Oxygenated Desert Planet';
                 planet.color = '#ff938bff';
                 planet.landColor = '#ff7979ff';
             } else if (planet.temperature > 50 && planet.waterValue < 40 && graphicsQuality === 'high' && planet.cloudsValue <= 30 && planet.gasValue <= 99) {  
-                planet.planetClass = 'Desert Planet';//verificado
+                planet.planetClass = 'Desert Planet';
                 planet.color = '#ff8d23ff';
                 planet.landColor = '#faac1cff';
             } else if (planet.temperature > 50 && planet.waterValue < 40 && graphicsQuality === 'high' && planet.cloudsValue > 30 && planet.cloudsValue < 60 && planet.gasValue <= 99) {  
-                planet.planetClass = 'Desert Planet';//verificado
+                planet.planetClass = 'Desert Planet';
                 planet.color = '#fdb169ff';
                 planet.landColor = '#ffc252ff';
             } else if (planet.temperature > 50 && planet.waterValue < 40 && planet.cloudsValue >= 60 && planet.cloudsValue < 70 && planet.gasValue <= 99) {  
-                planet.planetClass = 'Semi Cloudy Desert Planet';//verificado
+                planet.planetClass = 'Semi Cloudy Desert Planet';
                 planet.color = '#ffcfa2ff';
                 planet.landColor = '#ffd483ff';
             } else if (planet.temperature > 50 && planet.waterValue < 40 && planet.cloudsValue > 99 && planet.gasValue <= 99) {  
-                planet.planetClass = 'Cloudy Desert Planet';//verificado
+                planet.planetClass = 'Cloudy Desert Planet';
                 planet.color = '#ffcfa2ff';
                 planet.landColor = '#ffd483ff';
             } else if (planet.temperature > 50 && planet.waterValue < 40 && planet.cloudsValue > 99 && planet.gasValue > 99) {  
-                planet.planetClass = 'Oxygenated Cloudy Desert Planet';//verificado
+                planet.planetClass = 'Oxygenated Cloudy Desert Planet';
                 planet.color = '#ffa2a2ff';
                 planet.landColor = '#ff8b83ff';
             } else if (planet.temperature > 50 && planet.waterValue >= 40 && graphicsQuality !='high') {  
-                planet.planetClass = 'Humid Desert Planet';//verificado
+                planet.planetClass = 'Humid Desert Planet';
                 planet.color = '#00ffddff';
                 planet.landColor = '#ffbb00ff';
             } else if (planet.temperature > 50 && planet.waterValue >= 40 && graphicsQuality ==='high' && planet.cloudsValue >= 0 && planet.cloudsValue < 30 && planet.gasValue <= 99) {  
-                planet.planetClass = 'Humid Desert Planet';//verificado
+                planet.planetClass = 'Humid Desert Planet';
                 planet.color = '#00ffddff';
                 planet.landColor = '#ffbb00ff';
             } else if (planet.temperature > 50 && planet.waterValue >= 40 && graphicsQuality ==='high' && planet.cloudsValue >= 0 && planet.cloudsValue < 30 && planet.gasValue > 99) {  
@@ -2218,39 +2397,39 @@ function fgpPlanetsTemperature(deltaTime) {
                 planet.color = '#00ff80ff';
                 planet.landColor = '#ff5100ff';
             } else if (planet.temperature > 50 && planet.waterValue >= 40 && graphicsQuality ==='high' && planet.cloudsValue >= 30 && planet.cloudsValue < 50 && planet.gasValue <= 99) {  
-                planet.planetClass = 'Humid Desert Planet';//verificado
+                planet.planetClass = 'Humid Desert Planet';
                 planet.color = '#58f8e3ff';
                 planet.landColor = '#ffca38ff';
             } else if (planet.temperature > 50 && planet.waterValue >= 40 && graphicsQuality ==='high' && planet.cloudsValue >= 50 && planet.cloudsValue < 60 && planet.gasValue <= 99) {  
-                planet.planetClass = 'Semi Fog Humid Desert Planet';//verificado
+                planet.planetClass = 'Semi Fog Humid Desert Planet';
                 planet.color = '#58f8e3ff';
                 planet.landColor = '#ffca38ff';
             } else if (planet.temperature > 50 && planet.waterValue >= 40 && graphicsQuality ==='high' && planet.cloudsValue >= 60 && planet.cloudsValue < 70 && planet.gasValue <= 99) {  
-                planet.planetClass = 'Fog Humid Desert Planet';//verificado
+                planet.planetClass = 'Fog Humid Desert Planet';
                 planet.color = '#9cfff2ff';
                 planet.landColor = '#ffe59cff';
             } else if (planet.temperature > 50 && planet.waterValue >= 40 && graphicsQuality ==='high' && planet.cloudsValue > 70 && planet.gasValue <= 99) {  
-                planet.planetClass = 'Super Fog Humid Desert Planet';//verificado
+                planet.planetClass = 'Super Fog Humid Desert Planet';
                 planet.color = '#76ffedff';
                 planet.landColor = '#83e2faff';
             } else if (planet.temperature > 50 && planet.waterValue >= 40 && graphicsQuality ==='high' && planet.cloudsValue >= 60 && planet.cloudsValue < 70 && planet.gasValue > 99) {  
-                planet.planetClass = 'Oxygenated Fog Humid Desert Planet';//verificado
+                planet.planetClass = 'Oxygenated Fog Humid Desert Planet';
                 planet.color = '#bbff9cff';
                 planet.landColor = '#ffe59cff';
             } else if (planet.temperature > 50 && planet.waterValue >= 40 && graphicsQuality ==='high' && planet.cloudsValue > 70 && planet.gasValue > 99) {  
-                planet.planetClass = 'Oxygenated Super Fog Humid Desert Planet';//verificado
+                planet.planetClass = 'Oxygenated Super Fog Humid Desert Planet';
                 planet.color = '#56ffbeff';
                 planet.landColor = '#60ffa7ff';
             } else if (planet.temperature <= -270 ){
                 unlockAchievement(33)
                 planet.color = '#ffffffff';
                 planet.landColor = '#ffffffff';
-                planet.planetClass = 'Extreme Frozen Planet';//verificado
+                planet.planetClass = 'Extreme Frozen Planet';
             } else if (planet.temperature >= 0 && planet.temperature < 20 &&  
                     planet.waterValue > 0 && planet.waterValue < 20 &&
                     planet.gasValue > 0 && planet.gasValue < 80 &&
                     planet.cloudsValue >= 10 && planet.cloudsValue <= 60 && graphicsQuality != 'high') {
-                planet.planetClass = 'Tundra Planet';//verificado
+                planet.planetClass = 'Tundra Planet';
                 planet.color = '#0c01a7ff';
                 planet.landColor = '#e74c50';
                 unlockAchievement(5)
@@ -2266,7 +2445,7 @@ function fgpPlanetsTemperature(deltaTime) {
                     planet.waterValue > 0 && planet.waterValue < 20 &&
                     planet.gasValue > 0 && planet.gasValue < 80 &&
                     planet.cloudsValue >= 10 && planet.cloudsValue <= 30 && graphicsQuality === 'high') {
-                planet.planetClass = 'Tundra Planet';//verificado
+                planet.planetClass = 'Tundra Planet';
                 planet.color = '#0c01a7ff';
                 planet.landColor = '#e74c50';
                 unlockAchievement(5)
@@ -2274,7 +2453,7 @@ function fgpPlanetsTemperature(deltaTime) {
                     planet.waterValue > 0 && planet.waterValue < 20 &&
                     planet.gasValue >= 80 &&
                     planet.cloudsValue >= 10 && planet.cloudsValue <= 30 && graphicsQuality === 'high') {
-                planet.planetClass = 'Oxygenated Tundra Planet';//verificado
+                planet.planetClass = 'Oxygenated Tundra Planet';
                 planet.color = '#4901a7ff';
                 planet.landColor = '#e74cc0ff';
                 unlockAchievement(5)
@@ -2282,7 +2461,7 @@ function fgpPlanetsTemperature(deltaTime) {
                     planet.waterValue > 0 && planet.waterValue < 20 &&
                     planet.gasValue >= 80 &&
                     planet.cloudsValue >= 30 && planet.cloudsValue <= 60 && graphicsQuality === 'high') {
-                planet.planetClass = 'Oxygenated Tundra Planet';//verificado
+                planet.planetClass = 'Oxygenated Tundra Planet';
                 planet.color = '#572c8fff';
                 planet.landColor = '#a54e8fff';
                 unlockAchievement(5)
@@ -2290,7 +2469,7 @@ function fgpPlanetsTemperature(deltaTime) {
                     planet.waterValue > 0 && planet.waterValue < 20 &&
                     planet.gasValue > 0 && planet.gasValue < 80 &&
                     planet.cloudsValue >= 30 && planet.cloudsValue <= 50 && graphicsQuality === 'high') {
-                planet.planetClass = 'Tundra Planet';//verificado
+                planet.planetClass = 'Tundra Planet';
                 planet.color = '#1e1961ff';
                 planet.landColor = '#ad5e61ff';
                 unlockAchievement(5)
@@ -2298,7 +2477,7 @@ function fgpPlanetsTemperature(deltaTime) {
                     planet.waterValue > 0 && planet.waterValue < 20 &&
                     planet.gasValue > 0 && planet.gasValue < 80 &&
                     planet.cloudsValue >= 50 && planet.cloudsValue <= 60 && graphicsQuality === 'high') {
-                planet.planetClass = 'Semi Storm Tundra Planet';//verificado
+                planet.planetClass = 'Semi Storm Tundra Planet';
                 planet.color = '#13122eff';
                 planet.landColor = '#362746ff';
                 unlockAchievement(5)
@@ -2306,7 +2485,7 @@ function fgpPlanetsTemperature(deltaTime) {
                     planet.waterValue > 0 && planet.waterValue < 20 &&
                     planet.gasValue > 0 && planet.gasValue < 80 &&
                     planet.cloudsValue >= 60 && planet.cloudsValue <= 70) {
-                planet.planetClass = 'Storm Tundra Planet';//verificado
+                planet.planetClass = 'Storm Tundra Planet';
                 planet.color = '#020041ff';
                 planet.landColor = '#211c36ff';
                 unlockAchievement(5)
@@ -2314,7 +2493,7 @@ function fgpPlanetsTemperature(deltaTime) {
                     planet.waterValue > 0 && planet.waterValue < 20 &&
                     planet.gasValue > 0 && planet.gasValue < 80 &&
                     planet.cloudsValue > 70) {
-                planet.planetClass = 'Super Storm Tundra Planet';//verificado
+                planet.planetClass = 'Super Storm Tundra Planet';
                 planet.color = '#020041ff';
                 planet.landColor = '#211c36ff';
                 unlockAchievement(5)
@@ -2322,7 +2501,7 @@ function fgpPlanetsTemperature(deltaTime) {
                     planet.waterValue > 0 && planet.waterValue < 20 &&
                     planet.gasValue >= 80 &&
                     planet.cloudsValue >= 60 && planet.cloudsValue <= 70) {
-                planet.planetClass = 'Oxygenated Storm Tundra Planet';//verificado
+                planet.planetClass = 'Oxygenated Storm Tundra Planet';
                 planet.color = '#004123ff';
                 planet.landColor = '#31361cff';
                 unlockAchievement(5)
@@ -2330,7 +2509,7 @@ function fgpPlanetsTemperature(deltaTime) {
                     planet.waterValue > 0 && planet.waterValue < 20 &&
                     planet.gasValue > 80 &&
                     planet.cloudsValue >= 70) {
-                planet.planetClass = 'Oxygenated Super Storm Tundra Planet';//verificado
+                planet.planetClass = 'Oxygenated Super Storm Tundra Planet';
                 planet.color = '#030e09ff';
                 planet.landColor = '#0c0e06ff';
                 unlockAchievement(5)
@@ -2338,7 +2517,7 @@ function fgpPlanetsTemperature(deltaTime) {
                     planet.waterValue >= 20 &&
                     planet.gasValue > 0 && planet.gasValue < 80 &&
                     planet.cloudsValue >= 10 && planet.cloudsValue <= 60 && graphicsQuality != 'high') {
-                planet.planetClass = 'Humid Tundra Planet';//verificado
+                planet.planetClass = 'Humid Tundra Planet';
                 planet.color = '#0c01a7ff';
                 planet.landColor = '#564ce7ff';
                 unlockAchievement(5)
@@ -2354,7 +2533,7 @@ function fgpPlanetsTemperature(deltaTime) {
                      planet.waterValue >= 20 &&
                     planet.gasValue > 0 && planet.gasValue < 80 &&
                     planet.cloudsValue >= 10 && planet.cloudsValue <= 30 && graphicsQuality === 'high') {
-                planet.planetClass = 'Humid Tundra Planet';//verificado
+                planet.planetClass = 'Humid Tundra Planet';
                 planet.color = '#070064ff';
                 planet.landColor = '#7b4ce7ff';
                 unlockAchievement(5)
@@ -2362,7 +2541,7 @@ function fgpPlanetsTemperature(deltaTime) {
                      planet.waterValue >= 20 &&
                     planet.gasValue >= 80 &&
                     planet.cloudsValue >= 10 && planet.cloudsValue <= 30 && graphicsQuality === 'high') {
-                planet.planetClass = 'Humid Oxygenated Tundra Planet';//verificado
+                planet.planetClass = 'Humid Oxygenated Tundra Planet';
                 planet.color = '#110027ff';
                 planet.landColor = '#5c4ce7ff';
                 unlockAchievement(5)
@@ -2370,7 +2549,7 @@ function fgpPlanetsTemperature(deltaTime) {
                      planet.waterValue >= 20 &&
                     planet.gasValue >= 80 &&
                     planet.cloudsValue >= 30 && planet.cloudsValue <= 60 && graphicsQuality === 'high') {
-                planet.planetClass = 'Humid Oxygenated Tundra Planet';//verificado
+                planet.planetClass = 'Humid Oxygenated Tundra Planet';
                 planet.color = '#3b2c8fff';
                 planet.landColor = '#544ea5ff';
                 unlockAchievement(5)
@@ -2378,7 +2557,7 @@ function fgpPlanetsTemperature(deltaTime) {
                      planet.waterValue >= 20 &&
                     planet.gasValue > 0 && planet.gasValue < 80 &&
                     planet.cloudsValue >= 30 && planet.cloudsValue <= 50 && graphicsQuality === 'high') {
-                planet.planetClass = 'Humid Tundra Planet';//verificado
+                planet.planetClass = 'Humid Tundra Planet';
                 planet.color = '#05004bff';
                 planet.landColor = '#765eadff';
                 unlockAchievement(5)
@@ -2386,7 +2565,7 @@ function fgpPlanetsTemperature(deltaTime) {
                      planet.waterValue >= 20 &&
                     planet.gasValue > 0 && planet.gasValue < 80 &&
                     planet.cloudsValue >= 50 && planet.cloudsValue <= 60 && graphicsQuality === 'high') {
-                planet.planetClass = 'Humid Semi Storm Tundra Planet';//verificado
+                planet.planetClass = 'Humid Semi Storm Tundra Planet';
                 planet.color = '#030055ff';
                 planet.landColor = '#25004dff';
                 unlockAchievement(5)
@@ -2394,7 +2573,7 @@ function fgpPlanetsTemperature(deltaTime) {
                      planet.waterValue >= 20 &&
                     planet.gasValue > 0 && planet.gasValue < 80 &&
                     planet.cloudsValue >= 60 && planet.cloudsValue <= 70) {
-                planet.planetClass = 'Humid Storm Tundra Planet';//verificado
+                planet.planetClass = 'Humid Storm Tundra Planet';
                 planet.color = '#000c41ff';
                 planet.landColor = '#09002cff';
                 unlockAchievement(5)
@@ -2402,7 +2581,7 @@ function fgpPlanetsTemperature(deltaTime) {
                      planet.waterValue >= 20 &&
                     planet.gasValue > 0 && planet.gasValue < 80 &&
                     planet.cloudsValue > 70) {
-                planet.planetClass = 'Humid Super Storm Tundra Planet';//verificado
+                planet.planetClass = 'Humid Super Storm Tundra Planet';
                 planet.color = '#030218ff';
                 planet.landColor = '#070025ff';
                 unlockAchievement(5)
@@ -2410,7 +2589,7 @@ function fgpPlanetsTemperature(deltaTime) {
                      planet.waterValue >= 20 &&
                     planet.gasValue >= 80 &&
                     planet.cloudsValue >= 60 && planet.cloudsValue <= 70) {
-                planet.planetClass = 'Humid Oxygenated Storm Tundra Planet';//verificado
+                planet.planetClass = 'Humid Oxygenated Storm Tundra Planet';
                 planet.color = '#0a0041ff';
                 planet.landColor = '#2a1c36ff';
                 unlockAchievement(5)
@@ -2418,7 +2597,7 @@ function fgpPlanetsTemperature(deltaTime) {
                      planet.waterValue >= 20 &&
                     planet.gasValue > 80 &&
                     planet.cloudsValue >= 70) {
-                planet.planetClass = 'Humid Oxygenated Super Storm Tundra Planet';//verificado
+                planet.planetClass = 'Humid Oxygenated Super Storm Tundra Planet';
                 planet.color = '#030a0eff';
                 planet.landColor = '#06070eff';
                 unlockAchievement(5)
@@ -2426,7 +2605,7 @@ function fgpPlanetsTemperature(deltaTime) {
                     planet.waterValue < 20 &&
                     planet.gasValue > 0 && planet.gasValue <= 99 &&
                     planet.cloudsValue >= 0 && planet.cloudsValue <= 90 && graphicsQuality !='high') {
-                planet.planetClass = 'Cold Desert Planet';//verificado
+                planet.planetClass = 'Cold Desert Planet';
                 planet.color = '#f85c35ff';
                 planet.landColor = '#f83200ff';
             } else if (planet.temperature >= 0 && planet.temperature <= 20 &&  
@@ -2447,192 +2626,182 @@ function fgpPlanetsTemperature(deltaTime) {
                     planet.waterValue < 20 &&
                     planet.gasValue > 0 && planet.gasValue <= 99 &&
                     planet.cloudsValue >= 0 && planet.cloudsValue <= 20 && graphicsQuality ==='high') {
-                planet.planetClass = 'Cold Desert Planet';//verificado
+                planet.planetClass = 'Cold Desert Planet';
                 planet.color = '#f85c35ff';
                 planet.landColor = '#f83200ff';
             } else if (planet.temperature >= 0 && planet.temperature <= 20 &&  
                     planet.waterValue < 20 &&
                     planet.gasValue > 99 &&
                     planet.cloudsValue >= 0 && planet.cloudsValue <= 20 && graphicsQuality ==='high') {
-                planet.planetClass = 'Cold Desert Planet';//verificado
+                planet.planetClass = 'Cold Desert Planet';
                 planet.color = '#f83535ff';
                 planet.landColor = '#f80000ff';
             } else if (planet.temperature >= 0 && planet.temperature <= 20 &&  
                     planet.waterValue < 20 &&
                     planet.gasValue > 0 && planet.gasValue <= 99 &&
                     planet.cloudsValue >= 20 && planet.cloudsValue <= 40 && graphicsQuality ==='high') {
-                planet.planetClass = 'Cold Desert Planet';//verificado
+                planet.planetClass = 'Cold Desert Planet';
                 planet.color = '#ff8d70ff';
                 planet.landColor = '#ff5930ff';
             } else if (planet.temperature >= 0 && planet.temperature <= 20 &&  
                     planet.waterValue < 20 &&
                     planet.gasValue > 0 && planet.gasValue <= 99 &&
                     planet.cloudsValue >= 40 && planet.cloudsValue <= 60 && graphicsQuality ==='high') {
-                planet.planetClass = 'Semi Cloudy Cold Desert Planet';//verificado
+                planet.planetClass = 'Semi Cloudy Cold Desert Planet';
                 planet.color = '#ffb6a3ff';
                 planet.landColor = '#ff977dff';
             } else if (planet.temperature >= 0 && planet.temperature <= 20 &&  
                     planet.waterValue < 20 &&
                     planet.gasValue > 0 && planet.gasValue <= 99 &&
                     planet.cloudsValue >= 60) {
-                planet.planetClass = 'Cloudy Cold Desert Planet';//verificado
+                planet.planetClass = 'Cloudy Cold Desert Planet';
                 planet.color = '#ffb6a3ff';
                 planet.landColor = '#ff977dff';
             } else if (planet.temperature >= 0 && planet.temperature <= 20 &&  
                     planet.waterValue < 20 &&
                     planet.gasValue > 99 &&
                     planet.cloudsValue >= 60) {
-                planet.planetClass = 'Oxgenated Cloudy Cold Desert Planet';//verificado
+                planet.planetClass = 'Oxgenated Cloudy Cold Desert Planet';
                 planet.color = '#ffa3a3ff';
                 planet.landColor = '#ff7d7dff';
             } else {
                 planet.planetClass = 'Rocky Planet';
                 planet.color = '#555555';
                 planet.landColor = '#2b2b2bff';
+                planet.lifeChance = 0;
             }
-
             applyExoticClass();
         }
-        
         else if (planet.type === 'gasGiant') {
             planet.waterValue = planet.waterValue || 0;
             planet.gasValue = planet.gasValue || 0;
             planet.cloudsValue = planet.cloudsValue || 0;
             planet.temperature = planet.temperature || 20;
-
             checkExoticTransformation(
                 ['Plasma', 'Crystalline', 'Magnetic', 'Radioative', 'Vibrational'],
                 ['Neptuno', 'Jupiterian', 'Saturnian', 'Hidrogenic'],
                 ['-Ω', '-Δ', '-Σ', '-Φ', '-Ψ']
             );
             if (planet.temperature >= 100 && planet.gasValue >= 0 && planet.cloudsValue >= 0 && planet.waterValue >= 0) {
-                planet.planetClass = 'Hot Jupiter';//verificado
+                planet.planetClass = 'Hot Jupiter';
                 planet.color = '#ff0800ff';
                 unlockAchievement(4)
             } else if (planet.temperature >= 70 && planet.temperature <= 100 && planet.gasValue >= 0 && planet.gasValue <= 20 && planet.cloudsValue >= 0 && planet.cloudsValue <= 20 && planet.waterValue >= 0 && planet.waterValue <= 20) {
-                planet.planetClass = 'Temperate Jupiter';//verificado
+                planet.planetClass = 'Temperate Jupiter';
                 planet.color = '#ff3300ff';
                 unlockAchievement(4)
             } else if (planet.temperature <= 0 && planet.gasValue >= 0 && planet.cloudsValue >= 0 && planet.waterValue >= 20)  {
-                planet.planetClass = 'Ice Giant';//verificado
+                planet.planetClass = 'Ice Giant';
                 planet.color = '#00008B';
             } else if (planet.temperature >= 0 && planet.temperature <= 10 && planet.gasValue >= 0 && planet.gasValue <= 20 && planet.cloudsValue >= 0 && planet.cloudsValue <= 20 && planet.waterValue >= 20) {
-                planet.planetClass = 'Cold Water Giant';//verificado
+                planet.planetClass = 'Cold Water Giant';
                 planet.color = '#008b8bff';
             } else if (planet.temperature >= 10 && planet.temperature <= 30 && planet.gasValue >= 0 && planet.gasValue <= 20 && planet.cloudsValue >= 0 && planet.cloudsValue <= 20 && planet.waterValue >= 20) {
-                planet.planetClass = 'Water Giant';//verificado
+                planet.planetClass = 'Water Giant';
                 planet.color = '#00FFFF';
             } else if (planet.temperature >= 30 && planet.temperature <= 70 && planet.gasValue >= 0 && planet.gasValue <= 20 && planet.cloudsValue >= 0 && planet.cloudsValue <= 20 && planet.waterValue >= 20) {
-                planet.planetClass = 'Warm Water Giant';//verificado
+                planet.planetClass = 'Warm Water Giant';
                 planet.color = '#4dffc4ff';
             } else if (planet.temperature <= 0 && planet.gasValue >= 0 && planet.cloudsValue >= 0 && planet.waterValue >= 0 && planet.waterValue <= 20) {
-                planet.planetClass = 'Cold Giant';//verificado
+                planet.planetClass = 'Cold Giant';
                 planet.color = '#4682B4';
                 unlockAchievement(37)
             } else if (planet.temperature >= 20 && planet.gasValue >= 100 && planet.cloudsValue >= 100 && planet.waterValue >= 100) {
-                planet.planetClass = 'Multielemental';//verificado
+                planet.planetClass = 'Multielemental';
                 planet.color = '#ff00d4ff';
                 unlockAchievement(41)
             } else if (planet.temperature >= 50 && planet.temperature <= 70 && planet.gasValue >= 10 && planet.gasValue <= 30 && planet.cloudsValue >= 10 && planet.cloudsValue <= 40 && planet.waterValue >= 100) {
-                planet.planetClass = 'Warm Ammonia Giant';//verificado
+                planet.planetClass = 'Warm Ammonia Giant';
                 planet.color = '#4aff9cff';
             } else if (planet.temperature >= 40 && planet.temperature <= 50 && planet.gasValue >= 10 && planet.gasValue <= 30 && planet.cloudsValue >= 10 && planet.cloudsValue <= 40 && planet.waterValue >= 100) {
-                planet.planetClass = 'Ammonia Giant';//verificado
+                planet.planetClass = 'Ammonia Giant';
                 planet.color = '#00ff73ff';
             } else if (planet.temperature >= 30 && planet.temperature <= 40 && planet.gasValue >= 10 && planet.gasValue <= 30 && planet.cloudsValue >= 10 && planet.cloudsValue <= 40 && planet.waterValue >= 100) {
-                planet.planetClass = 'Cold Ammonia Giant';//verificado
+                planet.planetClass = 'Cold Ammonia Giant';
                 planet.color = '#158b4bff';
             } else if (planet.temperature >= 40 && planet.temperature <= 70 && planet.gasValue >= 100 && planet.cloudsValue >= 10 && planet.cloudsValue <= 30 && planet.waterValue >= 0 && planet.waterValue <= 20) {
-                planet.planetClass = 'Warm Noble Giant';//verificado
+                planet.planetClass = 'Warm Noble Giant';
                 planet.color = '#5ffafaff';
             } else if (planet.temperature >= 20 && planet.temperature <= 40 && planet.gasValue >= 100 && planet.cloudsValue >= 10 && planet.cloudsValue <= 30 && planet.waterValue >= 0 && planet.waterValue <= 20) {
-                planet.planetClass = 'Noble Giant';//verificado
+                planet.planetClass = 'Noble Giant';
                 planet.color = '#00FFFF';
             } else if (planet.temperature >= 0 && planet.temperature <= 20 && planet.gasValue >= 100 && planet.cloudsValue >= 10 && planet.cloudsValue <= 30 && planet.waterValue >= 0 && planet.waterValue <= 20) {
-                planet.planetClass = 'Cold Noble Giant';//verificado
+                planet.planetClass = 'Cold Noble Giant';
                 planet.color = '#056868ff';
             } else if (planet.temperature >= 70 && planet.gasValue >= 100 && planet.cloudsValue >= 0 && planet.waterValue >= 0) {
-                planet.planetClass = 'Warm Carbon Giant';//verificado
+                planet.planetClass = 'Warm Carbon Giant';
                 planet.color = '#790000ff';
             } else if (planet.temperature >= 60 && planet.temperature <= 70 && planet.gasValue >= 100 && planet.cloudsValue >= 0 && planet.waterValue >= 0) {
-                planet.planetClass = 'Carbon Giant';//verificado
+                planet.planetClass = 'Carbon Giant';
                 planet.color = '#792600ff';
             } else if (planet.temperature >= 50 && planet.temperature <= 60 && planet.gasValue >= 100 && planet.cloudsValue >= 0 && planet.waterValue >= 0) {
-                planet.planetClass = 'Cold Carbon Giant';//verificado
+                planet.planetClass = 'Cold Carbon Giant';
                 planet.color = '#423d3aff';
             } else if (planet.temperature >= 45 && planet.temperature <= 50 && planet.gasValue >= 100 && planet.cloudsValue >= 0 && planet.waterValue >= 0 ) {
-                planet.planetClass = 'Warm Methane Giant';//verificado
+                planet.planetClass = 'Warm Methane Giant';
                 planet.color = '#fc5a5aff';
             } else if (planet.temperature >= 40 && planet.temperature <= 45 && planet.gasValue >= 100 && planet.cloudsValue >= 0 && planet.waterValue >= 0 ) {
-                planet.planetClass = 'Methane Giant';//verificado
+                planet.planetClass = 'Methane Giant';
                 planet.color = '#ff4800ff';
             } else if (planet.temperature >= 30 && planet.temperature <= 40 && planet.gasValue >= 100 && planet.cloudsValue >= 0 && planet.waterValue >= 0 ) {
-                planet.planetClass = 'Cold Methane Giant';//verificado
+                planet.planetClass = 'Cold Methane Giant';
                 planet.color = '#2c0000ff';
             } else if (planet.temperature >= 20 && planet.temperature <= 45 && planet.gasValue >= 80 && planet.cloudsValue >= 10 && planet.waterValue >= 100 ) {
-                planet.planetClass = 'Warm Hidrogen Giant';//verificado
+                planet.planetClass = 'Warm Hidrogen Giant';
                 planet.color = '#9fb9ffff';
             } else if (planet.temperature >= -10 && planet.temperature <= 20 && planet.gasValue >= 80 && planet.cloudsValue >= 10 && planet.waterValue >= 100 ) {
-                planet.planetClass = 'Hidrogen Giant';//verificado
+                planet.planetClass = 'Hidrogen Giant';
                 planet.color = '#0044ffff';
             } else if (planet.temperature >= -30 && planet.temperature <= -10 && planet.gasValue >= 80 && planet.cloudsValue >= 10 && planet.waterValue >= 100 ) {
-                planet.planetClass = 'Cold Hidrogen Giant';//verificado
+                planet.planetClass = 'Cold Hidrogen Giant';
                 planet.color = '#081331ff';
             } else if (planet.temperature >= 70 && planet.temperature <= 80 && planet.gasValue >= 100 && planet.cloudsValue >= 70 && planet.waterValue >= 10 ) {
-                planet.planetClass = 'Warm Helium Giant';//verificado
+                planet.planetClass = 'Warm Helium Giant';
                 planet.color = '#55f3f3ff';
             } else if (planet.temperature >= 40 && planet.temperature <= 70 && planet.gasValue >= 100 && planet.cloudsValue >= 70 && planet.waterValue >= 10) {
-                planet.planetClass = 'Helium Giant';//verificado
+                planet.planetClass = 'Helium Giant';
                 planet.color = '#00FFFF';
             } else if (planet.temperature >= 0 && planet.temperature <= 40 && planet.gasValue >= 100 && planet.cloudsValue >= 70 && planet.waterValue >= 10) {
-                planet.planetClass = 'Cold Helium Giant';//verificado
+                planet.planetClass = 'Cold Helium Giant';
                 planet.color = '#115252ff';
             } else {
                 planet.planetClass = 'Gas Giant';
                 planet.color = '#e67e22';
             }
-
             applyExoticClass();
         }
-
-        
         else if (planet.type === 'planetoid') {
             planet.waterValue = planet.waterValue || 0;
             planet.gasValue = planet.gasValue || 0;
             planet.cloudsValue = planet.cloudsValue || 0;
             planet.temperature = planet.temperature || 20;
-
             checkExoticTransformation(
                 ['Crystalline', 'Radioative', 'Vibrational', 'Quantum'],
                 ['Cerium', 'Zirconium', 'Tantalum', 'Ruthenium'],
                 ['-X', '-Ω', '-Δ', '-Σ']
             );
-
             if (planet.temperature > 100) {
-                planet.planetClass = 'Lava Planetoid';//verificado
+                planet.planetClass = 'Lava Planetoid';
                 planet.color = '#ff0000ff';
                 unlockAchievement(4)
             } else if (planet.temperature < -50 && planet.waterValue > 30) {
-                planet.planetClass = 'Ice Planetoid';//verificado
+                planet.planetClass = 'Ice Planetoid';
                 planet.color = '#609899';
             } else if (planet.temperature < -50) {
-                planet.planetClass = 'Frozen and Arid Planetoid';//verificado
+                planet.planetClass = 'Frozen and Arid Planetoid';
                 planet.color = '#ffffff';
             } else if (planet.temperature > 50 && planet.waterValue < 40) {
-                planet.planetClass = 'Desert Planetoid';//verificado
+                planet.planetClass = 'Desert Planetoid';
                 planet.color = '#ff3300ff';
             } else if (planet.temperature > 0 && planet.temperature < 20) {
-                planet.planetClass = 'Cold Planetoid';//verificado
+                planet.planetClass = 'Cold Planetoid';
                 planet.color = '#a1887f';
             } else {
                 planet.planetClass = 'Rocky Planetoid';
                 planet.color = '#a1887f';
             }
-
             applyExoticClass();
         }
-
-        
         else if (planet.type === 'asteroid') {
             planet.waterValue = planet.waterValue || 0;
             planet.gasValue = planet.gasValue || 0;
@@ -2643,7 +2812,6 @@ function fgpPlanetsTemperature(deltaTime) {
                 ['Zirconium', 'Tantalum', 'Ruthenium'],
                 ['-X', '-Ω', '-Δ']
             );
-
             if (planet.temperature > 150) {
                 planet.planetClass = 'Flaming Asteroid';
                 planet.color = '#FF4500';
@@ -2664,11 +2832,8 @@ function fgpPlanetsTemperature(deltaTime) {
                 planet.planetClass = 'Commom Asteroid';
                 planet.color = '#95a5a6';
             }
-
             applyExoticClass();
         }
-
-        
         else if (planet.type === 'meteoroid') {
             planet.waterValue = planet.waterValue || 0;
             planet.gasValue = planet.gasValue || 0;
@@ -2679,7 +2844,6 @@ function fgpPlanetsTemperature(deltaTime) {
                 ['Zirconium', 'Tantalum', 'Ruthenium'],
                 ['-X', '-Ω', '-Δ']
             );
-
             if (planet.temperature > 200) {
                 planet.planetClass = 'Flaming Meteoroid';
                 planet.color = '#FF4500';
@@ -2700,11 +2864,8 @@ function fgpPlanetsTemperature(deltaTime) {
                 planet.planetClass = 'Commom Meteoroid';
                 planet.color = '#7f8c8d';
             }
-
             applyExoticClass();
         }
-
-        
         else if (planet.type === 'spaceDust') {
             planet.waterValue = planet.waterValue || 0;
             planet.gasValue = planet.gasValue || 0;
@@ -2715,7 +2876,6 @@ function fgpPlanetsTemperature(deltaTime) {
                 ['Cerium', 'Hafnium', 'Niobio'],
                 ['-X', '-Ω', '-Δ']
             );
-
             if (planet.temperature > 100) {
                 planet.planetClass = 'Hot Space Dust';
                 planet.color = '#FFA500';
@@ -2727,34 +2887,21 @@ function fgpPlanetsTemperature(deltaTime) {
                 planet.planetClass = 'Cold Space Dust';
                 planet.color = '#A9A9A9';
             }
-
             applyExoticClass();
         }
-
-                
         else if (planet.type === 'comet') {
-                    
             planet.waterValue = planet.waterValue || 70;
             planet.gasValue = planet.gasValue || 80;
             planet.cloudsValue = planet.cloudsValue || 50;
             planet.temperature = planet.temperature ||10; 
-
-                        
-            
             const waterLossRate = planet.temperature > 100 ? 0.5 : 0.05; 
             planet.waterValue = Math.max(0, planet.waterValue - (deltaTime / 1000 * waterLossRate));
-            
-            
             planet.waterValue = Math.max(0, planet.waterValue - (deltaTime / 1000 * waterLossRate));
-            
-            
             checkExoticTransformation(
                 ['Congelado', 'Exotic', 'Condensed'],
                 ['Hidrogênio', 'Metano', 'Amônia'],
                 ['-Ω', '-Δ', '-Σ']
             );
-
-            
             if (planet.waterValue <= 0) {
                 const chance = Math.random();
                 if (chance < 0.33 && planet.mass > 10) {
@@ -2765,8 +2912,6 @@ function fgpPlanetsTemperature(deltaTime) {
                     planet.markedForRemoval = true;
                 }
             }
-
-            
             if (planet.temperature > 100) {
                 planet.planetClass = 'Hot Comet';
                 planet.color = '#FFA500';
@@ -2782,7 +2927,6 @@ function fgpPlanetsTemperature(deltaTime) {
                 planet.planetClass = 'Commom Comet';
                 planet.color = '#3498db';
             }
-
             if (planet.waterValue <= 0) {
                 const chance = Math.random();
                 if (chance < 0.33 && planet.mass > 10) {
@@ -2793,11 +2937,8 @@ function fgpPlanetsTemperature(deltaTime) {
                     planet.markedForRemoval = true;
                 }
             }
-
             applyExoticClass();
         }
-
-        
         else if (planet.type === 'meteorite') {
             planet.waterValue = planet.waterValue || 0;
             planet.gasValue = planet.gasValue || 0;
@@ -2808,7 +2949,6 @@ function fgpPlanetsTemperature(deltaTime) {
                 ['Irídio', 'Osmio', 'Platina'],
                 ['-Φ', '-Σ', '-Ψ']
             );
-
             if (planet.temperature > 300) {
                 planet.planetClass = 'Super Hot Meteorite';
                 planet.color = '#FF0000';
@@ -2820,11 +2960,752 @@ function fgpPlanetsTemperature(deltaTime) {
                 planet.planetClass = 'Cold Meteorite';
                 planet.color = '#D3D3D3';
             }
-
             applyExoticClass();
         }
-
-    });
+    }
+    if (planet.ignoreColorChanges){ 
+        if (planet.type === 'rockyPlanet') {
+            planet.waterValue = planet.waterValue || 0;
+            planet.gasValue = planet.gasValue || 0;
+            planet.cloudsValue = planet.cloudsValue || 0;
+            checkExoticTransformation(
+                ['Crystalline', 'Magnetic', 'Radioative', 'Vibrational', 'Quantum'],
+                ['Cerium', 'Zirconium', 'Tantalum', 'Ruthenium', 'Hafnium'],
+                ['-X', '-Ω', '-Δ', '-Σ', '-Φ']
+            );
+            fgpPlanetConditions(planet);
+            if (planet.temperature > 100 && planet.cloudsValue < 10 && graphicsQuality != 'high' && planet.cloudsValue < 100 && planet.gasValue <= 99){  
+                planet.planetClass = 'Lava Planet';
+                planet.lifeChance = 0;
+                unlockAchievement(4)
+            } else if (planet.temperature > 100 && planet.cloudsValue >= 0 && planet.cloudsValue < 20 && graphicsQuality === 'high' && planet.gasValue <= 99){  
+                planet.planetClass = 'Lava Planet';
+                planet.lifeChance = 0;
+                unlockAchievement(4)
+            } else if (planet.temperature > 100 && planet.cloudsValue >= 0 && planet.cloudsValue < 99 && planet.gasValue > 99){  
+                planet.planetClass = 'Carbon Lava Planet';
+                unlockAchievement(4)
+            } else if (planet.temperature > 100 && planet.cloudsValue >= 20 && planet.cloudsValue < 30 && graphicsQuality === 'high' && planet.gasValue <= 99){  
+                planet.planetClass = 'Lava Planet'; 
+                planet.lifeChance = 0;
+                unlockAchievement(4)
+            } else if (planet.temperature > 100 && planet.cloudsValue >= 20 && planet.cloudsValue < 40 && graphicsQuality === 'high' && planet.gasValue <= 99){  
+                planet.planetClass = 'Lava Planet'; 
+                planet.lifeChance = 0;
+                unlockAchievement(4)
+            } else if (planet.temperature > 100 && planet.cloudsValue >= 40 && planet.cloudsValue < 50 && graphicsQuality === 'high' && planet.gasValue <= 99){  
+                planet.planetClass = 'Lava Planet';
+                planet.lifeChance = 0;
+                unlockAchievement(4)
+            } else if (planet.temperature > 100 && planet.cloudsValue >= 50 && planet.cloudsValue < 60 && graphicsQuality === 'high' && planet.gasValue <= 99){  
+                planet.planetClass = 'Lava Planet';
+                planet.lifeChance = 0;
+                unlockAchievement(4)
+            } else if (planet.temperature > 100 && planet.cloudsValue >= 60 && planet.cloudsValue < 70 && graphicsQuality === 'high' && planet.gasValue <= 99){  
+                planet.planetClass = 'Lava Planet';
+                planet.lifeChance = 0;
+                unlockAchievement(4)
+            } else if (planet.temperature > 100 && planet.cloudsValue >= 70 && planet.cloudsValue < 80 && graphicsQuality === 'high' && planet.gasValue <= 99){  
+                planet.planetClass = 'Lava Planet';
+                planet.lifeChance = 0;
+                unlockAchievement(4)
+            } else if (planet.temperature > 100 && planet.cloudsValue >= 80 && planet.cloudsValue <= 99 && graphicsQuality === 'high' && planet.gasValue <= 99){  
+                planet.planetClass = 'Lava Planet';
+                planet.lifeChance = 0;
+                unlockAchievement(4)
+            } else if (planet.temperature > 100 && planet.cloudsValue >= 100) {  
+                planet.planetClass = 'Cloudy Lava Planet';
+                planet.lifeChance = 0;
+                unlockAchievement(4)
+                if (planet.gasValue > 99) {
+                planet.planetClass = 'Acidic Cloudy Lava Planet';
+            }
+            } else if (planet.temperature >= 10 && planet.temperature <= 50 &&  
+                    planet.waterValue > 99 && planet.gasValue <= 99 &&
+                    planet.cloudsValue > 99 && graphicsQuality != 'high') {
+                planet.planetClass = 'Cloudy Oceanic Planet'; 
+            } else if (planet.temperature >= 10 && planet.temperature <= 50 &&  
+                    planet.waterValue > 99 && planet.gasValue > 99 &&
+                    planet.cloudsValue <= 99 && graphicsQuality != 'high') {
+                planet.planetClass = 'Oxygenated Oceanic Planet';
+            } else if (planet.temperature >= 10 && planet.temperature <= 50 &&  
+                    planet.waterValue > 99 && planet.gasValue > 99 &&
+                    planet.cloudsValue > 99 && graphicsQuality != 'high') {
+                planet.planetClass = 'Oxygenated Cloudy Oceanic Planet';
+            } else if (planet.temperature >= 10 && planet.temperature <= 50 &&  
+                    planet.waterValue > 99 && planet.gasValue <= 99 &&
+                    planet.cloudsValue <= 99 && graphicsQuality != 'high') {
+                planet.planetClass = 'Oceanic Planet';
+            } else if (planet.temperature >= 10 && planet.temperature <= 50 &&  
+                    planet.waterValue > 99 && planet.gasValue <= 99 &&
+                    planet.cloudsValue > 0 && planet.cloudsValue <= 40 && graphicsQuality === 'high') {
+                planet.planetClass = 'Oceanic Planet';
+            } else if (planet.temperature >= 10 && planet.temperature <= 50 &&  
+                    planet.waterValue > 99 && planet.gasValue <= 99 &&
+                    planet.cloudsValue > 40 && planet.cloudsValue <= 50 && graphicsQuality === 'high') {
+                planet.planetClass = 'Oceanic Planet';
+            } else if (planet.temperature >= 10 && planet.temperature <= 50 &&  
+                    planet.waterValue > 99 && planet.gasValue <= 99 &&
+                    planet.cloudsValue > 50 && planet.cloudsValue <= 70 && graphicsQuality === 'high') {
+                planet.planetClass = 'Oceanic Planet';
+            } else if (planet.temperature >= 10 && planet.temperature <= 50 &&  
+                    planet.waterValue > 99 && planet.gasValue <= 99 &&
+                    planet.cloudsValue > 70 && planet.cloudsValue <= 90 && graphicsQuality === 'high') {
+                planet.planetClass = 'Oceanic Planet';
+            } else if (planet.temperature >= 10 && planet.temperature <= 50 &&  
+                    planet.waterValue > 99 && planet.gasValue <= 99 &&
+                    planet.cloudsValue > 90 && graphicsQuality === 'high') {
+                planet.planetClass = 'Cloudy Oceanic Planet';
+            } else if (planet.temperature >= 10 && planet.temperature <= 50 &&  
+                    planet.waterValue > 99 && planet.gasValue >= 100 &&
+                    planet.cloudsValue <= 99) {
+                planet.planetClass = 'Oxygenated Oceanic Planet';
+            } else if (planet.temperature >= 10 && planet.temperature <= 50 &&  
+                    planet.waterValue > 99 && planet.gasValue >= 100 &&
+                    planet.cloudsValue > 90 && graphicsQuality === 'high') {
+                planet.planetClass = 'Cloudy Oxygenated Oceanic Planet';
+            } else if (planet.temperature > -50 && planet.temperature < 10 &&  
+                    planet.waterValue > 99 && planet.gasValue <= 99 &&
+                    planet.cloudsValue > 0 && graphicsQuality != 'high') {
+                planet.planetClass = 'Storm Planet';
+            } else if (planet.temperature > -50 && planet.temperature < 10 &&  
+                    planet.waterValue > 99 && planet.gasValue > 99 &&
+                    planet.cloudsValue <= 99 && graphicsQuality != 'high') {
+                planet.planetClass = 'Oxygenated Storm Planet';
+            } else if (planet.temperature > -50 && planet.temperature <= 10 &&  
+                    planet.waterValue > 99 && planet.gasValue <= 99 &&
+                    planet.cloudsValue > 0 && planet.cloudsValue <= 30 && graphicsQuality === 'high') {
+                planet.planetClass = 'Storm Planet';
+            } else if (planet.temperature > -50 && planet.temperature < 10 &&  
+                    planet.waterValue > 99 && planet.gasValue > 99 &&
+                    planet.cloudsValue > 0 && planet.cloudsValue <= 99 && graphicsQuality === 'high') {
+                planet.planetClass = 'Oxygenated Storm Planet';
+            } else if (planet.temperature > -50 && planet.temperature <= 10 &&  
+                    planet.waterValue > 99 && planet.gasValue <= 99 &&
+                    planet.cloudsValue > 30 && planet.cloudsValue <= 60 && graphicsQuality === 'high') {
+                planet.planetClass = 'Storm Planet';
+            } else if (planet.temperature > -50 && planet.temperature <= 10 &&  
+                    planet.waterValue > 99 && planet.gasValue <= 99 &&
+                    planet.cloudsValue > 60 && planet.cloudsValue <= 99 && graphicsQuality === 'high') {
+                planet.planetClass = 'Storm Planet';
+            } else if (planet.temperature > -50 && planet.temperature <= 10 &&  
+                    planet.waterValue > 99 && planet.gasValue <= 99 &&
+                    planet.cloudsValue > 99) {
+                planet.planetClass = 'Super Storm Planet';
+            } else if (planet.temperature > -50 && planet.temperature <= 10 &&  
+                    planet.waterValue > 99 && planet.gasValue > 99 &&
+                    planet.cloudsValue > 99) {
+                planet.planetClass = 'Super Oxygenated Storm Planet';
+            } else if (planet.temperature >= - 269 && planet.temperature < 0 && planet.waterValue >= 20 && planet.cloudsValue <= 99 && planet.gasValue <= 99) {
+                planet.planetClass = 'Frozen Planet';
+                planet.lifeChance = 0;
+            } else if (planet.temperature >= - 269 && planet.temperature < 0 && planet.waterValue >= 20 && planet.cloudsValue > 99 && planet.gasValue <= 99) {  
+                planet.planetClass = 'Cloudy Frozen Planet';
+                planet.lifeChance = 0;
+            } else if (planet.temperature >= - 269 && planet.temperature < 0 && planet.waterValue >= 20 && planet.cloudsValue <= 99 && planet.gasValue > 99) {
+                planet.planetClass = 'Condensed Air Frozen Planet';
+            } else if (planet.temperature >= - 269 && planet.temperature < 0 && planet.waterValue >= 20 && planet.cloudsValue > 99 && planet.gasValue > 99) {  
+                planet.planetClass = 'Cloudy Condensed Air Frozen Planet';
+                planet.lifeChance = 0;
+            } else if (planet.temperature >= - 269 && planet.temperature < 0 && planet.waterValue < 20 && planet.cloudsValue <= 99 && planet.gasValue <= 99) {  
+                planet.planetClass = 'Frozen and Arid Planet';
+                planet.lifeChance = 0;
+            } else if (planet.temperature >= - 269 && planet.temperature < 0 && planet.waterValue < 20 && planet.cloudsValue <= 99 && planet.gasValue > 99) {  
+                planet.planetClass = 'Condensed Air Frozen and Arid Planet';
+                planet.lifeChance = 0;
+            } else if (planet.temperature >= - 269 && planet.temperature < 0 && planet.waterValue < 20 && planet.cloudsValue > 99 && planet.gasValue <= 99) {  
+                planet.planetClass = 'Cloudy Frozen and Arid Planet';
+                planet.lifeChance = 0;
+            } else if (planet.temperature >= - 269 && planet.temperature < 0 && planet.waterValue < 20 && planet.cloudsValue > 99 && planet.gasValue > 99) {  
+                planet.planetClass = 'Condensed Air Cloudy Frozen and Arid Planet'; 
+                planet.lifeChance = 0;
+            } else if (planet.temperature >= 20 && planet.temperature <= 30 &&  
+                    planet.waterValue >= 30 && planet.waterValue <= 80 &&
+                    planet.gasValue >= 50 && planet.gasValue <= 80 &&
+                    planet.cloudsValue >= 20 && planet.cloudsValue <= 90 && graphicsQuality != 'high') {
+                planet.planetClass = 'Habitable Planet';
+                unlockAchievement(5)
+                unlockAchievement(7)
+            } else if (planet.temperature >= 20 && planet.temperature <= 30 &&  
+                    planet.waterValue >= 30 && planet.waterValue <= 80 &&
+                    planet.gasValue > 80 &&
+                    planet.cloudsValue >= 20 && planet.cloudsValue <= 90 && graphicsQuality != 'high') {
+                planet.planetClass = 'Oxygenated Planet';
+                unlockAchievement(5)
+                unlockAchievement(7)
+            } else if (planet.temperature >= 20 && planet.temperature <= 30 &&  
+                    planet.waterValue >= 30 && planet.waterValue <= 80 &&
+                    planet.gasValue >= 50 && planet.gasValue <= 80 &&
+                    planet.cloudsValue >= 20 && planet.cloudsValue <= 30 && graphicsQuality === 'high') {
+                planet.planetClass = 'Habitable Planet';
+                unlockAchievement(5)
+                unlockAchievement(7)
+            } else if (planet.temperature >= 20 && planet.temperature <= 30 &&  
+                    planet.waterValue >= 30 && planet.waterValue <= 80 &&
+                    planet.gasValue > 80 &&
+                    planet.cloudsValue >= 20 && planet.cloudsValue <= 30 && graphicsQuality === 'high') {
+                planet.planetClass = 'Oxygenated Planet';
+                unlockAchievement(5)
+                unlockAchievement(7)
+            } else if (planet.temperature >= 20 && planet.temperature <= 30 &&  
+                    planet.waterValue >= 30 && planet.waterValue <= 80 &&
+                    planet.gasValue > 80 &&
+                    planet.cloudsValue >= 30 && planet.cloudsValue <= 60 && graphicsQuality === 'high') {
+                planet.planetClass = 'Oxygenated Planet';
+                unlockAchievement(5)
+                unlockAchievement(7)
+            } else if (planet.temperature >= 20 && planet.temperature <= 50 &&  
+                    planet.waterValue >= 30 && planet.waterValue <= 80 &&
+                    planet.gasValue > 80 &&
+                    planet.cloudsValue >= 60 && planet.cloudsValue <= 90 && graphicsQuality === 'high') {
+                planet.planetClass = 'Oxygenated Cloudy Planet';
+                unlockAchievement(5)
+                unlockAchievement(7)
+            } else if (planet.temperature >= 20 && planet.temperature <= 30 &&  
+                    planet.waterValue >= 30 && planet.waterValue <= 80 &&
+                    planet.gasValue >= 50 && planet.gasValue <= 80 &&
+                    planet.cloudsValue >= 30 && planet.cloudsValue <= 40 && graphicsQuality === 'high') {
+                planet.planetClass = 'Habitable Planet';
+                unlockAchievement(5)
+                unlockAchievement(7)
+            } else if (planet.temperature >= 20 && planet.temperature <= 30 &&  
+                    planet.waterValue >= 30 && planet.waterValue <= 80 &&
+                    planet.gasValue >= 50 && planet.gasValue <= 80 &&
+                    planet.cloudsValue >= 40 && planet.cloudsValue <= 50 && graphicsQuality === 'high') {
+                planet.planetClass = 'Habitable Planet';
+                unlockAchievement(5)
+                unlockAchievement(7)
+            } else if (planet.temperature >= 20 && planet.temperature <= 30 &&  
+                    planet.waterValue >= 30 && planet.waterValue <= 80 &&
+                    planet.gasValue >= 50 && planet.gasValue <= 80 &&
+                    planet.cloudsValue >= 50 && planet.cloudsValue <= 60 && graphicsQuality === 'high') {
+                planet.planetClass = 'Habitable Planet';
+                unlockAchievement(5)
+                unlockAchievement(7)
+            } else if (planet.temperature >= 20 && planet.temperature <= 30 &&  
+                    planet.waterValue >= 30 && planet.waterValue <= 80 &&
+                    planet.gasValue >= 50 && planet.gasValue <= 80 &&
+                    planet.cloudsValue >= 60 && planet.cloudsValue <= 70 && graphicsQuality === 'high') {
+                planet.planetClass = 'Habitable Planet';
+                unlockAchievement(5)
+                unlockAchievement(7)
+            } else if (planet.temperature >= 20 && planet.temperature <= 30 &&  
+                    planet.waterValue >= 30 && planet.waterValue <= 80 &&
+                    planet.gasValue >= 50 && planet.gasValue <= 80 &&
+                    planet.cloudsValue >= 70 && planet.cloudsValue <= 80 && graphicsQuality === 'high') {
+                planet.planetClass = 'Semi Cloudy Habitable Planet';
+                unlockAchievement(5)
+                unlockAchievement(7)
+            } else if (planet.temperature >= 20 && planet.temperature <= 30 &&  
+                    planet.waterValue >= 30 && planet.waterValue <= 80 &&
+                    planet.gasValue >= 50 && planet.gasValue <= 80 &&
+                    planet.cloudsValue === 90 && graphicsQuality === 'high') {
+                planet.planetClass = 'Cloudy Habitable Planet';
+                unlockAchievement(5)
+                unlockAchievement(7)
+            } else if (planet.temperature > 20 && planet.temperature <= 30 &&   
+                    planet.cloudsValue >= 70 &&
+                    planet.waterValue >= 30 && planet.waterValue <= 60 &&
+                    planet.gasValue >= 40 && planet.gasValue <= 70) {
+                planet.planetClass = 'Cloudy Planet';
+            } else if (planet.temperature > 20 && planet.temperature <= 30 &&   
+                    planet.cloudsValue >= 70 &&
+                    planet.waterValue >= 30 && planet.waterValue <= 60 &&
+                    planet.gasValue > 70) {
+                planet.planetClass = 'Oxygenated Cloudy Planet';
+            } else if (planet.temperature > 30 && planet.temperature <= 50 &&  
+                    planet.waterValue >= 30 && planet.waterValue <= 80 &&
+                    planet.gasValue >= 50 && planet.gasValue <= 80 &&
+                    planet.cloudsValue >= 20 && planet.cloudsValue <= 90 && graphicsQuality != 'high') {
+                planet.planetClass = 'Temperate Planet';
+                unlockAchievement(5)
+            } else if (planet.temperature > 30 && planet.temperature <= 50 &&  
+                    planet.waterValue >= 30 && planet.waterValue <= 80 &&
+                    planet.gasValue >= 50 && planet.gasValue <= 80 &&
+                    planet.cloudsValue >= 20 && planet.cloudsValue <= 30 && graphicsQuality === 'high') {
+                planet.planetClass = 'Temperate Planet';
+                unlockAchievement(5)
+            } else if (planet.temperature > 30 && planet.temperature <= 50 &&  
+                    planet.waterValue >= 30 && planet.waterValue <= 80 &&
+                    planet.gasValue >= 50 && planet.gasValue <= 80 &&
+                    planet.cloudsValue >= 30 && planet.cloudsValue <= 50 && graphicsQuality === 'high') {
+                planet.planetClass = 'Temperate Planet';
+                unlockAchievement(5)
+            } else if (planet.temperature > 30 && planet.temperature <= 50 &&  
+                    planet.waterValue >= 30 && planet.waterValue <= 80 &&
+                    planet.gasValue >= 50 && planet.gasValue <= 80 &&
+                    planet.cloudsValue >= 50 && planet.cloudsValue <= 70 && graphicsQuality === 'high') {
+                planet.planetClass = 'Semi Cloudy Temperate Planet';
+                unlockAchievement(5)
+            } else if (planet.temperature > 30 && planet.temperature <= 100 &&  
+                    planet.cloudsValue >= 70 &&
+                    planet.waterValue >= 30 && planet.waterValue <= 60 &&
+                    planet.gasValue >= 40 && planet.gasValue <= 70) {
+                planet.planetClass = 'Temperate Cloudy Planet';
+            } else if (planet.temperature > 50 && planet.waterValue < 40 && planet.cloudsValue <= 99 && planet.gasValue <= 99 && graphicsQuality != 'high') {  
+                planet.planetClass = 'Desert Planet';
+            } else if (planet.temperature > 50 && planet.waterValue < 40 && graphicsQuality != 'high' && planet.cloudsValue <= 99 && planet.gasValue > 99) {  
+                planet.planetClass = 'Oxygenated Desert Planet';
+            } else if (planet.temperature > 50 && planet.waterValue < 40 && graphicsQuality === 'high' && planet.cloudsValue <= 20 && planet.gasValue <= 99) {  
+                planet.planetClass = 'Desert Planet';
+            } else if (planet.temperature > 50 && planet.waterValue < 40 && graphicsQuality === 'high' && planet.cloudsValue <= 20 && planet.gasValue > 99) {  
+                planet.planetClass = 'Oxygenated Desert Planet';
+            } else if (planet.temperature > 50 && planet.waterValue < 40 && graphicsQuality === 'high' && planet.cloudsValue > 20 && planet.cloudsValue <= 50 && planet.gasValue > 99) {  
+                planet.planetClass = 'Oxygenated Desert Planet';
+            } else if (planet.temperature > 50 && planet.waterValue < 40 && graphicsQuality === 'high' &&  planet.cloudsValue > 50 && planet.cloudsValue <= 99 && planet.gasValue > 99) {  
+                planet.planetClass = 'Semi Cloudy Oxygenated Desert Planet';
+            } else if (planet.temperature > 50 && planet.waterValue < 40 && graphicsQuality === 'high' && planet.cloudsValue <= 30 && planet.gasValue <= 99) {  
+                planet.planetClass = 'Desert Planet';
+            } else if (planet.temperature > 50 && planet.waterValue < 40 && graphicsQuality === 'high' && planet.cloudsValue > 30 && planet.cloudsValue < 60 && planet.gasValue <= 99) {  
+                planet.planetClass = 'Desert Planet';
+            } else if (planet.temperature > 50 && planet.waterValue < 40 && planet.cloudsValue >= 60 && planet.cloudsValue < 70 && planet.gasValue <= 99) {  
+                planet.planetClass = 'Semi Cloudy Desert Planet';
+            } else if (planet.temperature > 50 && planet.waterValue < 40 && planet.cloudsValue > 99 && planet.gasValue <= 99) {  
+                planet.planetClass = 'Cloudy Desert Planet';
+            } else if (planet.temperature > 50 && planet.waterValue < 40 && planet.cloudsValue > 99 && planet.gasValue > 99) {  
+                planet.planetClass = 'Oxygenated Cloudy Desert Planet';
+            } else if (planet.temperature > 50 && planet.waterValue >= 40 && graphicsQuality !='high') {  
+                planet.planetClass = 'Humid Desert Planet';
+            } else if (planet.temperature > 50 && planet.waterValue >= 40 && graphicsQuality ==='high' && planet.cloudsValue >= 0 && planet.cloudsValue < 30 && planet.gasValue <= 99) {  
+                planet.planetClass = 'Humid Desert Planet';
+            } else if (planet.temperature > 50 && planet.waterValue >= 40 && graphicsQuality ==='high' && planet.cloudsValue >= 0 && planet.cloudsValue < 30 && planet.gasValue > 99) {  
+                planet.planetClass = 'Oxygenated Humid Desert Planet';
+            } else if (planet.temperature > 50 && planet.waterValue >= 40 && graphicsQuality ==='high' && planet.cloudsValue >= 30 && planet.cloudsValue < 50 && planet.gasValue <= 99) {  
+                planet.planetClass = 'Humid Desert Planet';
+            } else if (planet.temperature > 50 && planet.waterValue >= 40 && graphicsQuality ==='high' && planet.cloudsValue >= 50 && planet.cloudsValue < 60 && planet.gasValue <= 99) {  
+                planet.planetClass = 'Semi Fog Humid Desert Planet';
+            } else if (planet.temperature > 50 && planet.waterValue >= 40 && graphicsQuality ==='high' && planet.cloudsValue >= 60 && planet.cloudsValue < 70 && planet.gasValue <= 99) {  
+                planet.planetClass = 'Fog Humid Desert Planet';
+            } else if (planet.temperature > 50 && planet.waterValue >= 40 && graphicsQuality ==='high' && planet.cloudsValue > 70 && planet.gasValue <= 99) {  
+                planet.planetClass = 'Super Fog Humid Desert Planet';
+            } else if (planet.temperature > 50 && planet.waterValue >= 40 && graphicsQuality ==='high' && planet.cloudsValue >= 60 && planet.cloudsValue < 70 && planet.gasValue > 99) {  
+                planet.planetClass = 'Oxygenated Fog Humid Desert Planet';
+            } else if (planet.temperature > 50 && planet.waterValue >= 40 && graphicsQuality ==='high' && planet.cloudsValue > 70 && planet.gasValue > 99) {  
+                planet.planetClass = 'Oxygenated Super Fog Humid Desert Planet';
+            } else if (planet.temperature <= -270 ){
+                unlockAchievement(33)
+                planet.planetClass = 'Extreme Frozen Planet';
+            } else if (planet.temperature >= 0 && planet.temperature < 20 &&  
+                    planet.waterValue > 0 && planet.waterValue < 20 &&
+                    planet.gasValue > 0 && planet.gasValue < 80 &&
+                    planet.cloudsValue >= 10 && planet.cloudsValue <= 60 && graphicsQuality != 'high') {
+                planet.planetClass = 'Tundra Planet';
+                unlockAchievement(5)
+            } else if (planet.temperature >= 0 && planet.temperature < 20 &&  
+                    planet.waterValue > 0 && planet.waterValue < 20 &&
+                    planet.gasValue >= 80 &&
+                    planet.cloudsValue >= 10 && planet.cloudsValue <= 60 && graphicsQuality != 'high') {
+                planet.planetClass = 'Oxygenated Tundra Planet';
+                unlockAchievement(5)
+            } else if (planet.temperature >= 0 && planet.temperature < 20 &&  
+                    planet.waterValue > 0 && planet.waterValue < 20 &&
+                    planet.gasValue > 0 && planet.gasValue < 80 &&
+                    planet.cloudsValue >= 10 && planet.cloudsValue <= 30 && graphicsQuality === 'high') {
+                planet.planetClass = 'Tundra Planet';
+                unlockAchievement(5)
+            } else if (planet.temperature >= 0 && planet.temperature < 20 &&  
+                    planet.waterValue > 0 && planet.waterValue < 20 &&
+                    planet.gasValue >= 80 &&
+                    planet.cloudsValue >= 10 && planet.cloudsValue <= 30 && graphicsQuality === 'high') {
+                planet.planetClass = 'Oxygenated Tundra Planet';
+                unlockAchievement(5)
+            } else if (planet.temperature >= 0 && planet.temperature < 20 &&  
+                    planet.waterValue > 0 && planet.waterValue < 20 &&
+                    planet.gasValue >= 80 &&
+                    planet.cloudsValue >= 30 && planet.cloudsValue <= 60 && graphicsQuality === 'high') {
+                planet.planetClass = 'Oxygenated Tundra Planet';
+                unlockAchievement(5)
+            } else if (planet.temperature >= 0 && planet.temperature < 20 &&  
+                    planet.waterValue > 0 && planet.waterValue < 20 &&
+                    planet.gasValue > 0 && planet.gasValue < 80 &&
+                    planet.cloudsValue >= 30 && planet.cloudsValue <= 50 && graphicsQuality === 'high') {
+                planet.planetClass = 'Tundra Planet';
+                unlockAchievement(5)
+            } else if (planet.temperature >= 0 && planet.temperature < 20 &&  
+                    planet.waterValue > 0 && planet.waterValue < 20 &&
+                    planet.gasValue > 0 && planet.gasValue < 80 &&
+                    planet.cloudsValue >= 50 && planet.cloudsValue <= 60 && graphicsQuality === 'high') {
+                planet.planetClass = 'Semi Storm Tundra Planet';
+                unlockAchievement(5)
+            } else if (planet.temperature >= 0 && planet.temperature < 20 &&  
+                    planet.waterValue > 0 && planet.waterValue < 20 &&
+                    planet.gasValue > 0 && planet.gasValue < 80 &&
+                    planet.cloudsValue >= 60 && planet.cloudsValue <= 70) {
+                planet.planetClass = 'Storm Tundra Planet';
+                unlockAchievement(5)
+            } else if (planet.temperature >= 0 && planet.temperature < 20 &&  
+                    planet.waterValue > 0 && planet.waterValue < 20 &&
+                    planet.gasValue > 0 && planet.gasValue < 80 &&
+                    planet.cloudsValue > 70) {
+                planet.planetClass = 'Super Storm Tundra Planet';
+                unlockAchievement(5)
+            } else if (planet.temperature >= 0 && planet.temperature < 20 &&  
+                    planet.waterValue > 0 && planet.waterValue < 20 &&
+                    planet.gasValue >= 80 &&
+                    planet.cloudsValue >= 60 && planet.cloudsValue <= 70) {
+                planet.planetClass = 'Oxygenated Storm Tundra Planet';
+                unlockAchievement(5)
+            } else if (planet.temperature >= 0 && planet.temperature < 20 &&  
+                    planet.waterValue > 0 && planet.waterValue < 20 &&
+                    planet.gasValue > 80 &&
+                    planet.cloudsValue >= 70) {
+                planet.planetClass = 'Oxygenated Super Storm Tundra Planet';
+                unlockAchievement(5)
+            } else if (planet.temperature >= 0 && planet.temperature < 20 &&  
+                    planet.waterValue >= 20 &&
+                    planet.gasValue > 0 && planet.gasValue < 80 &&
+                    planet.cloudsValue >= 10 && planet.cloudsValue <= 60 && graphicsQuality != 'high') {
+                planet.planetClass = 'Humid Tundra Planet';
+                unlockAchievement(5)
+            } else if (planet.temperature >= 0 && planet.temperature < 20 &&  
+                    planet.waterValue >= 20 &&
+                    planet.gasValue >= 80 &&
+                    planet.cloudsValue >= 10 && planet.cloudsValue <= 60 && graphicsQuality != 'high') {
+                planet.planetClass = 'Humid Oxygenated Tundra Planet';
+                unlockAchievement(5)
+            } else if (planet.temperature >= 0 && planet.temperature < 20 &&  
+                     planet.waterValue >= 20 &&
+                    planet.gasValue > 0 && planet.gasValue < 80 &&
+                    planet.cloudsValue >= 10 && planet.cloudsValue <= 30 && graphicsQuality === 'high') {
+                planet.planetClass = 'Humid Tundra Planet';
+                unlockAchievement(5)
+            } else if (planet.temperature >= 0 && planet.temperature < 20 &&  
+                     planet.waterValue >= 20 &&
+                    planet.gasValue >= 80 &&
+                    planet.cloudsValue >= 10 && planet.cloudsValue <= 30 && graphicsQuality === 'high') {
+                planet.planetClass = 'Humid Oxygenated Tundra Planet';
+                unlockAchievement(5)
+            } else if (planet.temperature >= 0 && planet.temperature < 20 &&  
+                     planet.waterValue >= 20 &&
+                    planet.gasValue >= 80 &&
+                    planet.cloudsValue >= 30 && planet.cloudsValue <= 60 && graphicsQuality === 'high') {
+                planet.planetClass = 'Humid Oxygenated Tundra Planet';
+                unlockAchievement(5)
+            } else if (planet.temperature >= 0 && planet.temperature < 20 &&  
+                     planet.waterValue >= 20 &&
+                    planet.gasValue > 0 && planet.gasValue < 80 &&
+                    planet.cloudsValue >= 30 && planet.cloudsValue <= 50 && graphicsQuality === 'high') {
+                planet.planetClass = 'Humid Tundra Planet';
+                unlockAchievement(5)
+            } else if (planet.temperature >= 0 && planet.temperature < 20 &&  
+                     planet.waterValue >= 20 &&
+                    planet.gasValue > 0 && planet.gasValue < 80 &&
+                    planet.cloudsValue >= 50 && planet.cloudsValue <= 60 && graphicsQuality === 'high') {
+                planet.planetClass = 'Humid Semi Storm Tundra Planet';
+                unlockAchievement(5)
+            } else if (planet.temperature >= 0 && planet.temperature < 20 &&  
+                     planet.waterValue >= 20 &&
+                    planet.gasValue > 0 && planet.gasValue < 80 &&
+                    planet.cloudsValue >= 60 && planet.cloudsValue <= 70) {
+                planet.planetClass = 'Humid Storm Tundra Planet';
+                unlockAchievement(5)
+            } else if (planet.temperature >= 0 && planet.temperature < 20 &&  
+                     planet.waterValue >= 20 &&
+                    planet.gasValue > 0 && planet.gasValue < 80 &&
+                    planet.cloudsValue > 70) {
+                planet.planetClass = 'Humid Super Storm Tundra Planet';
+                unlockAchievement(5)
+            } else if (planet.temperature >= 0 && planet.temperature < 20 &&  
+                     planet.waterValue >= 20 &&
+                    planet.gasValue >= 80 &&
+                    planet.cloudsValue >= 60 && planet.cloudsValue <= 70) {
+                planet.planetClass = 'Humid Oxygenated Storm Tundra Planet';
+                unlockAchievement(5)
+            } else if (planet.temperature >= 0 && planet.temperature < 20 &&  
+                     planet.waterValue >= 20 &&
+                    planet.gasValue > 80 &&
+                    planet.cloudsValue >= 70) {
+                planet.planetClass = 'Humid Oxygenated Super Storm Tundra Planet';
+                unlockAchievement(5)
+            } else if (planet.temperature >= 0 && planet.temperature <= 20 &&  
+                    planet.waterValue < 20 &&
+                    planet.gasValue > 0 && planet.gasValue <= 99 &&
+                    planet.cloudsValue >= 0 && planet.cloudsValue <= 90 && graphicsQuality !='high') {
+                planet.planetClass = 'Cold Desert Planet';
+            } else if (planet.temperature >= 0 && planet.temperature <= 20 &&  
+                    planet.waterValue < 20 &&
+                    planet.gasValue > 99 &&
+                    planet.cloudsValue >= 0 && planet.cloudsValue <= 90 && graphicsQuality !='high') {
+                planet.planetClass = 'Oxygenated Cold Desert Planet';
+            } else if (planet.temperature >= 0 && planet.temperature <= 20 &&  
+                    planet.waterValue < 20 &&
+                    planet.gasValue > 99 &&
+                    planet.cloudsValue >= 0 && planet.cloudsValue <= 90 && graphicsQuality ==='high') {
+                planet.planetClass = 'Oxygenated Cold Desert Planet';
+            } else if (planet.temperature >= 0 && planet.temperature <= 20 &&  
+                    planet.waterValue < 20 &&
+                    planet.gasValue > 0 && planet.gasValue <= 99 &&
+                    planet.cloudsValue >= 0 && planet.cloudsValue <= 20 && graphicsQuality ==='high') {
+                planet.planetClass = 'Cold Desert Planet';
+            } else if (planet.temperature >= 0 && planet.temperature <= 20 &&  
+                    planet.waterValue < 20 &&
+                    planet.gasValue > 99 &&
+                    planet.cloudsValue >= 0 && planet.cloudsValue <= 20 && graphicsQuality ==='high') {
+                planet.planetClass = 'Cold Desert Planet';
+            } else if (planet.temperature >= 0 && planet.temperature <= 20 &&  
+                    planet.waterValue < 20 &&
+                    planet.gasValue > 0 && planet.gasValue <= 99 &&
+                    planet.cloudsValue >= 20 && planet.cloudsValue <= 40 && graphicsQuality ==='high') {
+                planet.planetClass = 'Cold Desert Planet';
+            } else if (planet.temperature >= 0 && planet.temperature <= 20 &&  
+                    planet.waterValue < 20 &&
+                    planet.gasValue > 0 && planet.gasValue <= 99 &&
+                    planet.cloudsValue >= 40 && planet.cloudsValue <= 60 && graphicsQuality ==='high') {
+                planet.planetClass = 'Semi Cloudy Cold Desert Planet';
+            } else if (planet.temperature >= 0 && planet.temperature <= 20 &&  
+                    planet.waterValue < 20 &&
+                    planet.gasValue > 0 && planet.gasValue <= 99 &&
+                    planet.cloudsValue >= 60) {
+                planet.planetClass = 'Cloudy Cold Desert Planet';
+            } else if (planet.temperature >= 0 && planet.temperature <= 20 &&  
+                    planet.waterValue < 20 &&
+                    planet.gasValue > 99 &&
+                    planet.cloudsValue >= 60) {
+                planet.planetClass = 'Oxgenated Cloudy Cold Desert Planet';
+            } else {
+                planet.planetClass = 'Rocky Planet';
+                planet.lifeChance = 0;
+            }
+            applyExoticClass();
+        }
+        else if (planet.type === 'gasGiant') {
+            planet.waterValue = planet.waterValue || 0;
+            planet.gasValue = planet.gasValue || 0;
+            planet.cloudsValue = planet.cloudsValue || 0;
+            planet.temperature = planet.temperature || 20;
+            checkExoticTransformation(
+                ['Plasma', 'Crystalline', 'Magnetic', 'Radioative', 'Vibrational'],
+                ['Neptuno', 'Jupiterian', 'Saturnian', 'Hidrogenic'],
+                ['-Ω', '-Δ', '-Σ', '-Φ', '-Ψ']
+            );
+            if (planet.temperature >= 100 && planet.gasValue >= 0 && planet.cloudsValue >= 0 && planet.waterValue >= 0) {
+                planet.planetClass = 'Hot Jupiter';
+                unlockAchievement(4)
+            } else if (planet.temperature >= 70 && planet.temperature <= 100 && planet.gasValue >= 0 && planet.gasValue <= 20 && planet.cloudsValue >= 0 && planet.cloudsValue <= 20 && planet.waterValue >= 0 && planet.waterValue <= 20) {
+                planet.planetClass = 'Temperate Jupiter';
+                unlockAchievement(4)
+            } else if (planet.temperature <= 0 && planet.gasValue >= 0 && planet.cloudsValue >= 0 && planet.waterValue >= 20)  {
+                planet.planetClass = 'Ice Giant';
+            } else if (planet.temperature >= 0 && planet.temperature <= 10 && planet.gasValue >= 0 && planet.gasValue <= 20 && planet.cloudsValue >= 0 && planet.cloudsValue <= 20 && planet.waterValue >= 20) {
+                planet.planetClass = 'Cold Water Giant';
+            } else if (planet.temperature >= 10 && planet.temperature <= 30 && planet.gasValue >= 0 && planet.gasValue <= 20 && planet.cloudsValue >= 0 && planet.cloudsValue <= 20 && planet.waterValue >= 20) {
+                planet.planetClass = 'Water Giant';
+            } else if (planet.temperature >= 30 && planet.temperature <= 70 && planet.gasValue >= 0 && planet.gasValue <= 20 && planet.cloudsValue >= 0 && planet.cloudsValue <= 20 && planet.waterValue >= 20) {
+                planet.planetClass = 'Warm Water Giant';
+            } else if (planet.temperature <= 0 && planet.gasValue >= 0 && planet.cloudsValue >= 0 && planet.waterValue >= 0 && planet.waterValue <= 20) {
+                planet.planetClass = 'Cold Giant';
+                unlockAchievement(37)
+            } else if (planet.temperature >= 20 && planet.gasValue >= 100 && planet.cloudsValue >= 100 && planet.waterValue >= 100) {
+                planet.planetClass = 'Multielemental';
+                unlockAchievement(41)
+            } else if (planet.temperature >= 50 && planet.temperature <= 70 && planet.gasValue >= 10 && planet.gasValue <= 30 && planet.cloudsValue >= 10 && planet.cloudsValue <= 40 && planet.waterValue >= 100) {
+                planet.planetClass = 'Warm Ammonia Giant';
+            } else if (planet.temperature >= 40 && planet.temperature <= 50 && planet.gasValue >= 10 && planet.gasValue <= 30 && planet.cloudsValue >= 10 && planet.cloudsValue <= 40 && planet.waterValue >= 100) {
+                planet.planetClass = 'Ammonia Giant';
+            } else if (planet.temperature >= 30 && planet.temperature <= 40 && planet.gasValue >= 10 && planet.gasValue <= 30 && planet.cloudsValue >= 10 && planet.cloudsValue <= 40 && planet.waterValue >= 100) {
+                planet.planetClass = 'Cold Ammonia Giant';
+            } else if (planet.temperature >= 40 && planet.temperature <= 70 && planet.gasValue >= 100 && planet.cloudsValue >= 10 && planet.cloudsValue <= 30 && planet.waterValue >= 0 && planet.waterValue <= 20) {
+                planet.planetClass = 'Warm Noble Giant';
+            } else if (planet.temperature >= 20 && planet.temperature <= 40 && planet.gasValue >= 100 && planet.cloudsValue >= 10 && planet.cloudsValue <= 30 && planet.waterValue >= 0 && planet.waterValue <= 20) {
+                planet.planetClass = 'Noble Giant';
+            } else if (planet.temperature >= 0 && planet.temperature <= 20 && planet.gasValue >= 100 && planet.cloudsValue >= 10 && planet.cloudsValue <= 30 && planet.waterValue >= 0 && planet.waterValue <= 20) {
+                planet.planetClass = 'Cold Noble Giant';
+            } else if (planet.temperature >= 70 && planet.gasValue >= 100 && planet.cloudsValue >= 0 && planet.waterValue >= 0) {
+                planet.planetClass = 'Warm Carbon Giant';
+            } else if (planet.temperature >= 60 && planet.temperature <= 70 && planet.gasValue >= 100 && planet.cloudsValue >= 0 && planet.waterValue >= 0) {
+                planet.planetClass = 'Carbon Giant';
+            } else if (planet.temperature >= 50 && planet.temperature <= 60 && planet.gasValue >= 100 && planet.cloudsValue >= 0 && planet.waterValue >= 0) {
+                planet.planetClass = 'Cold Carbon Giant';
+            } else if (planet.temperature >= 45 && planet.temperature <= 50 && planet.gasValue >= 100 && planet.cloudsValue >= 0 && planet.waterValue >= 0 ) {
+                planet.planetClass = 'Warm Methane Giant';
+            } else if (planet.temperature >= 40 && planet.temperature <= 45 && planet.gasValue >= 100 && planet.cloudsValue >= 0 && planet.waterValue >= 0 ) {
+                planet.planetClass = 'Methane Giant';
+            } else if (planet.temperature >= 30 && planet.temperature <= 40 && planet.gasValue >= 100 && planet.cloudsValue >= 0 && planet.waterValue >= 0 ) {
+                planet.planetClass = 'Cold Methane Giant';
+            } else if (planet.temperature >= 20 && planet.temperature <= 45 && planet.gasValue >= 80 && planet.cloudsValue >= 10 && planet.waterValue >= 100 ) {
+                planet.planetClass = 'Warm Hidrogen Giant';
+            } else if (planet.temperature >= -10 && planet.temperature <= 20 && planet.gasValue >= 80 && planet.cloudsValue >= 10 && planet.waterValue >= 100 ) {
+                planet.planetClass = 'Hidrogen Giant';
+            } else if (planet.temperature >= -30 && planet.temperature <= -10 && planet.gasValue >= 80 && planet.cloudsValue >= 10 && planet.waterValue >= 100 ) {
+                planet.planetClass = 'Cold Hidrogen Giant';
+            } else if (planet.temperature >= 70 && planet.temperature <= 80 && planet.gasValue >= 100 && planet.cloudsValue >= 70 && planet.waterValue >= 10 ) {
+                planet.planetClass = 'Warm Helium Giant';
+            } else if (planet.temperature >= 40 && planet.temperature <= 70 && planet.gasValue >= 100 && planet.cloudsValue >= 70 && planet.waterValue >= 10) {
+                planet.planetClass = 'Helium Giant';
+            } else if (planet.temperature >= 0 && planet.temperature <= 40 && planet.gasValue >= 100 && planet.cloudsValue >= 70 && planet.waterValue >= 10) {
+                planet.planetClass = 'Cold Helium Giant';
+            } else {
+                planet.planetClass = 'Gas Giant';
+            }
+            applyExoticClass();
+        }
+        else if (planet.type === 'planetoid') {
+            planet.waterValue = planet.waterValue || 0;
+            planet.gasValue = planet.gasValue || 0;
+            planet.cloudsValue = planet.cloudsValue || 0;
+            planet.temperature = planet.temperature || 20;
+            checkExoticTransformation(
+                ['Crystalline', 'Radioative', 'Vibrational', 'Quantum'],
+                ['Cerium', 'Zirconium', 'Tantalum', 'Ruthenium'],
+                ['-X', '-Ω', '-Δ', '-Σ']
+            );
+            if (planet.temperature > 100) {
+                planet.planetClass = 'Lava Planetoid';
+                unlockAchievement(4)
+            } else if (planet.temperature < -50 && planet.waterValue > 30) {
+                planet.planetClass = 'Ice Planetoid';
+            } else if (planet.temperature < -50) {
+                planet.planetClass = 'Frozen and Arid Planetoid';
+            } else if (planet.temperature > 50 && planet.waterValue < 40) {
+                planet.planetClass = 'Desert Planetoid';
+            } else if (planet.temperature > 0 && planet.temperature < 20) {
+                planet.planetClass = 'Cold Planetoid';
+            } else {
+                planet.planetClass = 'Rocky Planetoid';
+            }
+            applyExoticClass();
+        }
+        else if (planet.type === 'asteroid') {
+            planet.waterValue = planet.waterValue || 0;
+            planet.gasValue = planet.gasValue || 0;
+            planet.cloudsValue = planet.cloudsValue || 0;
+            planet.temperature = planet.temperature || 20;
+            checkExoticTransformation(
+                ['Crystalline', 'Radioative', 'Vibrational'],
+                ['Zirconium', 'Tantalum', 'Ruthenium'],
+                ['-X', '-Ω', '-Δ']
+            );
+            if (planet.temperature > 150) {
+                planet.planetClass = 'Flaming Asteroid';
+                unlockAchievement(4)
+            } else if (planet.temperature > 80) {
+                planet.planetClass = 'Hot Asteroid';
+            } else if (planet.temperature > 30) {
+                planet.planetClass = 'Commom Asteroid';
+            } else if (planet.temperature < 0 && planet.waterValue > 30) {
+                planet.planetClass = 'Frozen Asteroid';
+            } else if (planet.temperature < 0 && planet.waterValue <= 30) {
+                planet.planetClass = 'Cold Asteroid';
+            } else {
+                planet.planetClass = 'Commom Asteroid';
+            }
+            applyExoticClass();
+        }
+        else if (planet.type === 'meteoroid') {
+            planet.waterValue = planet.waterValue || 0;
+            planet.gasValue = planet.gasValue || 0;
+            planet.cloudsValue = planet.cloudsValue || 0;
+            planet.temperature = planet.temperature || 20;
+            checkExoticTransformation(
+                ['Crystalline', 'Radioative', 'Vibrational'],
+                ['Zirconium', 'Tantalum', 'Ruthenium'],
+                ['-X', '-Ω', '-Δ']
+            );
+            if (planet.temperature > 200) {
+                planet.planetClass = 'Flaming Meteoroid';
+                planet.color = '#FF4500';
+                unlockAchievement(4)
+            } else if (planet.temperature > 100) {
+                planet.planetClass = 'Hot Meteoroid';
+            } else if (planet.temperature > 20) {
+                planet.planetClass = 'Commom Meteoroid';
+            } else if (planet.temperature < 0 && planet.waterValue > 30) {
+                planet.planetClass = 'Frozen Meteoroid';
+            } else if (planet.temperature < 0 && planet.water <= 30) {
+                planet.planetClass = 'Cold Meteoroid';
+            } else {
+                planet.planetClass = 'Commom Meteoroid';
+            }
+            applyExoticClass();
+        }
+        else if (planet.type === 'spaceDust') {
+            planet.waterValue = planet.waterValue || 0;
+            planet.gasValue = planet.gasValue || 0;
+            planet.cloudsValue = planet.cloudsValue || 0;
+            planet.temperature = planet.temperature || 20;
+            checkExoticTransformation(
+                ['Cristalina', 'Magnética', 'Radioativa'],
+                ['Cerium', 'Hafnium', 'Niobio'],
+                ['-X', '-Ω', '-Δ']
+            );
+            if (planet.temperature > 100) {
+                planet.planetClass = 'Hot Space Dust';
+                unlockAchievement(4)
+            } else if (planet.temperature > 30) {
+                planet.planetClass = 'Commom Space Dust';
+            } else {
+                planet.planetClass = 'Cold Space Dust';
+            }
+            applyExoticClass();
+        }
+        else if (planet.type === 'comet') {
+            planet.waterValue = planet.waterValue || 70;
+            planet.gasValue = planet.gasValue || 80;
+            planet.cloudsValue = planet.cloudsValue || 50;
+            planet.temperature = planet.temperature ||10; 
+            const waterLossRate = planet.temperature > 100 ? 0.5 : 0.05; 
+            planet.waterValue = Math.max(0, planet.waterValue - (deltaTime / 1000 * waterLossRate));
+            planet.waterValue = Math.max(0, planet.waterValue - (deltaTime / 1000 * waterLossRate));
+            checkExoticTransformation(
+                ['Congelado', 'Exotic', 'Condensed'],
+                ['Hidrogênio', 'Metano', 'Amônia'],
+                ['-Ω', '-Δ', '-Σ']
+            );
+            if (planet.waterValue <= 0) {
+                const chance = Math.random();
+                if (chance < 0.33 && planet.mass > 10) {
+                    transformToMeteoroid(planet);
+                } else if (chance < 0.66 && planet.mass > 1) {
+                    transformToMeteorite(planet);
+                } else {
+                    planet.markedForRemoval = true;
+                }
+            }
+            if (planet.temperature > 100) {
+                planet.planetClass = 'Hot Comet';
+                unlockAchievement(4)
+                planet.mass = Math.max(0.1, planet.mass * 0.99); 
+            } else if (planet.temperature < -100 && planet.waterValue > 70 && planet.gasValue > 80) {
+                planet.planetClass = 'Condensed Comet';
+            } else if (planet.temperature < 0 && planet.waterValue < 70) {
+                planet.planetClass = 'Frozen Cometa';
+            } else {
+                planet.planetClass = 'Commom Comet';
+            }
+            if (planet.waterValue <= 0) {
+                const chance = Math.random();
+                if (chance < 0.33 && planet.mass > 10) {
+                    transformToMeteoroid(planet);
+                } else if (chance < 0.66 && planet.mass > 1) {
+                    transformToMeteorite(planet);
+                } else {
+                    planet.markedForRemoval = true;
+                }
+            }
+            applyExoticClass();
+        }
+        else if (planet.type === 'meteorite') {
+            planet.waterValue = planet.waterValue || 0;
+            planet.gasValue = planet.gasValue || 0;
+            planet.cloudsValue = planet.cloudsValue || 0;
+            planet.temperature = planet.temperature || 20;
+            checkExoticTransformation(
+                ['Metalic', 'Exotic', 'Quantum'],
+                ['Irídio', 'Osmio', 'Platina'],
+                ['-Φ', '-Σ', '-Ψ']
+            );
+            if (planet.temperature > 300) {
+                planet.planetClass = 'Super Hot Meteorite';
+                unlockAchievement(4)
+            } else if (planet.temperature > 150) {
+                planet.planetClass = 'Commom Meteorite';
+            } else {
+                planet.planetClass = 'Cold Meteorite';
+            }
+            applyExoticClass();
+        }
+    }
+});
 }
 function getOriginalClass(type) {
     const classMap = {
@@ -2836,47 +3717,62 @@ function getOriginalClass(type) {
         spaceDust: 'Commom Space Dust',
         comet: 'Commom Comet'
     };
-    return classMap[type] || '(FGP/Br)Classe Base';
+    return classMap[type] || '(FGP/br)Base Class';
 }
 function generateExoticName(prefixes, cores, suffixes) {
     return `${prefixes[Math.floor(Math.random()*prefixes.length)]} ${cores[Math.floor(Math.random()*cores.length)]}${suffixes[Math.floor(Math.random()*suffixes.length)]}`;
 }
 function gameLoop(timestamp) {
-    
     if (!lastTime) lastTime = timestamp;
     const deltaTime = timestamp - lastTime;
     fps = Math.floor(1000 / deltaTime);
-    
-        
     ctx.fillStyle = spaceColor;
     ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-    if (temperatureZonesVisible) {
-        drawTemperatureZones(); 
-    }
-
-    planets.forEach(planet => drawPlanet(planet)); 
-    
-    
     if (gameState === 'playing') {
         fgpPhysics(deltaTime * timeScale);
         fgpPlanetsTemperature(deltaTime);
         fgpExoticObjects(deltaTime * timeScale);
         fgpAstroEvolution(deltaTime * Math.abs(timeScale));
         handleCollisions();
+        cleanupDistantShips();
         fgpAnimations(deltaTime);
-
+        updateShipMovement(deltaTime);
+        cleanupDestroyedShips();
+        updateSpectateCamera();
+        if (gameState === 'playing') {
+            fgpRocketGeneration(deltaTime);
+        }
         ctx.fillStyle = spaceColor;
         ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-        if (temperatureZonesVisible) {
-            drawTemperatureZones();
+        planets.forEach(planet => {
+    if (planet.markedForRemoval) return;
+    if (planet.type === 'rockyPlanet') {
+        fgpLifeEvolution(planet);
+    }
+        });
+        planets.forEach(obj => {
+            if (obj.markedForRemoval) return;
+            if (obj.type === 'spaceship') {
+                fgpSpaceshipBehavior(obj, deltaTime);
+            } else if (obj.type === 'superShip') {
+                fgpSuperShipBehavior(obj, deltaTime);
+            } else if (obj.type === 'laser') {
+                fgpLaser(obj, deltaTime);
+            } else if (obj.type === 'rocket') {
+                fgpRocketBehavior(obj, deltaTime);
+            }
+        });
+        planets = planets.filter(p => !p.markedForRemoval);
+        planets.forEach(planet => {
+            if (planet.markedForRemoval) return;
+            if (planet.type === 'rockyPlanet') {
+                fgpPlanetLifeChance(planet);
+            }
+        });
+        if (timestamp % 10000 < deltaTime) {
+            cleanupDistantObjects();
         }
-
         planets.forEach(planet => drawPlanet(planet));
-    
-
-        
         let anosPorSegundo = 0;
         switch (timeScale) {
             case 0:
@@ -2899,63 +3795,45 @@ function gameLoop(timestamp) {
         }
         universeAge += anosPorSegundo * (deltaTime / 1000);
         universeTime += anosPorSegundo * (deltaTime / 1000);
-
-        
-        fgpAstroEvolution(deltaTime * Math.abs(timeScale));
-
-        
         fgpWhiteHoles(deltaTime * Math.abs(timeScale));
         fgpBlackHolesAndQuasars(deltaTime * Math.abs(timeScale)); 
-        
         fgpInfoPanel();
     }
-    
-    
-    planets.forEach(planet => drawPlanet(planet));
-    
-    
+    if (temperatureZonesVisible) {
+            drawTemperatureZones();
+    }
+        planets.forEach(planet => {
+            if (!planet.markedForRemoval) drawPlanet(planet);
+        });
     if (gameState !== 'menu') {
-        
         if (mouse.down) {
             const startX = (mouse.downX - camera.x) * camera.zoom + canvas.width / 2;
             const startY = (mouse.downY - camera.y) * camera.zoom + canvas.height / 2;
             const endX = (mouse.x - camera.x) * camera.zoom + canvas.width / 2;
             const endY = (mouse.y - camera.y) * camera.zoom + canvas.height / 2;
-            
-            
             ctx.beginPath();
             ctx.moveTo(startX, startY);
             ctx.lineTo(endX, endY);
             ctx.strokeStyle = 'rgba(255, 255, 255, 0.7)';
             ctx.lineWidth = 2;
             ctx.stroke();
-            
-            
             drawArrow(startX, startY, endX, endY, '#3498db');
-            
-            
             calculateTrajectory();
-            
-            
             if (trajectoryPoints.length > 1) {
                 ctx.beginPath();
                 ctx.moveTo(
                     (trajectoryPoints[0].x - camera.x) * camera.zoom + canvas.width / 2,
                     (trajectoryPoints[0].y - camera.y) * camera.zoom + canvas.height / 2
                 );
-                
                 for (let i = 1; i < trajectoryPoints.length; i++) {
                     ctx.lineTo(
                         (trajectoryPoints[i].x - camera.x) * camera.zoom + canvas.width / 2,
                         (trajectoryPoints[i].y - camera.y) * camera.zoom + canvas.height / 2
                     );
                 }
-                
                 ctx.strokeStyle = 'rgba(46, 204, 113, 0.7)';
                 ctx.lineWidth = 2;
                 ctx.stroke();
-                
-                
                 if (trajectoryPoints.length > 10) {
                     const lastPoint = trajectoryPoints[trajectoryPoints.length - 1];
                     const prevPoint = trajectoryPoints[trajectoryPoints.length - 10];
@@ -2970,7 +3848,21 @@ function gameLoop(timestamp) {
             }
         }
     }
-
+        if (spectateMode && spectatedAstro) {
+        const astroStillValid = planets.find(p => 
+            p === spectatedAstro && 
+            !p.markedForRemoval && 
+            isFinite(p.x) && 
+            isFinite(p.y)
+        );
+        
+        if (!astroStillValid) {
+            spectateMode = false;
+            spectatedAstro = null;
+            btnSpectate.style.backgroundColor = '';
+            showNotification("Lost track of spectated astro. Spectate mode deactivated.");
+        }
+    }
     planets.forEach((planet, index) => {
         if (planet.type === 'nebula') {
             planets.forEach((other, otherIndex) => {
@@ -2980,19 +3872,15 @@ function gameLoop(timestamp) {
             });
         }
     });
-
     lastTime = timestamp;
     requestAnimationFrame(gameLoop);
 }
 function renderPlanets(ctx, planets) {
     planets.forEach((planet) => {
-        
         ctx.beginPath();
         ctx.arc(planet.x, planet.y, planet.radius, 0, Math.PI * 2);
         ctx.fillStyle = planet.color;
         ctx.fill();
-
-        
         drawRing(planet, ctx);
     });
 }
@@ -3014,14 +3902,11 @@ function calculateRingTransparency(type) {
 function fgpInfoPanel() {
     if (universeAge >= 10000000000000) unlockAchievement(47);
     universeTimeElem.textContent = formatShortNumber(universeAge);
-    
     if (document.getElementById('astroExtraInfo')) {
         document.getElementById('astroExtraInfo').remove();
     }
     astroCountElem.textContent = planets.length;
     timeScaleElem.textContent = timeScale + "x";
-
-    
     const typeCounts = {};
     planets.forEach(p => {
         typeCounts[p.type] = (typeCounts[p.type] || 0) + 1;
@@ -3031,35 +3916,6 @@ function fgpInfoPanel() {
             `${getTypeName(type)}: ${count}`
         ).join('<br>');
 }
-function openEditPanel(planet) {
-    if (!planet) return;
-    selectedPlanet = planet;
-    editPanel.style.display = 'block';
-    
-    editName.value = planet.name || '';
-    editType.value = getTypeName(planet.type);
-    editClass.value = planet.planetClass || '';
-    editTemperature.value = planet.temperature !== undefined ? planet.temperature + ' °C' : '';
-    editColor.value = planet.color || '#3498db';
-    editSecondaryColor.value = planet.landColor || '#2ecc71';
-    editMass.value = planet.mass !== undefined ? planet.mass : '';
-    editGravity.value = planet.gravity !== undefined ? planet.gravity : '';
-    editRotation.value = planet.rotationSpeed !== undefined ? planet.rotationSpeed : '';
-    editWater.value = planet.water !== undefined ? planet.water : '';
-    editClouds.value = planet.clouds !== undefined ? planet.clouds : '';
-    editGas.value = planet.gas !== undefined ? planet.gas : '';
-    editRingMass.value = planet.ringMass !== undefined ? planet.ringMass : '';
-    editDescription.value = planet.description || '';
-    
-    const astroTimePanel = document.getElementById('astroTimePanel');
-    if (astroTimePanel) astroTimePanel.style.display = 'none';
-
-    if (planet.locked) {
-        btnLock.textContent = "🔓 Unlock";
-    } else {
-        btnLock.textContent = "🔒 Lock";
-    }
-}
 function showAstroTimePanel() {
     if (!selectedPlanet) return;
     const planet = selectedPlanet;
@@ -3068,7 +3924,6 @@ function showAstroTimePanel() {
     const astroTimeLifeLeftGroup = document.getElementById('astroTimeLifeLeftGroup');
     const astroTimeLifeLeft = document.getElementById('astroTimeLifeLeft');
     if (astroTimePanel && astroTimeAge && astroTimeLifeLeftGroup && astroTimeLifeLeft) {
-        
         let idade = '';
         if (planet.lifeTime !== undefined && planet.lifeTime !== null) {
             if (["ttauriStar","star","giantStar","hypergiant","massiveStar","whiteDwarf","brownDwarf","carbonStar"].includes(planet.type)) {
@@ -3080,7 +3935,6 @@ function showAstroTimePanel() {
             idade = '0 anos';
         }
         astroTimeAge.value = idade;
-        
         let vidaRestante = '';
         let mostrarVidaRestante = false;
         if (["ttauriStar","star","giantStar","hypergiant","massiveStar","whiteDwarf","brownDwarf","carbonStar"].includes(planet.type) && planet.maxLifeTime && planet.maxLifeTime !== Infinity) {
@@ -3117,7 +3971,6 @@ function showAstroTimePanel() {
         }
         astroTimePanel.style.display = 'block';
     }
-    
     const closeTimePanelBtn = document.getElementById('closeTimePanel');
     if (closeTimePanelBtn) {
         closeTimePanelBtn.onclick = () => { document.getElementById('astroTimePanel').style.display = 'none'; };
@@ -3151,27 +4004,20 @@ function formatShortNumber(num) {
         return Math.round(num).toString();
     }
 }
-
-    const typeCounts = {};
-    planets.forEach(p => {
-        typeCounts[p.type] = (typeCounts[p.type] || 0) + 1;
-    });
-    
-    
-    astroTypesElem.innerHTML = 
-        Object.entries(typeCounts).map(([type, count]) => 
-            `${getTypeName(type)}: ${count}`
-        ).join('<br>');
-
+const typeCounts = {};
+planets.forEach(p => {
+    typeCounts[p.type] = (typeCounts[p.type] || 0) + 1;
+});
+astroTypesElem.innerHTML = 
+    Object.entries(typeCounts).map(([type, count]) => 
+        `${getTypeName(type)}: ${count}`
+    ).join('<br>');
 function drawArrow(fromX, fromY, toX, toY, color) {
     const headLength = 15;
     const angle = Math.atan2(toY - fromY, toX - fromX);
-    
     ctx.save();
     ctx.translate(toX, toY);
     ctx.rotate(angle);
-    
-    
     ctx.beginPath();
     ctx.moveTo(0, 0);
     ctx.lineTo(-headLength, headLength/2);
@@ -3179,14 +4025,11 @@ function drawArrow(fromX, fromY, toX, toY, color) {
     ctx.closePath();
     ctx.fillStyle = color;
     ctx.fill();
-    
     ctx.restore();
 }
 function calculateTrajectory() {
     trajectoryPoints = [];
     const steps = 200; 
-    
-    
     const tempPlanet = {
         x: mouse.downX,
         y: mouse.downY,
@@ -3197,109 +4040,468 @@ function calculateTrajectory() {
         color: astroSettings.primaryColor,
         type: creationMode || 'spaceDust'
     };
-    
-    
     for (let step = 0; step < steps; step++) {
-        
         trajectoryPoints.push({x: tempPlanet.x, y: tempPlanet.y});
-        
-        
         planets.forEach(planet => {
             if (planet === tempPlanet) return;
-            
-            
             const dx = planet.x - tempPlanet.x;
             const dy = planet.y - tempPlanet.y;
             const distance = Math.sqrt(dx * dx + dy * dy);
-            
-            
             const force = gravityFactor * G * tempPlanet.mass * planet.mass / (distance * distance);
             const forceX = force * dx / distance;
             const forceY = force * dy / distance;
-            
-            
             tempPlanet.vx += forceX / tempPlanet.mass * 0.1;
             tempPlanet.vy += forceY / tempPlanet.mass * 0.1;
         });
-        
-        
         tempPlanet.x += tempPlanet.vx * 0.1;
         tempPlanet.y += tempPlanet.vy * 0.1;
     }
 }
 function fgpPhysics(deltaTime) {
     if (timeScale === 0) return;
-    
     const delta = deltaTime / 1000;
     const timeFactor = Math.abs(timeScale) * delta;
-    
-    
+    const shipTypes = ['satellite', 'rocket', 'spaceship', 'superShip'];
+    const celestialTypes = ['star', 'redDwarf', 'brownDwarf', 'ttauriStar', 'carbonStar', 'giantStar', 'hypergiant', 'massiveStar', 'redGiant', 'redSupergiant', 'redHypergiant', 'pulsar', 'quarkStar', 'blackHole', 'wormhole', 'quasar', 'whiteHole', 'neutronStar', 'strangeStar', 'magnetar', 'rockyPlanet', 'gasGiant', 'planetoid', 'asteroid', 'meteoroid', 'comet', 'meteorite', 'spaceDust', 'nebula', 'radiation'];
+    planets.forEach((planet) => {
+        if (planet.locked) return;
+        if (['rocket', 'spaceship', 'superShip', 'satellite'].includes(planet.type)) {
+            calculateMovementDirection(planet);
+        }
+    });
+    for (let i = 0; i < planets.length; i++) {
+        const body = planets[i];
+        if (body.type === 'satellite' && body.originPlanet) {
+            const dx = body.originPlanet.x - body.x;
+            const dy = body.originPlanet.y - body.y;
+            const distance = Math.sqrt(dx * dx + dy * dy);
+            if (distance > 0) {
+                const force = G * gravityFactor * body.originPlanet.mass / (distance * distance);
+                body.vx += (dx / distance) * force * timeFactor;
+                body.vy += (dy / distance) * force * timeFactor;
+                const currentSpeed = Math.sqrt(body.vx * body.vx + body.vy * body.vy);
+                const desiredSpeed = Math.sqrt(G * gravityFactor * body.originPlanet.mass / distance);
+                if (currentSpeed > 0) {
+                    const speedRatio = desiredSpeed / currentSpeed;
+                    body.vx *= speedRatio;
+                    body.vy *= speedRatio;
+                }
+                if (body.vx !== 0 || body.vy !== 0) {
+                    body.direction = Math.atan2(body.vy, body.vx);
+                }
+            }
+        }
+        if (body.type === 'rocket') {
+            const thrustPower = 0.3;
+            body.vx += Math.cos(body.direction || 0) * thrustPower * timeFactor;
+            body.vy += Math.sin(body.direction || 0) * thrustPower * timeFactor;
+            for (let j = 0; j < planets.length; j++) {
+                const other = planets[j];
+                if (celestialTypes.includes(other.type) && other !== body) {
+                    const dx = other.x - body.x;
+                    const dy = other.y - body.y;
+                    const distance = Math.sqrt(dx * dx + dy * dy);
+                    if (distance > other.radius + body.radius) {
+                        const force = (G * gravityFactor * other.mass) / (distance * distance) * 0.1;
+                        body.vx += (dx / distance) * force * timeFactor;
+                        body.vy += (dy / distance) * force * timeFactor;
+                    }
+                }
+            }
+            if (body.vx !== 0 || body.vy !== 0) {
+                body.direction = Math.atan2(body.vy, body.vx);
+            }
+        }
+        if (body.type === 'spaceship' || body.type === 'superShip') {
+            const baseThrust = body.type === 'superShip' ? 0.2 : 0.4;
+            body.vx += Math.cos(body.direction || 0) * baseThrust * timeFactor;
+            body.vy += Math.sin(body.direction || 0) * baseThrust * timeFactor;
+            for (let j = 0; j < planets.length; j++) {
+                const other = planets[j];
+                if (celestialTypes.includes(other.type) && other !== body && other !== body.originPlanet) {
+                    const dx = other.x - body.x;
+                    const dy = other.y - body.y;
+                    const distance = Math.sqrt(dx * dx + dy * dy);
+                    if (distance > other.radius + body.radius + 50) {
+                        const force = (G * gravityFactor * other.mass) / (distance * distance) * 0.05;
+                        body.vx += (dx / distance) * force * timeFactor;
+                        body.vy += (dy / distance) * force * timeFactor;
+                    }
+                }
+            }
+            if (body.vx !== 0 || body.vy !== 0) {
+                body.direction = Math.atan2(body.vy, body.vx);
+            }
+            if (body.type === 'superShip') {
+                const speed = Math.sqrt(body.vx * body.vx + body.vy * body.vy);
+                if (speed > 10) {
+                    body.vx *= 0.98;
+                    body.vy *= 0.98;
+                }
+            }
+        }
+    }
     for (let i = 0; i < planets.length; i++) {
         const planetA = planets[i];
-        
+        if (shipTypes.includes(planetA.type)) continue;
         for (let j = i + 1; j < planets.length; j++) {
             const planetB = planets[j];
-            
+            if (shipTypes.includes(planetB.type)) continue;
             const dx = planetB.x - planetA.x;
             const dy = planetB.y - planetA.y;
             const distance = Math.hypot(dx, dy);
-            
             if (distance < 0.1) continue;
-            
             let force = (G * gravityFactor * planetA.mass * planetB.mass) / (distance * distance);
-            
             if (planetA.type === 'whiteHole' || planetB.type === 'whiteHole') {
                 force *= -1;
             }
-            
             const angle = Math.atan2(dy, dx);
             const cosAngle = Math.cos(angle);
             const sinAngle = Math.sin(angle);
-            
             const axA = (force / planetA.mass) * cosAngle;
             const ayA = (force / planetA.mass) * sinAngle;
-            
             const axB = -(force / planetB.mass) * cosAngle;
             const ayB = -(force / planetB.mass) * sinAngle;
-            
-            
             if (!planetA.locked) {
                 planetA.vx += axA * timeFactor;
                 planetA.vy += ayA * timeFactor;
             }
-            
             if (!planetB.locked) {
                 planetB.vx += axB * timeFactor;
                 planetB.vy += ayB * timeFactor;
             }
         }
     }
-
-    
     for (let i = 0; i < planets.length; i++) {
-        const planet = planets[i];
-        
-        if (!planet.locked) {
-            if (dragFactor > 0 && timeScale > 0) {
-                planet.vx *= (1 - dragFactor * 0.01 * timeFactor);
-                planet.vy *= (1 - dragFactor * 0.01 * timeFactor);
+        const body = planets[i];
+        if (!body.locked) {
+            if (dragFactor > 0 && timeScale > 0 && !shipTypes.includes(body.type)) {
+                body.vx *= (1 - dragFactor * timeFactor);
+                body.vy *= (1 - dragFactor * timeFactor);
             }
-            
-            planet.x += planet.vx * timeFactor;
-            planet.y += planet.vy * timeFactor;
+            body.x += body.vx * timeFactor;
+            body.y += body.vy * timeFactor;
+            if (shipTypes.includes(body.type)) {
+                const maxSpeed = body.type === 'rocket' ? 20 : 
+                               body.type === 'spaceship' ? 15 : 10;
+                const speed = Math.sqrt(body.vx * body.vx + body.vy * body.vy);
+                if (speed > maxSpeed) {
+                    body.vx = (body.vx / speed) * maxSpeed;
+                    body.vy = (body.vy / speed) * maxSpeed;
+                }
+            }
         }
     }
-  checkRadiationCount();
+    cleanupDistantShips();
+    checkRadiationCount();
 }
 preloadCollisionSounds();
+function cleanupDistantShips() {
+    const MAX_DISTANCE = 100000;
+    for (let i = planets.length - 1; i >= 0; i--) {
+        const obj = planets[i];
+        if (['rocket', 'spaceship', 'superShip'].includes(obj.type)) {
+            let distanceFromOrigin = Infinity;
+            if (obj.originPlanet) {
+                const dx = obj.x - obj.originPlanet.x;
+                const dy = obj.y - obj.originPlanet.y;
+                distanceFromOrigin = Math.sqrt(dx * dx + dy * dy);
+            } else if (obj.originShip) {
+                const dx = obj.x - obj.originShip.x;
+                const dy = obj.y - obj.originShip.y;
+                distanceFromOrigin = Math.sqrt(dx * dx + dy * dy);
+            } else {
+                distanceFromOrigin = 0;
+            }
+            if (distanceFromOrigin > MAX_DISTANCE) {
+                planets.splice(i, 1);
+            }
+        }
+    }
+}
+function cleanupDistantObjects() {
+    const MAX_DISTANCE = 1000000;
+    for (let i = planets.length - 1; i >= 0; i--) {
+        const obj = planets[i];
+        const distance = Math.sqrt(obj.x * obj.x + obj.y * obj.y);
+        if (distance > MAX_DISTANCE && 
+            !['star', 'rockyPlanet', 'gasGiant', 'blackHole', 'quasar'].includes(obj.type)) {
+            planets.splice(i, 1);
+        }
+    }
+}
+function isValidRocketTarget(target) {
+    const validTargetTypes = ['meteorite', 'meteoroid', 'comet', 'asteroid', 'planetoid', 'rockyPlanet'];
+    return validTargetTypes.includes(target.type);
+}
+function findNewTargetForRocket(rocket) {
+    if (rocket.originPlanet && !rocket.originPlanet.markedForRemoval) {
+        return rocket.originPlanet;
+    }
+    const backupTargets = planets.filter(p => 
+        !p.markedForRemoval && 
+        (p.type === 'rockyPlanet' || p.type === 'planetoid') &&
+        p !== rocket
+    );
+    if (backupTargets.length > 0) {
+        let nearestTarget = null;
+        let minDistance = Infinity;
+        backupTargets.forEach(target => {
+            const dx = target.x - rocket.x;
+            const dy = target.y - rocket.y;
+            const distance = Math.sqrt(dx * dx + dy * dy);
+            if (distance < minDistance) {
+                minDistance = distance;
+                nearestTarget = target;
+            }
+        });
+        return nearestTarget;
+    }
+    return null;
+}
+function shouldAvoidAstro(astro) {
+    const avoidTypes = [
+        'gasGiant', 'star', 'redDwarf', 'brownDwarf', 'ttauriStar', 
+        'carbonStar', 'giantStar', 'hypergiant', 'massiveStar', 
+        'redGiant', 'redSupergiant', 'redHypergiant', 'pulsar', 
+        'quarkStar', 'blackHole', 'wormhole', 'quasar', 'whiteHole', 
+        'neutronStar', 'strangeStar', 'magnetar'
+    ];
+    return avoidTypes.includes(astro.type);
+}
+function avoidLargeAstro(rocket, astro, deltaTime) {
+    const dx = astro.x - rocket.x;
+    const dy = astro.y - rocket.y;
+    const distance = Math.sqrt(dx * dx + dy * dy);
+    const safeDistance = astro.radius * 3;
+    if (distance < safeDistance) {
+        const avoidAngle = Math.atan2(dy, dx) + Math.PI;
+        const avoidanceStrength = 0.3 * (1 - (distance / safeDistance));
+        rocket.vx += Math.cos(avoidAngle) * avoidanceStrength * (deltaTime / 16);
+        rocket.vy += Math.sin(avoidAngle) * avoidanceStrength * (deltaTime / 16);
+        return true;
+    }
+    return false;
+}
+function handleRocketCollision(rocket, target) {
+    if (target === rocket.originPlanet) {
+        rocket.markedForRemoval = true;
+        return;
+    }
+    const smallTargets = ['meteorite', 'meteoroid', 'comet', 'asteroid'];
+    const largeTargets = ['planetoid', 'rockyPlanet'];
+    if (smallTargets.includes(target.type)) {
+        rocket.markedForRemoval = true;
+        target.markedForRemoval = true;
+    } else if (largeTargets.includes(target.type)) {
+        rocket.markedForRemoval = true;
+    } else {
+        rocket.markedForRemoval = true;
+    }
+}
+function updateShipMovement(deltaTime) {
+    if (!controlMode || !controlledShip || controlledShip.markedForRemoval) return;
+    const acceleration = 0.5 * (deltaTime / 16); 
+    const maxSpeed = 10;
+    if (keys['w'] || keys['W'] || keys['ArrowUp']) {
+        controlledShip.vy -= acceleration;
+    }
+    if (keys['s'] || keys['S'] || keys['ArrowDown']) {
+        controlledShip.vy += acceleration;
+    }
+    if (keys['a'] || keys['A'] || keys['ArrowLeft']) {
+        controlledShip.vx -= acceleration;
+    }
+    if (keys['d'] || keys['D'] || keys['ArrowRight']) {
+        controlledShip.vx += acceleration;
+    }
+    const speed = Math.sqrt(controlledShip.vx * controlledShip.vx + controlledShip.vy * controlledShip.vy);
+    if (speed > maxSpeed) {
+        controlledShip.vx = (controlledShip.vx / speed) * maxSpeed;
+        controlledShip.vy = (controlledShip.vy / speed) * maxSpeed;
+    }
+    camera.x = controlledShip.x;
+    camera.y = controlledShip.y;
+}
+function fgpSpaceshipBehavior(obj, deltaTime) {
+    if (obj.type === 'rockyPlanet' && obj.population > 1000) {
+        if (!obj.lastShipProduction) obj.lastShipProduction = 0;
+        obj.lastShipProduction += deltaTime;
+        const productionInterval = Math.max(30000, 60000 - (obj.population / 10000) * 1000);
+        if (obj.lastShipProduction >= productionInterval) {
+            obj.lastShipProduction = 0;
+            const productionChance = Math.min(0.8, obj.population / 100000);
+            if (Math.random() < productionChance) {
+                produceSpaceship(obj);
+            }
+        }
+    }
+    if (obj.type === 'spaceship' || obj.type === 'rocket' || obj.type === 'superShip') {
+        if (obj.avoidanceField === undefined) obj.avoidanceField = 80; 
+        if (obj.maxSpeed === undefined) obj.maxSpeed = 2; 
+        if (obj.steeringStrength === undefined) obj.steeringStrength = 0.02; 
+        if (!obj.target) {
+            findTargetForSpaceship(obj);
+        }
+        if (obj.target) {
+            const dx = obj.target.x - obj.x;
+            const dy = obj.target.y - obj.y;
+            const distance = Math.sqrt(dx * dx + dy * dy) || 1;
+            const steer = obj.steeringStrength;
+            obj.vx += (dx / distance) * steer * (deltaTime / 16);
+            obj.vy += (dy / distance) * steer * (deltaTime / 16);
+        }
+        for (let i = 0; i < planets.length; i++) {
+            const other = planets[i];
+            if (other === obj || other === obj.originPlanet) continue;
+            const dx = other.x - obj.x;
+            const dy = other.y - obj.y;
+            const distance = Math.sqrt(dx * dx + dy * dy) || 0.0001;
+            const minDistance = obj.avoidanceField + (other.radius || 0);
+            if (distance < minDistance && distance > 0) {
+                const force = 0.25 * (1 - (distance / minDistance));
+                obj.vx -= (dx / distance) * force * (deltaTime / 16);
+                obj.vy -= (dy / distance) * force * (deltaTime / 16);
+            }
+        }
+        const speed = Math.sqrt(obj.vx * obj.vx + obj.vy * obj.vy);
+        if (speed > obj.maxSpeed) {
+            obj.vx = (obj.vx / speed) * obj.maxSpeed;
+            obj.vy = (obj.vy / speed) * obj.maxSpeed;
+        }
+        if (obj.vx !== 0 || obj.vy !== 0) {
+            obj.direction = Math.atan2(obj.vy, obj.vx);
+        }
+        if (!obj._lastFire) obj._lastFire = 0;
+        obj._lastFire += deltaTime;
+        const fireCooldown = obj.fireRate || 1200; 
+        function ensureRelation(aPlanet, bPlanet) {
+            if (!aPlanet || !bPlanet) return null;
+            aPlanet._relations = aPlanet._relations || {};
+            bPlanet._relations = bPlanet._relations || {};
+            const keyA = bPlanet.id || bPlanet._id || (bPlanet.x + '_' + bPlanet.y);
+            const keyB = aPlanet.id || aPlanet._id || (aPlanet.x + '_' + aPlanet.y);
+            if (aPlanet._relations[keyA] === undefined && bPlanet._relations[keyB] === undefined) {
+                const roll = Math.floor(Math.random() * 20) + 1;
+                const relation = roll <= 10 ? 'war' : 'peace';
+                aPlanet._relations[keyA] = relation;
+                bPlanet._relations[keyB] = relation;
+                if (relation === 'war') {
+                }
+            }
+            return aPlanet._relations[keyA];
+        }
+        let nearestThreat = null;
+        let threatDist = Infinity;
+        for (let i = 0; i < planets.length; i++) {
+            const p = planets[i];
+            if (p === obj) continue;
+            if (['asteroid','meteoroid','meteorite','comet'].includes(p.type)) {
+                const dx = p.x - obj.x;
+                const dy = p.y - obj.y;
+                const d = Math.hypot(dx, dy);
+                if (d < 800 && d < threatDist) { 
+                    threatDist = d;
+                    nearestThreat = p;
+                }
+            }
+        }
+        if (nearestThreat && obj._lastFire >= fireCooldown) {
+            obj._lastFire = 0;
+        }
+        for (let i = 0; i < planets.length; i++) {
+            const p = planets[i];
+            if (p === obj) continue;
+            if (!['spaceship','rocket','superShip'].includes(p.type)) continue;
+            const sameCivilization = obj.originPlanet && p.originPlanet && (obj.originPlanet === p.originPlanet || obj.originPlanet.id === p.originPlanet.id);
+            if (sameCivilization) continue;
+            const myOrigin = obj.originPlanet || { _relations: {} };
+            const relation = ensureRelation(myOrigin, p.originPlanet || p);
+            if (relation === 'war') {
+                const dx = p.x - obj.x;
+                const dy = p.y - obj.y;
+                const d = Math.hypot(dx, dy);
+                if (d < 900 && obj._lastFire >= fireCooldown) {
+                    obj._lastFire = 0;
+                }
+            }
+        }
+    }
+}
+function produceSpaceship(planet) {
+    const shipTypes = ['spaceship', 'rocket'];
+    const shipType = shipTypes[Math.floor(Math.random() * shipTypes.length)];
+    const newShip = {
+        x: planet.x + (Math.random() - 0.5) * planet.radius * 2,
+        y: planet.y + (Math.random() - 0.5) * planet.radius * 2,
+        vx: (Math.random() - 0.5) * 2,
+        vy: (Math.random() - 0.5) * 2,
+        mass: 1,
+        radius: 3,
+        color: shipType === 'rocket' ? '#ff4444' : '#44ff44',
+        type: shipType,
+        name: `${planet.name} ${shipType} ${Math.floor(Math.random() * 1000)}`,
+        population: 0,
+        originalRadius: 3
+    };
+    newShip.originPlanet = planet;
+    newShip.designVariant = Math.floor(Math.random() * 4) + 1;
+    newShip.id = newShip.id || Math.random().toString(36).substr(2,9);
+    planets.push(newShip);
+    showNotification(`🛸 ${planet.name} launched a ${shipType}!`);
+}
+function findTargetForSpaceship(ship) {
+    let nearestTarget = null;
+    let minDistance = Infinity;
+    planets.forEach(planet => {
+        if (planet === ship) return;
+        const dx = planet.x - ship.x;
+        const dy = planet.y - ship.y;
+        const distance = Math.sqrt(dx * dx + dy * dy);
+        const isGoodTarget = (planet.type === 'rockyPlanet' && planet.population > 0) || 
+                            planet.type === 'gasGiant' ||
+                            planet.type === 'asteroid';
+        if (isGoodTarget && distance < minDistance && distance > 100) {
+            minDistance = distance;
+            nearestTarget = planet;
+        }
+    });
+    ship.target = nearestTarget;
+}
+function fgpSuperShipBehavior(ship, deltaTime) {
+    for (let i = 0; i < planets.length; i++) {
+        const other = planets[i];
+        if (other !== ship && other !== ship.originPlanet) {
+            const dx = other.x - ship.x;
+            const dy = other.y - ship.y;
+            const distance = Math.sqrt(dx * dx + dy * dy);
+            if (distance < ship.avoidanceField + other.radius) {
+                const force = 0.5;
+                ship.vx -= (dx / distance) * force;
+                ship.vy -= (dy / distance) * force;
+            }
+        }
+    }
+    ship.lastProduction += deltaTime;
+    if (ship.lastProduction >= ship.productionRate) {
+        const productionType = ship.canProduce[Math.floor(Math.random() * ship.canProduce.length)];
+        if (productionType === 'satellite') {
+            createSatellites(ship.originPlanet, 1);
+        } else if (productionType === 'spaceship3') {
+            createSpaceship(ship.originPlanet, 3);
+        } else if (productionType === 'spaceship4') {
+            if (Math.random() < 0.1) {
+                createSpaceship(ship.originPlanet, 4);
+            }
+        }
+        ship.lastProduction = 0;
+    }
+}
 function playRandomCollisionSound() {
     if (collisionSounds.length === 0) return;
-    
     const randomIndex = Math.floor(Math.random() * collisionSounds.length);
     const sound = collisionSounds[randomIndex];
-    
     try {
-        
         sound.currentTime = 0;
         sound.play().catch(e => console.log("Autoplay bloqueado:", e));
     } catch (e) {
@@ -3313,32 +4515,96 @@ function preloadCollisionSounds() {
     }
 }
 function handleCollisions() {
-    
+    const shipPower = {
+        'rocket': 1,
+        'spaceship': 2,
+        'superShip': 3,
+        'satellite': 1
+    };
+    const astroPower = {
+        'asteroid': 1,
+        'meteoroid': 0.5,
+        'meteorite': 0.5,
+        'comet': 1,
+        'rockyPlanet': 4,
+        'planetoid': 3,
+        'gasGiant': 3,
+        'star': 4,
+        'blackHole': 5,
+        'quasar': 5,
+        'whiteHole': 5,
+        'pulsar': 4,
+        'neutronStar': 4
+    };
     for (let i = 0; i < planets.length; i++) {
         const a = planets[i];
-        
+        if (a.markedForRemoval) continue;
         for (let j = i + 1; j < planets.length; j++) {
             const b = planets[j];
-
-            
+            if (b.markedForRemoval) continue;
             const dx = a.x - b.x;
             const dy = a.y - b.y;
             const distance = Math.hypot(dx, dy);
-            const minDistance = (a.radius + b.radius) * 0.8; 
-            
-            
+            const minDistance = (a.radius + b.radius) * 0.8;
             if (distance < minDistance) {
-                
-
-                
                 playRandomCollisionSound();
-
-                if ((a.type === 'nebula' && !['nebula', 'radiation'].includes(b.type)) || 
+                for (const [ship, power] of Object.entries(shipPower)) {
+                        if (a.type === ship && astroPower[b.type] !== undefined) {
+                            if (a.originPlanet && a.originPlanet === b) {
+                                removeFromOriginLists(a);
+                                a.markedForRemoval = true;
+                            } else if (power >= astroPower[b.type]) {
+                                removeFromOriginLists(a);
+                                removeFromOriginLists(b);
+                                a.markedForRemoval = true;
+                                b.markedForRemoval = true;
+                            } else {
+                                removeFromOriginLists(a);
+                                a.markedForRemoval = true;
+                            }
+                            continue;
+                        }
+                        if (b.type === ship && astroPower[a.type] !== undefined) {
+                            if (b.originPlanet && b.originPlanet === a) {
+                                removeFromOriginLists(b);
+                                b.markedForRemoval = true;
+                            } else if (power >= astroPower[a.type]) {
+                                removeFromOriginLists(a);
+                                removeFromOriginLists(b);
+                                b.markedForRemoval = true;
+                                a.markedForRemoval = true;
+                            } else {
+                                removeFromOriginLists(b);
+                                b.markedForRemoval = true;
+                            }
+                            continue;
+                        }
+                }
+                if ((a.type === 'nebula' && !['nebula', 'radiation'].includes(b.type)) ||
                     (b.type === 'nebula' && !['nebula', 'radiation'].includes(a.type))) {
                     continue;
                 }
-                
-                
+                const shipTypes = ['rocket', 'spaceship', 'superShip', 'satellite'];
+                if (shipTypes.includes(a.type) || shipTypes.includes(b.type)) {
+                    if (shipTypes.includes(a.type) && b === a.originPlanet) {
+                        removeFromOriginLists(a);
+                        a.markedForRemoval = true;
+                        continue;
+                    }
+                    if (shipTypes.includes(b.type) && a === b.originPlanet) {
+                        removeFromOriginLists(b);
+                        b.markedForRemoval = true;
+                        continue;
+                    }
+                    if (a.mass >= b.mass) {
+                        removeFromOriginLists(b);
+                        b.markedForRemoval = true;
+                    } else {
+                        removeFromOriginLists(a);
+                        a.markedForRemoval = true;
+                    }
+                    continue;
+                }
                 let larger, smaller;
                 if (a.mass >= b.mass) {
                     larger = a;
@@ -3347,60 +4613,53 @@ function handleCollisions() {
                     larger = b;
                     smaller = a;
                 }
-                
-                
-                if (larger.type === 'nebula' && 
-                    !['nebula', 'radiation'].includes(smaller.type)) {
+                if (larger.type === 'nebula' && !['nebula', 'radiation'].includes(smaller.type)) {
                     continue;
                 }
-                
-
-                if ((a.type === 'rockyPlanet' && b.type === 'asteroid') || 
+                if ((a.type === 'rockyPlanet' && b.type === 'asteroid') ||
                     (a.type === 'asteroid' && b.type === 'rockyPlanet')) {
                     unlockAchievement(25);
                 }
-
-               if ((a.type === 'quasar' && b.type === 'whiteHole') || 
+                if ((a.type === 'quasar' && b.type === 'whiteHole') ||
                     (a.type === 'whiteHole' && b.type === 'quasar')) {
                     unlockAchievement(27);
                 }
-
-                if ((a.type === 'pulsar' && b.type === 'blackHole') || 
-                (a.type === 'blackHole' && b.type === 'pulsar')) {
-                unlockAchievement(43);
+                if ((a.type === 'pulsar' && b.type === 'blackHole') ||
+                    (a.type === 'blackHole' && b.type === 'pulsar')) {
+                    unlockAchievement(43);
                 }
-                
+                if (!isFinite(larger.mass) || !isFinite(smaller.mass)) {
+                    console.warn('[WARN] massa inválida detectada durante fusão:', { larger, smaller });
+                    if (!isFinite(larger.mass)) larger.markedForRemoval = true;
+                    if (!isFinite(smaller.mass)) smaller.markedForRemoval = true;
+                    continue;
+                }
                 const combinedValues = calculateCombinedValues(larger, smaller);
-                
-                
                 larger.mass += smaller.mass;
+                if (!isFinite(larger.mass) || larger.mass <= 0) {
+                    console.warn('[WARN] larger.mass inválida depois da soma, ajustando para 1');
+                    larger.mass = 1;
+                }
                 larger.radius = calculateRadiusForType(larger.type, larger.mass);
-                
-                
                 const totalMass = larger.mass;
+                if (!isFinite(totalMass) || totalMass <= 0) {
+                    console.warn('[WARN] totalMass inválido durante fusão:', totalMass);
+                    continue;
+                }
                 const smallerRatio = smaller.mass / totalMass;
-                
-                
                 const relativeVx = larger.vx * (1 - smallerRatio) + smaller.vx * smallerRatio;
                 const relativeVy = larger.vy * (1 - smallerRatio) + smaller.vy * smallerRatio;
-                
                 larger.vx = relativeVx;
                 larger.vy = relativeVy;
-                
-                
                 larger.waterValue = combinedValues.water;
                 larger.gasValue = combinedValues.gas;
                 larger.cloudsValue = combinedValues.clouds;
                 larger.temperature = combinedValues.temperature;
-                
-                
                 larger.exoticAcquired = false;
                 larger.currentClassTime = 0;
-                
-                
+                removeFromOriginLists(smaller);
                 smaller.markedForRemoval = true;
                 unlockAchievement(2);
-
                 if (!larger.locked) {
                     larger.vx = relativeVx;
                     larger.vy = relativeVy;
@@ -3408,31 +4667,110 @@ function handleCollisions() {
             }
         }
     }
-    
-    
     planets = planets.filter(p => !p.markedForRemoval);
 }
+function removeFromOriginLists(obj) {
+    if (!obj.originPlanet) return;
+    if (obj.type === 'satellite' && Array.isArray(obj.originPlanet.satellites)) {
+        obj.originPlanet.satellites = obj.originPlanet.satellites.filter(s => s !== obj);
+    }
+    if (obj.type === 'rocket' && Array.isArray(obj.originPlanet.rockets)) {
+        obj.originPlanet.rockets = obj.originPlanet.rockets.filter(s => s !== obj);
+    }
+    if (obj.type === 'spaceship' && Array.isArray(obj.originPlanet.spaceships)) {
+        obj.originPlanet.spaceships = obj.originPlanet.spaceships.filter(s => s !== obj);
+    }
+    if (obj.type === 'superShip' && Array.isArray(obj.originPlanet.superShips)) {
+        obj.originPlanet.superShips = obj.originPlanet.superShips.filter(s => s !== obj);
+    }
+}
+function spawnRocketPeriodically() {
+}
+function isSpaceshipType(type) {
+    return ['rocket', 'spaceship', 'superShip', 'satellite'].includes(type);
+}
+function cleanupDestroyedShips() {
+    for (let i = planets.length - 1; i >= 0; i--) {
+        const obj = planets[i];
+        if (obj.markedForRemoval && isSpaceshipType(obj.type)) {
+            planets.splice(i, 1);
+            continue;
+        }
+        if (isSpaceshipType(obj.type)) {
+            if (!isFinite(obj.x) || !isFinite(obj.y) || 
+                Math.abs(obj.x) > 1e10 || Math.abs(obj.y) > 1e10) {s
+                obj.markedForRemoval = true;
+            }
+        }
+    }
+}
+function handleSpaceshipCollision(spaceship, astro) {
+    try {
+        spaceship.markedForRemoval = true;
+        console.log(`💥 ${spaceship.type} destroyed after collision with ${astro.type}`);
+    } catch (error) {
+        console.error('Error in handleSpaceshipCollision:', error);
+        spaceship.markedForRemoval = true;
+    }
+}
+function handleAstroCollision(a, b) {
+    if (a.mass > b.mass) {
+        a.mass += b.mass;
+        a.radius = Math.cbrt(a.mass) * 5;
+        b.markedForRemoval = true;
+    } else {
+        b.mass += a.mass;
+        b.radius = Math.cbrt(b.mass) * 5;
+        a.markedForRemoval = true;
+    }
+}
+function handleCollisionResponse(a, b, dx, dy, distance, minDistance) {
+    if (distance === 0) return;
+    const nx = dx / distance;
+    const ny = dy / distance;
+    const separation = (minDistance - distance) / 2;
+    a.x += nx * separation;
+    a.y += ny * separation;
+    b.x -= nx * separation;
+    b.y -= ny * separation;
+    if (a.type === 'rocket' && b.mass > a.mass * 10) {
+        a.markedForRemoval = true;
+    } else if (b.type === 'rocket' && a.mass > b.mass * 10) {
+        b.markedForRemoval = true;
+    }
+}
+function handleSpaceshipCombat(a, b) {
+    a.markedForRemoval = true;
+    b.markedForRemoval = true;
+}
 function calculateCombinedValues(larger, smaller) {
-    
     const totalMass = larger.mass + smaller.mass;
-    
-    
+    const largerRatio = larger.mass / totalMass;
+    const smallerRatio = smaller.mass / totalMass;
     return {
         water: Math.max(0, Math.min(100, 
-            (larger.waterValue || 0) * (larger.mass / totalMass) + 
-            (smaller.waterValue || 0) * (smaller.mass / totalMass)
+            (larger.waterValue || 0) * largerRatio + 
+            (smaller.waterValue || 0) * smallerRatio
         )),
         gas: Math.max(0, Math.min(100, 
-            (larger.gasValue || 0) * (larger.mass / totalMass) + 
-            (smaller.gasValue || 0) * (smaller.mass / totalMass)
+            (larger.gasValue || 0) * largerRatio + 
+            (smaller.gasValue || 0) * smallerRatio
         )),
         clouds: Math.max(0, Math.min(100, 
-            (larger.cloudsValue || 0) * (larger.mass / totalMass) + 
-            (smaller.cloudsValue || 0) * (smaller.mass / totalMass)
+            (larger.cloudsValue || 0) * largerRatio + 
+            (smaller.cloudsValue || 0) * smallerRatio
         )),
         temperature: 
-            larger.temperature * (larger.mass / totalMass) + 
-            smaller.temperature * (smaller.mass / totalMass)
+            larger.temperature * largerRatio + 
+            smaller.temperature * smallerRatio,
+        biomass: Math.max(0, Math.min(100, 
+            (larger.biomass || 0) * largerRatio + 
+            (smaller.biomass || 0) * smallerRatio
+        )),
+        population: Math.max(0, Math.min(100, 
+            (larger.population || 0) * largerRatio + 
+            (smaller.population || 0) * smallerRatio
+        ))
     };
 }
 function fgpWhiteHoles(deltaTime) {
@@ -3440,24 +4778,15 @@ function fgpWhiteHoles(deltaTime) {
   for (let i = 0; i < planets.length; i++) {
     const planet = planets[i];
     if (planet.type !== 'whiteHole') continue;
-    
-    
     planet.mass -= planet.mass * 0.20 * absDelta;
-    
-    
     planet.lifeTime = (planet.lifeTime || 0) + absDelta;
-    
-    
     if (planet.lifeTime > 0.5) {
       planet.lifeTime = 0;
-      
-      
       const count = 10 + Math.floor(Math.random() * 10); 
       for (let j = 0; j < count; j++) {
         const angle = Math.random() * Math.PI * 2;
         const distance = planet.radius * 5; 
         const speed = 800 + Math.random() * 400; 
-        
         createAstro(
           ['spaceDust', 'nebula', 'radiation'][Math.floor(Math.random() * 3)],
           planet.x + Math.cos(angle) * distance,
@@ -3467,15 +4796,11 @@ function fgpWhiteHoles(deltaTime) {
         );
       }
     }
-    
-    
     if (planet.mass < 1000) {
         planet.markedForRemoval = true;
         unlockAchievement(39);
     }
   }
-  
-  
   planets = planets.filter(p => !p.markedForRemoval);
 }
 function generateContinentTexture(width, height, baseColor, temperature) {
@@ -3483,11 +4808,8 @@ function generateContinentTexture(width, height, baseColor, temperature) {
   canvas.width = width;
   canvas.height = height;
   const ctx = canvas.getContext('2d');
-  
-  
   const color = tinycolor(baseColor);
   let landColor;
-  
   if (temperature < 0) {
     landColor = color.lighten(30).toHexString(); 
   } else if (temperature > 40) {
@@ -3495,31 +4817,20 @@ function generateContinentTexture(width, height, baseColor, temperature) {
   } else {
     landColor = baseColor;
   }
-  
-  
   ctx.fillStyle = landColor;
   ctx.fillRect(0, 0, width, height);
-  
-  
   const patternCanvas = document.createElement('canvas');
   patternCanvas.width = 64;
   patternCanvas.height = 64;
   const patternCtx = patternCanvas.getContext('2d');
-  
-  
   patternCtx.fillStyle = landColor;
   patternCtx.fillRect(0, 0, 64, 64);
-  
-  
   for (let i = 0; i < 200; i++) {
     const x = Math.random() * 64;
     const y = Math.random() * 64;
     const size = Math.random() * 3;
-    
-    
     const elevation = Math.random();
     let shade;
-    
     if (elevation > 0.7) {
       shade = tinycolor(landColor).lighten(15 + elevation * 10).toHexString(); 
     } else if (elevation < 0.3) {
@@ -3527,60 +4838,45 @@ function generateContinentTexture(width, height, baseColor, temperature) {
     } else {
       shade = landColor; 
     }
-    
     patternCtx.fillStyle = shade;
     patternCtx.beginPath();
     patternCtx.arc(x, y, size, 0, Math.PI * 2);
     patternCtx.fill();
   }
-  
-  
   if (temperature > 10 && temperature < 30) {
     for (let i = 0; i < 50; i++) {
       const x = Math.random() * 64;
       const y = Math.random() * 64;
       const greenShade = tinycolor(landColor).mix('#2e8b57', 40).toHexString();
-      
       patternCtx.fillStyle = greenShade;
       patternCtx.beginPath();
       patternCtx.arc(x, y, 1, 0, Math.PI * 2);
       patternCtx.fill();
     }
   }
-  
-  
   if (temperature > 35) {
     for (let i = 0; i < 30; i++) {
       const x = Math.random() * 64;
       const y = Math.random() * 64;
       const sandColor = tinycolor(landColor).mix('#e0c070', 60).toHexString();
-      
       patternCtx.fillStyle = sandColor;
       patternCtx.beginPath();
       patternCtx.arc(x, y, 2, 0, Math.PI * 2);
       patternCtx.fill();
     }
   }
-  
-  
   const pattern = ctx.createPattern(patternCanvas, 'repeat');
   ctx.fillStyle = pattern;
   ctx.fillRect(0, 0, width, height);
-  
   return canvas;
 }
 function fgpAstroEvolution(deltaTime) {
     const anosPassados = deltaTime * Math.abs(timeScale) / 1000 * getTimeScaleFactor();
-    
     for (let i = 0; i < planets.length; i++) {
         const planet = planets[i];
-        
-        
         if (planet.age === undefined) planet.age = 0;
         if (planet.lifeStage === undefined) planet.lifeStage = 'main-sequence';
         planet.age += anosPassados;
-
-        
         const massEvolution = () => {
             switch(planet.type) {
                 case 'radiation':
@@ -3598,36 +4894,27 @@ function fgpAstroEvolution(deltaTime) {
                         }
                     }
                     break;
-                    
                 case 'meteorite':
                     if (planet.mass > 50) transformToAsteroid(planet);
                     break;
-                    
                 case 'spaceDust':
                     if (planet.mass > 1) transformToMeteoroid(planet);
                     break;
-                    
                 case 'meteoroid':
                     if (planet.mass > 50) transformToAsteroid(planet);
                     break;
-                    
                 case 'asteroid':
                     if (planet.mass > 250) transformToPlanetoid(planet);
                     break;
-                    
                 case 'planetoid':
                     if (planet.mass > 700) transformToRockyPlanet(planet);
                     break;
-                    
                 case 'rockyPlanet':
                     if (planet.mass > 30500) transformToGasGiant(planet);
                     break;
-                    
                 case 'gasGiant':
                     if (planet.mass > 2500000) transformToBrownDwarf(planet);
                     break;
-                    
-                
                 case 'brownDwarf':
                     if (planet.mass > 1e8) transformToRedDwarf(planet);
                     break;
@@ -3646,8 +4933,6 @@ function fgpAstroEvolution(deltaTime) {
                 case 'massiveStar':
                     if (planet.mass > 1e14) transformTosupermassiveStar(planet);
                     break;
-                    
-                
                 case 'neutronStar':
                     if (planet.mass > 1e18) transformToPulsar(planet);
                     break;
@@ -3668,8 +4953,6 @@ function fgpAstroEvolution(deltaTime) {
                     break;
             }
         };
-
-        
         const timeEvolution = () => {
             switch(planet.type) {
                 case 'nebula':
@@ -3681,7 +4964,6 @@ function fgpAstroEvolution(deltaTime) {
                         else transformToTauriStar(planet);
                     }
                     break;
-                    
                 case 'ttauriStar':
                     if (planet.age > 2e16) {
                         if (planet.mass < 15e9) transformToStar(planet);
@@ -3692,22 +4974,18 @@ function fgpAstroEvolution(deltaTime) {
                         else transformTosupermassiveStar(planet);
                     }
                     break;
-                    
                 case 'star':
                     if (planet.age > 2e20) transformToRedGiant(planet);
                     break;
-                    
                 case 'redGiant':
                     if (planet.age > 2e19) {
                         transformToWhiteDwarf(planet);
                         createNebulaFromExplosion(planet, 0.6);
                     }
                     break;
-                    
                 case 'giantStar':
                     if (planet.age > 1e20) transformToRedSupergiant(planet);
                     break;
-                    
                 case 'redSupergiant':
                     if (planet.age > 1e19) transformToNeutronStar(planet);
                     break;
@@ -3717,51 +4995,40 @@ function fgpAstroEvolution(deltaTime) {
                         transformToHeliumWhiteDwarf(planet);
                     }
                     break;
-                    
                 case 'hypergiant':
                     if (planet.age > 1e16) {
                         createNebulaFromExplosion(planet, 0.7);
                         transformToPulsar(planet);
                     }
                     break;
-                    
                 case 'massiveStar':
                     if (planet.age > 2e15) {
                         createNebulaFromExplosion(planet, 0.8);
                         transformToMagnetar(planet);
                     }
                     break;
-                    
                 case 'supermassiveStar':
                     if (planet.age > 1e15) {
                         createNebulaFromExplosion(planet, 0.9);
                         transformToBlackHole(planet);
                     }
                     break;
-                    
                 case 'whiteDwarf':
                     if (planet.age > 2e21) transformToBlackDwarf(planet);
                     break;
-                    
                 case 'brownDwarf':
                     if (planet.age > 3e22) transformToBlackDwarf(planet);
                     break;
-                    
                 case 'redDwarf':
                     if (planet.age > 1e22) transformToHeliumWhiteDwarf(planet);
                     break;
-                    
                 case 'heliumWhiteDwarf':
                     if (planet.age > 2e22) transformToBlackDwarf(planet);
                     break;
             }
         };
-
-        
         massEvolution();
         timeEvolution();
-
-        
         switch(planet.type) {
             case 'quasar':
                 if (planet.mass >= 9.99e78) {
@@ -3783,7 +5050,6 @@ function fgpAstroEvolution(deltaTime) {
 }
 function getTimeScaleFactor() {
     if (timeScale <= 0) return 0;
-    
     const factors = {
         0.01: 1,       
         0.1: 100,      
@@ -3792,7 +5058,6 @@ function getTimeScaleFactor() {
         100: 1000000,  
         1000: 1000000000 
     };
-    
     return factors[timeScale] || Math.pow(10, Math.floor(Math.log10(timeScale)) + 3);
 }
 function transformToRedDwarf(planet) {
@@ -3838,15 +5103,12 @@ function transformTosupermassiveStar(planet) {
 function createNebulaFromExplosion(planet, massFraction) {
     const nebulaMass = planet.mass * massFraction;
     planet.mass *= (1 - massFraction); 
-    
     const explosionPower = Math.log10(planet.mass) * 10;
     const fragments = 50 + Math.floor(explosionPower);
-    
     for (let i = 0; i < fragments; i++) {
         const angle = Math.random() * Math.PI * 2;
         const distance = planet.radius * (2 + Math.random() * 4);
         const speed = 0.5 + Math.random() * explosionPower/10;
-        
         const fragment = {
             x: planet.x + Math.cos(angle) * distance,
             y: planet.y + Math.sin(angle) * distance,
@@ -3862,7 +5124,6 @@ function createNebulaFromExplosion(planet, massFraction) {
         };     
         planets.push(fragment);
     }
-    
     showNotification(`Stellar explosion created ${fragments} nebula fragments!`);
 }
 function transformToTauriStar(planet) {
@@ -3943,16 +5204,11 @@ function transformToNeutronStar(planet) {
 }
 function transformToBlackHole(planet) {
     try {
-        
         const G = 6.67430e-11;
         const c = 299792458;
         const schwarzschildRadius = (2 * G * planet.mass) / (c * c);
-        
-        
         const diskMass = planet.mass * 0.1;
         planet.mass *= 0.9;
-        
-        
         planet.type = 'blackHole';
         planet.color = '#000000';
         planet.glowColor = `hsl(${Math.random() * 60 + 200}, 100%, 50%)`;
@@ -3963,26 +5219,18 @@ function transformToBlackHole(planet) {
             outerRadius: planet.radius * 10,
             rotationSpeed: 0.05
         };
-        
-        
         planet.gravitationalLensing = {
             strength: Math.min(1, planet.mass / 1e30),
             distortion: 0.2
         };
-        
-        
         delete planet.continents;
         delete planet.ocean;
         delete planet.clouds;
-        
-        
         const solarMasses = (planet.mass / 1.98847e30).toFixed(2);
         showNotification(`Black hole! ${solarMasses} solar masses. Radius: ~${Math.round(planet.radius)} km`);
-        
         return planet;
     } catch (error) {
         console.error('Falha na transformação para buraco negro:', error);
-        
         return {
             ...planet,
             type: 'blackHole',
@@ -4014,27 +5262,18 @@ function transformToBigBang(planet) {
     const index = planets.indexOf(planet);
     if (index !== -1) {
         planets.splice(index, 1);
-        
-        
         const dustCount = 20000 + Math.floor(Math.random() * 30001); 
         const nebulaCount = 15000 + Math.floor(Math.random() * 15001); 
         const asteroidCount = 10000 + Math.floor(Math.random() * 5001); 
-        
-        
         for (let i = 0; i < dustCount; i++) {
             createExpelledMatter('spaceDust', planet.x, planet.y, 0.01, 1);
         }
-        
-        
         for (let i = 0; i < nebulaCount; i++) {
             createExpelledMatter('nebula', planet.x, planet.y, 0.1, 1000);
         }
-        
-        
         for (let i = 0; i < asteroidCount; i++) {
             createExpelledMatter('asteroid', planet.x, planet.y, 1, 100);
         }
-        
         showNotification('BIG BANG! ' + 
                          (dustCount + nebulaCount + asteroidCount));
     }
@@ -4044,7 +5283,6 @@ function createExpelledMatter(type, x, y, minMass, maxMass) {
     const distance = Math.random() * 100;
     const mass = minMass + Math.random() * (maxMass - minMass);
     const speed = 50 + Math.random() * 100;
-    
     const newAstro = {
         x: x + Math.cos(angle) * distance,
         y: y + Math.sin(angle) * distance,
@@ -4057,26 +5295,28 @@ function createExpelledMatter(type, x, y, minMass, maxMass) {
         type: type,
         lifeTime: 0
     };
-    
     if (type === 'asteroid') {
         newAstro.shape = generateAsteroidShape(newAstro.radius);
     }
-    
     planets.push(newAstro);
 }
 function calculateRadiusForType(type, mass) {
-    
     if (!isFinite(mass) || mass <= 0) {
         console.warn(`Massa inválida para ${type}: ${mass}. Usando valor padrão.`);
+        console.trace();
         mass = type === 'spaceDust' ? 0.1 : 1000;
     }
-
-
         const baseRadius = {
             star: 30,
             redDwarf: 15,
             brownDwarf: 10,
-            whiteDwarf: 8,
+            whiteDwarf: 0.001,
+            heliumWhiteDwarf: 0.001,
+            blackDwarf: 0.001,
+            ttauriStar: 20,
+            carbonStar: 40,
+            massiveStar: 70,
+            supermassiveStar: 150,
             giantStar: 50,
             hypergiant: 80,
             redGiant: 60,
@@ -4085,9 +5325,9 @@ function calculateRadiusForType(type, mass) {
             whiteHole: 120,
             blackHole: 10,
             neutronStar: 5,
-            pulsar: 5,
-            magnetar: 5,
-            quarkStar: 5,
+            pulsar: 0.05,
+            magnetar: 0.15,
+            quarkStar: 0.5,
             comet: 2,
             meteoroid: 1.5,
             asteroid: 3,
@@ -4098,219 +5338,55 @@ function calculateRadiusForType(type, mass) {
             gasGiant: 20,
             planet: 10,
             nebula: 100,
-            radiation: 1
-        };
-
+            radiation: 1,
+            satellite: 0.1,
+            rocket: 0.12,
+            spaceship: 0.2,
+            superShip: 4,
+    };
     const base = baseRadius[type] || 10;
-    return base * Math.pow(mass / 1000, 0.3);
-        
-    
-    const DENSITY_FACTORS = {
-        'spaceDust': 0.3,
-        'radiation': 0.1,
-        'nebula': 1.5,
-        'comet': 0.4,
-        'meteoroid': 0.5,
-        'meteorite': 0.6,
-        'asteroid': 0.7,
-        'planetoid': 1.0,
-        'rockyPlanet': 1.3,
-        'gasGiant': 2.0,
-        'brownDwarf': 1.8,
-        'ttauriStar': 3.0,
-        'redDwarf': 1.9,
-        'star': 2.5,
-        'giantStar': 4.0,
-        'redGiant': 5.0,
-        'redSupergiant': 7.0,
-        'redHypergiant': 9.0,
-        'hypergiant': 8.0,
-        'massiveStar': 4.0,
-        'supermassiveStar': 5.0,
-        'carbonStar': 3.5,
-        'whiteDwarf': 0.6,
-        'heliumWhiteDwarf': 0.7,
-        'blackDwarf': 0.6,
-        'neutronStar': 0.05,
-        'pulsar': 0.06,
-        'magnetar': 0.07,
-        'quarkStar': 0.08,
-        'strangeStar': 0.09,
-        'blackHole': 0.02,
-        'quasar': 0.03,
-        'whiteHole': 0.04,
-        'wormhole': 0.05
-    };
-
-    
-    const MIN_RADII = {
-        'spaceDust': 1,
-        'radiation': 0.5,
-        'nebula': 10,
-        'comet': 2,
-        'meteoroid': 1.5,
-        'meteorite': 2,
-        'asteroid': 3,
-        'planetoid': 4,
-        'rockyPlanet': 6,
-        'gasGiant': 12,
-        'brownDwarf': 8,
-        'ttauriStar': 15,
-        'redDwarf': 10,
-        'star': 12,
-        'giantStar': 25,
-        'redGiant': 40,
-        'redSupergiant': 60,
-        'redHypergiant': 90,
-        'hypergiant': 70,
-        'massiveStar': 20,
-        'supermassiveStar': 30,
-        'carbonStar': 20,
-        'whiteDwarf': 4,
-        'heliumWhiteDwarf': 4,
-        'blackDwarf': 4,
-        'neutronStar': 2,
-        'pulsar': 2.5,
-        'magnetar': 3,
-        'quarkStar': 3.5,
-        'strangeStar': 4,
-        'blackHole': 5,
-        'quasar': 6,
-        'whiteHole': 6,
-        'wormhole': 5
-    };
-
-    
-    const SOLAR_MASS_KG = 1.989e30; 
-    const GRAVITATIONAL_CONSTANT = 6.67430e-11; 
-    const SPEED_OF_LIGHT = 299792458; 
-    const KM_TO_GAME_UNITS = 1e-9; 
-
-    
-    switch (type) {
-
-        case 'redGiant':
-            return Math.max(40, Math.cbrt(mass) * 3); 
-                
-        case 'redSupergiant':
-            return Math.max(60, Math.cbrt(mass) * 15); 
-        
-        case 'supermassiveStar':
-            return Math.max(MIN_RADII.supermassiveStar || 30, Math.cbrt(mass) * (DENSITY_FACTORS.supermassiveStar || 5.0));
-        
-        case 'heliumWhiteDwarf':
-            return Math.max(MIN_RADII.heliumWhiteDwarf || 4, Math.cbrt(mass) * (DENSITY_FACTORS.heliumWhiteDwarf || 0.7));
-        
-        case 'whiteDwarf':
-            return Math.max(MIN_RADII.whiteDwarf || 4, Math.cbrt(mass) * (DENSITY_FACTORS.whiteDwarf || 0.6));
-        
-        case 'blackDwarf':
-            return Math.max(MIN_RADII.blackDwarf || 4, Math.cbrt(mass) * (DENSITY_FACTORS.blackDwarf || 0.6));
-        
-        case 'neutronStar':
-        case 'pulsar':
-        case 'magnetar':
-        case 'quarkStar':
-        case 'strangeStar': {
-            
-            const densityFactor = DENSITY_FACTORS[type] || 0.07;
-            return Math.max(MIN_RADII[type] || 2, Math.cbrt(mass) * densityFactor);
-        }
-        
-        case 'blackHole': {
-            
-            const solarMasses = mass / SOLAR_MASS_KG;
-            const schwarzschildRadiusKm = 2.95 * solarMasses;
-            return Math.max(MIN_RADII.blackHole || 5, schwarzschildRadiusKm * KM_TO_GAME_UNITS);
-        }
-        
-        case 'quasar': {
-            
-            const solarMasses = mass / SOLAR_MASS_KG;
-            return Math.max(MIN_RADII.quasar || 6, (10 + 2 * solarMasses) * KM_TO_GAME_UNITS);
-        }
-        
-        case 'whiteHole': {
-            
-            const solarMasses = mass / SOLAR_MASS_KG;
-            return Math.max(MIN_RADII.whiteHole || 6, (8 + 1.5 * solarMasses) * KM_TO_GAME_UNITS);
-        }
-        
-        case 'wormhole': {
-            
-            return MIN_RADII.wormhole || 5;
-        }
-        
-        
-        default: {
-            const factor = DENSITY_FACTORS[type] || 1;
-            const minRadius = MIN_RADII[type] || 3;
-            
-            
-            const baseRadius = Math.cbrt(mass) * factor;
-            
-            return Math.max(minRadius, baseRadius);
-        }
+    const calculatedRadius = base * Math.pow(mass / 1000, 0.3);
+    if (!isFinite(calculatedRadius) || calculatedRadius <= 0) {
+        console.warn(`Raio inválido calculado para ${type}: ${calculatedRadius}. Usando valor base.`);
+        return Math.max(0.1, base);
     }
-    
+    return Math.max(0.1, calculatedRadius);
 }
-
 window.addEventListener('DOMContentLoaded', function() {
-    
     const btn100x = document.getElementById('btn100x');
     if (btn100x) {
         btn100x.onclick = function() { setTimeScale(100); };
     }
-
-    
-    
     const btn1000x = document.createElement('button');
     btn1000x.id = 'btn1000x';
     btn1000x.textContent = '1000x';
     btn1000x.className = 'time-btn';
     btn1000x.setAttribute('data-scale', '1000');
     btn1000x.onclick = function() { setTimeScale(1000); };
-    
-
     const btn10000x = document.createElement('button');
     btn10000x.id = 'btn10000x';
     btn10000x.textContent = '10000x';
     btn10000x.className = 'time-btn';
     btn10000x.setAttribute('data-scale', '10000');
     btn10000x.onclick = function() { setTimeScale(10000); };
-    
-
-    
     if (typeof advanceTimeBillionYears !== 'undefined') {
         advanceTimeBillionYears = undefined;
     }
 });
-
 function startGame() {
-    
     if (!playTimerInterval) {
         playTimerInterval = setInterval(() => {
             playTimer++;
-            
-            
             if (playTimer >= 300) unlockAchievement(37);
-            
-            
             if (playTimer >= 3600) unlockAchievement(38);
-            
-            
             if (playTimer >= 86400) unlockAchievement(39);
-            
         }, 1000);
     }
-
     gameStartCount++;
     localStorage.setItem('gameStartCount', gameStartCount.toString());
-    
     if (gameStartCount >= 2) {
         unlockAchievement(26);
     }
-
     console.log('[DEBUG] startGame chamado');
     if (!inGameMenu) {
         console.warn('[DEBUG] startGame: inGameMenu NÃO encontrado!');
@@ -4356,14 +5432,13 @@ function toggleGameMenu() {
 function fgpVolume() {
     const volume = volumeSlider.value;
     volumeValue.textContent = volume;
-    
 }
 function fgpGravityFactor() {
-    gravityFactor = gravityFactorSlider.value / 100;
+    gravityFactor = parseFloat(gravityFactorSlider.value) / 100;
     gravityFactorValue.textContent = gravityFactorSlider.value;
 }
 function fgpDragFactor() {
-    dragFactor = dragFactorSlider.value / 100;
+    dragFactor = parseFloat(dragFactorSlider.value) / 100;
     dragFactorValue.textContent = dragFactorSlider.value;
 }
 function resetPhysics() {
@@ -4392,21 +5467,65 @@ function fgpTemperature() {
     const temp = parseInt(tempSlider.value);
     tempValue.textContent = temp + '°C';
     astroSettings.temperature = temp;
-    
-    
     if (selectedPlanet) {
         selectedPlanet.temperature = temp;
     }
-    
-    
     planets.forEach(p => {
         if (p.type.includes('Star')) { 
             p.temperature = temp;
         }
     });
 }
+function toggleSpectateBtn(show) {
+    const exitSpectateBtn = document.getElementById('exitSpectateBtn');
+    if (exitSpectateBtn) {
+        exitSpectateBtn.style.display = show ? 'block' : 'none';
+    }
+}
+function toggleSpectateMode() {
+    if (!selectedPlanet) {
+        showNotification("Select a celestial body first!");
+        return;
+    }
+    spectateMode = !spectateMode;
+    if (spectateMode) {
+        spectatedAstro = selectedPlanet;
+        const astroStillExists = planets.find(p => p === spectatedAstro);
+        if (!astroStillExists) {
+            showNotification("Selected astro no longer exists!");
+            spectateMode = false;
+            spectatedAstro = null;
+            return;
+        }
+        btnSpectate.style.backgroundColor = '#4CAF50';
+        showNotification(`Spectating ${spectatedAstro.name}. Press B to stop.`);
+        camera.x = spectatedAstro.x;
+        camera.y = spectatedAstro.y;
+        if (controlMode) {
+            toggleControlMode();
+        }
+    } else {
+        spectatedAstro = null;
+        btnSpectate.style.backgroundColor = '';
+        showNotification("Spectate mode deactivated.");
+    }
+}
+function updateSpectateCamera() {
+    if (spectateMode && spectatedAstro) {
+        const astroExists = planets.find(p => p === spectatedAstro && !p.markedForRemoval);
+        if (!astroExists) {
+            showNotification("Spectated astro no longer exists. Exiting spectate mode.");
+            spectateMode = false;
+            spectatedAstro = null;
+            btnSpectate.style.backgroundColor = '';
+            return;
+        }
+        const smoothFactor = 0.1;
+        camera.x += (spectatedAstro.x - camera.x) * smoothFactor;
+        camera.y += (spectatedAstro.y - camera.y) * smoothFactor;
+    }
+}
 function setTimeScale(scale) {
-    
     let newScale = Number(scale);
     if (!isFinite(newScale) || isNaN(newScale) || newScale < 0) {
         newScale = 0.1;
@@ -4417,7 +5536,6 @@ function setTimeScale(scale) {
         showNotification(`${newScale}x`);
     }
     timeScale = newScale;
-    
     document.querySelectorAll('.time-btn').forEach(btn => {
         const btnScale = parseFloat(btn.getAttribute('data-scale'));
         if (!isNaN(btnScale) && Math.abs(btnScale - newScale) < 0.001) {
@@ -4463,11 +5581,7 @@ function fgpRingMass() {
 function fgpAstroPreview() {
     const primary = primaryColor.value;
     const secondary = secondaryColor.value;
-    
-    
     planetPreview.style.background = `radial-gradient(circle at 30% 30%, ${secondary}, ${primary})`;
-    
-    
     astroSettings.primaryColor = primary;
     astroSettings.secondaryColor = secondary;
     astroSettings.ringColor = ringColor.value || '#cccccc'; 
@@ -4496,7 +5610,6 @@ function resetAstroSettings() {
     hasRings.checked = false;
     ringMassSlider.value = 30;
     tempSlider.value = 20;
-    
     fgpMass();
     fgpGravity();
     fgpRotation();
@@ -4506,16 +5619,12 @@ function resetAstroSettings() {
     fgpRingMass();
     fgpTemperature();
     fgpAstroPreview();
-    
 }
-function createAstro(type, x, y, vx = 0, vy = 0, customMass = null) {
-
+function createAstro(type, x, y, vx = 0, vy = 0, customMass = null, originPlanet = null) {
     if (type === 'spaceDust') spaceDustCreated++;
-    
     if (spaceDustCreated >= 1000) {
         unlockAchievement(29);
     }
-    
     let planetClass = '';
     if (type === 'planetoid' || type === 'planetoid') {
         planetClass = 'Rocky Planetoid';
@@ -4524,8 +5633,6 @@ function createAstro(type, x, y, vx = 0, vy = 0, customMass = null) {
     } else if (type === 'gasGiant' || type === 'Gas Giant' || type === 'gasoso') {
         planetClass = 'Gas Giant';
     }
-
-    
     const planet = {
         x, y, vx, vy,
         rotation: Math.random() * Math.PI * 2,
@@ -4541,10 +5648,21 @@ function createAstro(type, x, y, vx = 0, vy = 0, customMass = null) {
         glowColor: '#2ecc71',
         mass: 1000,
         radius: 10,
-        locked: false
+        locked: false,
+        lifeChance: 0,
+        biomass: 0,
+        population: 0,
+        knowledge: 0,
+        intelligentSpecies: [],
+        knowledgePoints: 0,
+        affectionColor: null,
+        satellites: [],
+        rockets: [],
+        spaceships: [],
+        superShips: [],
+        hasIntelligentLife: false,
+        ignoreColorChanges: false,
     };
-
-    
     const typeMap = {
         'planetoide': 'planetoid',
         'planetoid': 'planetoid',
@@ -4568,15 +5686,19 @@ function createAstro(type, x, y, vx = 0, vy = 0, customMass = null) {
         'quasar': 'quasar',
         'whitehole': 'whiteHole'
     };
-
-    
+    const originalCreateAstro = createAstro;
+    createAstro = function(type, x, y, vx = 0, vy = 0, customMass = null) {
+        const planet = originalCreateAstro(type, x, y, vx, vy, customMass);
+        initializePlanetLifeProperties(planet);
+        if (planet.type === 'rockyPlanet' || planet.type === 'planet' || planet.type === 'gasGiant') {
+            startPlanetSatelliteSpawner(planet);
+        }
+        return planet;
+    };
     const normalizedType = (type || '').toLowerCase();
     const astroType = typeMap[normalizedType] || type;
     planet.type = astroType;
-
-    
     switch (astroType) {
-
         case 'spaceDust':
             planet.mass = Math.max(0.01, customMass || astroSettings.mass * 0.01);
             planet.color = '#888888';
@@ -4586,8 +5708,6 @@ function createAstro(type, x, y, vx = 0, vy = 0, customMass = null) {
             planet.clouds = astroSettings.clouds / 100;
             planet.continents = generateContinents(5);
             Acount = (Acount || 0) + 1;
-            
-    
         if (Acount >= 20){
             unlockAchievement(20);
         }
@@ -4603,18 +5723,14 @@ function createAstro(type, x, y, vx = 0, vy = 0, customMass = null) {
         if (Acount >= 10000){
             unlockAchievement(24);
         }
-
-            
         console.log('Astros no total : ' + Acount + ' quantidades ' )
             break;
-
         case 'radiation':
             planet.mass = Math.max(0.005, customMass || astroSettings.mass * 0.005);
             planet.color = '#ffff66';
             planet.radius = calculateRadiusForType('radiation', planet.mass);
             planet.lifetime = 10; 
             Acount = (Acount || 0) + 1;
-            
             if (Acount >= 20){
             unlockAchievement(20);
         }
@@ -4630,17 +5746,13 @@ function createAstro(type, x, y, vx = 0, vy = 0, customMass = null) {
         if (Acount >= 10000){
             unlockAchievement(24);
         }
-            
         console.log('Astros no total : ' + Acount + ' quantidades ' )
             break;
-            
         case 'nebula':
             planet.mass = Math.max(0.1, customMass || astroSettings.mass);
             planet.color = `hsl(${Math.random() * 360}, 70%, 60%)`;
             planet.radius = calculateRadiusForType('nebula', planet.mass);
             Acount = (Acount || 0) + 1;
-            
-    
          if (Acount >= 20){
             unlockAchievement(20);
         }
@@ -4656,11 +5768,8 @@ function createAstro(type, x, y, vx = 0, vy = 0, customMass = null) {
         if (Acount >= 10000){
             unlockAchievement(24);
         }
-
-            
         console.log('Astros no total : ' + Acount + ' quantidades ' )
             break;
-            
         case 'comet':
             planet.mass = Math.max(0.1, customMass || astroSettings.mass);
             planet.color = '#3498db';
@@ -4672,7 +5781,6 @@ function createAstro(type, x, y, vx = 0, vy = 0, customMass = null) {
             planet.clouds = astroSettings.clouds / 100;
             planet.continents = generateContinents(5);
             Acount = (Acount || 0) + 1;
-    
         if (Acount >= 20){
             unlockAchievement(20);
         }
@@ -4688,10 +5796,8 @@ function createAstro(type, x, y, vx = 0, vy = 0, customMass = null) {
         if (Acount >= 10000){
             unlockAchievement(24);
         }
-            
         console.log('Astros no total : ' + Acount + ' quantidades ' )
             break;
-
         case 'meteoroid':
             planet.mass = Math.max(0.01, customMass || astroSettings.mass);
             planet.color = '#95a5a6';
@@ -4703,29 +5809,22 @@ function createAstro(type, x, y, vx = 0, vy = 0, customMass = null) {
             planet.gas = astroSettings.gas / 100;
             Acount = (Acount || 0) + 1;
         if (Acount >= 20){
-            
             unlockAchievement(20);
         }
         if (Acount >= 100){
-            
             unlockAchievement(21);
         }
         if (Acount >= 500){
-            
             unlockAchievement(22);
         }
         if (Acount >= 1000){
-            
             unlockAchievement(23);
         }
         if (Acount >= 10000){
-            
             unlockAchievement(24);
         }
-            
         console.log('Astros no total : ' + Acount + ' quantidades ' )
             break;
-
         case 'meteorite':
             planet.mass = Math.max(0.1, customMass || astroSettings.mass);
             planet.color = '#7f8c8d';
@@ -4738,31 +5837,23 @@ function createAstro(type, x, y, vx = 0, vy = 0, customMass = null) {
             planet.continents = generateContinents(5);
             planet.gas = astroSettings.gas / 100;
             Acount = (Acount || 0) + 1;
-    
         if (Acount >= 20){
-            
             unlockAchievement(20);
         }
         if (Acount >= 100){
-            
             unlockAchievement(21);
         }
         if (Acount >= 500){
-            
             unlockAchievement(22);
         }
         if (Acount >= 1000){
-            
             unlockAchievement(23);
         }
         if (Acount >= 10000){
-            
             unlockAchievement(24);
         }
-            
         console.log('Astros no total : ' + Acount + ' quantidades ' )
             break;
-
         case 'asteroid':
             planet.mass = Math.max(1, customMass || astroSettings.mass);
             planet.color = '#95a5a6';
@@ -4777,31 +5868,23 @@ function createAstro(type, x, y, vx = 0, vy = 0, customMass = null) {
             planet.continents = generateContinents(5);
             planet.gas = astroSettings.gas / 100;
             Acount = (Acount || 0) + 1;
-    
         if (Acount >= 20){
-            
             unlockAchievement(20);
         }
         if (Acount >= 100){
-            
             unlockAchievement(21);
         }
         if (Acount >= 500){
-            
             unlockAchievement(22);
         }
         if (Acount >= 1000){
-            
             unlockAchievement(23);
         }
         if (Acount >= 10000){
-            
             unlockAchievement(24);
         }
-            
         console.log('Astros no total : ' + Acount + ' quantidades ' )
             break;
-
         case 'planetoid':
             planet.mass = Math.max(300, customMass || astroSettings.mass);
             planet.color = '#9b59b6';
@@ -4819,32 +5902,23 @@ function createAstro(type, x, y, vx = 0, vy = 0, customMass = null) {
             planet.gas = astroSettings.gas / 100;
             unlockAchievement(14)
             Acount = (Acount || 0) + 1;
-    
         if (Acount >= 20){
-            
             unlockAchievement(20);
         }
         if (Acount >= 100){
-            
             unlockAchievement(21);
         }
         if (Acount >= 500){
-            
             unlockAchievement(22);
         }
         if (Acount >= 1000){
-            
             unlockAchievement(23);
         }
         if (Acount >= 10000){
-            
             unlockAchievement(24);
         }
-
-            
         console.log('Astros no total : ' + Acount + ' quantidades ' )
             break;
-            
         case 'rockyPlanet':
             planet.mass = Math.max(5000, customMass || astroSettings.mass * 10);
             planet.color = astroSettings.primaryColor;
@@ -4860,31 +5934,24 @@ function createAstro(type, x, y, vx = 0, vy = 0, customMass = null) {
             planet.ringRotation = Math.random() * Math.PI * 2;
             planet.gas = astroSettings.gas / 100;
             Acount = (Acount || 0) + 1;
-    
+            planet.waterValue = astroSettings.water || 0;
         if (Acount >= 20){
-            
             unlockAchievement(20);
         }
         if (Acount >= 100){
-            
             unlockAchievement(21);
         }
         if (Acount >= 500){
-            
             unlockAchievement(22);
         }
         if (Acount >= 1000){
-            
             unlockAchievement(23);
         }
         if (Acount >= 10000){
-            
             unlockAchievement(24);
         }
-            
         console.log('Astros no total : ' + Acount + ' quantidades ' )
             break;
-            
         case 'gasGiant':
             planet.mass = Math.max(105000, customMass || astroSettings.mass * 100);
             planet.color = '#e67e22';
@@ -4901,30 +5968,22 @@ function createAstro(type, x, y, vx = 0, vy = 0, customMass = null) {
             Acount = (Acount || 0) + 1;
             planet.temperature = 2;
         if (Acount >= 20){
-            
             unlockAchievement(20);
         }
         if (Acount >= 100){
-            
             unlockAchievement(21);
         }
         if (Acount >= 500){
-            
             unlockAchievement(22);
         }
         if (Acount >= 1000){
-            
             unlockAchievement(23);
         }
         if (Acount >= 10000){
-            
             unlockAchievement(24);
         }
-
-            
         console.log('Astros no total : ' + Acount + ' quantidades ' )
             break;
-            
         case 'brownDwarf':
             planet.mass = Math.max(2550000, customMass || astroSettings.mass * 1000);
             planet.color = '#d60000ff';
@@ -4936,28 +5995,21 @@ function createAstro(type, x, y, vx = 0, vy = 0, customMass = null) {
             planet.ringRotation = Math.random() * Math.PI * 2;
             planet.temperature = 2300;
             Acount = (Acount || 0) + 1;
-    
         if (Acount >= 20){
-            
             unlockAchievement(20);
         }
         if (Acount >= 100){
-            
             unlockAchievement(21);
         }
         if (Acount >= 500){
-            
             unlockAchievement(22);
         }
         if (Acount >= 1000){
-            
             unlockAchievement(23);
         }
         if (Acount >= 10000){
-            
             unlockAchievement(24);
         }
-            
         case 'ttauriStar':
             planet.mass = Math.max(10000000, customMass || astroSettings.mass * 1000000);
             planet.color = '#FFD700';
@@ -4968,31 +6020,23 @@ function createAstro(type, x, y, vx = 0, vy = 0, customMass = null) {
             planet.maxLifeTime = 0.001 + Math.random() * 2;
             planet.temperature = 54000;
             Acount = (Acount || 0) + 1;
-    
         if (Acount >= 20){
-            
             unlockAchievement(20);
         }
         if (Acount >= 100){
-            
             unlockAchievement(21);
         }
         if (Acount >= 500){
-            
             unlockAchievement(22);
         }
         if (Acount >= 1000){
-            
             unlockAchievement(23);
         }
         if (Acount >= 10000){
-            
             unlockAchievement(24);
         }
-            
         console.log('Astros no total : ' + Acount + ' quantidades ' )
             break;
-            
         case 'carbonStar':
             planet.mass = Math.max(20000000, customMass || astroSettings.mass * 1000000);
             planet.color = '#C70039';
@@ -5000,31 +6044,23 @@ function createAstro(type, x, y, vx = 0, vy = 0, customMass = null) {
             planet.radius = calculateRadiusForType('carbonStar', planet.mass);
             planet.temperature = 24000;
             Acount = (Acount || 0) + 1;
-    
         if (Acount >= 20){
-            
             unlockAchievement(20);
         }
         if (Acount >= 100){
-            
             unlockAchievement(21);
         }
         if (Acount >= 500){
-            
             unlockAchievement(22);
         }
         if (Acount >= 1000){
-            
             unlockAchievement(23);
         }
         if (Acount >= 10000){
-            
             unlockAchievement(24);
         }
-            
         console.log('Astros no total : ' + Acount + ' quantidades ' )
             break;
-            
         case 'giantStar':
             planet.mass = Math.max(50000000, customMass || astroSettings.mass * 1000000);
             planet.color = '#ff0000';
@@ -5032,33 +6068,23 @@ function createAstro(type, x, y, vx = 0, vy = 0, customMass = null) {
             planet.radius = calculateRadiusForType('giantStar', planet.mass);
             Acount = (Acount || 0) + 1;
             planet.temperature = 28000;
-            
-    
         if (Acount >= 20){
-            
             unlockAchievement(20);
         }
         if (Acount >= 100){
-            
             unlockAchievement(21);
         }
         if (Acount >= 500){
-            
             unlockAchievement(22);
         }
         if (Acount >= 1000){
-            
             unlockAchievement(23);
         }
         if (Acount >= 10000){
-            
             unlockAchievement(24);
         }
-
-            
         console.log('Astros no total : ' + Acount + ' quantidades ' )
             break;
-            
         case 'hypergiant':
             planet.mass = Math.max(100000000, customMass || astroSettings.mass * 1000000);
             planet.color = '#FF0000';
@@ -5066,32 +6092,23 @@ function createAstro(type, x, y, vx = 0, vy = 0, customMass = null) {
             planet.radius = calculateRadiusForType('hypergiant', planet.mass);
             planet.temperature = 36000;
             Acount = (Acount || 0) + 1;
-    
         if (Acount >= 20){
-            
             unlockAchievement(20);
         }
         if (Acount >= 100){
-            
             unlockAchievement(21);
         }
         if (Acount >= 500){
-            
             unlockAchievement(22);
         }
         if (Acount >= 1000){
-            
             unlockAchievement(23);
         }
         if (Acount >= 10000){
-            
             unlockAchievement(24);
         }
-
-            
         console.log('Astros no total : ' + Acount + ' quantidades ' )
             break;
-            
         case 'massiveStar':
             planet.mass = Math.max(500000000, customMass || astroSettings.mass * 1000000);
             planet.color = '#00BFFF';
@@ -5099,32 +6116,23 @@ function createAstro(type, x, y, vx = 0, vy = 0, customMass = null) {
             planet.radius = calculateRadiusForType('massiveStar', planet.mass);
             planet.temperature = 50000;
             Acount = (Acount || 0) + 1;
-    
         if (Acount >= 20){
-            
             unlockAchievement(20);
         }
         if (Acount >= 100){
-            
             unlockAchievement(21);
         }
         if (Acount >= 500){
-            
             unlockAchievement(22);
         }
         if (Acount >= 1000){
-            
             unlockAchievement(23);
         }
         if (Acount >= 10000){
-            
             unlockAchievement(24);
         }
-
-            
         console.log('Astros no total : ' + Acount + ' quantidades ' )
             break;
-            
         case 'strangeStar':
             planet.mass = Math.max(500000000000, customMass || astroSettings.mass * 1000000000);
             planet.color = '#8A2BE2';
@@ -5134,32 +6142,23 @@ function createAstro(type, x, y, vx = 0, vy = 0, customMass = null) {
             unlockAchievement(11)
             planet.temperature = 184000;
             Acount = (Acount || 0) + 1;
-    
         if (Acount >= 20){
-            
             unlockAchievement(20);
         }
         if (Acount >= 100){
-            
             unlockAchievement(21);
         }
         if (Acount >= 500){
-            
             unlockAchievement(22);
         }
         if (Acount >= 1000){
-            
             unlockAchievement(23);
         }
         if (Acount >= 10000){
-            
             unlockAchievement(24);
         }
-
-            
         console.log('Astros no total : ' + Acount + ' quantidades ' )
             break;
-            
         case 'whiteDwarf':
             planet.mass = Math.max(1e15, customMass || 20500000000);
             planet.color = '#ffffff';
@@ -5171,32 +6170,23 @@ function createAstro(type, x, y, vx = 0, vy = 0, customMass = null) {
             planet.ringRotation = Math.random() * Math.PI * 2;
             planet.temperature = 9000;
             Acount = (Acount || 0) + 1;
-    
         if (Acount >= 20){
-            
             unlockAchievement(20);
         }
         if (Acount >= 100){
-            
             unlockAchievement(21);
         }
         if (Acount >= 500){
-            
             unlockAchievement(22);
         }
         if (Acount >= 1000){
-            
             unlockAchievement(23);
         }
         if (Acount >= 10000){
-            
             unlockAchievement(24);
         }
-
-            
         console.log('Astros no total : ' + Acount + ' quantidades ' )
             break;
-            
         case 'blackDwarf':
             planet.mass = Math.max(100000, customMass || 100000);
             planet.color = '#181818';
@@ -5209,30 +6199,23 @@ function createAstro(type, x, y, vx = 0, vy = 0, customMass = null) {
             planet.temperature = 28;
             unlockAchievement(30)
             Acount = (Acount || 0) + 1;
-    
         if (Acount >= 20){
-            
             unlockAchievement(20);
         }
         if (Acount >= 100){
-            
             unlockAchievement(21);
         }
         if (Acount >= 500){
-            
             unlockAchievement(22);
         }
         if (Acount >= 1000){
-            
             unlockAchievement(23);
         }
         if (Acount >= 10000){
-            
             unlockAchievement(24);
         }
         console.log('Astros no total : ' + Acount + ' quantidades ' )
             break;
-            
         case 'star':
             planet.mass = Math.max(500000, customMass || 500000);
             planet.color = '#FFD700';
@@ -5245,30 +6228,22 @@ function createAstro(type, x, y, vx = 0, vy = 0, customMass = null) {
             planet.temperature = 14000;
             Acount = (Acount || 0) + 1;
         if (Acount >= 20){
-            
             unlockAchievement(20);
         }
         if (Acount >= 100){
-            
             unlockAchievement(21);
         }
         if (Acount >= 500){
-            
             unlockAchievement(22);
         }
         if (Acount >= 1000){
-            
             unlockAchievement(23);
         }
         if (Acount >= 10000){
-            
             unlockAchievement(24);
         }
-
-            
         console.log('Astros no total : ' + Acount + ' quantidades ' )
             break;
-            
         case 'neutronStar':
             planet.mass = Math.max(50500000000, customMass || astroSettings.mass * 1000000000);
             planet.color = '#6ae1f7';
@@ -5277,33 +6252,23 @@ function createAstro(type, x, y, vx = 0, vy = 0, customMass = null) {
             planet.radius = calculateRadiusForType('neutronStar', planet.mass);
             planet.temperature = 71778;
             Acount = (Acount || 0) + 1;
-    
         if (Acount >= 20){
-            
             unlockAchievement(20);
         }
         if (Acount >= 100){
-            
             unlockAchievement(21);
         }
         if (Acount >= 500){
-            
             unlockAchievement(22);
         }
         if (Acount >= 1000){
-            
             unlockAchievement(23);
         }
         if (Acount >= 10000){
-            
             unlockAchievement(24);
         }
-
-            
         console.log('Astros no total : ' + Acount + ' quantidades ' )
             break;
-
-        
         case 'pulsar':
             planet.mass = Math.max(50500000000, customMass || astroSettings.mass * 1000000000);
             planet.color = '#F0FFFF';
@@ -5321,30 +6286,22 @@ function createAstro(type, x, y, vx = 0, vy = 0, customMass = null) {
             }
             Acount = (Acount || 0) + 1;
          if (Acount >= 20){
-            
             unlockAchievement(20);
         }
         if (Acount >= 100){
-            
             unlockAchievement(21);
         }
         if (Acount >= 500){
-            
             unlockAchievement(22);
         }
         if (Acount >= 1000){
-            
             unlockAchievement(23);
         }
         if (Acount >= 10000){
-            
             unlockAchievement(24);
         }
-
-            
         console.log('Astros no total : ' + Acount + ' quantidades ' )
             break;
-            
         case 'blackHole':
             planet.mass = Math.max(1e12, customMass || astroSettings.mass * 1e12);
             planet.color = '#000000';
@@ -5355,32 +6312,23 @@ function createAstro(type, x, y, vx = 0, vy = 0, customMass = null) {
             planet.temperature = 584000;
             unlockAchievement(10)
             Acount = (Acount || 0) + 1;
-    
         if (Acount >= 20){
-            
             unlockAchievement(20);
         }
         if (Acount >= 100){
-            
             unlockAchievement(21);
         }
         if (Acount >= 500){
-            
             unlockAchievement(22);
         }
         if (Acount >= 1000){
-            
             unlockAchievement(23);
         }
         if (Acount >= 10000){
-            
             unlockAchievement(24);
         }
-
-            
         console.log('Astros no total : ' + Acount + ' quantidades ' )
             break;
-            
         case 'quasar':
             planet.mass = Math.max(1e12, customMass || astroSettings.mass * 1e12);
             planet.color = '#000000';
@@ -5392,67 +6340,49 @@ function createAstro(type, x, y, vx = 0, vy = 0, customMass = null) {
             planet.temperature = 557999978;
             unlockAchievement(15)
             Acount = (Acount || 0) + 1;
-    
         if (Acount >= 20){
-            
             unlockAchievement(20);
         }
         if (Acount >= 100){
-            
             unlockAchievement(21);
         }
         if (Acount >= 500){
-            
             unlockAchievement(22);
         }
         if (Acount >= 1000){
-            
             unlockAchievement(23);
         }
         if (Acount >= 10000){
-            
             unlockAchievement(24);
         }
-
-            
         console.log('Astros no total : ' + Acount + ' quantidades ' )
             break;
-
         case 'whiteHole':
             planet.mass = Math.max(5000, customMass || 5000);
-            
             planet.color = '#ffffff';
             planet.glowColor = '#3498db';
             planet.radius = calculateRadiusForType('whiteHole', planet.mass);
-            
             planet.jets = true;
             planet.temperature = 5679999978;
             unlockAchievement(9)
             Acount = (Acount || 0) + 1;
         if (Acount >= 20){
-            
             unlockAchievement(20);
         }
         if (Acount >= 100){
-            
             unlockAchievement(21);
         }
         if (Acount >= 500){
-            
             unlockAchievement(22);
         }
         if (Acount >= 1000){
-            
             unlockAchievement(23);
         }
         if (Acount >= 10000){
-            
             unlockAchievement(24);
         }
-            
         console.log('Astros no total : ' + Acount + ' quantidades ' )
             break;
-            
         case 'wormhole':
             planet.mass = Math.max(1e12, customMass || astroSettings.mass * 1e12);
             planet.color = '#ffffff';
@@ -5461,30 +6391,22 @@ function createAstro(type, x, y, vx = 0, vy = 0, customMass = null) {
             unlockAchievement(18)
             Acount = (Acount || 0) + 1;
         if (Acount >= 20){
-            
             unlockAchievement(20);
         }
         if (Acount >= 100){
-            
             unlockAchievement(21);
         }
         if (Acount >= 500){
-            
             unlockAchievement(22);
         }
         if (Acount >= 1000){
-            
             unlockAchievement(23);
         }
         if (Acount >= 10000){
-            
             unlockAchievement(24);
         }
-
-            
         console.log('Astros no total : ' + Acount + ' quantidades ' )
             break;
-
         case 'redDwarf':
             planet.mass = Math.max(2.56e6, customMass || astroSettings.mass * 1000);
             planet.color = '#FF3300';
@@ -5494,29 +6416,22 @@ function createAstro(type, x, y, vx = 0, vy = 0, customMass = null) {
             planet.temperature = 9500;
             Acount = (Acount || 0) + 1;
          if (Acount >= 20){
-            
             unlockAchievement(20);
         }
         if (Acount >= 100){
-            
             unlockAchievement(21);
         }
         if (Acount >= 500){
-            
             unlockAchievement(22);
         }
         if (Acount >= 1000){
-            
             unlockAchievement(23);
         }
         if (Acount >= 10000){
-            
             unlockAchievement(24);
         }
-            
         console.log('Astros no total : ' + Acount + ' quantidades ' )
             break;
-
         case 'heliumWhiteDwarf':
             planet.mass = Math.max(1e15, customMass || astroSettings.mass * 1e12);
             planet.color = '#87CEEB';
@@ -5526,30 +6441,22 @@ function createAstro(type, x, y, vx = 0, vy = 0, customMass = null) {
             planet.temperature = 1678;
             Acount = (Acount || 0) + 1;
         if (Acount >= 20){
-            
             unlockAchievement(20);
         }
         if (Acount >= 100){
-            
             unlockAchievement(21);
         }
         if (Acount >= 500){
-            
             unlockAchievement(22);
         }
         if (Acount >= 1000){
-            
             unlockAchievement(23);
         }
         if (Acount >= 10000){
-            
             unlockAchievement(24);
         }
-
-            
         console.log('Astros no total : ' + Acount + ' quantidades ' )
             break;
-
         case 'supermassiveStar':
             planet.mass = Math.max(1e16, customMass || astroSettings.mass * 1e13);
             planet.color = '#0000FF';
@@ -5558,31 +6465,23 @@ function createAstro(type, x, y, vx = 0, vy = 0, customMass = null) {
             planet.maxLifeTime = 1e6;
             planet.temperature = 99000;
             Acount = (Acount || 0) + 1;
-    
         if (Acount >= 20){
-            
             unlockAchievement(20);
         }
         if (Acount >= 100){
-            
             unlockAchievement(21);
         }
         if (Acount >= 500){
-            
             unlockAchievement(22);
         }
         if (Acount >= 1000){
-            
             unlockAchievement(23);
         }
         if (Acount >= 10000){
-            
             unlockAchievement(24);
         }
-            
         console.log('Astros no total : ' + Acount + ' quantidades ' )
             break;
-
         case 'magnetar':
             planet.mass = Math.max(1e12, customMass || astroSettings.mass * 1e9);
             planet.color = '#E0FBE2';
@@ -5594,31 +6493,23 @@ function createAstro(type, x, y, vx = 0, vy = 0, customMass = null) {
             planet.maxLifeTime = 1e7;
             planet.temperature = 108778;
             Acount = (Acount || 0) + 1;
-    
         if (Acount >= 20){
-            
             unlockAchievement(20);
         }
         if (Acount >= 100){
-            
             unlockAchievement(21);
         }
         if (Acount >= 500){
-            
             unlockAchievement(22);
         }
         if (Acount >= 1000){
-            
             unlockAchievement(23);
         }
         if (Acount >= 10000){
-            
             unlockAchievement(24);
         }
-            
         console.log('Astros no total : ' + Acount + ' quantidades ' )
             break;
-
         case 'redGiant':
             planet.mass = Math.max(5e13, customMass || astroSettings.mass * 1e10);
             planet.color = '#FF4500';
@@ -5626,32 +6517,23 @@ function createAstro(type, x, y, vx = 0, vy = 0, customMass = null) {
             planet.radius = calculateRadiusForType('redGiant', planet.mass);
             planet.temperature = 14000;
             Acount = (Acount || 0) + 1;
-    
         if (Acount >= 20){
-            
             unlockAchievement(20);
         }
         if (Acount >= 100){
-            
             unlockAchievement(21);
         }
         if (Acount >= 500){
-            
             unlockAchievement(22);
         }
         if (Acount >= 1000){
-            
             unlockAchievement(23);
         }
         if (Acount >= 10000){
-            
             unlockAchievement(24);
         }
-
-            
         console.log('Astros no total : ' + Acount + ' quantidades ' )
             break;
-
         case 'redSupergiant':
             planet.mass = Math.max(1e14, customMass || astroSettings.mass * 1e11);
             planet.color = '#FF0000';
@@ -5659,32 +6541,23 @@ function createAstro(type, x, y, vx = 0, vy = 0, customMass = null) {
             planet.radius = calculateRadiusForType('redSupergiant', planet.mass);
             planet.temperature = 34000;
             Acount = (Acount || 0) + 1;
-    
         if (Acount >= 20){
-            
             unlockAchievement(20);
         }
         if (Acount >= 100){
-            
             unlockAchievement(21);
         }
         if (Acount >= 500){
-            
             unlockAchievement(22);
         }
         if (Acount >= 1000){
-            
             unlockAchievement(23);
         }
         if (Acount >= 10000){
-            
             unlockAchievement(24);
         }
-
-            
         console.log('Astros no total : ' + Acount + ' quantidades ' )
             break;
-
     case 'quarkStar':
         planet.mass = Math.max(5e12, customMass || astroSettings.mass * 1e10);
         planet.color = '#F0BBE2';
@@ -5696,33 +6569,23 @@ function createAstro(type, x, y, vx = 0, vy = 0, customMass = null) {
         planet.jetAngle = Math.random() * Math.PI * 2;
         planet.temperature = 208778;
         Acount = (Acount || 0) + 1;
-    
         if (Acount >= 20){
-            
             unlockAchievement(20);
         }
         if (Acount >= 100){
-            
             unlockAchievement(21);
         }
         if (Acount >= 500){
-            
             unlockAchievement(22);
         }
         if (Acount >= 1000){
-            
             unlockAchievement(23);
         }
         if (Acount >= 10000){
-            
             unlockAchievement(24);
         }
-
-            
         console.log('Astros no total : ' + Acount + ' quantidades ' )
         break;
-
-        
         default:
             planet.mass = customMass || 1000;
             planet.color = '#cccccc';
@@ -5730,36 +6593,22 @@ function createAstro(type, x, y, vx = 0, vy = 0, customMass = null) {
             console.warn(`Tipo de astro desconhecido: ${astroType}, usando configurações padrão`);
             break;
     }
-
-
-    
     if (!isFinite(planet.mass) || planet.mass <= 0) {
         console.error(`Massa inválida para ${astroType}: ${planet.mass}`);
         planet.mass = astroType === 'spaceDust' ? 0.1 : 1000;
     }
-    
     if (!isFinite(planet.radius) || planet.radius <= 0) {
         console.error(`Raio inválido para ${astroType}: ${planet.radius}`);
         planet.radius = calculateRadiusForType(astroType, planet.mass) || 10;
     }
-
-    
     if (["asteroid", "meteorite", "meteoroid"].includes(astroType)) {
         if (!planet.shape || !Array.isArray(planet.shape) || planet.shape.length < 3) {
             planet.shape = generateAsteroidShape(planet.radius);
         }
     }
-
-    
- 
     planet.createdManually = false;
-
-    
     planets.push(planet);
-    
-    
     if (modoRetirada && planets.length > MAX_ASTROS_RETIRADA) {
-        
         let ultimoManualIndex = -1;
         for (let i = planets.length - 1; i >= 0; i--) {
             if (planets[i].createdManually) {
@@ -5767,21 +6616,102 @@ function createAstro(type, x, y, vx = 0, vy = 0, customMass = null) {
                 break;
             }
         }
-        
-        
         if (ultimoManualIndex !== -1) {
             const removed = planets.splice(ultimoManualIndex, 1)[0];
             showNotification(`(Withdrawal mode): ${removed.name || removed.type}`);
         }
-        
         else {
             const removed = planets.shift();
             showNotification(`(Withdrawal mode): ${removed.name || removed.type}`);
         }
     }
-    
     return planet;
 }
+function initializePlanetLifeProperties(planet) {
+    planet.lifeChance = 0;
+    planet.biomass = 0;
+    planet.population = 0;
+    planet.evolutionTime = 0;
+    planet.intelligentSpecies = null;
+    planet.knowledgePoints = 0;
+    if (planet.type === 'rockyPlanet') {
+        planet.lifeChance = calculateLifeChance(planet);
+    }
+}
+function calculateLifeChance(planet) {
+    if (planet.type !== 'rockyPlanet') return 0;
+    let chance = 0;
+    if (planet.temperature >= 18 && planet.temperature <= 32) { 
+        chance += 0.3;
+    } else if (planet.temperature >= 15 && planet.temperature <= 35) {
+        chance += 0.1;
+    } else if (planet.temperature >= 10 && planet.temperature <= 40) {
+        chance += 0.05; 
+    }
+    if (planet.waterValue >= 50 && planet.waterValue <= 80) { 
+        chance += 0.3;
+    } else if (planet.waterValue >= 40 && planet.waterValue <= 85) {
+        chance += 0.15; 
+    }
+    if (planet.gasValue >= 40 && planet.gasValue <= 70) { 
+        chance += 0.2;
+    } else if (planet.gasValue >= 30 && planet.gasValue <= 75) {
+        chance += 0.1; 
+    }
+    if (planet.cloudsValue >= 25 && planet.cloudsValue <= 65) { 
+        chance += 0.2;
+    } else if (planet.cloudsValue >= 20 && planet.cloudsValue <= 70) {
+        chance += 0.1; 
+    }
+    if (planet.temperature < -15 || planet.temperature > 75) {
+        chance *= 0.1; 
+    }
+    if (planet.waterValue < 15 || planet.gasValue < 15) {
+        chance *= 0.1; 
+    }
+    if (planet.temperature > 100 || planet.temperature < -50) {
+        chance = 0;
+    }
+    return Math.min(1, Math.max(0, chance));
+}
+const originalCreateAstro = createAstro;
+createAstro = function(type, x, y, vx = 0, vy = 0, customMass = null) {
+    const planet = originalCreateAstro(type, x, y, vx, vy, customMass);
+    initializePlanetLifeProperties(planet);
+    planet.lifeChance = calculateLifeChance(planet);
+    return planet;
+};
+function fgpPlanetLifeChance(planet) {
+    planet.lifeChance = calculateLifeChance(planet);
+}
+const originalGameLoop = gameLoop;
+gameLoop = function(timestamp) {
+    if (!lastTime) lastTime = timestamp;
+    const deltaTime = timestamp - lastTime;
+    originalGameLoop(timestamp);
+    if (gameState === 'playing') {
+        planets.forEach(planet => {
+            if (planet.type === 'rockyPlanet') {
+                fgpPlanetLifeChance(planet);
+            }
+        });
+    }
+    lastTime = timestamp;
+};
+const originalOpenEditPanel = openEditPanel;
+openEditPanel = function(planet) {
+    originalOpenEditPanel(planet);
+    if (planet.type === 'rockyPlanet') {
+        document.getElementById('editLifeChance').value = Math.round((planet.lifeChance || 0) * 100) + '%';
+        document.getElementById('editBiomass').value = planet.biomass || 0;
+        document.getElementById('editPopulation').value = planet.population || 0;
+        if (planet.intelligentSpecies) {
+            document.getElementById('editSpeciesName').value = planet.intelligentSpecies.name || 'none';
+            document.getElementById('editKnowledge').value = planet.intelligentSpecies.knowledge || 0;
+            document.getElementById('editCivilizationStage').value = planet.intelligentSpecies.stage || 0;
+        }
+    }
+};
 function getTypeName(type) {
     const names = {
         'spaceDust': 'Space Dust',
@@ -5816,7 +6746,11 @@ function getTypeName(type) {
         'magnetar': 'Magnetar',
         'pulsar': 'Pulsar',
         'quarkStar': 'Quark Pulsar',
-        'redSupergiant': 'Red Supergigant'
+        'redSupergiant': 'Red Supergigant',
+        'satellite':'satellite',
+        'rocket':'rocket',
+        'spaceship':'spaceship',
+        'superShip':'Super Ship',
     };
     return names[type] || 'Astro';
 }
@@ -5827,7 +6761,6 @@ function generateContinents(numContinents) {
         const points = 5 + Math.floor(Math.random() * 6);
         const centerX = -0.3 + Math.random() * 0.6;
         const centerY = -0.3 + Math.random() * 0.6;
-        
         for (let j = 0; j < points; j++) {
             const angle = (j / points) * Math.PI * 2;
             const distance = 0.1 + Math.random() * 0.2;
@@ -5840,22 +6773,454 @@ function generateContinents(numContinents) {
     }
     return continents;
 }
-function createPlanet(astroType, x, y, mass, radius) {
+function createPlanet(astroType, x, y, mass, color) {
     const planet = {
+        id: Math.random().toString(36).substr(2, 9),
         type: astroType,
         x,
         y,
         mass,
-        radius,
+        color: color || getDefaultColor(type),
+        radius: calculateRadiusForType(type, mass),
         continents: [],
-        
     };
-
     if (['rockyPlanet', 'planetoid'].includes(astroType)) {
         planet.continents = generateContinents(3);
     }
-
+    planets.push(planet);
     return planet;
+}
+function fgpLifeEvolution(planet) {
+    if (planet.type !== 'rockyPlanet') return;
+    let growthRate = 0;
+    if (planet.lifeChance >= 0.8) {
+        growthRate = (planet.lifeChance / 100) * 1.5;
+        if (planet.biomass > 70) {
+            growthRate *= 2;
+        }
+        if (planet.lifeChance >= 0.6) {
+            growthRate = Math.max(growthRate, 0.02);
+        }
+    }
+    if (growthRate > 0) {
+        planet.biomass = Math.min(100, planet.biomass + growthRate);
+    }
+    if (planet.biomass >= 100 && !planet.hasIntelligentLife) {
+        if (Math.random() < 0.5) {
+            planet.hasIntelligentLife = true;
+            planet.population = 0.1;
+            planet.knowledgePoints = 1;
+            planet.affectionColor = '#' + Math.floor(Math.random()*16777215).toString(16);
+        }
+    }
+    if (planet.hasIntelligentLife) {
+        if (planet.population < 1000) {
+            planet.population = Math.min(1000, planet.population + 1);
+        }
+        const baseKnowledgeGrowth = 0.0002;
+        const stabilityBonus = planet.biomass > 80 ? 0.3 : 0;
+        planet.knowledgePoints += baseKnowledgeGrowth + stabilityBonus;
+        if (planet.knowledgePoints > 100) {
+            planet.knowledgePoints *= 1.005;
+        }
+        handleKnowledgeMilestones(planet);
+    }
+}
+function startPlanetSatelliteSpawner(planet) {
+    if (planet._satelliteSpawnerActive) return;
+    planet._satelliteSpawnerActive = true;
+    function spawnNext() {
+        if (!planet.hasIntelligentLife || planet.lifeChance === 0 || planet.population < 100) {
+            planet._satelliteSpawnerActive = false;
+            return;
+        }
+        createSatellites(planet, 1);
+        const nextTime = 1000 + Math.random() * 9000;
+        setTimeout(spawnNext, nextTime);
+    }
+    spawnNext();
+}
+function handleKnowledgeMilestones(planet) {
+    if (!planet.hasIntelligentLife || planet.lifeChance === 0) {
+        return;
+    }
+    if (planet.biomass < 50 || planet.population < 100) {
+        return;
+    }
+    if (planet.knowledgePoints >= 100 && planet.satellites.length === 0) {
+        startPlanetSatelliteSpawner(planet);
+        unlockAchievement(51)
+    }
+    if (planet.knowledgePoints >= 400 && planet.rockets.length === 0) {
+        createRockets(planet, 2);
+        unlockAchievement(52)
+    }
+    if (planet.knowledgePoints >= 25000) {
+        if (Math.random() < 0.001) {
+            createSpaceship(planet, 1);
+            unlockAchievement(53)
+        }
+    }
+    if (planet.knowledgePoints >= 95000) {
+        if (Math.random() < 0.001) {
+            createSpaceship(planet, 2);
+        }
+    }
+    if (planet.knowledgePoints >= 100000) {
+        if (Math.random() < 0.001) {
+            createSpaceship(planet, 3);
+        }
+    }
+    if (planet.knowledgePoints >= 500000) {
+        if (Math.random() < 0.001) {
+            createSpaceship(planet, 4);
+        }
+    }
+    if (planet.knowledgePoints >= 900000) {
+        if (Math.random() < 0.0005) {
+            createSpaceship(planet, 5);
+        }
+    }
+    if (planet.knowledgePoints >= 250000) {
+        if (Math.random() < 0.001) {
+            createSuperShip(planet);
+            unlockAchievement(54);
+        }
+    }
+    if (planet.knowledgePoints >= 1000000) {
+            unlockAchievement(55);
+    }
+}
+function createSatellites(planet, count) {
+    for (let i = 0; i < count; i++) {
+        const angle = Math.random() * Math.PI * 2;
+        const distance = planet.radius * 1;
+        const numPanels = Math.floor(Math.random() * 10) + 1;
+        const modules = [];
+        const moduleTypes = ['panel','antenna','dish','radar'];
+        for (let p = 0; p < numPanels; p++) {
+            const type = moduleTypes[Math.floor(Math.random() * moduleTypes.length)];
+            modules.push({
+                type: type,
+                angle: Math.random() * Math.PI * 2,
+                size: 1 + Math.floor(Math.random() * 3),
+                color: type === 'panel' ? `hsl(${Math.floor(Math.random()*60)+180},60%,50%)` : undefined
+            });
+        }
+        const satellite = {
+            type: 'satellite',
+            name: 'satellite',
+            x: planet.x + Math.cos(angle) * distance,
+            y: planet.y + Math.sin(angle) * distance,
+            vx: planet.vx - Math.sin(angle) * 2,
+            vy: planet.vy + Math.cos(angle) * 2,
+            radius: 0.1,
+            color: planet.affectionColor || '#cccccc',
+            originPlanet: planet,
+            orbitSpeed: 0.01,
+            angle: angle,
+            parentPlanetId: planet.id || Math.random().toString(36).substr(2, 9),
+            direction: 0,
+            modules: modules
+        };
+        planets.push(satellite);
+        planet.satellites.push(satellite);
+    }
+}
+function createRockets(planet, count) {
+    const validTargets = planets.filter(p => 
+        p !== planet && ['meteoroid', 'meteorite', 'comet', 'asteroid', 'planetoid'].includes(p.type)
+    );
+    if (validTargets.length === 0) {
+        return;
+    }
+    for (let i = 0; i < count; i++) {
+        const randomIndex = Math.floor(Math.random() * validTargets.length);
+        const target = validTargets[randomIndex];
+        if (!target) continue;
+        const dx = target.x - planet.x;
+        const dy = target.y - planet.y;
+        const distance = Math.sqrt(dx * dx + dy * dy);
+        const dirX = dx / distance;
+        const dirY = dy / distance;
+        const baseSpeed = 5;
+        const speedVariation = Math.random() * 2;
+        const speed = baseSpeed + speedVariation;
+        const rocket = {
+            type: 'rocket',
+            name: `Rocket-${Math.floor(Math.random() * 10000)}`,
+            x: planet.x + dirX * (planet.radius * 1.5),
+            y: planet.y + dirY * (planet.radius * 1.5),
+            vx: planet.vx + dirX * speed,
+            vy: planet.vy + dirY * speed,
+            radius: 0.12,
+            color: planet.affectionColor || '#ff9900',
+            originPlanet: planet,
+            target: target,
+            direction: Math.atan2(dirY, dirX),
+            astronauts: Math.floor(Math.random() * 8) + 3,
+            lifeTime: 0,
+            maxLifeTime: 600000,
+            markedForRemoval: false
+        };
+        planets.push(rocket);
+        if (!planet.rockets) planet.rockets = [];
+        planet.rockets.push(rocket);
+    }
+}
+function findNearestTarget(source, targets) {
+    let nearestTarget = null;
+    let minDistance = Infinity;
+    targets.forEach(target => {
+        const dx = target.x - source.x;
+        const dy = target.y - source.y;
+        const distance = Math.sqrt(dx * dx + dy * dy);
+        if (distance < minDistance) {
+            minDistance = distance;
+            nearestTarget = target;
+        }
+    });
+    return nearestTarget;
+}
+function canCreateRockets(planet) {
+    const hasValidTargets = planets.some(p => 
+        p !== planet && ['meteoroid', 'meteorite', 'comet', 'asteroid', 'planetoid', 'rockyPlanet'].includes(p.type)
+    );
+    const hasPopulation = planet.type !== 'rockyPlanet' || (planet.population && planet.population > 0);
+    return hasValidTargets && hasPopulation;
+}
+function fgpRocketBehavior(rocket, deltaTime) {
+    if (!rocket.target || rocket.target.markedForRemoval) {
+        const validTargets = planets.filter(p => 
+            p !== rocket.originPlanet && 
+            ['meteoroid', 'meteorite', 'comet', 'asteroid', 'planetoid'].includes(p.type)
+        );
+        if (validTargets.length > 0) {
+            let nearestTarget = null;
+            let minDistance = Infinity;
+            validTargets.forEach(target => {
+                const dx = target.x - rocket.x;
+                const dy = target.y - rocket.y;
+                const distance = Math.sqrt(dx * dx + dy * dy);
+                if (distance < minDistance) {
+                    minDistance = distance;
+                    nearestTarget = target;
+                }
+            });
+            rocket.target = nearestTarget;
+        } else {
+            rocket.markedForRemoval = true;
+            return;
+        }
+    }
+    if (rocket.target) {
+        const dx = rocket.target.x - rocket.x;
+        const dy = rocket.target.y - rocket.y;
+        const distance = Math.sqrt(dx * dx + dy * dy);
+        if (distance > 5) {
+            const adjustmentStrength = 0.1;
+            const dirX = dx / distance;
+            const dirY = dy / distance;
+            rocket.vx += dirX * adjustmentStrength;
+            rocket.vy += dirY * adjustmentStrength;
+            const currentSpeed = Math.sqrt(rocket.vx * rocket.vx + rocket.vy * rocket.vy);
+            const maxSpeed = 8;
+            if (currentSpeed > maxSpeed) {
+                rocket.vx = (rocket.vx / currentSpeed) * maxSpeed;
+                rocket.vy = (rocket.vy / currentSpeed) * maxSpeed;
+            }
+            rocket.direction = Math.atan2(rocket.vy, rocket.vx);
+        } else {
+            handleRocketCollision(rocket, rocket.target);
+        }
+    }
+    if (!rocket.lifeTime) rocket.lifeTime = 0;
+    rocket.lifeTime += deltaTime;
+    if (!rocket.maxLifeTime) rocket.maxLifeTime = 30000;
+    if (rocket.lifeTime > rocket.maxLifeTime) {
+        rocket.markedForRemoval = true;
+    }
+}
+let rocketGenerationTimer = 0;
+const MIN_ROCKET_INTERVAL = 5000;
+const MAX_ROCKET_INTERVAL = 30000;
+let nextRocketInterval = getRandomRocketInterval();
+function getRandomRocketInterval() {
+    return MIN_ROCKET_INTERVAL + Math.random() * (MAX_ROCKET_INTERVAL - MIN_ROCKET_INTERVAL);
+}
+function fgpRocketGeneration(deltaTime) {
+    rocketGenerationTimer += deltaTime;
+    if (rocketGenerationTimer >= nextRocketInterval) {
+        rocketGenerationTimer = 0;
+        nextRocketInterval = getRandomRocketInterval();
+        const rocketProducers = planets.filter(planet => 
+            planet.type === 'rockyPlanet' && 
+            planet.population > 0 &&
+            !planet.markedForRemoval
+        );
+        if (rocketProducers.length > 0) {
+            const producer = rocketProducers[Math.floor(Math.random() * rocketProducers.length)];
+            createRockets(producer, 1);
+        }
+    }
+}
+function fgpRocketBehavior(obj, deltaTime) {
+    if (obj.type !== 'rocket') return;
+    const rocket = obj;
+    if (!rocket.target || rocket.target.markedForRemoval || !isValidRocketTarget(rocket.target)) {
+        rocket.target = findNewTargetForRocket(rocket);
+    }
+    if (!rocket.target) {
+        const validTargets = planets.filter(p => 
+            !p.markedForRemoval && 
+            isValidRocketTarget(p) &&
+            p !== rocket.originPlanet
+        );
+        if (validTargets.length > 0) {
+            rocket.target = findNearestTarget(rocket, validTargets);
+        } else {
+            if (rocket.originPlanet && !rocket.originPlanet.markedForRemoval) {
+                rocket.target = rocket.originPlanet;
+            } else {
+                rocket.markedForRemoval = true;
+                return;
+            }
+        }
+    }
+    let isAvoiding = false;
+    for (let i = 0; i < planets.length; i++) {
+        const other = planets[i];
+        if (other !== rocket && other !== rocket.target && shouldAvoidAstro(other)) {
+            if (avoidLargeAstro(rocket, other, deltaTime)) {
+                isAvoiding = true;
+                break;
+            }
+        }
+    }
+    if (!isAvoiding && rocket.target) {
+        const dx = rocket.target.x - rocket.x;
+        const dy = rocket.target.y - rocket.y;
+        const distance = Math.sqrt(dx * dx + dy * dy);
+        if (distance > 5) {
+            const adjustmentStrength = 0.1;
+            const dirX = dx / distance;
+            const dirY = dy / distance;
+            rocket.vx += dirX * adjustmentStrength * (deltaTime / 16);
+            rocket.vy += dirY * adjustmentStrength * (deltaTime / 16);
+            const currentSpeed = Math.sqrt(rocket.vx * rocket.vx + rocket.vy * rocket.vy);
+            const maxSpeed = 8;
+            if (currentSpeed > maxSpeed) {
+                rocket.vx = (rocket.vx / currentSpeed) * maxSpeed;
+                rocket.vy = (rocket.vy / currentSpeed) * maxSpeed;
+            }
+            rocket.direction = Math.atan2(rocket.vy, rocket.vx);
+        } else {
+            handleRocketCollision(rocket, rocket.target);
+        }
+    }
+    if (!rocket.lifeTime) rocket.lifeTime = 0;
+    rocket.lifeTime += deltaTime;
+    if (!rocket.maxLifeTime) rocket.maxLifeTime = 30000;
+    if (rocket.lifeTime > rocket.maxLifeTime) {
+        rocket.markedForRemoval = true;
+    }
+}
+function hasValidRocketTargets() {
+    return planets.some(p => 
+        ['meteoroid', 'meteorite', 'comet', 'asteroid', 'planetoid', 'rockyPlanet'].includes(p.type)
+    );
+}
+function findNearestRocketTarget(originX, originY) {
+    let nearestTarget = null;
+    let minDistance = Infinity;
+    planets.forEach(planet => {
+        if (['meteoroid', 'meteorite', 'comet', 'asteroid', 'planetoid', 'rockyPlanet'].includes(planet.type)) {
+            const dx = planet.x - originX;
+            const dy = planet.y - originY;
+            const distance = Math.sqrt(dx * dx + dy * dy);
+            if (distance < minDistance) {
+                minDistance = distance;
+                nearestTarget = planet;
+            }
+        }
+    });
+    return nearestTarget;
+}
+function createSpaceship(planet, type) {
+    const angle = Math.random() * Math.PI * 2;
+    const distance = planet.radius * 2;
+    let ship = {
+        type: 'spaceship',
+        name: 'spaceship',
+        x: planet.x + Math.cos(angle) * distance,
+        y: planet.y + Math.sin(angle) * distance,
+        vx: planet.vx + Math.cos(angle) * 3,
+        vy: planet.vy + Math.sin(angle) * 3,
+        radius: 0.2,
+        color: planet.affectionColor || '#00ccff',
+        originPlanet: planet,
+        direction: angle,
+        designVariant: Math.floor(Math.random() * 4) + 1,
+        decisionTimer: null,
+        isEnemy: false,
+        target: null
+    };
+    switch (type) {
+        case 1:
+            ship.subType = 1;
+            break;
+        case 2:
+            ship.subType = 2;
+            ship.storedPopulation = Math.floor(100 / (Math.floor(Math.random() * 6) + 5));
+            break;
+        case 3:
+            ship.subType = 3;
+            ship.attackPower = 10;
+            ship.fireRate = 1000;
+            ship.lastFire = 0;
+            break;
+        case 4:
+            ship.subType = 4;
+            ship.attackPower = 25;
+            ship.fireRate = 800;
+            ship.lastFire = 0;
+            break;
+        case 5:
+            ship.subType = 5;
+            ship.attackPower = 5;
+            ship.fireRate = 1500;
+            ship.lastFire = 0;
+            ship.productionRate = 30000;
+            ship.lastProduction = 0;
+            break;
+    }
+    planets.push(ship);
+    planet.spaceships.push(ship);
+    return ship;
+}
+function createSuperShip(planet) {
+    const angle = Math.random() * Math.PI * 2;
+    const distance = planet.radius * 3;
+    const superShip = {
+        type: 'superShip',
+        name: 'superShip',
+        x: planet.x + Math.cos(angle) * distance,
+        y: planet.y + Math.sin(angle) * distance,
+        vx: planet.vx + Math.cos(angle) * 2,
+        vy: planet.vy + Math.sin(angle) * 2,
+        radius: 4,
+        color: planet.affectionColor || '#ff00ff',
+        originPlanet: planet,
+        direction: angle,
+        population: 100,
+        maxPopulation: 100,
+        productionRate: 60000,
+        lastProduction: 0,
+        avoidanceField: 100,
+        canProduce: ['satellite', 'spaceship3', 'spaceship4']
+    };
+    planets.push(superShip);
+    planet.superShips.push(superShip);
 }
 function generateAsteroidShape(size) {
     const points = [];
@@ -5871,32 +7236,23 @@ function generateAsteroidShape(size) {
     return points;
 }
 function lightenColor(color, percent) {
-    
     if (!color || typeof color !== 'string') return '#ffffff';
-    
-    
     const colorNames = {
         'white': '#ffffff',
         'black': '#000000',
         'red': '#ff0000',
         'green': '#00ff00',
         'blue': '#0000ff',
-        
     };
-    
     if (colorNames[color.toLowerCase()]) {
         color = colorNames[color.toLowerCase()];
     }
-    
-    
     let r, g, b;
     if (color.startsWith('#')) {
-        
         r = parseInt(color.substring(1, 3), 16);
         g = parseInt(color.substring(3, 5), 16);
         b = parseInt(color.substring(5, 7), 16);
     } else if (color.startsWith('rgb')) {
-        
         const match = color.match(/(\d+),\s*(\d+),\s*(\d+)/);
         if (match) {
             r = parseInt(match[1]);
@@ -5908,28 +7264,17 @@ function lightenColor(color, percent) {
     } else {
         return '#ffffff'; 
     }
-    
-    
-    
-    
-    
-    
     r = Math.min(255, r + Math.round(255 * percent / 100));
     g = Math.min(255, g + Math.round(255 * percent / 100));
     b = Math.min(255, b + Math.round(255 * percent / 100));
-    
-    
     return `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`;
 }
 function openEditPanel(planet) {
     selectedPlanet = planet;
-    
-    
-
     editName.value = planet.name || getTypeName(planet.type);
     editType.value = getTypeName(planet.type);
     editClass.value = planet.planetClass || 'Nenhuma';
-    editTemperature.value = planet.temperature !== undefined ? planet.temperature + '°C' : 'Desconhecida';
+    editTemperature.value = planet.temperature !== undefined ? planet.temperature : 20;
     editColor.value = planet.color;
     editSecondaryColor.value = planet.landColor || planet.glowColor || '#3498db';
     editMass.value = planet.mass;
@@ -5939,56 +7284,95 @@ function openEditPanel(planet) {
     editClouds.value = planet.cloudsValue || 0;
     editGas.value = planet.gasValue || 0;
     editRingMass.value = planet.ringMass || 30;
-    
-    editDescription.value = planet.description || `Um ${getTypeName(planet.type)} no vasto universo`;
-    
-    
+    editDescription.value = planet.description || `${getTypeName(planet.type)}`;
     editPanel.style.display = 'block';
-
-
+    editKnowledge.value = planet.knowledgePoints || 0;
+    document.getElementById('editBiomass').value = Math.round(planet.biomass || 0);
+    document.getElementById('editPopulation').value = Math.round(planet.population || 0);
     const btnLock = document.getElementById('btnLock');
     if (planet.locked) {
         btnLock.textContent = "🔓 DesLock";
     } else {
         btnLock.textContent = "🔒 Lock";
     }
+    customColorEnabled = planet.ignoreColorChanges || false;
+    const btn = document.getElementById('btnCustomColor');
+    if (customColorEnabled) {
+        btn.textContent = '🎨 CCOn';
+        btn.style.backgroundColor = '#4CAF50';
+    } else {
+        btn.textContent = '🎨 CCA';
+        btn.style.backgroundColor = '';
+    }
 }
 function applyAstroChanges() {
+    if (editTemperature && selectedPlanet) {
+        const temp = parseFloat(editTemperature.value);
+        if (!isNaN(temp)) selectedPlanet.temperature = temp;
+    }
     if (!selectedPlanet) return;
-    
-    
+    try {
+        const oldLifeChance = selectedPlanet.lifeChance;
+        const newLifeChance = calculateLifeChance(selectedPlanet);
+        if (Math.abs(oldLifeChance - newLifeChance) > 0.3) {
+            selectedPlanet.hasIntelligentLife = false;
+            selectedPlanet.population = 0;
+            selectedPlanet.knowledgePoints = 0;
+            selectedPlanet.biomass = 0;
+            selectedPlanet.satellites = [];
+            selectedPlanet.rockets = [];
+            selectedPlanet.spaceships = [];
+            selectedPlanet.superShips = [];
+            selectedPlanet._satelliteSpawnerActive = false;
+        }
+        selectedPlanet.lifeChance = newLifeChance;
+        if (!isSpaceshipType(selectedPlanet.type)) {
+            selectedPlanet.mass = parseFloat(editMass.value) || selectedPlanet.mass;
+            selectedPlanet.radius = Math.cbrt(selectedPlanet.mass) * 5;
+        }
+        selectedPlanet.name = editName.value || selectedPlanet.name;
+        selectedPlanet.color = editColor.value || selectedPlanet.color;
+        showNotification(`✅ ${selectedPlanet.name} updated successfully`);
+        fgpAstroPreview();
+    } catch (error) {
+        console.error('Error applying astro changes:', error);
+        showNotification('❌ Error updating celestial body');
+    }
+    if (editBiomass.value !== selectedPlanet.biomass + '%') {
+            const biomassValue = parseInt(editBiomass.value) || selectedPlanet.biomass;
+            selectedPlanet.biomass = Math.max(0, Math.min(100, biomassValue));
+        }
+    if (editPopulation.value !== selectedPlanet.population + '%') {
+        const populationValue = parseInt(editPopulation.value) || selectedPlanet.population;
+        selectedPlanet.population = Math.max(0, Math.min(selectedPlanet.biomass, populationValue));
+    }
+    if (customColorEnabled) {
+        selectedPlanet.color = editColor.value;
+        selectedPlanet.landColor = editSecondaryColor.value;
+    }
     selectedPlanet.name = editName.value;
     selectedPlanet.color = editColor.value;
-    
     if (selectedPlanet.landColor) selectedPlanet.landColor = editSecondaryColor.value;
     if (selectedPlanet.glowColor) selectedPlanet.glowColor = editSecondaryColor.value;
-    
     selectedPlanet.mass = parseFloat(editMass.value);
     selectedPlanet.gravity = parseFloat(editGravity.value);
     selectedPlanet.rotationSpeed = parseFloat(editRotation.value);
-    
     if (selectedPlanet.ocean) selectedPlanet.ocean = parseFloat(editWater.value) / 100;
     if (selectedPlanet.clouds) selectedPlanet.clouds = parseFloat(editClouds.value) / 100;
     if (selectedPlanet.gas) selectedPlanet.gas = parseFloat(editGas.value) / 100;
-
     selectedPlanet.waterValue = parseInt(editWater.value);
     selectedPlanet.cloudsValue = parseInt(editClouds.value);
     selectedPlanet.gasValue = parseInt(editGas.value);
-    
-    
     selectedPlanet.ringMass = parseFloat(editRingMass.value);
-    
     selectedPlanet.description = editDescription.value;
-    
-    
     selectedPlanet.radius = calculateRadiusForType(selectedPlanet.type, selectedPlanet.mass);
-    
-    
+    if (selectedPlanet.type === 'rockyPlanet') {
+        fgpPlanetConditions(selectedPlanet);
+    }
     editPanel.style.display = 'none';
 }
 function deleteSelectedAstro() {
     if (!selectedPlanet) return;
-    
     const index = planets.indexOf(selectedPlanet);
     if (index !== -1) {
         planets.splice(index, 1);
@@ -5998,27 +7382,20 @@ function deleteSelectedAstro() {
 }
 function handleMouseDown(e) {
     if (gameState !== 'playing') return;
-    
     if (e.button === 0) { 
         mouse.down = true;
         mouse.downX = mouse.x;
         mouse.downY = mouse.y;
-        
-        
         if (creationMode) {
-            
             return;
         }
     } else if (e.button === 2) { 
         mouse.rightDown = true;
-        
-        
         for (let i = planets.length - 1; i >= 0; i--) {
             const planet = planets[i];
             const dx = (mouse.x - planet.x) * camera.zoom;
             const dy = (mouse.y - planet.y) * camera.zoom;
             const distance = Math.sqrt(dx * dx + dy * dy);
-            
             if (distance < planet.radius * camera.zoom) {
                 openEditPanel(planet);
                 break;
@@ -6028,26 +7405,18 @@ function handleMouseDown(e) {
 }
 function handleMouseUp(e) {
     if (gameState !== 'playing') return;
-    
     if (e.button === 0 && mouse.down) {
         mouse.down = false;
-
         const vx = (mouse.x - mouse.downX) * 0.1;
         const vy = (mouse.y - mouse.downY) * 0.1;
-        
         if (creationMode && mouse.downX !== null && mouse.downY !== null) {
             const vx = (mouse.x - mouse.downX) * 0.1;
             const vy = (mouse.y - mouse.downY) * 0.1;
-            
             const newPlanet = createAstro(creationMode, mouse.downX, mouse.downY, vx, vy);
             newPlanet.createdManually = true;
             createAstro(creationMode, mouse.downX, mouse.downY, velX, velY);
             return;
         }
-        
-        
-
-        
         planets.push({
             x: mouse.downX,
             y: mouse.downY,
@@ -6064,7 +7433,6 @@ function handleMouseUp(e) {
     } else if (e.button === 2) {
         mouse.rightDown = false;
     }
-    
     if (e.button === 0) {
         mouse.down = false;
         trajectoryPoints = [];
@@ -6083,27 +7451,48 @@ function handleContextMenu(e) {
 }
 function handleScroll(e) {
     if (gameState !== 'playing') return;
-    
-    
     mass += e.deltaY > 0 ? -5 : 5;
     mass = Math.max(5, Math.min(500, mass));
 }
 function handleKeyDown(e) {
     const isEditing = document.activeElement.tagName === 'INPUT' || 
                      document.activeElement.tagName === 'TEXTAREA';
-    
     const isMenuOpen = document.getElementById('inGameMenu').style.display === 'block' ||
                       document.getElementById('editPanel').style.display === 'block' ||
                       document.getElementById('achievementsSidebar').style.display !== 'none' ||
                       document.getElementById('savesSidebar').style.display !== 'none' ||
                       document.getElementById('configSidebar').classList.contains('active') ||
                       document.getElementById('warningsSidebar').classList.contains('active');
-    
-
     if (gameState !== 'playing' || isEditing || isMenuOpen) return;
-    
     const cameraSpeed = 50 / camera.zoom;
-    
+    if (controlMode && (e.key === 'w' || e.key === 'W' || e.key === 's' || e.key === 'S' || 
+                        e.key === 'a' || e.key === 'A' || e.key === 'd' || e.key === 'D' ||
+                        e.key === 'ArrowUp' || e.key === 'ArrowDown' || 
+                        e.key === 'ArrowLeft' || e.key === 'ArrowRight')) {
+        keys[e.key] = true;
+    }
+        let clickedPlanet = null;
+    const mouseX = (mouse.x - canvas.width / 2) / camera.zoom + camera.x;
+    const mouseY = (mouse.y - canvas.height / 2) / camera.zoom + camera.y;
+    for (let i = planets.length - 1; i >= 0; i--) {
+        const planet = planets[i];
+        if (planet.markedForRemoval) continue;
+        const dx = mouseX - planet.x;
+        const dy = mouseY - planet.y;
+        const distance = Math.sqrt(dx * dx + dy * dy);
+        const clickThreshold = (planet.radius * camera.zoom) * 1.2; 
+        if (distance < clickThreshold) {
+            clickedPlanet = planet;
+            break;
+        }
+    }
+    if (clickedPlanet) {
+        selectedPlanet = clickedPlanet;
+        console.log(`Selected: ${selectedPlanet.name} (${selectedPlanet.type}) at index ${planets.indexOf(selectedPlanet)}`);
+    } else {
+        selectedPlanet = null;
+        editPanel.style.display = 'none';
+    }
     switch(e.key.toLowerCase()) {
         case 'w': 
             camera.y -= cameraSpeed;
@@ -6160,7 +7549,22 @@ function handleKeyDown(e) {
                 showNotification(`Names ${namesVisible ? 'activated' : 'deactivated'}`);
             }
             break;
-            
+        case 'b':
+            if (spectateMode) {
+                toggleSpectateMode();
+            }
+            if (controlMode) {
+                toggleControlMode();
+            }
+            break;
+    }
+}
+function handleKeyUp(e) {
+    if (e.key === 'w' || e.key === 'W' || e.key === 's' || e.key === 'S' || 
+        e.key === 'a' || e.key === 'A' || e.key === 'd' || e.key === 'D' ||
+        e.key === 'ArrowUp' || e.key === 'ArrowDown' || 
+        e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
+        keys[e.key] = false;
     }
 }
 function transformToGiantStar(planet) {
@@ -6200,8 +7604,6 @@ function transformToMeteorite(planet) {
     planet.shape = generateAsteroidShape(planet.radius);
     planet.originalClass = 'Meteorito Comum';
     planet.planetClass = 'Meteorito Comum';
-    
-    
     const speedFactor = 1.1;
     planet.vx *= speedFactor;
     planet.vy *= speedFactor;
@@ -6247,59 +7649,39 @@ function transformToMeteoroid(planet) {
     planet.exoticAcquired = false;
 }
 function calculateGravitationalForce(body1, body2) {
-    
         if (body1.type === 'nebula' || body2.type === 'nebula') return;
-    
-    
     const dx = body2.x - body1.x;
     const dy = body2.y - body1.y;
     const distanceSquared = dx * dx + dy * dy;
-
     if (distanceSquared < MIN_DISTANCE * MIN_DISTANCE) return;
-
     const distance = Math.sqrt(distanceSquared);
     const force = (SAFE_G * body1.mass * body2.mass) / distanceSquared;
     const fx = (force * dx) / distance;
     const fy = (force * dy) / distance;
-
     body1.fx += fx;
     body1.fy += fy;
     body2.fx -= fx;
     body2.fy -= fy;
-    
     const MIN_DISTANCE = 10; 
     const SAFE_G = 6.67430e-11; 
-    
     try {
-        
         const dx = body2.x - body1.x;
         const dy = body2.y - body1.y;
         const distanceSquared = dx * dx + dy * dy;
-        
-        
         if (distanceSquared === 0 || !isFinite(distanceSquared)) {
             return { fx: 0, fy: 0 };
         }
-
-        
         const logForce = Math.log10(SAFE_G) + 
                          Math.log10(body1.mass) + 
                          Math.log10(body2.mass) - 
                          Math.log10(Math.max(distanceSquared, MIN_DISTANCE * MIN_DISTANCE));
-        
         const forceMagnitude = Math.pow(10, logForce);
-        
-        
         if (!isFinite(forceMagnitude)) {
             console.warn('Força gravitacional inválida calculada', {body1, body2});
             return { fx: 0, fy: 0 };
         }
-
-
-        
         const distance = Math.sqrt(distanceSquared);
         const forceRatio = forceMagnitude / distance;
-        
         return {
             fx: forceRatio * dx,
             fy: forceRatio * dy
@@ -6311,20 +7693,15 @@ function calculateGravitationalForce(body1, body2) {
 }
 function fgpExoticObjects(deltaTime) {
     const absDelta = Math.abs(deltaTime / 1000);
-    
     for (let i = 0; i < planets.length; i++) {
         const planet = planets[i];
-        
         if (planet.type === 'blackHole' || planet.type === 'quasar') {
-            
             planet.radiationTimer = (planet.radiationTimer || 0) + absDelta;
             if (planet.radiationTimer > 3) {
                 planet.radiationTimer = 0;
-                
                 const angle = Math.random() * Math.PI * 2;
                 const distance = planet.radius * 2.5;
                 const speed = 15 + Math.random() * 15; 
-                
                 createAstro(
                     'radiation',
                     planet.x + Math.cos(angle) * distance,
@@ -6335,20 +7712,16 @@ function fgpExoticObjects(deltaTime) {
                 );
             }
         }
-        
         if (planet.type === 'whiteHole') {
-            
             planet.lifeTime = (planet.lifeTime || 0) + absDelta;
             if (planet.lifeTime > 2) {
                 planet.lifeTime = 0;
-                
                 const types = ['spaceDust', 'nebula', 'meteoroid', 'asteroid'];
                 const type = types[Math.floor(Math.random() * types.length)];
                 const angle = Math.random() * Math.PI * 2;
                 const distance = planet.radius * 3.5;
                 const speed = 10 + Math.random() * 10; 
                 const mass = 0.5 + Math.random() * 20; 
-                
                 createAstro(
                     type,
                     planet.x + Math.cos(angle) * distance,
@@ -6363,29 +7736,19 @@ function fgpExoticObjects(deltaTime) {
 }
 function fgpBlackHolesAndQuasars(deltaTime) {
   const absDelta = Math.abs(deltaTime / 1000);
-  
   for (let i = 0; i < planets.length; i++) {
     const planet = planets[i];
     if (planet.type !== 'blackHole' && planet.type !== 'quasar') continue;
-    
-    
     const massLossRate = planet.type === 'quasar' ? 0.001 : 0.0005;
     planet.mass -= planet.mass * massLossRate * absDelta;
-    
-    
     planet.lifeTime = (planet.lifeTime || 0) + absDelta;
-    
-    
     if (planet.lifeTime > 2) {
       planet.lifeTime = 0;
-      
-      
       const count = planet.type === 'quasar' ? 8 : 5; 
       for (let j = 0; j < count; j++) {
         const angle = Math.random() * Math.PI * 2;
         const distance = planet.radius * 3;
         const speed = 10 + Math.random() * 20;
-        
         createAstro(
           'radiation',
           planet.x + Math.cos(angle) * distance,
@@ -6396,15 +7759,11 @@ function fgpBlackHolesAndQuasars(deltaTime) {
         );
       }
     }
-    
-    
     if (planet.mass < 1000) {
       planet.markedForRemoval = true;
       showNotification(`${getTypeName(planet.type)} evaporated.`);
     }
   }
-  
-  
   planets = planets.filter(p => !p.markedForRemoval);
 }
 function transformToRedSupergiant(planet) {
@@ -6458,8 +7817,6 @@ function transformToSupernova(planet) {
     const explosionPower = Math.log10(planet.mass) * 15;
     const fragments = 100 + Math.floor(explosionPower);
     unlockAchievement(38);
-    
-    
     createAstro(
         'nebula',
         planet.x,
@@ -6467,8 +7824,6 @@ function transformToSupernova(planet) {
         0, 0,
         planet.mass * 0.7
     );
-    
-    
     if (planet.mass > 3e12) {
         createAstro(
             'blackHole',
@@ -6486,11 +7841,8 @@ function transformToSupernova(planet) {
             planet.mass * 0.3
         );
     }
-    
-    
     const index = planets.indexOf(planet);
     if (index !== -1) planets.splice(index, 1);
-    
 }
 function transformToStrangeStar(planet) {
     planet.type = 'strangeStar';
@@ -6515,22 +7867,14 @@ function transformToRedStar(planet) {
 function handleNebulaConsumption(nebula, other, deltaTime) {
     const distance = Math.hypot(nebula.x - other.x, nebula.y - other.y);
     const minDistance = (nebula.radius + other.radius) * 0.8;
-
-    
     if (distance < minDistance) {
         const transferRate = 0.01; 
         const gasTransferRate = 0.03; 
-
-        
         nebula.mass -= transferRate * nebula.mass * deltaTime;
         nebula.radius = calculateRadiusForType(nebula.type, nebula.mass);
-
-        
         other.mass += transferRate * nebula.mass * deltaTime;
         other.radius = calculateRadiusForType(other.type, other.mass);
         other.gasValue = Math.min(100, (other.gasValue || 0) + gasTransferRate * deltaTime * 100);
-
-        
         if (nebula.mass <= 0.1) {
             nebula.markedForRemoval = true;
         }
@@ -6540,7 +7884,6 @@ function isVisible(planet) {
     const screenX = (planet.x - camera.x) * camera.zoom + canvas.width / 2;
     const screenY = (planet.y - camera.y) * camera.zoom + canvas.height / 2;
     const radius = planet.radius * camera.zoom;
-    
     return (
         screenX + radius > 0 &&
         screenX - radius < canvas.width &&
@@ -6565,65 +7908,36 @@ function sanitizeMass(mass) {
 function fgpAnimations(deltaTime) {
     const deltaSeconds = deltaTime / 1000;
     const timeFactor = Math.abs(timeScale) * deltaSeconds;
-
     for (let i = 0; i < planets.length; i++) {
         const planet = planets[i];
-
-        
         if (planet.rotationSpeed) {
             planet.rotation += planet.rotationSpeed * timeFactor;
         }
-
-                
         if (isVisible(planet)) {
-            
         }
-
-        
         if (planet.type === 'whiteHole' || planet.type === 'quasar') {
             planet.pulseTime = (planet.pulseTime || 0) + timeFactor;
         }
-
-        
         if (planet.type === 'whiteHole' || planet.type === 'quasar') {
             planet.jetAngle = (planet.jetAngle || 0) + 0.05 * timeFactor;
         }
-        
         if (planet.type === 'pulsar' || planet.type === 'quarkStar') {
-            
             if (planet.jetRotationSpeed === undefined) {
-                
                 planet.jetRotationSpeed = (planet.type === 'pulsar') ? 1.0 : 1.5;
             }
-            
-            
             const speedFactor = Math.max(1, Math.abs(timeScale) * 50);
-            
-            
             planet.jetAngle += planet.jetRotationSpeed * speedFactor * timeFactor;
-            
-            
             if (planet.jetAngle > Math.PI * 2) {
                 planet.jetAngle -= Math.PI * 2;
             }
         }
-
-            
-
         if (planet.type === 'quarkStar') {
-            
             if (planet.jetRotationSpeed === undefined) {
                 planet.jetRotationSpeed = 3.5;
             }
-            
-            
             const speedFactor = 1 + Math.log10(Math.max(1, Math.abs(timeScale)));
             planet.jetAngle += planet.jetRotationSpeed * speedFactor * timeFactor * (deltaTime / 16.67);
-            
-            
             planet.jetAngle %= Math.PI * 2;
-            
-            
             planet.fieldDistortion = (planet.fieldDistortion || 0) + 0.02 * timeFactor;
         }
     }
@@ -6631,37 +7945,29 @@ function fgpAnimations(deltaTime) {
 function drawGravitationalLens(radius, type = 'attractive', strength = 1) {
     const lensRadius = radius * (type === 'attractive' ? 2.5 : 3.0);
     const gradient = ctx.createRadialGradient(0, 0, 0, 0, 0, lensRadius);
-    
     if (type === 'attractive') {
-        
         gradient.addColorStop(0, 'rgba(0, 0, 0, 0.8)');
         gradient.addColorStop(0.6, 'rgba(50, 50, 50, 0.4)');
         gradient.addColorStop(0.8, 'rgba(100, 100, 100, 0.2)');
         gradient.addColorStop(1, 'rgba(150, 150, 150, 0)');
     } else {
-        
         gradient.addColorStop(0, 'rgba(255, 255, 255, 0.8)');
         gradient.addColorStop(0.6, 'rgba(200, 220, 255, 0.4)');
         gradient.addColorStop(0.8, 'rgba(150, 200, 255, 0.2)');
         gradient.addColorStop(1, 'rgba(100, 180, 255, 0)');
     }
-    
     ctx.beginPath();
     ctx.arc(0, 0, lensRadius, 0, Math.PI * 2);
     ctx.fillStyle = gradient;
     ctx.fill();
-    
-    
     if (strength > 0.7 && graphicsQuality === 'high') {
         ctx.strokeStyle = type === 'attractive' 
             ? 'rgba(0, 0, 0, 0.3)' 
             : 'rgba(255, 255, 255, 0.3)';
         ctx.lineWidth = 1;
-        
         for (let i = 0; i < 3; i++) {
             const waveRadius = lensRadius * (1.1 + i * 0.2);
             const distortion = Math.sin(Date.now() * 0.001 + i) * 0.1 * strength;
-            
             ctx.beginPath();
             for (let a = 0; a < Math.PI * 2; a += 0.1) {
                 const r = waveRadius * (1 + Math.sin(a * 10) * distortion);
@@ -6676,7 +7982,6 @@ function generateExoticName() {
     const prefixes = ['Crystalline', 'Magnetic', 'Radioative', 'Vibrational', 'Quantum'];
     const cores = ['Cerium', 'Zirconium', 'Tantalum', 'Ruthenium', 'Hafnium'];
     const suffixes = ['-X', '-Ω', '-Δ', '-Σ', '-Φ'];
-    
     return `${prefixes[Math.floor(Math.random()*prefixes.length)]} ${cores[Math.floor(Math.random()*cores.length)]}${suffixes[Math.floor(Math.random()*suffixes.length)]}`;
 }
 function transformToComet(planet) {
@@ -6693,37 +7998,29 @@ function generateExoticPlanetoidName() {
     const prefixes = ['Crystalline', 'Magnetic', 'Radioative', 'Vibrational', 'Quantum'];
     const cores = ['Cerium', 'Zirconium', 'Tantalum', 'Ruthenium', 'Hafnium'];
     const suffixes = ['-X', '-Ω', '-Δ', '-Σ', '-Φ'];
-    
     return `${prefixes[Math.floor(Math.random()*prefixes.length)]} ${cores[Math.floor(Math.random()*cores.length)]}${suffixes[Math.floor(Math.random()*suffixes.length)]}`;
 }
 function generateExoticGasGiantName() {
     const prefixes = ['Plasma', 'Crystalline', 'Magnetic', 'Radioative', 'Vibrational'];
     const cores = ['Neptuno', 'Jupiterian', 'Saturnian', 'Uranian', 'Hydrogenic'];
     const suffixes = ['-Ω', '-Δ', '-Σ', '-Φ', '-Ψ'];
-    
     return `${prefixes[Math.floor(Math.random()*prefixes.length)]} ${cores[Math.floor(Math.random()*cores.length)]}${suffixes[Math.floor(Math.random()*suffixes.length)]}`;
 }
 function mergeAstroms(a, b) {
     const survivor = a.mass >= b.mass ? a : b;
     const absorber = a.mass >= b.mass ? a : b;
-    
-    
     survivor.mass += absorber.mass;
     survivor.radius = calculateRadiusForType(survivor.type, survivor.mass);
     survivor.waterValue = Math.max(0, Math.min(100, 
         (survivor.waterValue || 0) * (survivor.mass / (survivor.mass + absorber.mass)) +
         (absorber.waterValue || 0) * (absorber.mass / (survivor.mass + absorber.mass))
     ));
-    
     absorber.markedForRemoval = true;
     return survivor;
 }
 function calculateLuminosity(planet) {
-    
     const solarMass = 1e30; 
     const massRatio = planet.mass / solarMass;
-    
-    
     switch(planet.type) {
         case 'redDwarf':
             return Math.pow(massRatio, 3.5) * 0.01; 
@@ -6739,222 +8036,213 @@ function generateExoticMeteoriteName() {
     const prefixes = ['Metalic', 'Exotic', 'Quantum'];
     const cores = ['Iridium', 'Osmium', 'Platin'];
     const suffixes = ['-Φ', '-Σ', '-Ψ'];
-    
     return `${prefixes[Math.floor(Math.random()*prefixes.length)]} ${cores[Math.floor(Math.random()*cores.length)]}${suffixes[Math.floor(Math.random()*suffixes.length)]}`;
 }
-
 try {
-    
 } catch (error) {
     astroLogger.logError('fgpPhysics', error);
 }
-
 window.addEventListener('load', init);
 window.saveUniverseData = function() {
-    
-
     unlockAchievement(32);
     return {
         planets: planets,
         universeAge: universeAge,
         universeTime: universeTime,
-        
     };
-
 };
-
 function saveUniverse() {
     const name = prompt("Nome do universo:");
     if (name && name.toLowerCase() === 'nome') {
         unlockAchievement(41);
     }
-    
 }
-
 window.loadUniverseData = function(data) {
-    
     if (!data) return;
     planets = data.planets || [];
     universeAge = data.universeAge || 0;
     universeTime = data.universeTime || 0;
-    
-    
-    
 };
-
-
 let warningCount = 0;
-
 function handleWarningClick() {
     warningCount += 1;
     console.log('agora são ' + warningCount);
-    
     if (warningCount >= 10) {
         unlockAchievement(35);
-        
         document.getElementById('btnWarnings').removeEventListener('click', handleWarningClick);
     }
 }
-
 document.getElementById('btnWarnings').addEventListener('click', handleWarningClick);
-
 console.log ('agora são ' + warnigCount);
-
 document.getElementById('btnDeleteAstro').onclick = () => {
     unlockAchievement(6);
 }
-        
-        const achievements = [
-          { id: 1, name: "O Básico", desc: "Conclua o tutorial pela primeira vez.", img: "../assets/img/achv-tutorial.png" },
-          { id: 2, name: "A Colisão!!", desc: "Colida seus 2 primeiros astros.", img: "../assets/img/achv-collision.png" },
-          { id: 3, name: "Um Núcleo quente..", desc: "Evolua poeira espacial para meteoroide.", img: "../assets/img/achv-meteoroide.png" },
-          { id: 4, name: "Pegando FOGO!", desc: "Algum astro passou de 99°C de temperatura.", img: "../assets/img/achv-fire.png" },
-          { id: 5, name: "A Vida está vivendo!", desc: "Planeta rochoso com classe Habitável, Temperado ou Tundra.", img: "../assets/img/achv-life.png" },
-          { id: 6, name: "NÃO FAÇA ISSO! SEU MONSTRO!", desc: "Deletou um Atro..", img: "../assets/img/achv-monster.png" },
-          { id: 7, name: "O Exigente..", desc: "Planeta rochoso habitável pela primeira vez.", img: "../assets/img/achv-demanding.png" },
-          { id: 8, name: "O Verdadeiro Farol Cósmico!", desc: "Colocou um Pulsar pela primeira vez.", img: "../assets/img/achv-pulsar.png" },
-          { id: 9, name: "Física Reversa", desc: "Criou um buraco branco pela primeira vez.", img: "../assets/img/achv-whitehole.png" },
-          { id: 10, name: "Quebra na física", desc: "Criou um buraco negro pela primeira vez.", img: "../assets/img/achv-blackhole.png" },
-          { id: 11, name: "Isso Parece estranho..", desc: "Criou uma estrela estranha pela primeira vez.", img: "../assets/img/achv-strangestar.png" },
-          { id: 12, name: "Dançe comigo!", desc: "Fundiu estrelas de neutrôns em pulsar.", img: "../assets/img/achv-dance.png" },
-          { id: 13, name: "O verdadeiro show!", desc: "5 pulsares no mapa pela primeira vez.", img: "../assets/img/achv-show.png" },
-          { id: 14, name: "Tão pequeno..", desc: "Criou um Planetoide pela primeira vez.", img: "../assets/img/achv-planetoid.png" },
-          { id: 15, name: "A Luz Do Cosmos", desc: "Criou um quasar pela primeira vez.", img: "../assets/img/achv-risk.png" },
-          { id: 16, name: "O Colossal!!", desc: "Quasar com mais de 9.99e+78 de massa.", img: "../assets/img/achv-colossal.png" },
-          { id: 17, name: "Big Bang?", desc: "Buraco branco com mais de 1e+21 de massa.", img: "../assets/img/achv-bigbang.png" },
-          { id: 18, name: "Portal Cósmico", desc: "Criou um buraco de minhoca.", img: "../assets/img/achv-wormhole.png" },
-          { id: 19, name: "Maior que a Tarântula!", desc: "Nebulosa com mais de 5e+16 de massa.", img: "../assets/img/achv-nebula.png" },
-          { id: 20, name: "Um Grande Sistema!", desc: "Chegou a 20 astros no jogo.", img: "../assets/img/achv-system20.png" },
-          { id: 21, name: "Uma Pequena Galáxia", desc: "Chegou a 100 astros no jogo.", img: "../assets/img/achv-galaxy100.png" },
-          { id: 22, name: "A Galáxia!", desc: "Chegou a 500 astros no jogo.", img: "../assets/img/achv-galaxy500.png" },
-          { id: 23, name: "Um Novo Universo!", desc: "Chegou a 1000 astros no jogo.", img: "../assets/img/achv-universe1000.png" },
-          { id: 24, name: "Um Universo de crashar...", desc: "Passou de 10000 astros no jogo.", img: "../assets/img/achv-crash.png" },
-          { id: 25, name: "A Queda...", desc: "Planeta colidiu com um asteroide.", img: "../assets/img/achv-extinction.png" },
-          { id: 26, name: "Seja bem vindo mais uma vez!", desc: "Entrou no jogo pela segunda vez.", img: "../assets/img/achv-welcome2.png" },
-          { id: 27, name: "Missão Impossível.", desc: "Quasar colidiu com buraco branco.", img: "../assets/img/achv-impossible.png" },
-          { id: 28, name: "chernobyl cósmico.", desc: "Chegou a 500 radiações.", img: "../assets/img/achv-chernobyl.png" },
-          { id: 29, name: "Vai comer poeira!", desc: "Criou 1000 poeiras espaciais.", img: "../assets/img/achv-dust.png" },
-          { id: 30, name: "O Último suspiro..", desc: "Criou uma estrela anã negra.", img: "../assets/img/achv-blackdwarf.png" },
-          { id: 31, name: "Congelado.", desc: "Parou o tempo (0x) no menu do universo.", img: "../assets/img/achv-frozen.png" },
-          { id: 32, name: "Calma ele não vai fugir.", desc: "Salvou o universo pela primeira vez.", img: "../assets/img/achv-save.png" },
-          { id: 33, name: "0 Absoluto!", desc: "Faça o extremo Planeta Rochoso de -270c", img: "../assets/img/achv-absolutezero.png" },
-          { id: 34, name: "O Diferentão", desc: "Planeta de classe Exotic pela primeira vez.", img: "../assets/img/achv-exotic.png" },
-          { id: 35, name: "Já viu o aviso?", desc: "Você é um verdadeiro detetive! clicou por mais de 10 vezes no botão de avisos.", img: "../assets/img/achv-warning.png" },
-          { id: 36, name: "A Endrenagem louca", desc: "Clicou 5 vezes no ⚙️ do menu de opções.", img: "../assets/img/achv-cogbug.png" },
-          { id: 37, name: "Frio Demais..", desc: "O Gigante Gasoso frio.", img: "../assets/img/achv-5min.png" },
-          { id: 38, name: "É Colorido feito Arco Íris.", desc: "Aconteceu uma supernova!", img: "../assets/img/achv-1h.png" },
-          { id: 39, name: "O Pequenino, Sem tempo, evaporou..", desc: "Buraco branco evaporou.", img: "../assets/img/achv-1d.png" },
-          { id: 40, name: "Easter egg 4444", desc: "Clicou com o direito no T Singularity do chat.", img: "../assets/img/achv-easter4444.png" },
-          { id: 41, name: "?????", desc: "O INCRÍVEL MULTELEMENTAL!!!! O Planeta Gasoso dos 100% elementos...", img: "../assets/img/achv-gasoso.png" },
-          { id: 42, name: "Comentando Igual a um Cometa!", desc: "Alterou a descrição do cometa no painel de edição.", img: "../assets/img/achv-cometdesc.png" },
-          { id: 43, name: "SACRIFÍCIO!!", desc: "Pulsar colidiu com buraco negro.", img: "../assets/img/achv-sacrifice.png" },
-          { id: 44, name: "OLHA! UM ESPAÇO DIFERENTE!", desc: "Alterou a cor do espaço pela primeira vez.", img: "../assets/img/achv-spacecolor.png" },
-          { id: 45, name: "O Exterminador..", desc: "F de respeito.. Clicou a tecla 'F' 20 vezes.", img: "../assets/img/achv-exterminator.png" },
-          { id: 46, name: "Na velocidade da Luz!", desc: "Selecionou o Modo Ultra rápido (10000x).", img: "../assets/img/achv-ultrafast.png" },
-          { id: 47, name: "Ao Infinito e Impossível!", desc: "Parabéns.. você tem o cargo supremo de maior viajante Espacial.. jogou por 1 hora no total..", img: "../assets/img/achv-infinite.png" },
-          { id: 48, name: "Olha! ele se mexeu!", desc: "Clicou em WASD pela primeira vez.", img: "../assets/img/achv-wasd.png" },
-          { id: 49, name: "Mudou de nome olha!", desc: "Mudou o nome de algum astro.", img: "../assets/img/achv-rename.png" },
-          { id: 50, name: ":)", desc: "Concluiu todas as outras 49 conquistas.", img: "../assets/img/achv-all.png" },
-          { id: 0, name: "Em Breve pode ter mais conquistas..", desc: "", img: "" },
-        ];
-       
-        let achievementsState = JSON.parse(localStorage.getItem('siu2d_achievements') || '{}');
-        function renderAchievementsList() {
-          const list = document.getElementById('achievementsList');
-          list.innerHTML = '';
-          achievements.forEach(a => {
-            const unlocked = achievementsState[a.id];
-            const card = document.createElement('div');
-            card.className = 'achievement-card' + (unlocked ? '' : ' locked');
-            card.innerHTML = `
-              <div class="achievement-img">
-                ${unlocked ? `<img src="${a.img}" alt="${a.name}" style="width:100%;height:100%;">` : `<span class="locked-icon">?</span>`}
-              </div>
-              <div>
-                <div class="achievement-title">${a.name}</div>
-                <div class="achievement-desc">${unlocked ? a.desc : ''}</div>
-              </div>
-            `;
-            list.appendChild(card);
-          });
-        }
-        
-        const btnAchievements = document.getElementById('btnAchievements');
-        const achievementsSidebar = document.getElementById('achievementsSidebar');
-        const closeAchievementsBtn = document.getElementById('closeAchievementsBtn');
-        if (btnAchievements && achievementsSidebar) {
-          btnAchievements.onclick = () => {
-            achievementsSidebar.style.display = '';
-            setTimeout(() => achievementsSidebar.classList.add('open'), 10);
-            renderAchievementsList();
-            document.body.style.overflow = 'hidden';
-          };
-        }
-        if (closeAchievementsBtn && achievementsSidebar) {
-          closeAchievementsBtn.onclick = () => {
-            achievementsSidebar.classList.remove('open');
-            setTimeout(() => {
-              achievementsSidebar.style.display = 'none';
-              document.body.style.overflow = '';
-            }, 300);
-          };
-        }
-        document.addEventListener('keydown', function(e) {
-          if (e.key === 'Escape' && achievementsSidebar.style.display !== 'none') {
-            achievementsSidebar.classList.remove('open');
-            setTimeout(() => {
-              achievementsSidebar.style.display = 'none';
-              document.body.style.overflow = '';
-            }, 300);
-          }
-        });
-        
-        function showAchievementNotification(id) {
-        const a = achievements.find(x => x.id === id);
-        if (!a) return;
-        
-        const notif = document.getElementById('achievementNotification');
-        notif.innerHTML = `<img src="${a.img}" alt="${a.name}"> <span>Achievement Unlocked :D <b>${a.name}</b></span>`;
-        
-        notif.classList.remove('show');
-        void notif.offsetWidth;
-        
-        notif.style.display = 'flex';
-        notif.classList.add('show');
-        
-        setTimeout(() => {
-            notif.classList.remove('show');
-            setTimeout(() => {
-            notif.style.display = 'none';
-            }, 700);
-        }, 3500);
-        }
-        
-        function unlockAchievement(id) {
-        if (achievementsState[id]) return; 
-        achievementsState[id] = true;
-        localStorage.setItem('siu2d_achievements', JSON.stringify(achievementsState));
-        renderAchievementsList();
-        showAchievementNotification(id);
-        
-        if (id !== 50) {
-            const allUnlocked = Object.keys(achievementsState).length >= 49;
-            if (allUnlocked) unlockAchievement(50);
-        }
+let achievements = [];
+async function loadAchievementsI18n(lang) {
+    try {
+        const response = await fetch(`../script/js/json/ach.${lang}.json`);
+        if (!response.ok) throw new Error('Arquivo de conquistas não encontrado');
+        const data = await response.json();
+        const imgMap = {
+            1: "../script/assets/img/ch2.jpg",
+            2: "../script/assets/img/ch3.jpg",
+            3: "../script/assets/img/ch1.jpg",
+            4: "../script/assets/img/ch4.jpg",
+            5: "../script/assets/img/ch5.jpg",
+            6: "../script/assets/img/ch6.jpg",
+            7: "../script/assets/img/ch7.jpg",
+            8: "../script/assets/img/ch8.jpg",
+            9: "../script/assets/img/ch9.jpg",
+            10: "../script/assets/img/ch10.jpg",
+            11: "../script/assets/img/ch11.jpg",
+            12: "../script/assets/img/ch12.jpg",
+            13: "../script/assets/img/ch13.jpg",
+            14: "../script/assets/img/ch14.jpg",
+            15: "../script/assets/img/ch15.jpg",
+            16: "../script/assets/img/ch16.jpg",
+            17: "../script/assets/img/ch17.jpg",
+            18: "../script/assets/img/ch18.jpg",
+            19: "../script/assets/img/ch19.jpg",
+            20: "../script/assets/img/ch20.jpg",
+            21: "../script/assets/img/ch21.jpg",
+            22: "../script/assets/img/ch22.jpg",
+            23: "../script/assets/img/ch23.jpg",
+            24: "../script/assets/img/ch24.jpg",
+            25: "../script/assets/img/ch25.jpg",
+            26: "../script/assets/img/ch26.jpg",
+            27: "../script/assets/img/ch27.jpg",
+            28: "../script/assets/img/ch28.jpg",
+            29: "../script/assets/img/ch29.jpg",
+            30: "../script/assets/img/ch30.jpg",
+            31: "../script/assets/img/ch31.jpg",
+            32: "../script/assets/img/ch32.jpg",
+            33: "../script/assets/img/ch33.jpg",
+            34: "../script/assets/img/ch34.jpg",
+            35: "../script/assets/img/ch35.jpg",
+            36: "../script/assets/img/ch36.jpg",
+            37: "../script/assets/img/ch37.jpg",
+            38: "../script/assets/img/ch38.jpg",
+            39: "../script/assets/img/ch39.jpg",
+            40: "../script/assets/img/ch40.jpg",
+            41: "../script/assets/img/ch41.jpg",
+            42: "../script/assets/img/ch42.jpg",
+            43: "../script/assets/img/ch43.jpg",
+            44: "../script/assets/img/ch44.jpg",
+            45: "../script/assets/img/ch45.jpg",
+            46: "../script/assets/img/ch46.jpg",
+            47: "../script/assets/img/ch47.jpg",
+            48: "../script/assets/img/ch48.jpg",
+            49: "../script/assets/img/ch49.jpg",
+            50: "../script/assets/img/ch50.jpg",
+            51: "../script/assets/img/new51.jpg",
+            52: "../script/assets/img/new52.jpg",
+            53: "../script/assets/img/new53.jpg",
+            54: "../script/assets/img/new54.jpg",
+            55: "../script/assets/img/new55.jpg",
+            0: ""
+        };
+        achievements = data.map(a => ({ ...a, img: imgMap[a.id] || "" }));
+        if (typeof renderAchievementsList === 'function') renderAchievementsList();
+    } catch (e) {
+        console.error('Error loading translated achievements:', e);
     }
-
-        document.getElementById('btn10000x').onclick = () => {
-            unlockAchievement(46);
-        }    
-        document.getElementById('timeStop').onclick = () => {
-            unlockAchievement(31);
-        }
-        document.getElementById('editName').onclick = () => {
-            unlockAchievement(49);
-        }
-        document.getElementById('spaceColor').onclick = () => {
-            unlockAchievement(44);
-        }
+}
+function getCurrentLang() {
+    return localStorage.getItem('siu2d_lang') || navigator.language.slice(0,2) || 'en';
+}
+loadAchievementsI18n(getCurrentLang());
+window.addEventListener('siu2d_lang_changed', function(e) {
+    const lang = localStorage.getItem('siu2d_lang') || 'en';
+    loadAchievementsI18n(lang);
+});
+let achievementsState = JSON.parse(localStorage.getItem('siu2d_achievements') || '{}');
+function renderAchievementsList() {
+    const list = document.getElementById('achievementsList');
+    list.innerHTML = '';
+    achievements.forEach(a => {
+    const unlocked = achievementsState[a.id];
+    const card = document.createElement('div');
+    card.className = 'achievement-card' + (unlocked ? '' : ' locked');
+    card.innerHTML = `
+        <div class="achievement-img">
+        ${unlocked ? `<img src="${a.img}" alt="${a.name}" style="width:100%;height:100%;">` : `<span class="locked-icon">?</span>`}
+        </div>
+        <div>
+        <div class="achievement-title">${a.name}</div>
+        <div class="achievement-desc">${unlocked ? a.desc : ''}</div>
+        </div>
+    `;
+    list.appendChild(card);
+    });
+}
+const btnAchievements = document.getElementById('btnAchievements');
+const achievementsSidebar = document.getElementById('achievementsSidebar');
+const closeAchievementsBtn = document.getElementById('closeAchievementsBtn');
+if (btnAchievements && achievementsSidebar) {
+    btnAchievements.onclick = () => {
+    achievementsSidebar.style.display = '';
+    setTimeout(() => achievementsSidebar.classList.add('open'), 10);
+    renderAchievementsList();
+    document.body.style.overflow = 'hidden';
+    };
+}
+if (closeAchievementsBtn && achievementsSidebar) {
+    closeAchievementsBtn.onclick = () => {
+    achievementsSidebar.classList.remove('open');
+    setTimeout(() => {
+        achievementsSidebar.style.display = 'none';
+        document.body.style.overflow = '';
+    }, 300);
+    };
+}
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape' && achievementsSidebar.style.display !== 'none') {
+    achievementsSidebar.classList.remove('open');
+    setTimeout(() => {
+        achievementsSidebar.style.display = 'none';
+        document.body.style.overflow = '';
+    }, 300);
+    }
+});
+function showAchievementNotification(id) {
+const a = achievements.find(x => x.id === id);
+if (!a) return;
+const notif = document.getElementById('achievementNotification');
+notif.innerHTML = `<img src="${a.img}" alt="${a.name}"> <span>Achievement Unlocked :D <b>${a.name}</b></span>`;
+notif.classList.remove('show');
+void notif.offsetWidth;
+notif.style.display = 'flex';
+notif.classList.add('show');
+setTimeout(() => {
+    notif.classList.remove('show');
+    setTimeout(() => {
+    notif.style.display = 'none';
+    }, 700);
+}, 3500);
+}
+function unlockAchievement(id) {
+if (achievementsState[id]) return; 
+achievementsState[id] = true;
+localStorage.setItem('siu2d_achievements', JSON.stringify(achievementsState));
+renderAchievementsList();
+showAchievementNotification(id);
+if (id !== 50) {
+    const allUnlocked = Object.keys(achievementsState).length >= 49;
+    if (allUnlocked) unlockAchievement(50);
+}
+}
+document.getElementById('btn10000x').onclick = () => {
+    unlockAchievement(46);
+}    
+document.getElementById('timeStop').onclick = () => {
+    unlockAchievement(31);
+}
+document.getElementById('editName').onclick = () => {
+    unlockAchievement(49);
+}
+document.getElementById('spaceColor').onclick = () => {
+    unlockAchievement(44);
+}
 function checkRadiationCount() {
     const radiationCount = planets.filter(p => p.type === 'radiation').length;
     if (radiationCount >= 500) unlockAchievement(28);
@@ -6965,73 +8253,75 @@ crazy.addEventListener('click', () => {
     if (settingsClickCount >= 5) unlockAchievement(36);
 });
 document.getElementById('crazy').addEventListener('click', function() {
-    
     let crazyClicks = parseInt(localStorage.getItem('crazyClicks') || '0');
     crazyClicks++;
     localStorage.setItem('crazyClicks', crazyClicks.toString());
-    
-    
     if (crazyClicks >= 5) {
         unlockAchievement(36);
-        
-        
         this.style.transition = 'all 1s';
         this.style.transform = 'rotate(360deg) scale(1.5)';
         this.style.color = '#ff00ff';
-        
         setTimeout(() => {
             this.style.transform = '';
             this.style.color = '';
         }, 1000);
     }
 });
-
 function resetAchievements() {
   if (!confirm("Tem certeza que deseja resetar TODAS as suas conquistas?\nIsso não pode ser desfeito!")) return;
-  
   achievementsState = {};
   localStorage.setItem('siu2d_achievements', JSON.stringify(achievementsState));
   renderAchievementsList();
-  
   const btn = document.getElementById('btnResetAchievements');
   btn.style.background = 'linear-gradient(to bottom, #00cc00, #008800)';
   btn.innerHTML = '<i class="fas fa-check"></i> Resetadas!';
-  
   setTimeout(() => {
     btn.style.background = 'linear-gradient(to bottom, #ff4444, #cc0000)';
     btn.innerHTML = '<i class="fas fa-trash-alt"></i> Resetar';
   }, 2000);
 }
-
+function fgpPlanetConditions(planet) {
+    if (planet.type !== 'rockyPlanet') return;
+    planet.lifeChance = calculateLifeChance(planet);
+    if (planet.lifeChance < 0.3) {
+        planet.biomass = Math.max(0, planet.biomass - 5);
+        planet.population = Math.max(0, planet.population - 10);
+    }
+}
 let minutos = 60;
 let segundos = 0;
-
 const contagem = setInterval(() => {
   segundos--;
-  
   if (segundos < 0) {
     minutos--;
     segundos = 59;
   }
-  
   if (minutos === 0 && segundos === 0) {
     clearInterval(contagem);
     unlockAchievement(47);
     console.log('Parabéns! Você alcançou o tempo máximo de jogo!');
   }
 }, 1000);
-
-
-
-
- document.addEventListener('DOMContentLoaded', function() {
-        const mobileControls = document.getElementById('mobileControls');
+document.addEventListener('DOMContentLoaded', function() {
+  const startScreen = document.getElementById('startScreen');
+  const mobileControls = document.getElementById('mobileControls');
+  if (startScreen && startScreen.style.display !== 'none') {
+    if (mobileControls) {
+      mobileControls.style.display = 'none';
+    }
+  }
+  const gameMenuBtn = document.getElementById('gameMenuBtn');
+  if (gameMenuBtn) {
+    gameMenuBtn.addEventListener('click', function() {
+      adjustOptionsGrid();
+    });
+  }
+  window.addEventListener('resize', adjustOptionsGrid);
         const modeToggleBtn = document.getElementById('modeToggleBtn');
         let isEditMode = false;
         let moveInterval = null;
         let currentDirection = null;
         const cameraSpeed = 100;
-
         modeToggleBtn.addEventListener('click', function() {
             isEditMode = !isEditMode;
             if (isEditMode) {
@@ -7042,23 +8332,19 @@ const contagem = setInterval(() => {
                 showNotification('Modo criação ativado - Clique para criar astros');
             }
         });
-
         document.addEventListener('touchstart', function(e) {
             if (e.touches.length > 1) {
                 e.preventDefault();
             }
         }, { passive: false });
-
         document.addEventListener('wheel', function(e) {
             if (e.ctrlKey) {
                 e.preventDefault();
             }
         }, { passive: false });
-
         function startMoving(direction) {
             if (moveInterval) clearInterval(moveInterval);
             currentDirection = direction;
-            
             moveInterval = setInterval(() => {
                 switch(direction) {
                     case 'up':
@@ -7076,7 +8362,6 @@ const contagem = setInterval(() => {
                 }
             }, 100);
         }
-
         function stopMoving() {
             if (moveInterval) {
                 clearInterval(moveInterval);
@@ -7084,23 +8369,19 @@ const contagem = setInterval(() => {
                 currentDirection = null;
             }
         }
-
         function addMobileButtonListeners(buttonId, action) {
             const button = document.getElementById(buttonId);
             if (!button) return;
-            
             button.addEventListener('touchstart', action, { passive: true });
             button.addEventListener('touchend', stopMoving, { passive: true });
             button.addEventListener('mousedown', action);
             button.addEventListener('mouseup', stopMoving);
             button.addEventListener('mouseleave', stopMoving);
         }
-
         addMobileButtonListeners('upBtn', () => startMoving('up'));
         addMobileButtonListeners('downBtn', () => startMoving('down'));
         addMobileButtonListeners('leftBtn', () => startMoving('left'));
         addMobileButtonListeners('rightBtn', () => startMoving('right'));
-
         document.getElementById('centerBtn').addEventListener('click', () => {
             planets = [];
             universeAge = 0;
@@ -7111,19 +8392,15 @@ const contagem = setInterval(() => {
                 unlockAchievement(45);
             }
         });
-
         document.getElementById('zoomInBtn').addEventListener('click', () => {
             camera.zoom *= 1.1;
         });
-        
         document.getElementById('zoomOutBtn').addEventListener('click', () => {
             camera.zoom /= 1.1;
         });
-
         const originalHandleMouseDown = handleMouseDown;
         handleMouseDown = function(e) {
             if (gameState !== 'playing') return;
-            
             if (e.button === 0 || e.type === 'touchstart') { 
                 if (isEditMode) {
                     for (let i = planets.length - 1; i >= 0; i--) {
@@ -7131,7 +8408,6 @@ const contagem = setInterval(() => {
                         const dx = (mouse.x - planet.x) * camera.zoom;
                         const dy = (mouse.y - planet.y) * camera.zoom;
                         const distance = Math.sqrt(dx * dx + dy * dy);
-                        
                         if (distance < planet.radius * camera.zoom) {
                             openEditPanel(planet);
                             break;
@@ -7139,23 +8415,19 @@ const contagem = setInterval(() => {
                     }
                     return;
                 }
-                
                 mouse.down = true;
                 mouse.downX = mouse.x;
                 mouse.downY = mouse.y;
-                
                 if (creationMode) {
                     return;
                 }
             } else if (e.button === 2) { 
                 mouse.rightDown = true;
-                
                 for (let i = planets.length - 1; i >= 0; i--) {
                     const planet = planets[i];
                     const dx = (mouse.x - planet.x) * camera.zoom;
                     const dy = (mouse.y - planet.y) * camera.zoom;
                     const distance = Math.sqrt(dx * dx + dy * dy);
-                    
                     if (distance < planet.radius * camera.zoom) {
                         openEditPanel(planet);
                         break;
@@ -7164,30 +8436,182 @@ const contagem = setInterval(() => {
             }
         };
         const consoleOptions = document.querySelectorAll('.console-option');
+        let touchModeActive = false;
+        let lastTouchDistance = null;
+        let lastTouchCenter = null;
+        let lastTwoTap = 0;
+        let twoTapCount = 0;
+        let lastSingleTap = 0;
+        let lastSingleTapPos = {x:0, y:0};
+        function enableTouchGestures() {
+            if (touchModeActive) return;
+            touchModeActive = true;
+            canvas.addEventListener('touchstart', handleTouchStart, {passive:false});
+            canvas.addEventListener('touchmove', handleTouchMove, {passive:false});
+            canvas.addEventListener('touchend', handleTouchEnd, {passive:false});
+        }
+        function disableTouchGestures() {
+            if (!touchModeActive) return;
+            touchModeActive = false;
+            canvas.removeEventListener('touchstart', handleTouchStart);
+            canvas.removeEventListener('touchmove', handleTouchMove);
+            canvas.removeEventListener('touchend', handleTouchEnd);
+        }
+        function getTouchCenter(touches) {
+            let x = 0, y = 0;
+            for (let i = 0; i < touches.length; i++) {
+                x += touches[i].clientX;
+                y += touches[i].clientY;
+            }
+            return {x: x/touches.length, y: y/touches.length};
+        }
+        function getTouchDistance(touches) {
+            if (touches.length < 2) return 0;
+            const dx = touches[0].clientX - touches[1].clientX;
+            const dy = touches[0].clientY - touches[1].clientY;
+            return Math.sqrt(dx*dx + dy*dy);
+        }
+        function handleTouchStart(e) {
+            if (e.touches.length === 1) {
+                const now = Date.now();
+                const pos = {x: e.touches[0].clientX, y: e.touches[0].clientY};
+                if (now - lastSingleTap < 350 && Math.abs(pos.x - lastSingleTapPos.x) < 30 && Math.abs(pos.y - lastSingleTapPos.y) < 30) {
+                    openEditPanelByTouch(pos);
+                    lastSingleTap = 0;
+                } else {
+                    lastSingleTap = now;
+                    lastSingleTapPos = pos;
+                    createAstroByTouch(pos);
+                }
+            } else if (e.touches.length === 2) {
+                lastTouchDistance = getTouchDistance(e.touches);
+                lastTouchCenter = getTouchCenter(e.touches);
+                const now = Date.now();
+                if (now - lastTwoTap < 400) {
+                    twoTapCount++;
+                    if (twoTapCount >= 2) {
+                        resetUniverseByTouch();
+                        twoTapCount = 0;
+                    }
+                } else {
+                    twoTapCount = 1;
+                }
+                lastTwoTap = now;
+            }
+        }
+        function handleTouchMove(e) {
+            if (e.touches.length === 1) {
+                const pos = {x: e.touches[0].clientX, y: e.touches[0].clientY};
+                createAstroByTouch(pos);
+            } else if (e.touches.length === 2) {
+                const newDist = getTouchDistance(e.touches);
+                const newCenter = getTouchCenter(e.touches);
+                if (lastTouchDistance && Math.abs(newDist - lastTouchDistance) > 10) {
+                    const zoomFactor = newDist / lastTouchDistance;
+                    camera.zoom *= zoomFactor;
+                    lastTouchDistance = newDist;
+                } else if (lastTouchCenter) {
+                    const dx = newCenter.x - lastTouchCenter.x;
+                    const dy = newCenter.y - lastTouchCenter.y;
+                    camera.x -= dx / camera.zoom;
+                    camera.y -= dy / camera.zoom;
+                    lastTouchCenter = newCenter;
+                }
+                e.preventDefault();
+            }
+        }
+        function createAstroByTouch(pos) {
+            const rect = canvas.getBoundingClientRect();
+            const x = (pos.x - rect.left - canvas.width/2) / camera.zoom + camera.x;
+            const y = (pos.y - rect.top - canvas.height/2) / camera.zoom + camera.y;
+            if (!window._lastAstroTouch || Date.now() - window._lastAstroTouch > 120) {
+                window._lastAstroTouch = Date.now();
+                planets.push({
+                    x, y,
+                    vx: 0, vy: 0,
+                    mass: 50,
+                    radius: 20,
+                    type: 'custom',
+                    color: '#fff',
+                    name: generateRandomName()
+                });
+                showNotification('new astro.');
+            }
+        }
+        function handleTouchEnd(e) {
+            lastTouchDistance = null;
+            lastTouchCenter = null;
+        }
+        function openEditPanelByTouch(pos) {
+            const rect = canvas.getBoundingClientRect();
+            const x = (pos.x - rect.left - canvas.width/2) / camera.zoom + camera.x;
+            const y = (pos.y - rect.top - canvas.height/2) / camera.zoom + camera.y;
+            for (let i = planets.length - 1; i >= 0; i--) {
+                const planet = planets[i];
+                const dx = x - planet.x;
+                const dy = y - planet.y;
+                const dist = Math.sqrt(dx*dx + dy*dy);
+                if (dist < planet.radius) {
+                    openEditPanel(planet);
+                    break;
+                }
+            }
+        }
+        function resetUniverseByTouch() {
+            planets = [];
+            universeAge = 0;
+            universeTime = 0;
+            showNotification('Universe reset!');
+        }
         consoleOptions.forEach(option => {
             option.addEventListener('click', function() {
                 const platform = this.getAttribute('data-platform');
-                
-                if (platform === 'android' || platform === 'ios') {
+                if (platform === 'android') {
                     mobileControls.style.display = 'flex';
-                    showNotification(`Modo ${platform.toUpperCase()} ativado. Controles touch habilitados.`);
+                    disableTouchGestures();
+                    showNotification(`ANDROID Mod activated, Touch controls enabled.`);
+                } else if (platform === 'toque') {
+                    mobileControls.style.display = 'none';
+                    enableTouchGestures();
+                    showNotification('TOUCH Mode activated, Touch gestures enabled.');
                 } else {
                     mobileControls.style.display = 'none';
-                    showNotification('Modo PC ativado.');
+                    disableTouchGestures();
+                    showNotification('PC Mode activated.');
                 }
             });
         });
     });
-
+function adjustOptionsGrid() {
+const optionsGrid = document.querySelector('.options-grid');
+if (!optionsGrid) return;
+const width = window.innerWidth;
+if (width <= 768) {
+optionsGrid.style.gridTemplateColumns = 'repeat(6, 1fr)';
+optionsGrid.style.gap = '8px';
+const optionCards = document.querySelectorAll('.option-card');
+optionCards.forEach(card => {
+    card.style.minWidth = '80px';
+    card.style.padding = '8px';
+});
+} else {
+optionsGrid.style.gridTemplateColumns = '';
+optionsGrid.style.gap = '';
+const optionCards = document.querySelectorAll('.option-card');
+optionCards.forEach(card => {
+    card.style.minWidth = '';
+    card.style.padding = '';
+});
+}
+}
 //#endregion
-
-
-//#region  My Coments
-    //  ¯\_(ツ)_/¯ //
-    //Please let
-    //  us know if there 
-    // is any error
-    //  in the game.
-    //Thank for gaming :D
-//  FGP WORKS  // BRASIL //
+//#region coments
+/*
+thanks for playing my game :D
+this is the first game sa FGP
+please, any error, please let us know
+if you have any idea to improve the game, please let us know
+¯\_(ツ)_/¯
+*/
+console.log(versionGame);
 //#endregion

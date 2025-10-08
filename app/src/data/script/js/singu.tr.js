@@ -9,7 +9,6 @@ function displayMessage(text, sender) {
 const responseHistory = new Map();
 const MAX_HISTORY_PER_TERM = 100;
 const STAR_EMOJI = 'T Singularity ';
-
 const responseDatabase = {
     "kuyruklu yıldız": [
         "☄️ Kuyruklu yıldızlar, yıldızlara yaklaştıklarında kuyruk geliştiren buzlu cisimlerdir! SIU 2D'de bunları 'Gök Cisimleri Oluştur' menüsünden oluşturabilirsiniz",
@@ -38,7 +37,6 @@ const responseDatabase = {
         "💧 Kuyruklu yıldızların suyu, buharlaştıklarında gezegen kaynak sistemi sayılır - gezegen panelinde görün",
         "🌟 En iyi sonuçlar için kuyruklu yıldızları 'Küçük Cisimler' menüsünden -100°C ile -50°C arasında başlangıç sıcaklığıyla oluşturun"
     ],
-    
     "kara delik": [
         "🕳️ Kara deliklerin minimum kütlesi 1 trilyon (1e12) birimdir - 'Egzotik Cisimler' menüsünden oluşturun",
         "🌀 Oyundaki yarıçap R = ∛(kütle)/1000 olarak hesaplanır - bu gameplay için Schwarzschild yarıçapını basitleştirir",
@@ -66,7 +64,6 @@ const responseDatabase = {
         "🌌 İpucu: Madde transferini gerçek zamanlı görmek için kara delik ve yıldızdan oluşan ikili sistem oluşturun",
         "✨ Tam deneyim için Seçenekler > Ses'te 'Tekillik' ortam müziğini etkinleştirin"
     ],
-    
     "yerçekimi": [
         "⚖️ Genel ayar: Menü > Fizik > Yerçekimi Sabiti'nde %0 ila %500",
         "📏 Standart G sabiti: 6.67430e-11 N·m²/kg² - alternatif evrenleri simüle etmek için değiştirilebilir",
@@ -94,7 +91,6 @@ const responseDatabase = {
         "💥 Çarpışmalarda yerçekimi açığa çıkan enerjiyi belirler - doğrudan çarpmalar için E ∝ M²/R",
         "✨ İpucu: Kararlı yörüngeler için başlangıç hızı ≈ yerel kaçış hızının %80'i olmalıdır"
     ],
-    
     "yıldız": [
         "⭐ Minimum kütle: 15 milyon birim - 'Yıldızsal Cisimler' menüsünden oluşturun",
         "🌞 Güneş gibi bir yıldız için: kütle ~1.989e30 kg (oyunda 1 güneş birimi)",
@@ -121,7 +117,6 @@ const responseDatabase = {
         "🔭 Detayları gözlemlemek için yakınlaştırın (fare tekerleği) ve zaman hızını düşürün",
         "✨ İpucu: İkili yıldızlar P-tipi (çift etrafında) veya S-tipi (birinin etrafında) yörüngede gezegenlere sahip olabilir"
     ],
-    
     "gezegen": [
         "🪐 Kütle: 5K-30.5K (kayalık), 105K-2.5M (gazlı) - 'Gezegensel Cisimler' menüsünden oluşturun",
         "🌍 Sınıflar: Kayalık (1-11), Gazlı (1-6), Cüceler - kütle/sıcaklığa göre otomatik atanır",
@@ -689,7 +684,6 @@ const responseDatabase = {
         "Bilgisayar: Evreni temizlemek için F'ye basın, seçmek ve oluşturmak için sol fare tıklayın, uzayda oluşturulan gök cisimlerine sağ tıklamak bir bilgi ekranı gösterecektir, hareket için WASD tuşlarını kullanın, yakınlaştırma için QE tuşlarını kullanın, Mobil Cihazlar: hareket için standart joystick kullanın, yakınlaştırma için + ve - düğmelerini kullanın, menüyü açmak için üst köşedeki düğmeye basın, her şeyi sıfırlamak için 'F' düğmesine basın, ve 'O' düğmesi eylemi değiştirmek için, iki eylem vardır, mavi 'O' düğmesi oluşturma modunda, menüde seçilebilecek birçok gök cismi vardır, birini seçin ve uzaya yerleştirin ve simülasyonu yapın, kırmızı tekrar tıklandığında bilgi modundadır, bir gök cismine tıklamak bilgilerini görüntüler, gök cisminin rotasını programlamak için tıklayın veya dokunun ve sürükleyin, iyi bir uzay yolculuğunuz olsun! 🌌"
     ]
 };
- 
 const followUpDatabase = {
     "kuyruklu yıldız": [
         "☄️ İnanılmaz, değil mi? Şimdi bir tane oluşturmak ister misin?",
@@ -1264,7 +1258,6 @@ const followUpDatabase = {
         "✨ Kuark yıldızlarının teorize edilişini ve etkilerini öğrenmek ister misin?"
     ]
 };
-
 const contextFollowUps = {
     "default": [
         "✨ Bu kozmik açıklamayı nasıl buldun?",
@@ -1289,14 +1282,11 @@ const contextFollowUps = {
         "🌈 Evren, merakınız için teşekkür eder!"
     ]
 };
-
 const contextSystem = {
     lastTopic: null,
     lastFollowUp: null,
-    
     affirmativeResponses: ["evet", "e", "yes", "y", "tabii", "kesinlikle", "tamam", "hadi", "olabilir", "lütfen"],
     negativeResponses: ["hayır", "h", "no", "n", "negatif", "olmaz", "belki sonra", "şimdi olmaz"],
-    
     positiveResponses: {
         "kara delik": [
             "🌌 Hadi simüle edelim! Önce, bir kara deliğin yakınına 1e30 kütleli bir yıldız oluşturun...",
@@ -1659,7 +1649,6 @@ const contextSystem = {
             "✨ Herhangi bir zamanda 'yardım' yazarak oluşturma seçeneklerini görebilirsiniz"
         ]
     },
-    
     negativeResponses: {
         "kara delik": [
             "🕳️ Sorun değil! Kara delikler bekleyebilir...",
@@ -1953,35 +1942,25 @@ const contextSystem = {
             "🪐 Hepimiz yıldız tozundan yapıldık!"
         ]
     },
-    
     isAffirmative: (input) => contextSystem.affirmativeResponses.includes(input.toLowerCase()),
     isNegative: (input) => contextSystem.negativeResponses.includes(input.toLowerCase()),
-    
     getPositiveResponse: () => {
         if (!contextSystem.lastTopic) return contextSystem.positiveResponses.default[0];
-        
         const responses = contextSystem.positiveResponses[contextSystem.lastTopic] || 
                           contextSystem.positiveResponses.default;
-        
         return responses[Math.floor(Math.random() * responses.length)];
     },
-    
     getNegativeResponse: () => {
         if (!contextSystem.lastTopic) return contextSystem.negativeResponses.default[0];
-        
         const responses = contextSystem.negativeResponses[contextSystem.lastTopic] || 
                           contextSystem.negativeResponses.default;
-        
         return responses[Math.floor(Math.random() * responses.length)];
     },
-    
     resetContext: () => {
         contextSystem.lastTopic = null;
         contextSystem.lastFollowUp = null;
     }
 };
-
- 
 const mathSystem = {
     responses: [
         "🧮 Sonuç: {expression} = {result}",
@@ -2052,46 +2031,35 @@ const mathSystem = {
         "🌠 Çözülmüş pulsar: {expression} = {result}",
         "🛰 Hesaplanmış plazma topu: {expression} = {result}"
     ],
-    
     usedResponses: [],
-    
     isMathQuery: (input) => {
         return /[0-9+\-*/\^().]/.test(input) && 
                !/[a-z]/.test(input) && 
                input.split('').filter(char => '0123456789'.includes(char)).length >= 2;
     },
-    
     calculate: (expression) => {
         try {
             const sanitized = expression
                 .replace(/\^/g, '**')
                 .replace(/[^0-9+\-*/\s().]/g, '');
-            
             if (!/^[\d\s+\-*/().]+$/.test(sanitized)) {
                 throw new Error("Geçersiz ifade");
             }
-            
             const result = eval(sanitized);
-            
-             
             let availableResponses = mathSystem.responses;
             if (mathSystem.usedResponses.length > 0) {
                 availableResponses = mathSystem.responses.filter(r => 
                     !mathSystem.usedResponses.includes(r)
                 );
             }
-            
             if (availableResponses.length === 0) {
                 mathSystem.usedResponses = [];
                 availableResponses = mathSystem.responses;
             }
-            
             const responseTemplate = availableResponses[
                 Math.floor(Math.random() * availableResponses.length)
             ];
-            
             mathSystem.usedResponses.push(responseTemplate);
-            
             return responseTemplate
                 .replace("{expression}", expression)
                 .replace("{result}", result);
@@ -2100,12 +2068,9 @@ const mathSystem = {
         }
     }
 };
-
- 
 const greetingsSystem = {
     greetings: ["merhaba", "selam", "hey", "alo", "hello", "hi", "günaydın", "iyi günler", "iyi akşamlar", "selamlar", "hey", "ey", "kozmik selamlar", "yıldızlı günaydın", "selam singularity"],
     farewells: ["hoşçakal", "güle güle", "görüşürüz", "bye", "kapat", "çıkış", "ayrılıyorum", "kapan", "exit", "bay bay", "hadikalk", "sonra görüşürüz", "bağlantıyı kes", "oturumu kapat", "hoşçakal singularity"],
-    
     greetingsResponses: [
         "✨ Merhaba kozmik kaşif! Yıldızlararası yolculuğuna nasıl yardımcı olabilirim?",
         "🚀 SIU 2D'ye hoş geldiniz! Harika evrenler yaratmaya hazır mısınız?",
@@ -2133,7 +2098,6 @@ const greetingsSystem = {
         "🪐 Gezegen halkaları selam veriyor! Hoş geldiniz!",
         "✨ Yıldız enerjisi kanalize edildi! Singularity emrinizde!"
     ],
-    
     farewellResponses: [
         "🌠 Sonra görüşürüz yıldız gezgini! Yolculuğunuz epik olsun!",
         "🛸 Kozmosta iyi yolculuklar! Yeni sorularınız olduğunda dönün!",
@@ -2161,111 +2125,75 @@ const greetingsSystem = {
         "🛸 Veda gemisi yörüngede! Yakında dönün!",
         "✨ Son yıldız atımı! Bağlantı kesiliyor..."
     ],
-    
     isGreeting: (input) => greetingsSystem.greetings.includes(input.toLowerCase()),
     isFarewell: (input) => greetingsSystem.farewells.includes(input.toLowerCase()),
-    
     getRandomGreeting: () => {
         return greetingsSystem.greetingsResponses[
             Math.floor(Math.random() * greetingsSystem.greetingsResponses.length)
         ];
     },
-    
     getRandomFarewell: () => {
         return greetingsSystem.farewellResponses[
             Math.floor(Math.random() * greetingsSystem.farewellResponses.length)
         ];
     }
 };
-
- 
 function getUniqueResponse(term) {
     if (!responseHistory.has(term)) {
         responseHistory.set(term, []);
     }
-    
     const usedResponses = responseHistory.get(term);
     let availableResponses = responseDatabase[term];
-    
-     
     if (usedResponses.length > 0) {
         availableResponses = availableResponses.filter(r => !usedResponses.includes(r));
     }
-    
-     
     const response = availableResponses.length > 0 
         ? availableResponses[Math.floor(Math.random() * availableResponses.length)]
         : responseDatabase[term][0];
-    
-     
     usedResponses.push(response);
-    
-     
     if (usedResponses.length > MAX_HISTORY_PER_TERM) {
         usedResponses.shift();
     }
-    
     return response;
 }
-
-
-
-
 const responseExpander = {
-     
     probabilities: {
         single: 0.2,        
         withFollowUp: 0.3,   
         expanded: 0.4,       
         fullCombo: 0.1       
     },
-    
-     
     getExpandedResponse: (term, baseResponse) => {
         const responses = [...responseDatabase[term]];
-        
-         
         const baseIndex = responses.indexOf(baseResponse);
         if (baseIndex !== -1) {
             responses.splice(baseIndex, 1);
         }
-        
-         
         const additionalCount = Math.floor(Math.random() * 3) + 1;
         const additionalResponses = [];
-        
-         
         for (let i = 0; i < additionalCount && responses.length > 0; i++) {
             const randomIndex = Math.floor(Math.random() * responses.length);
             additionalResponses.push(responses[randomIndex]);
             responses.splice(randomIndex, 1);
         }
-        
-         
         return [baseResponse, ...additionalResponses].join(' ');
     },
-    
-     
     selectResponseType: (term, baseResponse) => {
         const rand = Math.random();
         let cumulative = 0;
-        
         for (const [type, prob] of Object.entries(responseExpander.probabilities)) {
             cumulative += prob;
             if (rand < cumulative) {
                 switch(type) {
                     case 'single':
                         return [baseResponse];
-                    
                     case 'withFollowUp':
                         return [
                             baseResponse,
                             ...responseExpander.getFollowUp(term)
                         ];
-                    
                     case 'expanded':
                         return [responseExpander.getExpandedResponse(term, baseResponse)];
-                    
                     case 'fullCombo':
                         return [
                             responseExpander.getExpandedResponse(term, baseResponse),
@@ -2274,87 +2202,62 @@ const responseExpander = {
                 }
             }
         }
-        
         return [baseResponse];  
     },
-    
-     
     getFollowUp: (term) => {
         const followUps = followUpDatabase[term] || contextFollowUps.default;
         return [followUps[Math.floor(Math.random() * followUps.length)]];
     }
 };
-
-
- 
 async function getBotResponse(input) {
     const cleanInput = input.toLowerCase().trim();
     let responses = [];
-    
-     
     if (contextSystem.lastFollowUp) {
         if (contextSystem.isAffirmative(cleanInput)) {
             responses.push(contextSystem.getPositiveResponse());
             contextSystem.resetContext();
             return responses;
         }
-        
         if (contextSystem.isNegative(cleanInput)) {
             responses.push(contextSystem.getNegativeResponse());
             contextSystem.resetContext();
             return responses;
         }
     }
-    
-     
     if (greetingsSystem.isGreeting(cleanInput)) {
         responses.push(greetingsSystem.getRandomGreeting());
         contextSystem.resetContext();
         return responses;
     }
-    
     if (greetingsSystem.isFarewell(cleanInput)) {
         responses.push(greetingsSystem.getRandomFarewell());
         contextSystem.resetContext();
         return responses;
     }
-    
-     
     if (mathSystem.isMathQuery(cleanInput)) {
         responses.push(mathSystem.calculate(cleanInput));
         contextSystem.resetContext();
         return responses;
     }
-    
     let matchedTerm = null;
     for (const term in responseDatabase) {
         if (cleanInput.includes(term)) {
             matchedTerm = term;
             const baseResponse = getUniqueResponse(term);
-            
-             
             const expandedResponses = responseExpander.selectResponseType(term, baseResponse);
             responses.push(...expandedResponses);
-            
-             
             if (expandedResponses.length > 1) {
                 const lastMessage = expandedResponses[expandedResponses.length - 1];
-                
-                 
                 const isFollowUp = (followUpDatabase[term] || []).includes(lastMessage) || 
                                    contextFollowUps.default.includes(lastMessage);
-                
                 if (isFollowUp) {
                     contextSystem.lastTopic = term;
                     contextSystem.lastFollowUp = lastMessage;
                 }
             }
-            
             return responses;
         }
     }
-    
-     
 const fallbacks = [
     "🌌 Yıldız veritabanımda bunu bulamadım... 'Kuyruklu yıldızlar', 'kara delikler' veya 'kontroller' hakkında sorabilirsiniz!",
     "🛸 Bilgim kozmik düzeydedir - oyun fiziği veya evrenin elementleri hakkında soru sorabilirsiniz",
@@ -2364,23 +2267,15 @@ const fallbacks = [
     "🪐 Kozmik ipucu: 'yerçekimi', 'yıldız', 'gezegen' veya 'evrim' gibi terimler deneyin!",
     "⚡ Yeni yıldız mesajı tespit edildi! 'Bir kuasar nasıl oluşturulur?' veya 'Yaşanabilir bölge nedir?' şeklinde sorun"
 ];
-    
     responses.push(fallbacks[Math.floor(Math.random() * fallbacks.length)]);
-    
-     
     if (Math.random() < 0.2) {
         const followUp = followUpDatabase.default[Math.floor(Math.random() * followUpDatabase.default.length)];
         responses.push(followUp);
-        
-         
         contextSystem.lastTopic = "default";
         contextSystem.lastFollowUp = followUp;
     }
-    
     return responses;
 }
-
- 
 function toggleStarPulse(active) {
     const star = document.getElementById('star');
     if (star) {
@@ -2391,86 +2286,63 @@ function toggleStarPulse(active) {
         }
     }
 }
-
 function createMessage(text, className) {
     const message = document.createElement('div');
     message.classList.add(className);
-    
-     
     if (className === 'bot-message') {
         const starSpan = document.createElement('span');
         starSpan.textContent = STAR_EMOJI + ' ';
         starSpan.classList.add('star-emoji');
         message.appendChild(starSpan);
     }
-    
     const textSpan = document.createElement('span');
     textSpan.textContent = text;
     message.appendChild(textSpan);
-    
     return message;
 }
-
- 
 function initializeChat() {
     const chatBox = document.getElementById('chat-box');
     if (!chatBox) {
         console.error('Erro #20fgp');
         return;
     }
-    
     const botMessage = createMessage(
         greetingsSystem.getRandomGreeting(),
         'bot-message'
     );
     chatBox.appendChild(botMessage);
 }
-
- 
 async function showThinking(chatBox) {
     return new Promise(async (resolve) => {
-         
         const thinkingMsg = createMessage(' : Pensando', 'bot-message');
         chatBox.appendChild(thinkingMsg);
         const thinkingText = thinkingMsg.querySelector('span:last-child');
-        
         let dots = 0;
         const thinkDuration = Math.floor(Math.random() * 3000) + 3000;  
-        
         const thinkInterval = setInterval(() => {
             dots = (dots + 1) % 4;
             thinkingText.textContent = ` : Pensando${'.'.repeat(dots)}`;
             chatBox.scrollTop = chatBox.scrollHeight;
         }, 500);
-        
-         
         await new Promise(r => setTimeout(r, thinkDuration));
         clearInterval(thinkInterval);
         chatBox.removeChild(thinkingMsg);
-        
-         
         const searchingMsg = createMessage('Buscando', 'bot-message');
         chatBox.appendChild(searchingMsg);
         const searchingText = searchingMsg.querySelector('span:last-child');
-        
         dots = 0;
         const searchDuration = Math.floor(Math.random() * 2000) + 2000;  
-        
         const searchInterval = setInterval(() => {
             dots = (dots + 1) % 4;
             searchingText.textContent = ` : Buscando dados${'.'.repeat(dots)}`;
             chatBox.scrollTop = chatBox.scrollHeight;
         }, 500);
-        
-         
         await new Promise(r => setTimeout(r, searchDuration));
         clearInterval(searchInterval);
         chatBox.removeChild(searchingMsg);
-        
         resolve();
     });
 }
- 
 function humanTypeWriter(element, text, speed = 30) {
     return new Promise((resolve) => {
         let i = 0;
@@ -2478,19 +2350,15 @@ function humanTypeWriter(element, text, speed = 30) {
         let isPaused = false;
         let pauseEnd = 0;
         let dotsInterval = null;
-        
         toggleStarPulse(true);
-        
         function startDotsAnimation() {
             let dots = 0;
             const originalText = currentText;
-            
             dotsInterval = setInterval(() => {
                 dots = (dots + 1) % 4;
                 element.textContent = originalText + '.'.repeat(dots);
             }, 300);
         }
-        
         function stopDotsAnimation() {
             if (dotsInterval) {
                 clearInterval(dotsInterval);
@@ -2498,7 +2366,6 @@ function humanTypeWriter(element, text, speed = 30) {
                 element.textContent = currentText;
             }
         }
-        
         function type() {
             if (i >= text.length) {
                 if (dotsInterval) clearInterval(dotsInterval);
@@ -2506,15 +2373,11 @@ function humanTypeWriter(element, text, speed = 30) {
                 resolve();
                 return;
             }
-            
-             
             if (!isPaused && Math.random() < 0.03) {
                 isPaused = true;
                 pauseEnd = Date.now() + Math.random() * 2000 + 2000;  
                 startDotsAnimation();
             }
-            
-             
             if (isPaused) {
                 if (Date.now() >= pauseEnd) {
                     isPaused = false;
@@ -2523,83 +2386,56 @@ function humanTypeWriter(element, text, speed = 30) {
                 setTimeout(type, 100);
                 return;
             }
-            
-             
             currentText += text[i];
             element.textContent = currentText;
             i++;
-            
             setTimeout(type, speed);
         }
-        
         type();
     });
 }
-
-
- 
 function isOnline() {
     return navigator.onLine;
 }
-
- 
 async function handleUserInput() {
     const inputEl = document.getElementById('user-input');
     const chatBox = document.getElementById('chat-box');
     const text = inputEl.value.trim();
-    
     if (!text || !chatBox) return;
-
-     
     const userMsg = createMessage(`Você: ${text}`, 'user-message');
     chatBox.appendChild(userMsg);
     inputEl.value = '';
     chatBox.scrollTop = chatBox.scrollHeight;
-
-     
 if (!isOnline()) {
     const errorMsg = createMessage('error : Bağlantı hatası. İnternet bağlantınızı kontrol edin ve tekrar deneyin.', 'error-message');
     chatBox.appendChild(errorMsg);
     chatBox.scrollTop = chatBox.scrollHeight;
     return;
 }
-
-     
     await showThinking(chatBox);
-    
-     
     const replies = await getBotResponse(text);
-    
-     
     for (const reply of replies) {
         const botMsg = createMessage('', 'bot-message');
         chatBox.appendChild(botMsg);
         const textElement = botMsg.querySelector('span:last-child');
-        
-         
         await humanTypeWriter(textElement, `: ${reply}`);
         chatBox.scrollTop = chatBox.scrollHeight;
-        
-         
         if (replies.length > 1) {
             await new Promise(resolve => setTimeout(resolve, Math.random() * 1500 + 500));
         }
     }
 }
-
 setInterval(() => {
     if (Math.random() < 0.2) {
         const topics = Object.keys(responseDatabase);
         const randomTopic = topics[Math.floor(Math.random() * topics.length)];
         const messages = responseDatabase[randomTopic];
         const randomMessage = messages[Math.floor(Math.random() * messages.length)];
-        
         setTimeout(() => {
             displayMessage(randomMessage, 'bot');
         }, 3000);
     }
 }, 30000);
- 
 document.getElementById('send-btn').addEventListener('click', handleUserInput);
 document.getElementById('user-input').addEventListener('keypress', e => {
     if (e.key === 'Enter' && !e.shiftKey) {
@@ -2607,9 +2443,6 @@ document.getElementById('user-input').addEventListener('keypress', e => {
         handleUserInput();
     }
 });
-
 console.log("T Singularity: Sistema de IA carregado com sucesso!");
 console.log("(c) 2025 Free Game Plant. Todos os direitos reservados.");
-
- 
 window.addEventListener('load', initializeChat);

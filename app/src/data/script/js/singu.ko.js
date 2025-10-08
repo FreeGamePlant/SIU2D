@@ -9,7 +9,6 @@ function displayMessage(text, sender) {
 const responseHistory = new Map();
 const MAX_HISTORY_PER_TERM = 100;
 const STAR_EMOJI = 'T Singularity ';
-
 const responseDatabase = {
     "혜성": [
         "☄️ 혜성은 별에 가까워지면 꼬리를 발달시키는 얼어붙은 천체입니다! SIU 2D에서는 '천체 생성' 메뉴에서 만들 수 있습니다",
@@ -38,7 +37,6 @@ const responseDatabase = {
         "💧 혜성의 물은 증발 시 행성 자원 시스템에 계산됩니다 - 행성 패널에서 확인",
         "🌟 최상의 결과를 위해 '소형 천체' 메뉴에서 초기 온도 -100°C ~ -50°C로 혜성을 생성하세요"
     ],
-    
     "블랙홀": [
         "🕳️ 블랙홀의 최소 질량은 1조(1e12) 단위입니다 - '특이 천체' 메뉴에서 생성하세요",
         "🌀 게임 내 반지름 계산식: R = ∛(질량)/1000 - 게임플레이를 위한 슈바르츠실트 반경 단순화",
@@ -66,7 +64,6 @@ const responseDatabase = {
         "🌌 팁: 블랙홀-항성 쌍성을 만들어 실시간 물질 이동 관찰",
         "✨ 완전한 경험을 위해 옵션 > 오디오에서 '특이점' 환경 음악 활성화"
     ],
-    
     "중력": [
         "⚖️ 전역 조정: 메뉴 > 물리 > 중력 상수에서 0% ~ 500%",
         "📏 표준 G 상수: 6.67430e-11 N·m²/kg² - 대체 우주 시뮬레이션을 위해 수정 가능",
@@ -94,7 +91,6 @@ const responseDatabase = {
         "💥 충돌 시 중력은 방출 에너지를 결정 - 직격 충돌의 경우 E ∝ M²/R",
         "✨ 팁: 안정적인 궤도를 위해 초기 속도는 지역 탈출 속도의 ≈80%여야 함"
     ],
-    
     "항성": [
         "⭐ 최소 질량: 1,500만 단위 - '항성체' 메뉴에서 생성",
         "🌞 태양과 같은 항성: 질량 ~1.989e30 kg (게임 내 1 태양 단위)",
@@ -121,7 +117,6 @@ const responseDatabase = {
         "🔭 세부 사항 관찰: 마우스 휠로 확대 및 시간 속도 감소",
         "✨ 팁: 쌍성은 P형 궤도(쌍 주위) 또는 S형 궤도(하나 주위) 행성을 가질 수 있음"
     ],
-    
     "행성": [
         "🪐 질량: 5K-30.5K(암석), 105K-2.5M(가스) - '행성체' 메뉴에서 생성",
         "🌍 분류: 암석(1-11), 가스(1-6), 왜행성 - 질량/온도에 따라 자동 할당",
@@ -687,9 +682,7 @@ const responseDatabase = {
         "컴퓨터: 이동 WASD, 초기화 F, 생성 마우스 왼클릭, 줌 QE, 정보 마우스 우클릭, 모바일: 조이스틱 이동, 줌 +/- 버튼, 메뉴 상단 버튼, 다양한 천체 선택 가능, 초기화 F, 모드 전환 O, 생성 모드(파란색), 정보 모드(빨간색), 천체 클릭 시 정보 표시, 궤적 프로그래밍 드래그. 행운을 빕니다! 🚀",
         "컴퓨터: 초기화 F, 생성 마우스 왼클릭, 정보 마우스 우클릭, 이동 WASD, 줌 QE, 모바일: 조이스틱 이동, 줌 +/- 버튼, 메뉴 상단 버튼, 초기화 F, 모드 전환 O, 생성 모드(파란색), 다양한 천체 선택 가능, 정보 모드(빨간색), 천체 클릭 시 정보 표시, 궤적 프로그래밍 드래그. 즐거운 여행 되세요! 🌌"
     ],
-    
 };
- 
 const followUpDatabase = {
     "혜성": [
         "☄️ 놀랍죠? 지금 바로 하나 만들어 볼까요?",
@@ -1264,7 +1257,6 @@ const followUpDatabase = {
         "✨ 이론과 함의 더 알고 싶으신가요?"
     ]
 };
-
 const contextFollowUps = {
     "default": [
         "✨ 이 우주적 설명에 대해 어떻게 생각하시나요?",
@@ -1289,11 +1281,9 @@ const contextFollowUps = {
         "🌈 우주가 여러분의 호기심에 감사하고 있어요!"
     ]
 };
-
 const contextSystem = {
     lastTopic: null,     
     lastFollowUp: null,      
-    
     affirmativeResponses: [
         "예", "네", "y", "yes", 
         "물론", "당연히", "알겠어", "좋아", 
@@ -1303,7 +1293,6 @@ const contextSystem = {
         "아니요", "아니", "n", "no", 
         "하지 마세요", "그만", "나중에", "지금은 안 돼"
     ],
-    
     positiveResponses: {
         "블랙홀": [
             "🌌 시뮬레이션 시작! 먼저 블랙홀 근처에 1e30 질량의 별을 생성하세요...",
@@ -1666,7 +1655,6 @@ const contextSystem = {
             "✨ 생성 옵션을 보려면 언제든 '도움말' 입력"
         ]
     },
-    
     negativeResponses: {
         "블랙홀": [
             "🕳️ 문제 없어요! 블랙홀은 기다릴 수 있어요...",
@@ -1960,35 +1948,25 @@ const contextSystem = {
             "🪐 우리 모두는 별먼지로 이루어져 있어요!"
         ]
     },
-    
     isAffirmative: (input) => contextSystem.affirmativeResponses.includes(input.toLowerCase()),
     isNegative: (input) => contextSystem.negativeResponses.includes(input.toLowerCase()),
-    
     getPositiveResponse: () => {
         if (!contextSystem.lastTopic) return contextSystem.positiveResponses.default[0];
-        
         const responses = contextSystem.positiveResponses[contextSystem.lastTopic] || 
                           contextSystem.positiveResponses.default;
-        
         return responses[Math.floor(Math.random() * responses.length)];
     },
-    
     getNegativeResponse: () => {
         if (!contextSystem.lastTopic) return contextSystem.negativeResponses.default[0];
-        
         const responses = contextSystem.negativeResponses[contextSystem.lastTopic] || 
                           contextSystem.negativeResponses.default;
-        
         return responses[Math.floor(Math.random() * responses.length)];
     },
-    
     resetContext: () => {
         contextSystem.lastTopic = null;
         contextSystem.lastFollowUp = null;
     }
 };
-
- 
 const mathSystem = {
     responses: [
         "🧮 결과: {expression} = {result}",
@@ -2059,45 +2037,35 @@ const mathSystem = {
         "🌠 해결된 펄사: {expression} = {result}",
         "🛰️ 계산된 플라즈마 구체: {expression} = {result}"
     ],
-    
     usedResponses: [],
-    
     isMathQuery: (input) => {
         return /[0-9+\-*/\^().]/.test(input) && 
                !/[a-z]/.test(input) && 
                input.split('').filter(char => '0123456789'.includes(char)).length >= 2;
     },
-    
     calculate: (expression) => {
         try {
             const sanitized = expression
                 .replace(/\^/g, '**')
                 .replace(/[^0-9+\-*/\s().]/g, '');
-            
             if (!/^[\d\s+\-*/().]+$/.test(sanitized)) {
                 throw new Error("잘못된 수식");
             }
-            
             const result = eval(sanitized);
-            
             let availableResponses = mathSystem.responses;
             if (mathSystem.usedResponses.length > 0) {
                 availableResponses = mathSystem.responses.filter(r => 
                     !mathSystem.usedResponses.includes(r)
                 );
             }
-            
             if (availableResponses.length === 0) {
                 mathSystem.usedResponses = [];
                 availableResponses = mathSystem.responses;
             }
-            
             const responseTemplate = availableResponses[
                 Math.floor(Math.random() * availableResponses.length)
             ];
-            
             mathSystem.usedResponses.push(responseTemplate);
-            
             return responseTemplate
                 .replace("{expression}", expression)
                 .replace("{result}", result);
@@ -2106,12 +2074,9 @@ const mathSystem = {
         }
     }
 };
-
- 
 const greetingsSystem = {
     greetings: ["안녕", "안녕하세요", "하이", "반가워", "헬로", "안녕하신가", "좋은 아침", "좋은 오후", "좋은 저녁", "인사", "헤이", "여보세요", "우주 인사", "별빛 아침", "안녕 싱귤래리티"],
     farewells: ["잘 가", "안녕", "다음에 봐", "나중에 봐", "바이", "종료", "나가기", "닫기", "종료", "또 봐", "출발", "그럼 이만", "연결 종료", "세션 종료", "안녕 싱귤래리티"],
-    
     greetingsResponses: [
         "✨ 안녕하세요, 우주 탐험가님! 별들 사이의 여정을 어떻게 도와드릴까요?",
         "🚀 SIU 2D에 오신 것을 환영합니다! 놀라운 우주를 만들 준비가 되셨나요?",
@@ -2139,7 +2104,6 @@ const greetingsSystem = {
         "🪐 행성 고리가 인사합니다! 환영합니다!",
         "✨ 항성 에너지 전달 완료! 싱귤래리티가 준비되었습니다!"
     ],
-    
     farewellResponses: [
         "🌠 다음에 또 만나요, 별들의 여행자님! 서사적인 여정이 되길!",
         "🛸 우주 여행 안전히! 새로운 질문이 생기면 언제든 돌아오세요!",
@@ -2167,111 +2131,75 @@ const greetingsSystem = {
         "🛸 작별 우주선 궤도 진입! 곧 돌아오세요!",
         "✨ 마지막 별빛 펄스! 연결 종료합니다..."
     ],
-    
     isGreeting: (input) => greetingsSystem.greetings.includes(input.toLowerCase()),
     isFarewell: (input) => greetingsSystem.farewells.includes(input.toLowerCase()),
-    
     getRandomGreeting: () => {
         return greetingsSystem.greetingsResponses[
             Math.floor(Math.random() * greetingsSystem.greetingsResponses.length)
         ];
     },
-    
     getRandomFarewell: () => {
         return greetingsSystem.farewellResponses[
             Math.floor(Math.random() * greetingsSystem.farewellResponses.length)
         ];
     }
 };
-
- 
 function getUniqueResponse(term) {
     if (!responseHistory.has(term)) {
         responseHistory.set(term, []);
     }
-    
     const usedResponses = responseHistory.get(term);
     let availableResponses = responseDatabase[term];
-    
-     
     if (usedResponses.length > 0) {
         availableResponses = availableResponses.filter(r => !usedResponses.includes(r));
     }
-    
-     
     const response = availableResponses.length > 0 
         ? availableResponses[Math.floor(Math.random() * availableResponses.length)]
         : responseDatabase[term][0];
-    
-     
     usedResponses.push(response);
-    
-     
     if (usedResponses.length > MAX_HISTORY_PER_TERM) {
         usedResponses.shift();
     }
-    
     return response;
 }
-
-
-
-
 const responseExpander = {
-     
     probabilities: {
         single: 0.2,        
         withFollowUp: 0.3,   
         expanded: 0.4,       
         fullCombo: 0.1       
     },
-    
-     
     getExpandedResponse: (term, baseResponse) => {
         const responses = [...responseDatabase[term]];
-        
-         
         const baseIndex = responses.indexOf(baseResponse);
         if (baseIndex !== -1) {
             responses.splice(baseIndex, 1);
         }
-        
-         
         const additionalCount = Math.floor(Math.random() * 3) + 1;
         const additionalResponses = [];
-        
-         
         for (let i = 0; i < additionalCount && responses.length > 0; i++) {
             const randomIndex = Math.floor(Math.random() * responses.length);
             additionalResponses.push(responses[randomIndex]);
             responses.splice(randomIndex, 1);
         }
-        
-         
         return [baseResponse, ...additionalResponses].join(' ');
     },
-    
-     
     selectResponseType: (term, baseResponse) => {
         const rand = Math.random();
         let cumulative = 0;
-        
         for (const [type, prob] of Object.entries(responseExpander.probabilities)) {
             cumulative += prob;
             if (rand < cumulative) {
                 switch(type) {
                     case 'single':
                         return [baseResponse];
-                    
                     case 'withFollowUp':
                         return [
                             baseResponse,
                             ...responseExpander.getFollowUp(term)
                         ];
-                    
                     case 'expanded':
                         return [responseExpander.getExpandedResponse(term, baseResponse)];
-                    
                     case 'fullCombo':
                         return [
                             responseExpander.getExpandedResponse(term, baseResponse),
@@ -2280,87 +2208,62 @@ const responseExpander = {
                 }
             }
         }
-        
         return [baseResponse];  
     },
-    
-     
     getFollowUp: (term) => {
         const followUps = followUpDatabase[term] || contextFollowUps.default;
         return [followUps[Math.floor(Math.random() * followUps.length)]];
     }
 };
-
-
- 
 async function getBotResponse(input) {
     const cleanInput = input.toLowerCase().trim();
     let responses = [];
-    
-     
     if (contextSystem.lastFollowUp) {
         if (contextSystem.isAffirmative(cleanInput)) {
             responses.push(contextSystem.getPositiveResponse());
             contextSystem.resetContext();
             return responses;
         }
-        
         if (contextSystem.isNegative(cleanInput)) {
             responses.push(contextSystem.getNegativeResponse());
             contextSystem.resetContext();
             return responses;
         }
     }
-    
-     
     if (greetingsSystem.isGreeting(cleanInput)) {
         responses.push(greetingsSystem.getRandomGreeting());
         contextSystem.resetContext();
         return responses;
     }
-    
     if (greetingsSystem.isFarewell(cleanInput)) {
         responses.push(greetingsSystem.getRandomFarewell());
         contextSystem.resetContext();
         return responses;
     }
-    
-     
     if (mathSystem.isMathQuery(cleanInput)) {
         responses.push(mathSystem.calculate(cleanInput));
         contextSystem.resetContext();
         return responses;
     }
-    
     let matchedTerm = null;
     for (const term in responseDatabase) {
         if (cleanInput.includes(term)) {
             matchedTerm = term;
             const baseResponse = getUniqueResponse(term);
-            
-             
             const expandedResponses = responseExpander.selectResponseType(term, baseResponse);
             responses.push(...expandedResponses);
-            
-             
             if (expandedResponses.length > 1) {
                 const lastMessage = expandedResponses[expandedResponses.length - 1];
-                
-                 
                 const isFollowUp = (followUpDatabase[term] || []).includes(lastMessage) || 
                                    contextFollowUps.default.includes(lastMessage);
-                
                 if (isFollowUp) {
                     contextSystem.lastTopic = term;
                     contextSystem.lastFollowUp = lastMessage;
                 }
             }
-            
             return responses;
         }
     }
-    
-     
 const fallbacks = [
     "🌌 제 천체 데이터베이스에서 해당 내용을 찾지 못했습니다... '혜성', '블랙홀' 또는 '조작법'에 대해 물어보세요!",
     "🛸 제 지식은 우주적 범위를 다룹니다 - 게임 물리학이나 우주 구성 요소에 대해 질문해보세요",
@@ -2370,23 +2273,15 @@ const fallbacks = [
     "🪐 우주 힌트: '중력', '별', '행성' 또는 '진화' 같은 키워드를 사용해보세요!",
     "⚡ 새로운 우주 메시지 감지! '퀘이사 만드는 방법?'이나 '생명 가능 지대란 무엇인가요?'처럼 질문해보세요"
 ];
-    
     responses.push(fallbacks[Math.floor(Math.random() * fallbacks.length)]);
-    
-     
     if (Math.random() < 0.2) {
         const followUp = followUpDatabase.default[Math.floor(Math.random() * followUpDatabase.default.length)];
         responses.push(followUp);
-        
-         
         contextSystem.lastTopic = "default";
         contextSystem.lastFollowUp = followUp;
     }
-    
     return responses;
 }
-
- 
 function toggleStarPulse(active) {
     const star = document.getElementById('star');
     if (star) {
@@ -2397,86 +2292,63 @@ function toggleStarPulse(active) {
         }
     }
 }
-
 function createMessage(text, className) {
     const message = document.createElement('div');
     message.classList.add(className);
-    
-     
     if (className === 'bot-message') {
         const starSpan = document.createElement('span');
         starSpan.textContent = STAR_EMOJI + ' ';
         starSpan.classList.add('star-emoji');
         message.appendChild(starSpan);
     }
-    
     const textSpan = document.createElement('span');
     textSpan.textContent = text;
     message.appendChild(textSpan);
-    
     return message;
 }
-
- 
 function initializeChat() {
     const chatBox = document.getElementById('chat-box');
     if (!chatBox) {
         console.error('Erro #20fgp');
         return;
     }
-    
     const botMessage = createMessage(
         greetingsSystem.getRandomGreeting(),
         'bot-message'
     );
     chatBox.appendChild(botMessage);
 }
-
- 
 async function showThinking(chatBox) {
     return new Promise(async (resolve) => {
-         
         const thinkingMsg = createMessage(' : Pensando', 'bot-message');
         chatBox.appendChild(thinkingMsg);
         const thinkingText = thinkingMsg.querySelector('span:last-child');
-        
         let dots = 0;
         const thinkDuration = Math.floor(Math.random() * 3000) + 3000;  
-        
         const thinkInterval = setInterval(() => {
             dots = (dots + 1) % 4;
             thinkingText.textContent = ` : Pensando${'.'.repeat(dots)}`;
             chatBox.scrollTop = chatBox.scrollHeight;
         }, 500);
-        
-         
         await new Promise(r => setTimeout(r, thinkDuration));
         clearInterval(thinkInterval);
         chatBox.removeChild(thinkingMsg);
-        
-         
         const searchingMsg = createMessage('Buscando', 'bot-message');
         chatBox.appendChild(searchingMsg);
         const searchingText = searchingMsg.querySelector('span:last-child');
-        
         dots = 0;
         const searchDuration = Math.floor(Math.random() * 2000) + 2000;  
-        
         const searchInterval = setInterval(() => {
             dots = (dots + 1) % 4;
             searchingText.textContent = ` : Buscando dados${'.'.repeat(dots)}`;
             chatBox.scrollTop = chatBox.scrollHeight;
         }, 500);
-        
-         
         await new Promise(r => setTimeout(r, searchDuration));
         clearInterval(searchInterval);
         chatBox.removeChild(searchingMsg);
-        
         resolve();
     });
 }
- 
 function humanTypeWriter(element, text, speed = 30) {
     return new Promise((resolve) => {
         let i = 0;
@@ -2484,19 +2356,15 @@ function humanTypeWriter(element, text, speed = 30) {
         let isPaused = false;
         let pauseEnd = 0;
         let dotsInterval = null;
-        
         toggleStarPulse(true);
-        
         function startDotsAnimation() {
             let dots = 0;
             const originalText = currentText;
-            
             dotsInterval = setInterval(() => {
                 dots = (dots + 1) % 4;
                 element.textContent = originalText + '.'.repeat(dots);
             }, 300);
         }
-        
         function stopDotsAnimation() {
             if (dotsInterval) {
                 clearInterval(dotsInterval);
@@ -2504,7 +2372,6 @@ function humanTypeWriter(element, text, speed = 30) {
                 element.textContent = currentText;
             }
         }
-        
         function type() {
             if (i >= text.length) {
                 if (dotsInterval) clearInterval(dotsInterval);
@@ -2512,15 +2379,11 @@ function humanTypeWriter(element, text, speed = 30) {
                 resolve();
                 return;
             }
-            
-             
             if (!isPaused && Math.random() < 0.03) {
                 isPaused = true;
                 pauseEnd = Date.now() + Math.random() * 2000 + 2000;  
                 startDotsAnimation();
             }
-            
-             
             if (isPaused) {
                 if (Date.now() >= pauseEnd) {
                     isPaused = false;
@@ -2529,83 +2392,56 @@ function humanTypeWriter(element, text, speed = 30) {
                 setTimeout(type, 100);
                 return;
             }
-            
-             
             currentText += text[i];
             element.textContent = currentText;
             i++;
-            
             setTimeout(type, speed);
         }
-        
         type();
     });
 }
-
-
- 
 function isOnline() {
     return navigator.onLine;
 }
-
- 
 async function handleUserInput() {
     const inputEl = document.getElementById('user-input');
     const chatBox = document.getElementById('chat-box');
     const text = inputEl.value.trim();
-    
     if (!text || !chatBox) return;
-
-     
     const userMsg = createMessage(`Você: ${text}`, 'user-message');
     chatBox.appendChild(userMsg);
     inputEl.value = '';
     chatBox.scrollTop = chatBox.scrollHeight;
-
-     
 if (!isOnline()) {
     const errorMsg = createMessage('error : 연결 오류 발생. 인터넷 연결을 확인하고 다시 시도해 주세요.', 'error-message');
     chatBox.appendChild(errorMsg);
     chatBox.scrollTop = chatBox.scrollHeight;
     return;
 }
-
-     
     await showThinking(chatBox);
-    
-     
     const replies = await getBotResponse(text);
-    
-     
     for (const reply of replies) {
         const botMsg = createMessage('', 'bot-message');
         chatBox.appendChild(botMsg);
         const textElement = botMsg.querySelector('span:last-child');
-        
-         
         await humanTypeWriter(textElement, `: ${reply}`);
         chatBox.scrollTop = chatBox.scrollHeight;
-        
-         
         if (replies.length > 1) {
             await new Promise(resolve => setTimeout(resolve, Math.random() * 1500 + 500));
         }
     }
 }
-
 setInterval(() => {
     if (Math.random() < 0.2) {
         const topics = Object.keys(responseDatabase);
         const randomTopic = topics[Math.floor(Math.random() * topics.length)];
         const messages = responseDatabase[randomTopic];
         const randomMessage = messages[Math.floor(Math.random() * messages.length)];
-        
         setTimeout(() => {
             displayMessage(randomMessage, 'bot');
         }, 3000);
     }
 }, 30000);
- 
 document.getElementById('send-btn').addEventListener('click', handleUserInput);
 document.getElementById('user-input').addEventListener('keypress', e => {
     if (e.key === 'Enter' && !e.shiftKey) {
@@ -2613,9 +2449,6 @@ document.getElementById('user-input').addEventListener('keypress', e => {
         handleUserInput();
     }
 });
-
 console.log("T Singularity: Sistema de IA carregado com sucesso!");
 console.log("(c) 2025 Free Game Plant. Todos os direitos reservados.");
-
- 
 window.addEventListener('load', initializeChat);

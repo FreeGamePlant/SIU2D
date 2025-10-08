@@ -9,7 +9,6 @@ function displayMessage(text, sender) {
 const responseHistory = new Map();
 const MAX_HISTORY_PER_TERM = 100;
 const STAR_EMOJI = 'T Singularity ';
-
 const responseDatabase = {
     "彗星（すいせい）": [
         "☄️ 彗星は恒星に近づくと尾を発達させる氷天体！SIU 2Dでは「天体作成」メニューで作成可能",
@@ -38,7 +37,6 @@ const responseDatabase = {
         "💧 蒸発時の水資源が惑星リソースに加算→惑星パネルで確認",
         "🌟 最適結果：氷惑星体を「小天体」メニューで-100°C～-50°Cで作成"
     ],
-    
     "ブラックホール": [
         "🕳️ 最小質量：1兆(1e12)単位―「特殊天体」メニューで作成",
         "🌀 半径計算式：R = ∛(質量)/1000（シュバルツシルト半径を簡略化）",
@@ -66,7 +64,6 @@ const responseDatabase = {
         "🌌 実験：ブラックホール＋恒星の連星で物質転送をリアルタイム観測",
         "✨ 没入感：設定>オーディオで環境音楽「特異点」を再生"
     ],
-    
     "重力": [
         "⚖️ 重力定数の全局調整：0～500%（メニュー>物理>重力定数）",
         "📏 標準重力定数G：6.67430e-11 N·m²/kg²―代替宇宙シミュレーション用に変更可",
@@ -94,7 +91,6 @@ const responseDatabase = {
         "💥 衝突時の解放エネルギー：E ∝ M²/R（直撃時）",
         "✨ 安定軌道のコツ：初速を局所脱出速度の≈80%に設定"
     ],
-    
     "恒星": [
         "⭐ 最小質量：1500万単位―「恒星天体」メニューで作成",
         "🌞 太陽相当：質量～1.989e30kg（ゲーム内1太陽質量）",
@@ -121,7 +117,6 @@ const responseDatabase = {
         "🔭 詳細観察：ズーム(マウスホイール)＋時間速度低下",
         "✨ 連星系惑星：P型(連星周回) または S型(片星周回)軌道"
     ],
-    
     "惑星": [
         "🪐 質量：岩石惑星5K-30.5K／ガス惑星105K-2.5M―「惑星天体」メニュー",
         "🌍 分類：岩石(1-11)・ガス(1-6)・準惑星―質量/温度で自動分類",
@@ -149,7 +144,6 @@ const responseDatabase = {
         "✨ 安定軌道の秘訣：軌道共鳴(例2:3)で長期的安定性確保",
         "🔭 地表観測：観測モード(O)で選択惑星の地表詳細表示"
     ],
-    
     "流星物質": [
         "🌠 流星物質：小惑星より小さい岩片(1mm-1m)―衝突で自動生成",
         "💫 平均速度：20-70km/s―リアルタイムモードで高速軌跡として可視",
@@ -172,7 +166,6 @@ const responseDatabase = {
         "🌠 バリンジャー・クレーター生成流星体：直径わずか50m",
         "🌟 視覚効果：高速軌跡に「発光軌跡」を有効化"
     ],
-    
     "流星": [
         "☄️ 流星：大気中で燃焼する流星物質―「流れ星」として表示",
         "🔥 プラズマ温度：1,500-3,000°C―火花状カラー表示",
@@ -195,7 +188,6 @@ const responseDatabase = {
         "💧 水中流星：海底クレーター生成―海洋モードで可視",
         "🌌 スクリーンショット：一時停止(P)＋F12で瞬間を撮影"
     ],
-    
     "小惑星": [
         "🪨 小惑星：岩石天体(1m-1000km)―「小天体」メニューで作成",
         "🌌 分類：C型(炭素質)・S型(ケイ酸塩)・M型(金属質)―パネル選択",
@@ -218,7 +210,6 @@ const responseDatabase = {
         "🌠 ケレスは準惑星に分類",
         "🌟 惑星防衛：「衝突モード」で防御システムテスト"
     ],
-    
     "準惑星": [
         "🌑 準惑星：小惑星と惑星の中間天体(100-500km)",
         "🌌 質量1e18-1e20kgで「小天体」>「準惑星」作成",
@@ -241,7 +232,6 @@ const responseDatabase = {
         "🌠 環：希薄な環を持つ可能性―「特徴」で有効化",
         "🌟 探査モード：地表マッピングの探査機送信"
     ],
-    
     "ガス惑星": [
         "🪐 ガス惑星：固体表面なしの巨大惑星―最小質量105K単位",
         "🌪️ 「惑星天体」>「ガス惑星」で作成",
@@ -264,7 +254,6 @@ const responseDatabase = {
         "🌟 ミニ海王星：質量を10-20地球質量に低減",
         "💥 衝突：巨大ガス惑星衝突で一時的な水素星生成"
     ],
-    
     "褐色矮星": [
         "🟤 褐色矮星：恒星化に失敗した天体(13-80木星質量)",
         "🌡️ 温度：300-3,000K―水素安定融合に低温すぎる",
@@ -287,7 +276,6 @@ const responseDatabase = {
         "🌌 例：WISE 0855―事前定義モデル",
         "📉 下限：13MJup未満は惑星に分類"
     ],
-    
     "赤色矮星": [
         "🔴 赤色矮星：小型低温恒星(M型)―質量0.08-0.5太陽質量",
         "🌡️ 温度：2,400-3,700K―特徴的赤色",
@@ -310,7 +298,6 @@ const responseDatabase = {
         "💫 プロキシマ・ケンタウリ：太陽最接近恒星",
         "🌡️ 表面温度：パネル調整―標準3,300K"
     ],
-    
     "巨星": [
         "🌟 巨星：恒星の進化段階―主系列星後の段階",
         "🌡️ 分類：赤色巨星(K,M型)・青色巨星(B,A型)―稀少",
@@ -333,7 +320,6 @@ const responseDatabase = {
         "🌟 ベテルギウスは太陽系位置なら木星を飲み込む",
         "💥 シミュレーション：時間加速で完全進化を観察"
     ],
-    
     "極超巨星": [
         "💥 極超巨星：既知で最大質量・光度の恒星(>30太陽質量)",
         "🌡️ 温度：3,500-35,000K―O,B,A,F,K,M型",
@@ -356,7 +342,6 @@ const responseDatabase = {
         "❄️ 黄色極超巨星：青色超巨星と赤色超巨星間の稀少段階",
         "💥 死のシミュレーション：「超新星直前」で崩壊警告"
     ],
-    
     "大質量星": [
         "💫 大質量星：>8太陽質量―超新星運命",
         "🌡️ 温度：10,000-50,000K―O,B型",
@@ -379,7 +364,6 @@ const responseDatabase = {
         "📈 対不安定性：>130太陽質量で残骸なし爆発",
         "⚠️ 警告：居住惑星を近接配置しない―放射線が致命的"
     ],
-    
     "ホワイトホール": [
         "⚪ ホワイトホール：ブラックホールの理論的反対―物質を放出",
         "💫 理論上の存在―SIU 2Dでは推測シミュレーション",
@@ -402,7 +386,6 @@ const responseDatabase = {
         "🌠 放出物質：水素/プラズマ/エキゾチック物質で設定",
         "💥 警告：超高不安定―突然消滅可能性あり"
     ],
-    
     "ビッグバン": [
         "💥 ビッグバン：SIU 2Dでの宇宙起源シミュレーション",
         "🌌 「宇宙」>「新宇宙」>「ビッグバンモード」でアクセス",
@@ -425,7 +408,6 @@ const responseDatabase = {
         "💥 再結合：電子と陽子が中性原子形成―重要な遷移",
         "📈 異方性：銀河形成の種―強度調整可能"
     ],
-    
     "宇宙塵": [
         "🌌 宇宙塵：微粒子(0.01-10μm)―星形成の基盤",
         "💫 組成：珪酸塩・炭素・氷―宇宙領域で定義",
@@ -448,7 +430,6 @@ const responseDatabase = {
         "🌌 進化：付着で粒子成長―「凝集」でシミュレート",
         "💥 惑星衝突：地球外物質の供給源"
     ],
-    
     "放射線": [
         "☢️ 放射線：宇宙空間を伝播するエネルギー―天体物理学で重要",
         "🌌 種類：電磁波(光子)・粒子(宇宙線)・重力波",
@@ -471,7 +452,6 @@ const responseDatabase = {
         "💥 超新星：50光年圏内で致命的放射線―効果シミュレート",
         "🔭 測定：システム放射線レベルマッピングに「放射線探査機」使用"
     ],
-    
     "星雲": [
         "🌌 星雲：星間ガスと塵の雲―星の揺籃",
         "💫 種類：輝線星雲・反射星雲・暗黒星雲・惑星状星雲・超新星残骸",
@@ -494,7 +474,6 @@ const responseDatabase = {
         "💫 反射星雲：星光を塵が反射―光度は恒星に比例",
         "🌠 レンダリング：「高画質モード」でフィラメント構造を詳細表示"
     ],
-    
     "白色矮星": [
         "⚪ 白色矮星：<8太陽質量の恒星残骸―超高密度",
         "💫 質量：0.5-1.4太陽質量が地球半径に圧縮―密度10⁶-10⁹g/cm³",
@@ -517,7 +496,6 @@ const responseDatabase = {
         "🔭 観測：微かな青白色光―望遠鏡必要",
         "✨ 連星系で降着白色矮星は「相互作用連星」有効で"
     ],
-    
     "ヘリウム白色矮星": [
         "💠 ヘリウム白色矮星：ヘリウム豊富な特殊残骸",
         "💫 形成：ヘリウム融合前に外層喪失した連星系",
@@ -540,7 +518,6 @@ const responseDatabase = {
         "🔭 同定：ヘリウム線が支配的なスペクトル",
         "✨ 近接連星系の低質量星でシミュレート"
     ],
-    
     "黒色矮星": [
         "⚫ 黒色矮星：白色矮星の理論的終末段階―冷暗",
         "💫 温度：<5K―可視光なし 微弱赤外線のみ",
@@ -563,7 +540,6 @@ const responseDatabase = {
         "🔭 挑戦：重力レンズでシミュレート黒色矮星を発見",
         "✨ 古代銀河効果に暗黒物質と組み合わせ"
     ],
-    
     "中性子星": [
         "🌌 中性子星：超新星残骸―超高密度",
         "💫 質量：1.4-3太陽質量が10-15km半径に圧縮",
@@ -585,7 +561,6 @@ const responseDatabase = {
         "💥 物質放出：融合/他星衝突時に発生",
         "🔭 観測：X線・重力波で検出可能"
     ],
-    
     "ワームホール": [
         "🌀 ワームホール：時空の理論的トンネル―遠隔点を接続",
         "🌌 推測シミュレーション：「特殊天体」>「ワームホール」で有効",
@@ -599,7 +574,6 @@ const responseDatabase = {
         "⚠️ 危険：崩壊または強烈放射線発生の可能性",
         "🚀 旅行：瞬時の恒星間移動を可能―機能あり"
     ],
-    
     "ハビタブルゾーン": [
         "🌍 ハビタブルゾーン：恒星周辺で液体の水が存在可能な領域",
         "💫 定義：0°C～100°Cの理想距離",
@@ -618,7 +592,6 @@ const responseDatabase = {
         "📈 進化：恒星進化と共にゾーン移動",
         "🔭 秘訣：ハビタブルゾーン惑星の大気検出に望遠鏡使用"
     ],
-    
     "クエーサー": [
         "🌌 クエーサー：超高光度活動銀河核",
         "💫 エネルギー源：降着円盤が最大のエネルギー源",
@@ -641,7 +614,6 @@ const responseDatabase = {
         "🌌 環境：巨大銀河団内に常見",
         "💥 挑戦：10ジェット同時クエーサー作成は困難！"
     ],
-    
     "クォーク星": [
         "🔬 クォーク星：クォーク縮退物質からなる理論的天体",
         "🌌 形成：超大質量中性子星の崩壊結果",
@@ -661,7 +633,6 @@ const responseDatabase = {
         "📈 進化：数兆年かけて冷却→黒色矮星に",
         "🔭 挑戦：正確な質量で安定クォーク星作成を試みる"
     ],
-    
     "炭素白色矮星": [
         "⚪ 炭素白色矮星：炭素融合恒星の残骸",
         "💫 形成：1.4～8太陽質量の恒星―水素枯渇後に崩壊",
@@ -683,7 +654,6 @@ const responseDatabase = {
         "📈 冷却時間：～10億年で5,000Kに",
         "🔭 同定：炭素線が支配的なスペクトル"
     ],
-    
     "T特異点": [
         "はい！私はT特異点、宇宙シミュレーション専門のバーチャルアシスタントです。",
         "🌌 あなたと共に宇宙を探索し、恒星システムを創造します！",
@@ -693,7 +663,6 @@ const responseDatabase = {
         "🌠 ブラックホールやクエーサーについて学びたいですか？",
         "こんにちは、宇宙旅行者さん！どのようなお手伝いができますか？"
     ],
-    
     "特異点": [
         "✨ 特異点は宇宙で最も高密度の点でした！",
         "❤️ 私も特異点です。この天体について話してくれてありがとう、宇宙で唯一無二の存在です！",
@@ -704,7 +673,6 @@ const responseDatabase = {
         "⌚ ビッグバン理論では、特異点がその起源に関連！",
         "✨ 超巨大クエーサーを収縮させて特異点化→ビッグバンを再現！"
     ],
-    
     "操作ガイド": [
         "PC：Fキーで宇宙リセット、WASDで移動、QEでズーム、左クリックで選択/作成、右クリックで天体情報表示",
         "モバイル：ジョイスティックで移動、+/-ボタンでズーム、メニューボタン（右上）、Fボタンで全リセット",
@@ -713,7 +681,6 @@ const responseDatabase = {
         "多数の天体をメニューから選択可能―宇宙へ配置してシミュレーション実行",
         "宇宙の旅を楽しんでください！🚀"
     ],
-    
     "ヘルプ": [
         "PC：Fキーで宇宙リセット、WASD移動、QEズーム、左クリック作成、右クリック情報",
         "モバイル：ジョイスティック移動、+/-ズーム、メニューボタン（右上）、Fリセット",
@@ -723,7 +690,6 @@ const responseDatabase = {
         "幸運な宇宙の旅を！🌌"
     ]
 };
- 
 const followUpDatabase = {
     "彗星（すいせい）": [
         "☄️ すごいですよね？今すぐ作成しましょうか？",
@@ -747,7 +713,6 @@ const followUpDatabase = {
         "⏳ 彗星は原始太陽系のタイムカプセルです！",
         "📈 10個の彗星が同時に飛ぶシステムを作りませんか？"
     ],
-    
     "ブラックホール": [
         "🕳️ 魅惑的でありながら恐ろしい存在ですよね？",
         "🌀 今すぐブラックホールを作成してみませんか？",
@@ -770,7 +735,6 @@ const followUpDatabase = {
         "📏 クエーサーは宇宙最強のビーコン！",
         "⚠️ 挑戦：ゲーム内でブラックホールの引力から脱出！"
     ],
-    
     "重力": [
         "⚖️ 宇宙を繋ぎ止める接着剤ですよね？",
         "📏 今すぐ実験してみませんか？",
@@ -793,7 +757,6 @@ const followUpDatabase = {
         "🌌 反発重力の宇宙を想像してみて！",
         "✨ 極限重力下の連星系を作成！"
     ],
-    
     "恒星": [
         "⭐ 元素工場のような存在です！",
         "🌞 カスタム恒星を今すぐ作成！",
@@ -816,7 +779,6 @@ const followUpDatabase = {
         "🔭 他の銀河の星さえ見えるんです！",
         "🌟 今すぐ超新星爆発をシミュレート！"
     ],
-    
     "惑星": [
         "🪐 恒星を巡る宇宙の宝石のよう！",
         "🌍 居住可能惑星を今すぐ作成！",
@@ -839,7 +801,6 @@ const followUpDatabase = {
         "🌀 海王星と天王星ではダイヤモンドの雨が降る！",
         "📊 発泡スチロールより軽い惑星も存在！"
     ],
-    
     "流星物質": [
         "🌠 今すぐ流星群を作成しましょうか？",
         "💫 月は絶えず流星物質に曝されてます！",
@@ -862,7 +823,6 @@ const followUpDatabase = {
         "🌌 防御テストのため流星物質頻度上昇！",
         "🚀 流星物質迎撃ミッションを開始！"
     ],
-    
     "宇宙塵": [
         "🌌 星と惑星形成の基盤！",
         "✨ 今すぐ星間塵雲を作成！",
@@ -885,7 +845,6 @@ const followUpDatabase = {
         "💥 星間塵には太陽系前の粒子も含まれる！",
         "✨ 原始惑星系円盤形成について学びますか？"
     ],
-    
     "小惑星": [
         "🪨 太陽系の建築ブロック！",
         "🌌 今すぐ小惑星帯を作成！",
@@ -908,7 +867,6 @@ const followUpDatabase = {
         "💥 チクシュルーブ衝突が恐竜絶滅を招いた！",
         "✨ 小惑星資源活用について学びますか？"
     ],
-    
     "星雲": [
         "🌌 星のゆりかご！",
         "✨ 今すぐ星雲を作成！",
@@ -931,7 +889,6 @@ const followUpDatabase = {
         "💥 かに星雲は有名な超新星残骸！",
         "✨ 星形成プロセスについて学びますか？"
     ],
-    
     "準惑星": [
         "🪐 太陽系の小さな天体！",
         "🌌 今すぐ準惑星を作成！",
@@ -954,7 +911,6 @@ const followUpDatabase = {
         "💥 最大の準惑星はケレス！",
         "✨ 準惑星資源活用について学びますか？"
     ],
-    
     "ガス惑星": [
         "🌌 巨大で魅惑的な天体！",
         "✨ 今すぐガス惑星を作成！",
@@ -977,7 +933,6 @@ const followUpDatabase = {
         "💥 海王星は太陽系最速の風を持つ！",
         "✨ 複雑な惑星系形成について学びますか？"
     ],
-    
     "褐色矮星": [
         "🌌 恒星化に失敗した天体！",
         "✨ 今すぐ褐色矮星を作成！",
@@ -1000,7 +955,6 @@ const followUpDatabase = {
         "💥 褐色矮星は通常恒星より一般的な可能性！",
         "✨ 形成と進化について学びますか？"
     ],
-    
     "赤色矮星": [
         "🌌 宇宙で最も一般的な恒星！",
         "✨ 今すぐ赤色矮星を作成！",
@@ -1023,7 +977,6 @@ const followUpDatabase = {
         "💥 太陽より低温だが依然として高温！",
         "✨ 形成と進化について学びますか？"
     ],
-    
     "巨星": [
         "🌌 巨大で明るい恒星！",
         "✨ 今すぐ巨星を作成！",
@@ -1046,7 +999,6 @@ const followUpDatabase = {
         "💥 最も明るい超新星の前段階！",
         "✨ 形成と進化について学びますか？"
     ],
-    
     "極超巨星": [
         "🌌 宇宙最大級の恒星！",
         "✨ 今すぐ極超巨星を作成！",
@@ -1069,7 +1021,6 @@ const followUpDatabase = {
         "💥 宇宙で最も明るい超新星の前段階！",
         "✨ 形成と進化について学びますか？"
     ],
-    
     "白色矮星": [
         "🌌 恒星の燃え尽きた残骸！",
         "✨ 今すぐ白色矮星を作成！",
@@ -1092,7 +1043,6 @@ const followUpDatabase = {
         "💥 超新星化しない星の最終形態！",
         "✨ 形成と進化について学びますか？"
     ],
-    
     "クエーサー": [
         "🌌 遠方銀河の輝く核！",
         "✨ 今すぐクエーサーを作成！",
@@ -1115,7 +1065,6 @@ const followUpDatabase = {
         "💥 宇宙初期でより一般的！",
         "✨ 形成と進化について学びますか？"
     ],
-    
     "ワームホール": [
         "🌌 理論上の時空トンネル！",
         "✨ 今すぐワームホールを作成！",
@@ -1138,7 +1087,6 @@ const followUpDatabase = {
         "💥 SFで人気の異次元ポータル！",
         "✨ 理論とその意味について学びますか？"
     ],
-    
     "中性子星": [
         "🌌 超新星残骸の超高密度天体！",
         "✨ 今すぐ中性子星を作成！",
@@ -1161,7 +1109,6 @@ const followUpDatabase = {
         "💥 宇宙で最も高密度な既知天体！",
         "✨ 形成と進化について学びますか？"
     ],
-    
     "マグネター": [
         "🌌 超高磁場中性子星！",
         "✨ 今すぐマグネターを作成！",
@@ -1184,7 +1131,6 @@ const followUpDatabase = {
         "💥 宇宙で最も磁気的な天体！",
         "✨ 形成と進化について学びますか？"
     ],
-    
     "クォーク星": [
         "🌌 理論上のクォーク物質天体！",
         "✨ 今すぐクォーク星を作成！",
@@ -1208,7 +1154,6 @@ const followUpDatabase = {
         "✨ 理論とその意味について学びますか？"
     ]
 };
-
 const contextFollowUps = {
     "default": [
         "✨ この宇宙の解説、いかがでしたか？",
@@ -1233,14 +1178,11 @@ const contextFollowUps = {
         "🌈 宇宙はあなたの好奇心に感謝しています！"
     ]
 };
-
 const contextSystem = {
     lastTopic: null,
     lastFollowUp: null,
-    
     affirmativeResponses: ["はい", "そう", "イエス", "うん", "もちろん", "確かに", "OK", "そうしましょう", "いいですよ", "お願いします"],
     negativeResponses: ["いいえ", "いや", "ノー", "違う", "否定", "やめとく", "後で", "今はやめておきます"],
-    
     positiveResponses: {
         "ブラックホール": [
             "🌌 シミュレーション開始！まずブラックホール近くに質量1e30の恒星を作成...",
@@ -1603,7 +1545,6 @@ const contextSystem = {
             "✨ ヘルプはいつでも'help'と入力"
         ]
     },
-    
 negativeResponses: {
     "ブラックホール": [
         "🕳️ 問題ありません！ブラックホールは待てます...",
@@ -1897,35 +1838,25 @@ negativeResponses: {
         "🪐 私たちは皆、星屑でできている！"
     ]
 },
-    
     isAffirmative: (input) => contextSystem.affirmativeResponses.includes(input.toLowerCase()),
     isNegative: (input) => contextSystem.negativeResponses.includes(input.toLowerCase()),
-    
     getPositiveResponse: () => {
         if (!contextSystem.lastTopic) return contextSystem.positiveResponses.default[0];
-        
         const responses = contextSystem.positiveResponses[contextSystem.lastTopic] || 
                           contextSystem.positiveResponses.default;
-        
         return responses[Math.floor(Math.random() * responses.length)];
     },
-    
     getNegativeResponse: () => {
         if (!contextSystem.lastTopic) return contextSystem.negativeResponses.default[0];
-        
         const responses = contextSystem.negativeResponses[contextSystem.lastTopic] || 
                           contextSystem.negativeResponses.default;
-        
         return responses[Math.floor(Math.random() * responses.length)];
     },
-    
     resetContext: () => {
         contextSystem.lastTopic = null;
         contextSystem.lastFollowUp = null;
     }
 };
-
- 
 const mathSystem = {
     responses: [
         "🧮 結果: {expression} = {result}",
@@ -1996,46 +1927,35 @@ const mathSystem = {
         "🌠 解決されたパルサー: {expression} = {result}",
         "🛰 計算されたプラズマ球: {expression} = {result}"
     ],
-    
     usedResponses: [],
-    
     isMathQuery: (input) => {
         return /[0-9+\-*/\^().]/.test(input) && 
                !/[a-z]/.test(input) && 
                input.split('').filter(char => '0123456789'.includes(char)).length >= 2;
     },
-    
     calculate: (expression) => {
         try {
             const sanitized = expression
                 .replace(/\^/g, '**')
                 .replace(/[^0-9+\-*/\s().]/g, '');
-            
             if (!/^[\d\s+\-*/().]+$/.test(sanitized)) {
                 throw new Error("無効な式");
             }
-            
             const result = eval(sanitized);
-            
-             
             let availableResponses = mathSystem.responses;
             if (mathSystem.usedResponses.length > 0) {
                 availableResponses = mathSystem.responses.filter(r => 
                     !mathSystem.usedResponses.includes(r)
                 );
             }
-            
             if (availableResponses.length === 0) {
                 mathSystem.usedResponses = [];
                 availableResponses = mathSystem.responses;
             }
-            
             const responseTemplate = availableResponses[
                 Math.floor(Math.random() * availableResponses.length)
             ];
-            
             mathSystem.usedResponses.push(responseTemplate);
-            
             return responseTemplate
                 .replace("{expression}", expression)
                 .replace("{result}", result);
@@ -2044,12 +1964,9 @@ const mathSystem = {
         }
     }
 };
-
- 
 const greetingsSystem = {
     greetings: ["こんにちは", "やあ", "おい", "どうも", "ハロー", "こんにちは", "おはよう", "こんにちは", "こんばんは", "ご挨拶", "ヘイ", "おい", "宇宙からの挨拶", "星々の朝", "こんにちはシンギュラリティ"],
     farewells: ["さようなら", "さらば", "ではまた", "じゃあね", "バイバイ", "終了", "退出", "閉じる", "終了", "さよなら", "行くぞ", "またね", "切断", "セッション終了", "さようならシンギュラリティ"],
-    
     greetingsResponses: [
         "✨ こんにちは、宇宙探検者様！星々の旅をどうお手伝いしましょうか？",
         "🚀 SIU 2Dへようこそ！素晴らしい宇宙を作る準備はできていますか？",
@@ -2077,7 +1994,6 @@ const greetingsSystem = {
         "🪐 惑星の環が挨拶を送っています！ようこそ！",
         "✨ 恒星エネルギーが導かれました！シンギュラリティがお手伝いします！"
     ],
-    
     farewellResponses: [
         "🌠 星間旅行者様、またお会いしましょう！あなたの旅が壮大でありますように！",
         "🛸 宇宙の旅をお楽しみください！新たな疑問が生まれたらいつでも戻ってきてください！",
@@ -2105,111 +2021,75 @@ const greetingsSystem = {
         "🛸 別れの宇宙船が軌道に！すぐに戻ってきてください！",
         "✨ 最後の恒星パルス！切断します..."
     ],
-    
     isGreeting: (input) => greetingsSystem.greetings.includes(input.toLowerCase()),
     isFarewell: (input) => greetingsSystem.farewells.includes(input.toLowerCase()),
-    
     getRandomGreeting: () => {
         return greetingsSystem.greetingsResponses[
             Math.floor(Math.random() * greetingsSystem.greetingsResponses.length)
         ];
     },
-    
     getRandomFarewell: () => {
         return greetingsSystem.farewellResponses[
             Math.floor(Math.random() * greetingsSystem.farewellResponses.length)
         ];
     }
 };
-
- 
 function getUniqueResponse(term) {
     if (!responseHistory.has(term)) {
         responseHistory.set(term, []);
     }
-    
     const usedResponses = responseHistory.get(term);
     let availableResponses = responseDatabase[term];
-    
-     
     if (usedResponses.length > 0) {
         availableResponses = availableResponses.filter(r => !usedResponses.includes(r));
     }
-    
-     
     const response = availableResponses.length > 0 
         ? availableResponses[Math.floor(Math.random() * availableResponses.length)]
         : responseDatabase[term][0];
-    
-     
     usedResponses.push(response);
-    
-     
     if (usedResponses.length > MAX_HISTORY_PER_TERM) {
         usedResponses.shift();
     }
-    
     return response;
 }
-
-
-
-
 const responseExpander = {
-     
     probabilities: {
         single: 0.2,        
         withFollowUp: 0.3,   
         expanded: 0.4,       
         fullCombo: 0.1       
     },
-    
-     
     getExpandedResponse: (term, baseResponse) => {
         const responses = [...responseDatabase[term]];
-        
-         
         const baseIndex = responses.indexOf(baseResponse);
         if (baseIndex !== -1) {
             responses.splice(baseIndex, 1);
         }
-        
-         
         const additionalCount = Math.floor(Math.random() * 3) + 1;
         const additionalResponses = [];
-        
-         
         for (let i = 0; i < additionalCount && responses.length > 0; i++) {
             const randomIndex = Math.floor(Math.random() * responses.length);
             additionalResponses.push(responses[randomIndex]);
             responses.splice(randomIndex, 1);
         }
-        
-         
         return [baseResponse, ...additionalResponses].join(' ');
     },
-    
-     
     selectResponseType: (term, baseResponse) => {
         const rand = Math.random();
         let cumulative = 0;
-        
         for (const [type, prob] of Object.entries(responseExpander.probabilities)) {
             cumulative += prob;
             if (rand < cumulative) {
                 switch(type) {
                     case 'single':
                         return [baseResponse];
-                    
                     case 'withFollowUp':
                         return [
                             baseResponse,
                             ...responseExpander.getFollowUp(term)
                         ];
-                    
                     case 'expanded':
                         return [responseExpander.getExpandedResponse(term, baseResponse)];
-                    
                     case 'fullCombo':
                         return [
                             responseExpander.getExpandedResponse(term, baseResponse),
@@ -2218,87 +2098,62 @@ const responseExpander = {
                 }
             }
         }
-        
         return [baseResponse];  
     },
-    
-     
     getFollowUp: (term) => {
         const followUps = followUpDatabase[term] || contextFollowUps.default;
         return [followUps[Math.floor(Math.random() * followUps.length)]];
     }
 };
-
-
- 
 async function getBotResponse(input) {
     const cleanInput = input.toLowerCase().trim();
     let responses = [];
-    
-     
     if (contextSystem.lastFollowUp) {
         if (contextSystem.isAffirmative(cleanInput)) {
             responses.push(contextSystem.getPositiveResponse());
             contextSystem.resetContext();
             return responses;
         }
-        
         if (contextSystem.isNegative(cleanInput)) {
             responses.push(contextSystem.getNegativeResponse());
             contextSystem.resetContext();
             return responses;
         }
     }
-    
-     
     if (greetingsSystem.isGreeting(cleanInput)) {
         responses.push(greetingsSystem.getRandomGreeting());
         contextSystem.resetContext();
         return responses;
     }
-    
     if (greetingsSystem.isFarewell(cleanInput)) {
         responses.push(greetingsSystem.getRandomFarewell());
         contextSystem.resetContext();
         return responses;
     }
-    
-     
     if (mathSystem.isMathQuery(cleanInput)) {
         responses.push(mathSystem.calculate(cleanInput));
         contextSystem.resetContext();
         return responses;
     }
-    
     let matchedTerm = null;
     for (const term in responseDatabase) {
         if (cleanInput.includes(term)) {
             matchedTerm = term;
             const baseResponse = getUniqueResponse(term);
-            
-             
             const expandedResponses = responseExpander.selectResponseType(term, baseResponse);
             responses.push(...expandedResponses);
-            
-             
             if (expandedResponses.length > 1) {
                 const lastMessage = expandedResponses[expandedResponses.length - 1];
-                
-                 
                 const isFollowUp = (followUpDatabase[term] || []).includes(lastMessage) || 
                                    contextFollowUps.default.includes(lastMessage);
-                
                 if (isFollowUp) {
                     contextSystem.lastTopic = term;
                     contextSystem.lastFollowUp = lastMessage;
                 }
             }
-            
             return responses;
         }
     }
-    
-     
 const fallbacks = [
     "🌌 私の星のデータベースには見つかりませんでした… '彗星'、'ブラックホール'、'操作'について質問してみてください！",
     "🛸 私の知識は宇宙規模です - ゲームの物理法則や宇宙の要素について聞いてみてください",
@@ -2308,23 +2163,15 @@ const fallbacks = [
     "🪐 宇宙のヒント： '重力'、'星'、'惑星'、'進化' といった用語を試してみてください！",
     "⚡ 新しい星間メッセージを検出！ 'クエーサーの作り方' や '居住可能領域とは？' のように質問してみてください"
 ];
-    
     responses.push(fallbacks[Math.floor(Math.random() * fallbacks.length)]);
-    
-     
     if (Math.random() < 0.2) {
         const followUp = followUpDatabase.default[Math.floor(Math.random() * followUpDatabase.default.length)];
         responses.push(followUp);
-        
-         
         contextSystem.lastTopic = "default";
         contextSystem.lastFollowUp = followUp;
     }
-    
     return responses;
 }
-
- 
 function toggleStarPulse(active) {
     const star = document.getElementById('star');
     if (star) {
@@ -2335,86 +2182,63 @@ function toggleStarPulse(active) {
         }
     }
 }
-
 function createMessage(text, className) {
     const message = document.createElement('div');
     message.classList.add(className);
-    
-     
     if (className === 'bot-message') {
         const starSpan = document.createElement('span');
         starSpan.textContent = STAR_EMOJI + ' ';
         starSpan.classList.add('star-emoji');
         message.appendChild(starSpan);
     }
-    
     const textSpan = document.createElement('span');
     textSpan.textContent = text;
     message.appendChild(textSpan);
-    
     return message;
 }
-
- 
 function initializeChat() {
     const chatBox = document.getElementById('chat-box');
     if (!chatBox) {
         console.error('Erro #20fgp');
         return;
     }
-    
     const botMessage = createMessage(
         greetingsSystem.getRandomGreeting(),
         'bot-message'
     );
     chatBox.appendChild(botMessage);
 }
-
- 
 async function showThinking(chatBox) {
     return new Promise(async (resolve) => {
-         
         const thinkingMsg = createMessage(' : Pensando', 'bot-message');
         chatBox.appendChild(thinkingMsg);
         const thinkingText = thinkingMsg.querySelector('span:last-child');
-        
         let dots = 0;
         const thinkDuration = Math.floor(Math.random() * 3000) + 3000;  
-        
         const thinkInterval = setInterval(() => {
             dots = (dots + 1) % 4;
             thinkingText.textContent = ` : Pensando${'.'.repeat(dots)}`;
             chatBox.scrollTop = chatBox.scrollHeight;
         }, 500);
-        
-         
         await new Promise(r => setTimeout(r, thinkDuration));
         clearInterval(thinkInterval);
         chatBox.removeChild(thinkingMsg);
-        
-         
         const searchingMsg = createMessage('Buscando', 'bot-message');
         chatBox.appendChild(searchingMsg);
         const searchingText = searchingMsg.querySelector('span:last-child');
-        
         dots = 0;
         const searchDuration = Math.floor(Math.random() * 2000) + 2000;  
-        
         const searchInterval = setInterval(() => {
             dots = (dots + 1) % 4;
             searchingText.textContent = ` : Buscando dados${'.'.repeat(dots)}`;
             chatBox.scrollTop = chatBox.scrollHeight;
         }, 500);
-        
-         
         await new Promise(r => setTimeout(r, searchDuration));
         clearInterval(searchInterval);
         chatBox.removeChild(searchingMsg);
-        
         resolve();
     });
 }
- 
 function humanTypeWriter(element, text, speed = 30) {
     return new Promise((resolve) => {
         let i = 0;
@@ -2422,19 +2246,15 @@ function humanTypeWriter(element, text, speed = 30) {
         let isPaused = false;
         let pauseEnd = 0;
         let dotsInterval = null;
-        
         toggleStarPulse(true);
-        
         function startDotsAnimation() {
             let dots = 0;
             const originalText = currentText;
-            
             dotsInterval = setInterval(() => {
                 dots = (dots + 1) % 4;
                 element.textContent = originalText + '.'.repeat(dots);
             }, 300);
         }
-        
         function stopDotsAnimation() {
             if (dotsInterval) {
                 clearInterval(dotsInterval);
@@ -2442,7 +2262,6 @@ function humanTypeWriter(element, text, speed = 30) {
                 element.textContent = currentText;
             }
         }
-        
         function type() {
             if (i >= text.length) {
                 if (dotsInterval) clearInterval(dotsInterval);
@@ -2450,15 +2269,11 @@ function humanTypeWriter(element, text, speed = 30) {
                 resolve();
                 return;
             }
-            
-             
             if (!isPaused && Math.random() < 0.03) {
                 isPaused = true;
                 pauseEnd = Date.now() + Math.random() * 2000 + 2000;  
                 startDotsAnimation();
             }
-            
-             
             if (isPaused) {
                 if (Date.now() >= pauseEnd) {
                     isPaused = false;
@@ -2467,83 +2282,56 @@ function humanTypeWriter(element, text, speed = 30) {
                 setTimeout(type, 100);
                 return;
             }
-            
-             
             currentText += text[i];
             element.textContent = currentText;
             i++;
-            
             setTimeout(type, speed);
         }
-        
         type();
     });
 }
-
-
- 
 function isOnline() {
     return navigator.onLine;
 }
-
- 
 async function handleUserInput() {
     const inputEl = document.getElementById('user-input');
     const chatBox = document.getElementById('chat-box');
     const text = inputEl.value.trim();
-    
     if (!text || !chatBox) return;
-
-     
     const userMsg = createMessage(`Você: ${text}`, 'user-message');
     chatBox.appendChild(userMsg);
     inputEl.value = '';
     chatBox.scrollTop = chatBox.scrollHeight;
-
-     
     if (!isOnline()) {
         const errorMsg = createMessage('error : 接続エラーです。インターネット接続を確認して、もう一度お試しください。', 'error-message');
         chatBox.appendChild(errorMsg);
         chatBox.scrollTop = chatBox.scrollHeight;
         return;
     }
-
-     
     await showThinking(chatBox);
-    
-     
     const replies = await getBotResponse(text);
-    
-     
     for (const reply of replies) {
         const botMsg = createMessage('', 'bot-message');
         chatBox.appendChild(botMsg);
         const textElement = botMsg.querySelector('span:last-child');
-        
-         
         await humanTypeWriter(textElement, `: ${reply}`);
         chatBox.scrollTop = chatBox.scrollHeight;
-        
-         
         if (replies.length > 1) {
             await new Promise(resolve => setTimeout(resolve, Math.random() * 1500 + 500));
         }
     }
 }
-
 setInterval(() => {
     if (Math.random() < 0.2) {
         const topics = Object.keys(responseDatabase);
         const randomTopic = topics[Math.floor(Math.random() * topics.length)];
         const messages = responseDatabase[randomTopic];
         const randomMessage = messages[Math.floor(Math.random() * messages.length)];
-        
         setTimeout(() => {
             displayMessage(randomMessage, 'bot');
         }, 3000);
     }
 }, 30000);
- 
 document.getElementById('send-btn').addEventListener('click', handleUserInput);
 document.getElementById('user-input').addEventListener('keypress', e => {
     if (e.key === 'Enter' && !e.shiftKey) {
@@ -2551,9 +2339,6 @@ document.getElementById('user-input').addEventListener('keypress', e => {
         handleUserInput();
     }
 });
-
 console.log("T Singularity: Sistema de IA carregado com sucesso!");
 console.log("(c) 2025 Free Game Plant. Todos os direitos reservados.");
-
- 
 window.addEventListener('load', initializeChat);
