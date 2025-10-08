@@ -1,0 +1,70 @@
+#languageMenu.sidebar-overlay {
+position: fixed;
+top: 0; left: 0; width: 100vw; height: 100vh;
+background: rgba(10,20,40,0.7);
+z-index: 1005;
+display: none;
+transition: opacity 0.3s;
+opacity: 0;
+}
+#languageMenu.sidebar-overlay.open {
+display: block;
+opacity: 1;
+}
+.sidebar-panel.language-panel {
+position: absolute;
+top: 50%;
+left: 50%;
+transform: translate(-50%, -50%);
+width: 400px;
+max-height: 80vh;
+background: #181f2a;
+border-radius: 12px;
+box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+display: flex;
+flex-direction: column;
+}
+.language-panel .sidebar-content {
+padding: 1.5rem;
+overflow-y: auto;
+flex: 1;
+}
+.language-list {
+list-style: none;
+padding: 0;
+margin: 0;
+}
+.language-list li {
+padding: 12px 15px;
+margin: 8px 0;
+background: rgba(255,255,255,0.05);
+border-radius: 8px;
+cursor: pointer;
+display: flex;
+align-items: center;
+transition: all 0.2s;
+color: #e0e0e0;
+}
+.language-list li:hover {
+background: rgba(129, 212, 250, 0.15);
+transform: translateX(5px);
+}
+.language-list li img {
+width: 52px;
+height: 34px;
+margin-right: 15px;
+border: 1px solid #2c3e50;
+border-radius: 3px;
+object-fit: cover;
+}
+.close-language {
+position: absolute;
+top: 12px;
+right: 18px;
+background: none;
+border: none;
+color: #fff;
+font-size: 2rem;
+cursor: pointer;
+z-index: 10;
+}
