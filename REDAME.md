@@ -1,2 +1,4 @@
-📄 Licença: Todos os direitos reservados por Elai Leonel Figueroa.  
-Exceções educacionais e para vídeos estão descritas no arquivo LICENSE.
+    License: All rights reserved by Elai Leonel Figueroa.
+Exceptions for educational and video content are described in the LICENSE file.
+
+'By FGP'
