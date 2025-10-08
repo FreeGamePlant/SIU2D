@@ -255,7 +255,6 @@
         <!--<button class="hex-btn" id="btnOptions"><i class="fas fa-cog"></i><span><a href="../../../../index.html">Reiniciar</a></span></button>Apenas da FGP para desenvolvimento-->
         <button class="hex-btn" id="exitBtn"><i class="fas fa-sign-out-alt"></i><span data-i18n="ui.buttons.exit">Sair</span></button>
         <button class="hex-btn" id="btnTSingularity"><img src="../assets/img/singularity.png" alt="T Singularity" style="width: 32px; height: 32px; margin-bottom: 8px;"><span>T Singularity</span></button>
-        <button class="hex-btn" id="btnDiary"><i class="fas fa-book"></i><span>T Singularity Diary</span></button>
         <button class="hex-btn" id="btnNews"><i class="fas fa-newspaper"></i><span>FGP</span></button>
         <button class="hex-btn" id="btnAchievements"><i class="fas fa-trophy"></i><span data-i18n="ui.buttons.achievements">Conquistas</span></button>
         <button class="hex-btn" id="btnConsole">
@@ -275,31 +274,6 @@
             </div>
           </div>
         </div>
-    <div id="diarySidebar" class="sidebar-overlay fullscreen-sidebar" style="display:none;">
-      <div class="sidebar-panel diary-panel">
-        <div class="diary-book">
-          <div class="diary-page left-page">
-            <div class="page-content">
-              <h3></h3>
-              <img src="" alt="">
-              <p></p>
-            </div>
-          </div>
-          <div class="diary-page right-page">
-            <div class="page-content">
-              <h3></h3>
-              <img src="" alt="">
-              <p></p>
-            </div>
-          </div>
-        </div>
-        <div class="diary-controls">
-          <button class="diary-nav-btn" id="prevPage"><i class="fas fa-chevron-left"></i> <-- </button>
-          <span class="page-indicator">Pg <span id="currentPages">1-2</span> of <span id="totalPages">10</span></span>
-          <button class="diary-nav-btn" id="nextPage"> --> <i class="fas fa-chevron-right"></i></button>
-          <button class="close-diary" id="closeDiaryBtn" (onclick)="hideDiary">X</button>
-        </div>
-      </div>
     </div>
     <div id="newsSidebar" class="sidebar-overlay fullscreen-sidebar" style="display:none;">
       <div class="sidebar-panel news-panel">
@@ -308,8 +282,37 @@
           <h2 style="color:#81d4fa; margin-bottom:1rem;">FGP news</h2>
           <div class="news-content">
             <div class="news-item">
-              <h3><i class="fas fa-rocket"> &nbsp;FIRST NEWS - </i>Version 0.0.3</h3>
+              <h3><i class="fas fa-rocket"> &nbsp;FIRST NEWS - </i>Version 0.0.5</h3>
               <p class="news-date">
+                THE ERA OF SMART LIVES
+                <br>
+                - space system ships and life, evolution of intelligent life in general
+                <br>
+                - New achievement system added.
+                <br>
+                - New astros: Radiation and Nebula.
+                <br>
+                - New physics improvements.
+                <br>
+                - New UI improvements.
+                <br>
+                - New sound effects.
+                <br>
+                - New music tracks.
+                <br>
+                - New tutorial system.
+                <br>
+                - New save/load system.
+                <br>
+                - New settings menu.
+                <br>
+                - Bug fixes and performance improvements.
+              </p>
+              <p>October 10, 2025</p>
+            </div>
+            <div class="news-item">
+              <h3><i class="fas fa-star"> &nbsp;SECOND NEWS - </i></h3>
+                <p class="news-date">
                 - Tutorial translations have finally been added.
                 <br>
                 - New touch-based console mode.
@@ -319,14 +322,9 @@
               <p>September 8, 2025</p>
             </div>
             <div class="news-item">
-              <h3><i class="fas fa-star"> &nbsp;SECOND NEWS - </i>CONSOLE</h3>
+              <h3><i class="fas fa-globe"> &nbsp;THIRD NEWS - </i>CONSOLE</h3>
               <p class="news-date">Console for Mobiles and iOS has been added.</p>
               <p>August 22, 2025</p>
-            </div>
-            <div class="news-item">
-              <h3><i class="fas fa-globe"> &nbsp;THIRD NEWS - </i></h3>
-              <p class="news-date"></p>
-              <p></p>
             </div>
             <div class="news-item">
               <h3><i class="fas fa-globe"> &nbsp;OLD NEWS - </i></h3>
@@ -338,125 +336,6 @@
       </div>
     </div>
 </div>
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-  const btnDiary = document.getElementById('btnDiary');
-  const diarySidebar = document.getElementById('diarySidebar');
-  const closeDiaryBtn = document.getElementById('closeDiaryBtn');
-  const btnNews = document.getElementById('btnNews');
-  const newsSidebar = document.getElementById('newsSidebar');
-  const closeNewsBtn = document.getElementById('closeNewsBtn');
-  const prevPageBtn = document.getElementById('prevPage');
-  const nextPageBtn = document.getElementById('nextPage');
-  const currentPagesEl = document.getElementById('currentPages');
-  const totalPagesEl = document.getElementById('totalPages');
-  const diaryPages = [
-    {
-      title: "Still in development",
-      image: "",
-      content: "coming soon.."
-    },
-    {
-      title: "",
-      image: "",
-      content: ""
-    },
-    {
-      title: "",
-      image: "",
-      content: ""
-    },
-    {
-      title: "",
-      image: "",
-      content: ""
-    },
-    {
-      title: "",
-      image: "",
-      content: ""
-    }
-  ];
-  function showDiary() {
-    diarySidebar.style.display = '';
-    setTimeout(() => diarySidebar.classList.add('open'), 10);
-    document.body.style.overflow = 'hidden';
-    updateDiaryPages();
-  }
-  function hideDiary() {
-    diarySidebar.classList.remove('open');
-    setTimeout(() => {
-      diarySidebar.style.display = 'none';
-      document.body.style.overflow = '';
-    }, 300);
-  }
-  function showNews() {
-    newsSidebar.style.display = '';
-    setTimeout(() => newsSidebar.classList.add('open'), 10);
-    document.body.style.overflow = 'hidden';
-  }
-  function hideNews() {
-    newsSidebar.classList.remove('open');
-    setTimeout(() => {
-      newsSidebar.style.display = 'none';
-      document.body.style.overflow = '';
-    }, 300);
-  }
-  let currentSpread = 0;
-  const totalSpreads = Math.ceil(diaryPages.length / 2);
-  function updateDiaryPages() {
-    const leftPage = document.querySelector('.left-page .page-content');
-    const rightPage = document.querySelector('.right-page .page-content');
-    const leftPageIndex = currentSpread * 2;
-    const rightPageIndex = currentSpread * 2 + 1;
-    if (leftPageIndex < diaryPages.length) {
-      leftPage.innerHTML = `
-        <h3>${diaryPages[leftPageIndex].title}</h3>
-        <img src="${diaryPages[leftPageIndex].image}" alt="${diaryPages[leftPageIndex].title}">
-        <p>${diaryPages[leftPageIndex].content}</p>
-      `;
-    } else {
-      leftPage.innerHTML = `<div style="text-align:center;padding-top:40%;color:#8b4513;font-style:italic;">Página em branco</div>`;
-    }
-    if (rightPageIndex < diaryPages.length) {
-      rightPage.innerHTML = `
-        <h3>${diaryPages[rightPageIndex].title}</h3>
-        <img src="${diaryPages[rightPageIndex].image}" alt="${diaryPages[rightPageIndex].title}">
-        <p>${diaryPages[rightPageIndex].content}</p>
-      `;
-    } else {
-      rightPage.innerHTML = `<div style="text-align:center;padding-top:40%;color:#8b4513;font-style:italic;">Página em branco</div>`;
-    }
-    currentPagesEl.textContent = `${currentSpread * 2 + 1}-${Math.min(currentSpread * 2 + 2, diaryPages.length)}`;
-    totalPagesEl.textContent = diaryPages.length;
-    prevPageBtn.disabled = currentSpread === 0;
-    nextPageBtn.disabled = currentSpread >= totalSpreads - 1;
-  }
-  btnDiary.addEventListener('click', showDiary);
-  closeDiaryBtn.addEventListener('click', hideDiary);
-  btnNews.addEventListener('click', showNews);
-  closeNewsBtn.addEventListener('click', hideNews);
-  prevPageBtn.addEventListener('click', () => {
-    if (currentSpread > 0) {
-      currentSpread--;
-      updateDiaryPages();
-    }
-  });
-  nextPageBtn.addEventListener('click', () => {
-    if (currentSpread < totalSpreads - 1) {
-      currentSpread++;
-      updateDiaryPages();
-    }
-  });
-  document.addEventListener('keydown', function(e) {
-    if (e.key === 'Escape') {
-      if (diarySidebar.style.display !== 'none') hideDiary();
-      if (newsSidebar.style.display !== 'none') hideNews();
-    }
-  });
-  updateDiaryPages();
-});
-</script>
     </div>
     </div>
 <div id="languageMenu" class="sidebar-overlay" style="display:none;">
