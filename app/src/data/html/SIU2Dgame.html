@@ -4,12 +4,16 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SIU 2D</title>
+    <link rel="stylesheet" href="../style/css/style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="../style/css/game.css">
     <link rel="stylesheet" href="../style/css/singu.css">
-    <link rel="icon" type="image/png" sizes="32x32" href="../assets/img/singularity.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="../assets/img/CAPASIU2D.jpg">
     <link rel="stylesheet" href="../style/css/SIUD2.css">
-
+    <link rel="stylesheet" href="../style/css/style2.css">
+    <link rel="stylesheet" href="../style/css/languages.css">
+    <link rel="stylesheet" href="../style/css/editPanelOverride.css">
+    <link rel="stylesheet" href="../style/css/astroTimePanel.css">
     <style>
     * {
         -webkit-user-select: none;
@@ -31,7 +35,6 @@
             -ms-user-select: none;
             user-select: none;
         }
-
         input, textarea {
             -webkit-user-select: text;
             -moz-user-select: text;
@@ -39,241 +42,13 @@
             user-select: text;
         }
     </style>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <style>
-@media (max-width: 768px) {
-    body, html {
-        overflow: hidden;
-        position: fixed;
-        width: 100%;
-        height: 100%;
-    }
-    
-    #gameContainer {
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100vw;
-        height: 100vh;
-        overflow: hidden;
-    }
-    
-    .start-options {
-        flex-direction: row;
-        flex-wrap: nowrap;
-        overflow-x: auto;
-        overflow-y: hidden;
-        justify-content: flex-start;
-        padding-bottom: 15px;
-        margin-top: 30px;
-        width: 100%;
-        -webkit-overflow-scrolling: touch;
-    }
-    
-    .start-options::-webkit-scrollbar {
-        display: none;
-    }
-    
-    .hex-btn {
-        flex: 0 0 auto;
-        width: 90px;
-        height: 105px;
-        margin: 0 8px;
-    }
-    
-    .hex-btn i {
-        font-size: 1.5rem;
-        margin-bottom: 5px;
-    }
-    
-    .hex-btn span {
-        font-size: 0.75rem;
-    }
-    
-    .game-title {
-        font-size: 2.5rem;
-        margin-bottom: 1rem;
-    }
-}
-
-@media (max-width: 480px) {
-    .hex-btn {
-        width: 80px;
-        height: 95px;
-    }
-    
-    .game-title {
-        font-size: 2rem;
-    }
-    
-    .start-options {
-        gap: 5px;
-    }
-}
-
-@media (max-width: 768px) {
-    input, select, textarea {
-        font-size: 16px; 
-    }
-}
-@media (max-width: 768px) {
-    .hex-btn {
-        -webkit-tap-highlight-color: transparent;
-        touch-action: manipulation;
-    }
-}
-</style>
 </head>
- <style>
-        #btnConsole {
-            position: relative;
-            z-index: 100;
-        }
-        
-        #consoleSidebar {
-            position: fixed;
-            top: 0;
-            right: -100%;
-            width: 100%;
-            height: 100vh;
-            background: rgba(10, 20, 40, 0.95);
-            z-index: 1006;
-            transition: right 0.4s ease-out;
-            display: flex;
-            justify-content: flex-end;
-        }
-        
-        #consoleSidebar.open {
-            right: 0;
-        }
-        
-        .console-panel {
-            width: 85%;
-            max-width: 500px;
-            height: 100%;
-            background: #181f2a;
-            box-shadow: -5px 0 25px rgba(0, 0, 0, 0.5);
-            padding: 20px;
-            overflow-y: auto;
-        }
-        
-        .close-console {
-            position: absolute;
-            top: 15px;
-            right: 20px;
-            background: none;
-            border: none;
-            color: #fff;
-            font-size: 2rem;
-            cursor: pointer;
-            z-index: 10;
-        }
-        
-        .console-header {
-            text-align: center;
-            margin-bottom: 2rem;
-            padding-top: 1rem;
-        }
-        
-        .console-header h2 {
-            color: #81d4fa;
-            margin-bottom: 0.5rem;
-        }
-        
-        .console-options {
-            display: flex;
-            flex-direction: column;
-            gap: 1.5rem;
-            margin-top: 2rem;
-        }
-        
-        .console-option {
-            display: flex;
-            align-items: center;
-            padding: 1.5rem;
-            background: rgba(255, 255, 255, 0.05);
-            border-radius: 12px;
-            cursor: pointer;
-            transition: all 0.3s;
-            border: 2px solid transparent;
-        }
-        
-        .console-option:hover {
-            background: rgba(129, 212, 250, 0.1);
-            border-color: #81d4fa;
-            transform: translateX(10px);
-        }
-        
-        .console-option i {
-            font-size: 2.5rem;
-            margin-right: 1.5rem;
-            width: 50px;
-            text-align: center;
-        }
-        
-        .console-option.pc i {
-            color: #64b5f6;
-        }
-        
-        .console-option.android i {
-            color: #a5d6a7;
-        }
-        
-        .console-option.ios i {
-            color: #90caf9;
-        }
-        
-        .option-content {
-            flex: 1;
-        }
-        
-        .option-content h3 {
-            color: #e0e0e0;
-            margin-bottom: 0.5rem;
-        }
-        
-        .option-content p {
-            color: #aaa;
-            font-size: 0.9rem;
-        }
-        
-        @media (max-width: 768px) {
-            .console-panel {
-                width: 100%;
-                max-width: 100%;
-            }
-            
-            .console-option {
-                flex-direction: column;
-                text-align: center;
-            }
-            
-            .console-option i {
-                margin-right: 0;
-                margin-bottom: 1rem;
-            }
-        }
-    </style>
 <body>
 <div id="configSidebar">
   <button class="close-config" id="closeConfigBtn" title="Close">&times;</button>
   <div class="sidebar-content">
     <div class="edit-panel" style="padding: 1.5rem 1rem;">
       <h2 data-i18n="ui.config.title" style="margin-bottom: 1.2rem; color: #81d4fa;"><div id="crazy">⚙️</div></h2>
-      <div class="edit-group">
-        <div class="edit-label" data-i18n="ui.config.gravity"></div>
-        <div class="edit-input">
-          <input type="range" id="gravityFactorSlider" min="0" max="1000" value="500" step="1">
-          <span id="gravityFactorValue">500</span>
-        </div>
-      </div>
-      <div class="edit-group">
-        <div class="edit-label" data-i18n="ui.config.drag"></div>
-        <div class="edit-input">
-          <input type="range" id="dragFactorSlider" min="0" max="100" value="0" step="1">
-          <span id="dragFactorValue">0</span>
-        </div>
-      </div>
       <div class="edit-group">
         <div class="edit-label" data-i18n="ui.config.shadows">Sombras</div>
         <div class="edit-input">
@@ -323,7 +98,6 @@
   <div class="warnings-content">
     <h2 data-i18n="ui.warnings.title">Avisos Importantes</h2>
     <div id="warningsText">
-      
       <p data-i18n="ui.warnings.warning1">Aviso 1 - Por Favor, não exagere na quantidade de Astros(Planetas,Estrelas e etc.) caso exagere demais na quantidade de Astros, o jogo irá começar a travar, dependendo do seu dispositivo, por favor, não coloque demais! querermos uma boa experiência para você, e simples, sem muito exagero, com jogabilidade e aprendizado bom.</p><br>
       <p  data-i18n="ui.warnings.warning2">Aviso 2 - O jogo está em desenvolvimento, bugs podem ocorrer, por favor, relate-os para que possamos corrigir e melhorar a experiência de jogo.</p><br>
       <p data-i18n="ui.warnings.warning3">
@@ -341,11 +115,13 @@
 <div id="gameContainer">
   <canvas id="gameCanvas"></canvas>
     <div id="startScreen">
+      <div id="mainSingularityIcon">
+        <img src="../assets/img/singularity.png" alt="T Singularity">
+    </div>
     <h1 class="game-title" data-i18n="ui.gameTitle"></h1>
     <div class="start-options">
         <button class="hex-btn" id="btnPlay"><i class="fas fa-play"></i><span data-i18n="ui.buttons.play">Jogar</span></button>
         <button class="hex-btn" id="btnSaves"><i class="fas fa-save"></i><span data-i18n="ui.buttons.saves">Saves</span></button>
-        
         <div id="savesSidebar" class="sidebar-overlay" style="display:none;">
           <div class="sidebar-panel saves-panel">
             <button class="close-sidebar" id="closeSavesBtn" title="Close Saves">&times;</button>
@@ -368,11 +144,8 @@
         const saveNameInput = document.getElementById('saveNameInput');
         const savesList = document.getElementById('savesList');
         const noSavesMsg = document.getElementById('noSavesMsg');
-
         const btnSaveUniverse = document.getElementById('btnSaveUniverse');
         const btnLoadUniverse = document.getElementById('btnLoadUniverse');
-
-        
         function randomSaveName() {
           const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789 !@#$%&*()_+-=.,';
           const len = Math.floor(Math.random() * 11) + 5; 
@@ -382,7 +155,6 @@
           }
           return name.trim();
         }
-
         function getAllSaves() {
           const saves = JSON.parse(localStorage.getItem('siu2d_saves') || '[]');
           return saves;
@@ -441,10 +213,7 @@
             alert('Função saveUniverseData não encontrada!');
           }
         };
-        
         if (btnLoadUniverse) btnLoadUniverse.onclick = showSavesSidebar;
-
-        
         if (btnSaveUniverse) btnSaveUniverse.onclick = function() {
           let name = saveNameInput.value.trim();
           if (!name) name = randomSaveName();
@@ -480,47 +249,10 @@
         });
         renderSavesList();
         </script>
-<style>
-#savesSidebar.sidebar-overlay {
-  position: fixed;
-  top: 0; left: 0; width: 100vw; height: 100vh;
-  background: rgba(10,20,40,0.7);
-  z-index: 1002;
-  display: none;
-  transition: opacity 0.3s;
-  opacity: 0;
-}
-#savesSidebar.sidebar-overlay.open {
-  display: block;
-  opacity: 1;
-}
-.sidebar-panel.saves-panel {
-  position: absolute;
-  right: 0; top: 0; height: 100vh; width: 400px;
-  background: #181f2a;
-  box-shadow: -2px 0 16px #000a;
-  transform: translateX(100%);
-  transition: transform 0.3s;
-  display: flex; flex-direction: column;
-}
-#savesSidebar.open .sidebar-panel.saves-panel {
-  transform: translateX(0);
-}
-.close-sidebar {
-  position: absolute;
-  top: 12px; right: 18px;
-  background: none; border: none; color: #fff; font-size: 2rem; cursor: pointer;
-  z-index: 10;
-}
-.saves-panel .sidebar-content {
-  padding: 2.2rem 1.5rem 1.5rem 1.5rem;
-  overflow-y: auto;
-  flex: 1;
-}
-</style>
         <button class="hex-btn" id="btnOptions"><i class="fas fa-cog"></i><span data-i18n="ui.buttons.options">Opções</span></button>
         <button class="hex-btn" id="btnInstruction"><i class="fas fa-question-circle"></i><span data-i18n="ui.buttons.tutorial">Tutorial</span></button>
         <button class="hex-btn" id="btnWarnings"><i class="fas fa-exclamation-triangle"></i><span data-i18n="ui.buttons.warnings">Avisos</span></button>
+        <!--<button class="hex-btn" id="btnOptions"><i class="fas fa-cog"></i><span><a href="../../../../index.html">Reiniciar</a></span></button>Apenas da FGP para desenvolvimento-->
         <button class="hex-btn" id="exitBtn"><i class="fas fa-sign-out-alt"></i><span data-i18n="ui.buttons.exit">Sair</span></button>
         <button class="hex-btn" id="btnTSingularity"><img src="../assets/img/singularity.png" alt="T Singularity" style="width: 32px; height: 32px; margin-bottom: 8px;"><span>T Singularity</span></button>
         <button class="hex-btn" id="btnDiary"><i class="fas fa-book"></i><span>T Singularity Diary</span></button>
@@ -543,7 +275,6 @@
             </div>
           </div>
         </div>
-        
     <div id="diarySidebar" class="sidebar-overlay fullscreen-sidebar" style="display:none;">
       <div class="sidebar-panel diary-panel">
         <div class="diary-book">
@@ -563,7 +294,6 @@
           </div>
         </div>
         <div class="diary-controls">
-          
           <button class="diary-nav-btn" id="prevPage"><i class="fas fa-chevron-left"></i> <-- </button>
           <span class="page-indicator">Pg <span id="currentPages">1-2</span> of <span id="totalPages">10</span></span>
           <button class="diary-nav-btn" id="nextPage"> --> <i class="fas fa-chevron-right"></i></button>
@@ -571,8 +301,6 @@
         </div>
       </div>
     </div>
-
-    
     <div id="newsSidebar" class="sidebar-overlay fullscreen-sidebar" style="display:none;">
       <div class="sidebar-panel news-panel">
         <button class="close-sidebar" id="closeNewsBtn" title="close news">&times;</button>
@@ -580,14 +308,20 @@
           <h2 style="color:#81d4fa; margin-bottom:1rem;">FGP news</h2>
           <div class="news-content">
             <div class="news-item">
-              <h3><i class="fas fa-rocket"> &nbsp;FIRST NEWS - </i>CONSOLE</h3>
-              <p class="news-date">Console for Mobiles and iOS has been added!</p>
-              <p>08/22/2025</p>
+              <h3><i class="fas fa-rocket"> &nbsp;FIRST NEWS - </i>Version 0.0.3</h3>
+              <p class="news-date">
+                - Tutorial translations have finally been added.
+                <br>
+                - New touch-based console mode.
+                <br>
+                - Improvements to the game's intro.
+              </p>
+              <p>September 8, 2025</p>
             </div>
             <div class="news-item">
-              <h3><i class="fas fa-star"> &nbsp;SECOND NEWS - </i></h3>
-              <p class="news-date"></p>
-              <p></p>
+              <h3><i class="fas fa-star"> &nbsp;SECOND NEWS - </i>CONSOLE</h3>
+              <p class="news-date">Console for Mobiles and iOS has been added.</p>
+              <p>August 22, 2025</p>
             </div>
             <div class="news-item">
               <h3><i class="fas fa-globe"> &nbsp;THIRD NEWS - </i></h3>
@@ -603,247 +337,19 @@
         </div>
       </div>
     </div>
-
 </div>
-
-<style>
-
-
-.close-diary{
-  background-color: rgb(235, 235, 125);
-  padding: 20px;
-  border: black;
-  border-radius: 10px 10px 10px 10px;
-}
-.fullscreen-sidebar.sidebar-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100vw;
-  height: 100vh;
-  background: rgba(10, 20, 40, 0.95);
-  z-index: 1004;
-  display: none;
-  transition: opacity 0.3s;
-  opacity: 0;
-}
-
-.fullscreen-sidebar.sidebar-overlay.open {
-  display: block;
-  opacity: 1;
-}
-
-.sidebar-panel.diary-panel {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  width: 100%;
-  height: 100vh;
-  max-width: none;
-  background: transparent;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-}
-
-.sidebar-panel.news-panel {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  width: 90%;
-  max-width: 1000px;
-  height: 80vh;
-  background: #181f2a;
-  border-radius: 12px;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-}
-
-.sidebar-content {
-  padding: 2rem;
-  overflow-y: auto;
-  flex: 1;
-}
-
-.diary-book {
-  display: flex;
-  width: 100%;
-  height: 100%;
-  background: #f0e6d2;
-  border-radius: 12px;
-  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5),
-              inset 0 0 100px rgba(139, 69, 19, 0.3);
-  border: 2px solid #8b4513;
-  overflow: hidden;
-  position: relative;
-}
-
-.diary-book::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 50%;
-  width: 1px;
-  height: 100%;
-  background: linear-gradient(to bottom, 
-              transparent 0%, 
-              rgba(139, 69, 19, 0.5) 10%, 
-              rgba(139, 69, 19, 0.3) 50%, 
-              rgba(139, 69, 19, 0.5) 90%, 
-              transparent 100%);
-  z-index: 2;
-}
-
-.diary-page {
-  flex: 1;
-  padding: 2rem;
-  overflow-y: auto;
-  position: relative;
-  background: #f8f4e9;
-}
-
-.diary-page.left-page {
-  border-right: 1px solid #d9c7a8;
-  box-shadow: inset -5px 0 15px -5px rgba(0, 0, 0, 0.1);
-}
-
-.diary-page.right-page {
-  border-left: 1px solid #d9c7a8;
-  box-shadow: inset 5px 0 15px -5px rgba(0, 0, 0, 0.1);
-}
-
-.page-content {
-  height: 100%;
-  display: flex;
-  flex-direction: column;
-}
-
-.page-content h3 {
-  color: #8b4513;
-  font-size: 1.8rem;
-  margin-bottom: 1.5rem;
-  text-align: center;
-  border-bottom: 2px solid #d9c7a8;
-  padding-bottom: 0.5rem;
-  font-family: 'Georgia', serif;
-}
-
-.page-content img {
-  max-width: 100%;
-  height: auto;
-  border-radius: 8px;
-  margin: 1rem 0;
-  border: 1px solid #d9c7a8;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-}
-
-.page-content p {
-  color: #5a3825;
-  line-height: 1.6;
-  font-size: 1.1rem;
-  font-family: 'Georgia', serif;
-  flex: 1;
-}
-
-.diary-controls {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  gap: 2rem;
-  padding: 1.5rem;
-  background: rgba(139, 69, 19, 0.8);
-  border-radius: 8px;
-  margin-top: 1.5rem;
-  width: 80%;
-}
-
-.diary-nav-btn {
-  background: #8b4513;
-  border: none;
-  color: #f8f4e9;
-  padding: 0.8rem 1.5rem;
-  border-radius: 5px;
-  cursor: pointer;
-  font-size: 1rem;
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  transition: background 0.3s;
-  font-family: 'Georgia', serif;
-}
-
-.diary-nav-btn:hover {
-  background: #6b2f0d;
-}
-
-.diary-nav-btn:disabled {
-  background: #aaa;
-  cursor: not-allowed;
-}
-
-.page-indicator {
-  color: #f8f4e9;
-  font-weight: bold;
-  font-size: 1.1rem;
-  font-family: 'Georgia', serif;
-}
-
-.news-content {
-  display: flex;
-  flex-direction: column;
-  gap: 1.5rem;
-}
-
-.news-item {
-  background: rgba(255, 255, 255, 0.05);
-  padding: 1.5rem;
-  border-radius: 8px;
-  border-left: 4px solid #81d4fa;
-}
-
-.news-item h3 {
-  color: #81d4fa;
-  margin-bottom: 0.5rem;
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-.news-date {
-  color: #aaa;
-  font-size: 0.9rem;
-  margin-bottom: 1rem;
-}
-
-.news-item p {
-  color: #e0e0e0;
-  line-height: 1.6;
-}
-</style>
-
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-  
   const btnDiary = document.getElementById('btnDiary');
   const diarySidebar = document.getElementById('diarySidebar');
   const closeDiaryBtn = document.getElementById('closeDiaryBtn');
-  
-  
   const btnNews = document.getElementById('btnNews');
   const newsSidebar = document.getElementById('newsSidebar');
   const closeNewsBtn = document.getElementById('closeNewsBtn');
-  
-  
   const prevPageBtn = document.getElementById('prevPage');
   const nextPageBtn = document.getElementById('nextPage');
   const currentPagesEl = document.getElementById('currentPages');
   const totalPagesEl = document.getElementById('totalPages');
-  
   const diaryPages = [
     {
       title: "Still in development",
@@ -871,15 +377,12 @@ document.addEventListener('DOMContentLoaded', function() {
       content: ""
     }
   ];
-  
-  
   function showDiary() {
     diarySidebar.style.display = '';
     setTimeout(() => diarySidebar.classList.add('open'), 10);
     document.body.style.overflow = 'hidden';
     updateDiaryPages();
   }
-  
   function hideDiary() {
     diarySidebar.classList.remove('open');
     setTimeout(() => {
@@ -887,13 +390,11 @@ document.addEventListener('DOMContentLoaded', function() {
       document.body.style.overflow = '';
     }, 300);
   }
-  
   function showNews() {
     newsSidebar.style.display = '';
     setTimeout(() => newsSidebar.classList.add('open'), 10);
     document.body.style.overflow = 'hidden';
   }
-  
   function hideNews() {
     newsSidebar.classList.remove('open');
     setTimeout(() => {
@@ -901,19 +402,13 @@ document.addEventListener('DOMContentLoaded', function() {
       document.body.style.overflow = '';
     }, 300);
   }
-  
-  
   let currentSpread = 0;
   const totalSpreads = Math.ceil(diaryPages.length / 2);
-  
   function updateDiaryPages() {
     const leftPage = document.querySelector('.left-page .page-content');
     const rightPage = document.querySelector('.right-page .page-content');
-    
     const leftPageIndex = currentSpread * 2;
     const rightPageIndex = currentSpread * 2 + 1;
-    
-    
     if (leftPageIndex < diaryPages.length) {
       leftPage.innerHTML = `
         <h3>${diaryPages[leftPageIndex].title}</h3>
@@ -923,8 +418,6 @@ document.addEventListener('DOMContentLoaded', function() {
     } else {
       leftPage.innerHTML = `<div style="text-align:center;padding-top:40%;color:#8b4513;font-style:italic;">Página em branco</div>`;
     }
-    
-    
     if (rightPageIndex < diaryPages.length) {
       rightPage.innerHTML = `
         <h3>${diaryPages[rightPageIndex].title}</h3>
@@ -934,265 +427,72 @@ document.addEventListener('DOMContentLoaded', function() {
     } else {
       rightPage.innerHTML = `<div style="text-align:center;padding-top:40%;color:#8b4513;font-style:italic;">Página em branco</div>`;
     }
-    
-    
     currentPagesEl.textContent = `${currentSpread * 2 + 1}-${Math.min(currentSpread * 2 + 2, diaryPages.length)}`;
     totalPagesEl.textContent = diaryPages.length;
-    
-    
     prevPageBtn.disabled = currentSpread === 0;
     nextPageBtn.disabled = currentSpread >= totalSpreads - 1;
   }
-  
-  
   btnDiary.addEventListener('click', showDiary);
   closeDiaryBtn.addEventListener('click', hideDiary);
-  
   btnNews.addEventListener('click', showNews);
   closeNewsBtn.addEventListener('click', hideNews);
-  
   prevPageBtn.addEventListener('click', () => {
     if (currentSpread > 0) {
       currentSpread--;
       updateDiaryPages();
     }
   });
-  
   nextPageBtn.addEventListener('click', () => {
     if (currentSpread < totalSpreads - 1) {
       currentSpread++;
       updateDiaryPages();
     }
   });
-  
-  
   document.addEventListener('keydown', function(e) {
     if (e.key === 'Escape') {
       if (diarySidebar.style.display !== 'none') hideDiary();
       if (newsSidebar.style.display !== 'none') hideNews();
     }
   });
-  
-  
   updateDiaryPages();
 });
 </script>
-        <style>
-            #achievementNotification{
-                z-index: 110101010101000101001001010100110100101010101001001;
-            }
-        #achievementsSidebar.sidebar-overlay {
-          position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
-          background: rgba(10,20,40,0.7); z-index: 1003; display: none; opacity: 0;
-          transition: opacity 0.3s;
-        }
-        #achievementsSidebar.sidebar-overlay.open { display: block; opacity: 1; }
-        .sidebar-panel.achievements-panel {
-          position: absolute; left: 0; top: 0; height: 100vh; width: 100vw;
-          background: #181f2a; box-shadow: 2px 0 16px #000a;
-          transform: translateX(-100vw); transition: transform 0.5s;
-          display: flex; flex-direction: column;
-        }
-        #achievementsSidebar.open .sidebar-panel.achievements-panel { transform: translateX(0); }
-        .close-sidebar { position: absolute; top: 12px; right: 18px; background: none; border: none; color: #fff; font-size: 2rem; cursor: pointer; z-index: 10; }
-        .achievements-panel .sidebar-content { padding: 2.2rem 1.5rem 1.5rem 1.5rem; overflow-y: auto; flex: 1; }
-        .achievement-card { display: flex; align-items: center; margin-bottom: 18px; background: #222; border-radius: 10px; padding: 12px; box-shadow: 0 2px 8px #0004; transition: background 0.2s; }
-        .achievement-card.locked { background: #181a1f; filter: grayscale(1) brightness(0.6); }
-        .achievement-img { width: 48px; height: 48px; border-radius: 8px; margin-right: 18px; background: #333; display: flex; align-items: center; justify-content: center; font-size: 2rem; }
-        .achievement-card.locked .achievement-img { background: #222; color: #888; }
-        .achievement-title { font-size: 1.1rem; font-weight: bold; color: #ffd700; }
-        .achievement-card.locked .achievement-title { color: #aaa; }
-        .achievement-desc { font-size: 0.98rem; color: #eee; margin-top: 2px; }
-        .achievement-card.locked .achievement-desc { color: #444; }
-        .achievement-card.locked .achievement-img img { display: none; }
-        .achievement-card.locked .achievement-img .locked-icon { display: block; }
-        .achievement-img .locked-icon { font-size: 2.2rem; color: #888; }
-        #achievementNotification {
-          position: fixed; left: -400px; top: 40px; z-index: 99999;
-          background: linear-gradient(90deg,#ffd700,#fffbe6); color: #222;
-          border-radius: 12px; box-shadow: 0 4px 24px #0008;
-          padding: 18px 32px; font-size: 1.2rem; font-weight: bold;
-          display: flex; align-items: center; gap: 18px;
-          transition: left 0.7s cubic-bezier(.7,.2,.2,1);
-        }
-                #achievementNotification.show { left: 40px; }
-                #achievementNotification {
-          position: fixed;
-          top: 20px;
-          right: 20px;
-          z-index: 100000;
-          background: linear-gradient(90deg, #ffd700, #fffbe6);
-          color: #222;
-          border-radius: 12px;
-          box-shadow: 0 4px 24px rgba(0,0,0,0.5);
-          padding: 12px 24px;
-          font-size: 1.1rem;
-          font-weight: bold;
-          display: flex;
-          align-items: center;
-          gap: 12px;
-          transform: translateX(120%);
-          transition: transform 0.7s cubic-bezier(0.7, 0.2, 0.2, 1);
-        }
-
-        #achievementNotification.show {
-          transform: translateX(0);
-        }
-
-        #achievementNotification img {
-          width: 48px;
-          height: 48px;
-          border-radius: 8px;
-        }
-        </style>
-        <style>
-          .reset-btn {
-            background: linear-gradient(to bottom, #ff4444, #cc0000);
-            color: white;
-            border: none;
-            padding: 8px 16px;
-            border-radius: 20px;
-            cursor: pointer;
-            font-size: 0.9rem;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
-            transition: all 0.2s;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-          }
-
-          .reset-btn:hover {
-            background: linear-gradient(to bottom, #ff6666, #dd2222);
-            box-shadow: 0 4px 8px rgba(0,0,0,0.3);
-          }
-
-          .reset-btn:active {
-            transform: translateY(1px);
-          }
-
-          .reset-btn i {
-            font-size: 0.9em;
-          }
-        </style>
     </div>
     </div>
 <div id="languageMenu" class="sidebar-overlay" style="display:none;">
   <div class="sidebar-panel language-panel">
     <button class="close-language" id="closeLanguageBtn" title="Close">&times;</button>
     <div class="sidebar-content">
-      <h2 style="color:#81d4fa; margin-bottom:1rem;">Selecione o Idioma</h2>
+      <h2 style="color:#81d4fa; margin-bottom:1rem;">14 languages ​​available</h2>
       <ul class="language-list">
-        <li data-lang="en" id="1l"><img src="../assets/img/flags/en.png" alt="English"> English</li>
-        <li data-lang="pt" id="2l"><img src="../assets/img/flags/pt.png" alt="Português"> Português</li>
-        <li data-lang="es" id="3l"><img src="../assets/img/flags/es.png" alt="Español"> Español</li>
-        <li data-lang="fr" id="4l"><img src="../assets/img/flags/fr.png" alt="Français"> Français</li>
-        <li data-lang="it" id="5l"><img src="../assets/img/flags/it.png" alt="Italiano"> Italiano</li>
-        <li data-lang="de" id="6l"><img src="../assets/img/flags/de.png" alt="Deutsch"> Deutsch</li>
-        <li data-lang="zh" id="7l"><img src="../assets/img/flags/zh.png" alt="中国人"> 中国人</li>
-        <li data-lang="ja" id="8l"><img src="../assets/img/flags/ja.png" alt="日本語"> 日本語</li>
-        <li data-lang="ru" id="9l"><img src="../assets/img/flags/ru.png" alt="Русский"> Русский</li>
-        <li data-lang="hi" id="10l"><img src="../assets/img/flags/hi.png" alt="हिन्दी"> हिन्दी (Hindi)</li>
-        <li data-lang="ar" id="11l"><img src="../assets/img/flags/ar.png" alt="العربية"> العربية (Arabic)</li>
-        <li data-lang="ko" id="12l"><img src="../assets/img/flags/ko.png" alt="한국어"> 한국어 (Korean)</li>
-        <li data-lang="tr" id="13l"><img src="../assets/img/flags/tr.png" alt="Türkçe"> Türkçe (Turkish)</li>
-        <li data-lang="nl" id="14l"><img src="../assets/img/flags/nl.png" alt="Nederlands"> Nederlands (Dutch)</li>
+        <li data-lang="en" id="1l"><img src="../assets/img/flags/en.jpg" alt="English">1º English</li>
+        <li data-lang="pt" id="2l"><img src="../assets/img/flags/pt.jpg" alt="Português">2º Português</li>
+        <li data-lang="es" id="3l"><img src="../assets/img/flags/es.jpg" alt="Español">3º Español</li>
+        <li data-lang="fr" id="4l"><img src="../assets/img/flags/fr.jpg" alt="Français">4º Français</li>
+        <li data-lang="it" id="5l"><img src="../assets/img/flags/it.jpg" alt="Italiano">5º Italiano</li>
+        <li data-lang="de" id="6l"><img src="../assets/img/flags/de.jpg" alt="Deutsch">6º Deutsch</li>
+        <li data-lang="zh" id="7l"><img src="../assets/img/flags/zh.jpg" alt="中国人">7º 中国人</li>
+        <li data-lang="ja" id="8l"><img src="../assets/img/flags/ja.jpg" alt="日本語">8º 日本語</li>
+        <li data-lang="ru" id="9l"><img src="../assets/img/flags/ru.jpg" alt="Русский">9º Русский</li>
+        <li data-lang="hi" id="10l"><img src="../assets/img/flags/hi.jpg" alt="हिन्दी">10º हिन्दी (Hindi)</li>
+        <li data-lang="ar" id="11l"><img src="../assets/img/flags/ar.jpg" alt="العربية">11º العربية (Arabic)</li>
+        <li data-lang="ko" id="12l"><img src="../assets/img/flags/ko.jpg" alt="한국어">12º 한국어 (Korean)</li>
+        <li data-lang="tr" id="13l"><img src="../assets/img/flags/tr.jpg" alt="Türkçe">13º Türkçe (Turkish)</li>
+        <li data-lang="nl" id="14l"><img src="../assets/img/flags/nl.jpg" alt="Nederlands">14º Nederlands (Dutch)</li>
       </ul>
     </div>
   </div>
 </div>
-
-<style>
-#languageMenu.sidebar-overlay {
-  position: fixed;
-  top: 0; left: 0; width: 100vw; height: 100vh;
-  background: rgba(10,20,40,0.7);
-  z-index: 1005;
-  display: none;
-  transition: opacity 0.3s;
-  opacity: 0;
-}
-#languageMenu.sidebar-overlay.open {
-  display: block;
-  opacity: 1;
-}
-
-.sidebar-panel.language-panel {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  width: 400px;
-  max-height: 80vh;
-  background: #181f2a;
-  border-radius: 12px;
-  box-shadow: 0 8px 32px rgba(0,0,0,0.5);
-  display: flex;
-  flex-direction: column;
-}
-
-.language-panel .sidebar-content {
-  padding: 1.5rem;
-  overflow-y: auto;
-  flex: 1;
-}
-
-.language-list {
-  list-style: none;
-  padding: 0;
-  margin: 0;
-}
-
-.language-list li {
-  padding: 12px 15px;
-  margin: 8px 0;
-  background: rgba(255,255,255,0.05);
-  border-radius: 8px;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  transition: all 0.2s;
-  color: #e0e0e0;
-}
-
-.language-list li:hover {
-  background: rgba(129, 212, 250, 0.15);
-  transform: translateX(5px);
-}
-
-.language-list li img {
-  width: 32px;
-  height: 24px;
-  margin-right: 15px;
-  border: 1px solid #2c3e50;
-  border-radius: 3px;
-  object-fit: cover;
-}
-
-.close-language {
-  position: absolute;
-  top: 12px;
-  right: 18px;
-  background: none;
-  border: none;
-  color: #fff;
-  font-size: 2rem;
-  cursor: pointer;
-  z-index: 10;
-}
-</style>
-
 <script>
 document.addEventListener('DOMContentLoaded', function() {
   const btnLanguage = document.getElementById('btnleng');
   const languageMenu = document.getElementById('languageMenu');
   const closeLanguageBtn = document.getElementById('closeLanguageBtn');
-  
   function showLanguageMenu() {
     languageMenu.style.display = '';
     setTimeout(() => languageMenu.classList.add('open'), 10);
     document.body.style.overflow = 'hidden';
   }
-  
   function hideLanguageMenu() {
     languageMenu.classList.remove('open');
     setTimeout(() => {
@@ -1200,37 +500,22 @@ document.addEventListener('DOMContentLoaded', function() {
       document.body.style.overflow = '';
     }, 300);
   }
-  
-  
   btnLanguage.addEventListener('click', showLanguageMenu);
-  
-  
   closeLanguageBtn.addEventListener('click', hideLanguageMenu);
-  
-  
   document.addEventListener('keydown', function(e) {
     if (e.key === 'Escape' && languageMenu.style.display !== 'none') {
       hideLanguageMenu();
     }
   });
-  
-  
   const langItems = document.querySelectorAll('.language-list li');
   langItems.forEach(item => {
     item.addEventListener('click', function() {
       const lang = this.getAttribute('data-lang');
       console.log('Idioma selecionado:', lang);
-      
-      
-      
-      
-      
       this.style.backgroundColor = '#81d4fa';
       this.style.color = '#181f2a';
-      
       setTimeout(() => {
         hideLanguageMenu();
-        
         setTimeout(() => {
           this.style.backgroundColor = '';
           this.style.color = '';
@@ -1240,7 +525,6 @@ document.addEventListener('DOMContentLoaded', function() {
   });
 });
 </script>
-
 <div id="tsingularitySidebar">
   <button class="close-tsingularity" id="closeTSingularityBtn" title="Close Chat T Singularity">&times;</button>
   <div class="tsingularity-content">
@@ -1253,7 +537,6 @@ document.addEventListener('DOMContentLoaded', function() {
           <div class="star-core">
             <img id="tsingu" src="../assets/img/singularity.png" alt="Singularity" style="width: 100%; height: 100%; border-radius: 50%;">
           </div>
-          
           <div class="star-point main"></div>
           <div class="star-point main"></div>
           <div class="star-point main"></div>
@@ -1262,7 +545,6 @@ document.addEventListener('DOMContentLoaded', function() {
           <div class="star-point main"></div>
           <div class="star-point main"></div>
           <div class="star-point main"></div>
-          
           <div class="star-point secondary"></div>
           <div class="star-point secondary"></div>
           <div class="star-point secondary"></div>
@@ -1290,12 +572,9 @@ document.getElementById('tsingu').addEventListener('contextmenu', (e) => {
     unlockAchievement(40);
 });
 </script>
-        
         <div id="creationModeIndicator">
             <i class="fas fa-plus-circle"></i><div data-i18n="ui.game.creationMode"></div> <span id="creationModeText"></span>
         </div>
-        
-
         <div id="infoPanel">
             <h3 data-i18n="ui.game.universeInfo.title"></h3>
             <div class="info-row">
@@ -1315,28 +594,21 @@ document.getElementById('tsingu').addEventListener('contextmenu', (e) => {
                 <div class="info-value" id="astroTypes"></div>
             </div>
         </div>
-
-        
         <div id="extraTimeControlsSection" style="margin: 12px 0 0 0; padding: 10px 0; display: flex; justify-content: flex-start; align-items: center; gap: 10px; border-top: 1px solid #333;">
             <div id="customTimeFlowBtns"></div>
         </div>
-        
         <button id="gameMenuBtn">
             <i class="fas fa-bars"></i>
         </button>
-        
-        
         <div id="inGameMenu">
             <button class="close-menu"><i class="fas fa-times"></i></button>
             <h2 class="menu-title" data-i18n="ui.inGameMenu.title"></h2>
-            
           <div class="menu-section">
               <h3 class="section-title">
                   <i class="fas fa-plus-circle" data-i18n="ui.inGameMenu.sections.createAstros"></i>
                   <span data-i18n="ui.inGameMenu.sections.createAstros"></span>
               </h3>
               <div class="options-grid">
-                  
                   <div class="option-card" data-type="radiation">
                       <h3>
                           <i class="fas fa-radiation"></i>
@@ -1363,8 +635,6 @@ document.getElementById('tsingu').addEventListener('contextmenu', (e) => {
                       </div>
                       <div class="incomum" data-i18n="ui.common.uncommon"></div>
                   </div>
-
-                  
                   <div class="option-card" data-type="nebula">
                       <h3>
                           <i class="fas fa-cloud"></i>
@@ -1391,8 +661,6 @@ document.getElementById('tsingu').addEventListener('contextmenu', (e) => {
                       </div>
                       <div class="comum" data-i18n="ui.common.common"></div>
                   </div>
-
-                  
                   <div class="option-card" data-type="spaceDust">
                       <h3>
                           <i class="fas fa-dot-circle"></i>
@@ -1419,8 +687,6 @@ document.getElementById('tsingu').addEventListener('contextmenu', (e) => {
                       </div>
                       <div class="comum" data-i18n="ui.common.common"></div>
                   </div>
-
-                  
                   <div class="option-card" data-type="meteoroid">
                       <h3>
                           <i class="fas fa-shower"></i>
@@ -1447,8 +713,6 @@ document.getElementById('tsingu').addEventListener('contextmenu', (e) => {
                       </div>
                       <div class="comum" data-i18n="ui.common.common"></div>
                   </div>
-
-                  
                   <div class="option-card" data-type="meteorite">
                       <h3>
                           <i class="fas fa-meteor"></i>
@@ -1475,8 +739,6 @@ document.getElementById('tsingu').addEventListener('contextmenu', (e) => {
                       </div>
                       <div class="comum" data-i18n="ui.common.common"></div>
                   </div>
-
-                  
                   <div class="option-card" data-type="comet">
                       <h3>
                           <i class="fas fa-water"></i>
@@ -1503,8 +765,6 @@ document.getElementById('tsingu').addEventListener('contextmenu', (e) => {
                       </div>
                       <div class="comum" data-i18n="ui.common.common"></div>
                   </div>
-
-                  
                   <div class="option-card" data-type="asteroid">
                       <h3>
                           <i class="fas fa-meteor"></i>
@@ -1531,8 +791,6 @@ document.getElementById('tsingu').addEventListener('contextmenu', (e) => {
                       </div>
                       <div class="comum" data-i18n="ui.common.common"></div>
                   </div>
-
-                  
                   <div class="option-card" data-type="planetoid">
                       <h3>
                           <i class="fas fa-moon"></i>
@@ -1559,8 +817,6 @@ document.getElementById('tsingu').addEventListener('contextmenu', (e) => {
                       </div>
                       <div class="comum" data-i18n="ui.common.common"></div>
                   </div>
-
-                  
                   <div class="option-card" data-type="rockyPlanet">
                       <h3>
                           <i class="fas fa-circle"></i>
@@ -1587,8 +843,6 @@ document.getElementById('tsingu').addEventListener('contextmenu', (e) => {
                       </div>
                       <div class="comum" data-i18n="ui.common.common"></div>
                   </div>
-
-                  
                   <div class="option-card" data-type="gasGiant">
                       <h3>
                           <i class="fas fa-wind"></i>
@@ -1618,8 +872,6 @@ document.getElementById('tsingu').addEventListener('contextmenu', (e) => {
                       </div>
                       <div class="comum" data-i18n="ui.common.common"></div>
                   </div>
-
-                  
                   <div class="option-card" data-type="brownDwarf">
                       <h3>
                           <i class="fas fa-star-half-alt"></i>
@@ -1640,8 +892,6 @@ document.getElementById('tsingu').addEventListener('contextmenu', (e) => {
                       </div>
                       <div class="comum" data-i18n="ui.common.common"></div>
                   </div>
-
-                  
                   <div class="option-card" data-type="redDwarf">
                       <h3>
                           <i class="fas fa-star-half-alt"></i>
@@ -1662,8 +912,6 @@ document.getElementById('tsingu').addEventListener('contextmenu', (e) => {
                       </div>
                       <div class="comum" data-i18n="ui.common.common"></div>
                   </div>
-
-                  
                   <div class="option-card" data-type="ttauriStar">
                       <h3>
                           <i class="fas fa-star"></i>
@@ -1684,8 +932,6 @@ document.getElementById('tsingu').addEventListener('contextmenu', (e) => {
                       </div>
                       <div class="incomum" data-i18n="ui.common.uncommon"></div>
                   </div>
-
-                  
                   <div class="option-card" data-type="star">
                       <h3>
                           <i class="fas fa-sun"></i>
@@ -1706,8 +952,6 @@ document.getElementById('tsingu').addEventListener('contextmenu', (e) => {
                       </div>
                       <div class="comum" data-i18n="ui.common.common"></div>
                   </div>
-
-                  
                   <div class="option-card" data-type="redGiant">
                       <h3>
                           <i class="fas fa-sun"></i>
@@ -1728,8 +972,6 @@ document.getElementById('tsingu').addEventListener('contextmenu', (e) => {
                       </div>
                       <div class="comum" data-i18n="ui.common.common"></div>
                   </div>
-
-                  
                   <div class="option-card" data-type="carbonStar">
                       <h3>
                           <i class="fas fa-star"></i>
@@ -1750,8 +992,6 @@ document.getElementById('tsingu').addEventListener('contextmenu', (e) => {
                       </div>
                       <div class="raro" data-i18n="ui.common.rare"></div>
                   </div>
-
-                  
                   <div class="option-card" data-type="giantStar">
                       <h3>
                           <i class="fas fa-sun"></i>
@@ -1772,8 +1012,6 @@ document.getElementById('tsingu').addEventListener('contextmenu', (e) => {
                       </div>
                       <div class="comum" data-i18n="ui.common.common"></div>
                   </div>
-
-                  
                   <div class="option-card" data-type="redSupergiant">
                       <h3>
                           <i class="fas fa-sun"></i>
@@ -1794,8 +1032,6 @@ document.getElementById('tsingu').addEventListener('contextmenu', (e) => {
                       </div>
                       <div class="incomum" data-i18n="ui.common.uncommon"></div>
                   </div>
-
-                  
                   <div class="option-card" data-type="hypergiant">
                       <h3>
                           <i class="fas fa-star"></i>
@@ -1816,8 +1052,6 @@ document.getElementById('tsingu').addEventListener('contextmenu', (e) => {
                       </div>
                       <div class="hiper-raro" data-i18n="ui.common.hyperRare"></div>
                   </div>
-
-                  
                   <div class="option-card" data-type="massiveStar">
                       <h3>
                           <i class="fas fa-star"></i>
@@ -1838,8 +1072,6 @@ document.getElementById('tsingu').addEventListener('contextmenu', (e) => {
                       </div>
                       <div class="ultra-raro" data-i18n="ui.common.ultraRare"></div>
                   </div>
-
-                  
                   <div class="option-card" data-type="supermassiveStar">
                       <h3>
                           <i class="fas fa-star"></i>
@@ -1860,8 +1092,6 @@ document.getElementById('tsingu').addEventListener('contextmenu', (e) => {
                       </div>
                       <div class="epico" data-i18n="ui.common.epic"></div>
                   </div>
-
-                  
                   <div class="option-card" data-type="whiteDwarf">
                       <h3>
                           <i class="fas fa-star"></i>
@@ -1882,8 +1112,6 @@ document.getElementById('tsingu').addEventListener('contextmenu', (e) => {
                       </div>
                       <div class="comum" data-i18n="ui.common.common"></div>
                   </div>
-
-                  
                   <div class="option-card" data-type="HeliumWhiteDwarf">
                       <h3>
                           <i class="fas fa-star"></i>
@@ -1904,8 +1132,6 @@ document.getElementById('tsingu').addEventListener('contextmenu', (e) => {
                       </div>
                       <div class="comum" data-i18n="ui.common.common"></div>
                   </div>
-
-                  
                   <div class="option-card" data-type="blackDwarf">
                       <h3>
                           <i class="fas fa-moon"></i>
@@ -1926,8 +1152,6 @@ document.getElementById('tsingu').addEventListener('contextmenu', (e) => {
                       </div>
                       <div class="legendario" data-i18n="ui.common.legendary"></div>
                   </div>
-
-                  
                   <div class="option-card" data-type="neutronStar">
                       <h3>
                           <i class="fas fa-star"></i>
@@ -1948,8 +1172,6 @@ document.getElementById('tsingu').addEventListener('contextmenu', (e) => {
                       </div>
                       <div class="comum" data-i18n="ui.common.common"></div>
                   </div>
-
-                  
                   <div class="option-card" data-type="pulsar">
                       <h3>
                           <i class="fas fa-star"></i>
@@ -1970,8 +1192,6 @@ document.getElementById('tsingu').addEventListener('contextmenu', (e) => {
                       </div>
                       <div class="hiper-raro" data-i18n="ui.common.hyperRare"></div>
                   </div>
-
-                  
                   <div class="option-card" data-type="magnetar">
                       <h3>
                           <i class="fas fa-star"></i>
@@ -1992,8 +1212,6 @@ document.getElementById('tsingu').addEventListener('contextmenu', (e) => {
                       </div>
                       <div class="ultra-raro" data-i18n="ui.common.ultraRare"></div>
                   </div>
-
-                  
                   <div class="option-card" data-type="quarkStar">
                       <h3>
                           <i class="fas fa-star"></i>
@@ -2014,8 +1232,6 @@ document.getElementById('tsingu').addEventListener('contextmenu', (e) => {
                       </div>
                       <div class="epico" data-i18n="ui.common.epic"></div>
                   </div>
-
-                  
                   <div class="option-card" data-type="strangeStar">
                       <h3>
                           <i class="fas fa-radiation"></i>
@@ -2036,8 +1252,6 @@ document.getElementById('tsingu').addEventListener('contextmenu', (e) => {
                       </div>
                       <div class="exotico" data-i18n="ui.common.exotic"></div>
                   </div>
-
-                  
                   <div class="option-card" data-type="blackHole">
                       <h3>
                           <i class="fas fa-circle-notch"></i>
@@ -2058,8 +1272,6 @@ document.getElementById('tsingu').addEventListener('contextmenu', (e) => {
                       </div>
                       <div class="incomum" data-i18n="ui.common.uncommon"></div>
                   </div>
-
-                  
                   <div class="option-card" data-type="quasar">
                       <h3>
                           <i class="fas fa-radiation"></i>
@@ -2080,8 +1292,6 @@ document.getElementById('tsingu').addEventListener('contextmenu', (e) => {
                       </div>
                       <div class="legendario" data-i18n="ui.common.legendary"></div>
                   </div>
-
-                  
                   <div class="option-card" data-type="wormhole">
                       <h3>
                           <i class="fas fa-ring"></i>
@@ -2102,8 +1312,6 @@ document.getElementById('tsingu').addEventListener('contextmenu', (e) => {
                       </div>
                       <div class="exotico" data-i18n="ui.common.exotic"></div>
                   </div>
-
-                  
                   <div class="option-card" data-type="whiteHole">
                       <h3>
                           <i class="fas fa-radiation"></i>
@@ -2126,11 +1334,9 @@ document.getElementById('tsingu').addEventListener('contextmenu', (e) => {
                   </div>
               </div>
           </div>
-            
             <div class="menu-section" id="astroDetailsSection">
                 <h3 class="section-title" data-i18n="ui.inGameMenu.sections.astroSettings"><i class="fas fa-cog"></i></h3>
                 <div class="planet-preview" id="planetPreview"></div>
-                
                 <div class="detail-group">
                     <div class="detail-title"><i class="fas fa-palette" data-i18n="ui.inGameMenu.appearance.title"></i></div>
                     <div class="detail-row">
@@ -2152,7 +1358,6 @@ document.getElementById('tsingu').addEventListener('contextmenu', (e) => {
                         </div>
                     </div>
                 </div>
-                
                 <div class="detail-group">
                     <div class="detail-title"><i class="fas fa-weight-hanging" data-i18n="ui.inGameMenu.physicalProperties.title"></i></div>
                     <div class="detail-row">
@@ -2184,7 +1389,6 @@ document.getElementById('tsingu').addEventListener('contextmenu', (e) => {
                         </div>
                     </div>
                 </div>
-                
                 <div class="detail-group">
                     <div class="detail-title" data-i18n="ui.inGameMenu.characteristics.title"><i class="fas fa-water"></i></div>
                     <div class="detail-row">
@@ -2225,20 +1429,17 @@ document.getElementById('tsingu').addEventListener('contextmenu', (e) => {
                         </div>
                     </div>
                 </div>
-                
                 <div class="btn-group">
                     <button class="action-btn" id="applySettings" data-i18n="ui.inGameMenu.apply"></button>
                     <button class="action-btn secondary" id="resetSettings"></button>
                 </div>
             </div>
-            
             <div class="menu-section">
                 <h3 class="section-title"><i class="fas fa-sliders-h"></i></h3>
                 <div class="slider-container">
                     <label data-i18n="ui.inGameMenu.options.volume"><span id="volumeValue">70</span>%</label>
                     <input type="range" min="0" max="100" value="70" id="volumeSlider">
                 </div>
-                
                 <div class="slider-container">
                     <label data-i18n="ui.inGameMenu.options.graphicsQuality"></label>
                     <select id="graphicsQuality">
@@ -2247,7 +1448,6 @@ document.getElementById('tsingu').addEventListener('contextmenu', (e) => {
                         <option value="high" data-i18n="ui.inGameMenu.options.high"></option>
                     </select>
                 </div>
-                
                 <div style="display: flex; align-items: center; margin-top: 15px;">
                     <label style="margin-right: 15px;"  data-i18n="ui.inGameMenu.options.shadows"></label>
                     <label class="toggle-switch">
@@ -2255,7 +1455,6 @@ document.getElementById('tsingu').addEventListener('contextmenu', (e) => {
                         <span class="slider"></span>
                     </label>
                 </div>
-                
                 <div style="display: flex; align-items: center; margin-top: 15px;">
                     <label style="margin-right: 15px;" ></label>
                     <label class="toggle-switch">
@@ -2263,8 +1462,6 @@ document.getElementById('tsingu').addEventListener('contextmenu', (e) => {
                         <span class="slider"></span>
                     </label>
                 </div>
-
-                        
                 <div style="display: flex; align-items: center; margin-top: 15px;">
                     <label style="margin-right: 15px;" data-i18n="ui.inGameMenu.options.showNames"><i class="fas fa-font"></i></label>
                     <label class="toggle-switch">
@@ -2273,25 +1470,21 @@ document.getElementById('tsingu').addEventListener('contextmenu', (e) => {
                     </label>
                 </div>
             </div>
-            
             <div class="menu-section">
                 <h3 class="section-title"><i class="fas fa-atom"></i></h3>
                 <div class="slider-container">
                     <label data-i18n="ui.inGameMenu.physics.gravity"><span id="gravityFactorValue">500</span>%</label>
                     <input type="range" min="1" max="500" value="500" id="gravityFactorSlider">
                 </div>
-                
                 <div class="slider-container">
                     <label data-i18n="ui.inGameMenu.physics.drag"><span id="dragFactorValue">0</span>%</label>
                     <input type="range" min="0" max="20" value="0" id="dragFactorSlider">
                 </div>
-                
                 <div class="btn-group">
                     <button class="action-btn" id="btnPhysicsPresets" data-i18n="ui.inGameMenu.presets"></button>
                     <button class="action-btn secondary" id="btnResetPhysics" data-i18n="ui.inGameMenu.resetPhysics"></button>
                 </div>
             </div>
-            
             <div class="menu-section">
                 <h3 class="section-title"><i class="fas fa-hourglass-half"></i></h3>
                 <div class="time-control">
@@ -2301,7 +1494,6 @@ document.getElementById('tsingu').addEventListener('contextmenu', (e) => {
                     <div class="time-btn" id="timeFuture" data-scale="1" data-i18n="ui.inGameMenu.timeControl.future">Normal (1x)</div>
                     <div class="time-btn" id="timeDistantFuture" data-scale="10" data-i18n="ui.inGameMenu.timeControl.distantFuture">Rápido (10x)</div>
                 </div>
-                
                 <div style="display: flex; gap: 8px; margin-top: 10px; align-items: center;">
                     <button type="button" class="time-btn" id="btn100x" data-scale="100" data-i18n="ui.inGameMenu.timeControl.superFast">Super Rápido (100x)</button>
                     <button type="button" class="time-btn" id="btn1000x" data-scale="1000" data-i18n="ui.inGameMenu.timeControl.megaFast">Mega Rápido (1000x)</button>
@@ -2309,15 +1501,12 @@ document.getElementById('tsingu').addEventListener('contextmenu', (e) => {
                     <button type="button" class="time-btn" id="btn1000000x" data-scale="100000" data-i18n="ui.inGameMenu.timeControl.ultraFast">Ultra Rápido (100000x)</button>
                 </div>
             </div>
-            
             <div class="menu-section">
                 <h3 class="section-title"><i class="fas fa-save"></i></h3>
                 <div class="btn-group">
                     <button class="action-btn" id="btnSaveUniverse" data-i18n="ui.inGameMenu.saveUniverse"></button>
                 </div>
             </div>
-
-
             <div class="menu-section">
                 <h3 class="section-title"><i class="fas fa-gamepad"></i></h3>
                 <div class="detail-row">
@@ -2351,103 +1540,107 @@ document.getElementById('tsingu').addEventListener('contextmenu', (e) => {
                 <div style="display:flex;justify-content:center;margin-top:24px;">
                   <button class="action-btn secondary" id="btnBackToStart" data-i18n="ui.inGameMenu.back">VOLTAR</button>
                 </div>
-
             </div>
         </div>
-        
         <div id="editPanel">
             <div class="edit-header">
                 <h2 class="edit-title" data-i18n="ui.editPanel.title"></h2>
                 <button class="close-menu"><i class="fas fa-times"></i></button>
             </div>
-            
             <div class="edit-grid">
                 <div class="edit-group">
                     <label class="edit-label" data-i18n="ui.editPanel.name"></label>
                     <input type="text" id="editName" class="edit-input" placeholder="Nome do astro">
                 </div>
-                
                 <div class="edit-group">
                     <label class="edit-label" data-i18n="ui.editPanel.type"></label>
                     <input type="text" id="editType" class="edit-input" readonly>
                 </div>
-                
                 <div class="edit-group">
                     <label class="edit-label" data-i18n="ui.editPanel.class"></label>
                     <input type="text" id="editClass" class="edit-input" readonly>
                 </div>
-
-
-
                 <div class="edit-group">
-                    <label class="edit-label" data-i18n="ui.editPanel.temperature"></label>
-                    <input type="text" id="editTemperature" class="edit-input" readonly>
+                  <label class="edit-label" data-i18n="ui.editPanel.temperature"></label>
+                  <input type="number" id="editTemperature" class="edit-input" min="-273.15" max="100000" step="0.01">
                 </div>
-                
                 <div class="edit-group">
                     <label class="edit-label" data-i18n="ui.editPanel.primaryColor"></label>
                     <input type="color" id="editColor" class="edit-color" value="#3498db">
                 </div>
-                
                 <div class="edit-group">
                     <label class="edit-label" data-i18n="ui.editPanel.secondaryColor"></label>
                     <input type="color" id="editSecondaryColor" class="edit-color" value="#2ecc71">
                 </div>
-                
+                <div class="edit-group">
+                    <button id="btnCustomColor" title="Custom Color Auto">🎨 CCA</button>
+                </div>
                 <div class="edit-group">
                     <label class="edit-label" data-i18n="ui.editPanel.mass"></label>
                     <input type="number" id="editMass" class="edit-input" min="1" step="0.1">
                 </div>
-                
                 <div class="edit-group">
                     <label class="edit-label" data-i18n="ui.editPanel.gravity"></label>
                     <input type="number" id="editGravity" class="edit-input" min="0.1" step="0.1">
                 </div>
-                
                 <div class="edit-group">
                     <label class="edit-label" data-i18n="ui.editPanel.rotation"></label>
                     <input type="number" id="editRotation" class="edit-input" min="-1" max="1" step="0.001">
                 </div>
-                
                 <div class="edit-group">
                     <label class="edit-label" data-i18n="ui.editPanel.water"></label>
                     <input type="number" id="editWater" class="edit-input" min="0" max="100" step="1">
                 </div>
-                
                 <div class="edit-group">
                     <label class="edit-label" data-i18n="ui.editPanel.clouds"></label>
                     <input type="number" id="editClouds" class="edit-input" min="0" max="100" step="1">
                 </div>
-                
                 <div class="edit-group">
                     <label class="edit-label" data-i18n="ui.editPanel.gases"></label>
                     <input type="number" id="editGas" class="edit-input" min="0" max="100" step="1">
                 </div>
-                
                 <div class="edit-group">
                     <label class="edit-label" data-i18n="ui.editPanel.ringMass"></label>
                     <input type="number" id="editRingMass" class="edit-input" min="1" max="100" step="1">
                 </div>
-                
+                <div class="edit-group">
+                    <button id="btnSpectate" title="Spectate">👁️</button>
+                </div>
+                <div class="edit-group" id="lifeSection">
+                  <h3>Life Information</h3>
+                  <label class="edit-label" >Era:</label>
+                  <input type="text" id="editEra" class="edit-input"><br>
+                  <label class="edit-label" >Life Chance:</label>
+                  <input type="text" id="editLifeChance" readonly class="edit-input" min="0%" max="100%"><br>
+                  <label class="edit-label">Biomass:</label>
+                  <input type="number" id="editBiomass" readonly class="edit-input" ><br>
+                </div>
+                <div class="edit-group" id="civilizationSection">
+                    <h3>Civilization</h3>
+                    <label class="edit-label">Species Name:</label>
+                    <input type="text" id="editSpeciesName" class="edit-input"><br>
+                    <label class="edit-label" >Knowledge:</label><br>
+                    <input type="number" id="editKnowledge" step="0.1" readonly class="edit-input" ><br>
+                    <label class="edit-label">Population (Intelligent):</label>
+                    <input type="number" id="editPopulation" readonly class="edit-input" ><br>
+                </div>
                 <div class="edit-group">
                     <label class="edit-label" data-i18n="ui.editPanel.description"></label>
-                    <textarea id="editDescription" class="edit-input" rows="3" placeholder="Descrição do astro"></textarea>
+                    <textarea id="editDescription" class="edit-input" rows="3" placeholder="dsc[...]"></textarea>
                 </div>
             </div>
-
             <div class="detail-row">
                 <div class="detail-label" data-i18n="ui.editPanel.locked"></div>
                 <div class="detail-value">
                     <button type="checkbox" id="btnLock"></button>
                 </div>
             </div>
-            
             <div class="edit-btn-group">
                 <button class="edit-btn delete" id="btnDeleteAstro" data-i18n="ui.editPanel.delete"><i class="fas fa-trash"></i></button>
                 <button class="edit-btn primary" id="btnApplyChanges" data-i18n="ui.editPanel.apply"><i class="fas fa-check"></i></button>
             </div>
+          </div>
         </div>
-        
         <div class="notification" id="notification"></div>
         <div class="temperature-info" id="temperatureInfo">
             <h3 data-i18n="ui.temperatureZones.title"></h3>
@@ -2477,7 +1670,6 @@ document.getElementById('tsingu').addEventListener('contextmenu', (e) => {
             </div>
         </div>
     </div>
-
     <link rel="stylesheet" href="../style/css/astroTimePanel.css">
     <link rel="stylesheet" href="../style/css/editPanelOverride.css">
     <script src="../script/js/game.js"></script>
@@ -2524,8 +1716,6 @@ document.getElementById('tsingu').addEventListener('contextmenu', (e) => {
             window.close();
           }
         });
-
-        
         const btnInstruction = document.getElementById('btnInstruction');
         if (btnInstruction) {
           btnInstruction.addEventListener('click', function() {
@@ -2543,27 +1733,22 @@ document.getElementById('tsingu').addEventListener('contextmenu', (e) => {
         }
     </script>
 <script>
-
 document.addEventListener('DOMContentLoaded', function() {
-  
   const btnTSingularity = document.getElementById('btnTSingularity');
   const tsingularitySidebar = document.getElementById('tsingularitySidebar');
   const closeTSingularityBtn = document.getElementById('closeTSingularityBtn');
-  
   if (btnTSingularity && tsingularitySidebar) {
     btnTSingularity.addEventListener('click', function() {
       tsingularitySidebar.classList.add('active');
       document.body.style.overflow = 'hidden';
     });
   }
-  
   if (closeTSingularityBtn && tsingularitySidebar) {
     closeTSingularityBtn.addEventListener('click', function() {
       tsingularitySidebar.classList.remove('active');
       document.body.style.overflow = '';
     });
   }
-  
   document.addEventListener('keydown', function(e) {
     if (e.key === 'Escape' && tsingularitySidebar.classList.contains('active')) {
       tsingularitySidebar.classList.remove('active');
@@ -2587,41 +1772,34 @@ document.addEventListener('DOMContentLoaded', function() {
 <script>
 class I18n {
   constructor() {
-    this.locale = 'pt';
+    this.locale = 'en';
     this.translations = {};
     this.scriptElement = null;
   }
-
   async loadLocale(lang) {
     try {
       const response = await fetch(`../assets/locales/${lang}.json`);
       this.translations[lang] = await response.json();
       this.locale = lang;
       this.applyTranslations();
-      
       this.loadLanguageScript(lang);
-      
       localStorage.setItem('siu2d_lang', lang);
     } catch (error) {
       console.error(`Failed to load ${lang} translations:`, error);
     }
   }
-
   loadLanguageScript(lang) {
     if (this.scriptElement) {
       this.scriptElement.remove();
     }
-    
     this.scriptElement = document.createElement('script');
     this.scriptElement.id = 'language-script';
     this.scriptElement.src = `../script/js/singu.${lang}.js`;
     document.head.appendChild(this.scriptElement);
   }
-
   t(key) {
     const keys = key.split('.');
     let value = this.translations[this.locale];
-    
     for (const k of keys) {
       value = value?.[k];
       if (value === undefined) {
@@ -2631,32 +1809,25 @@ class I18n {
     }
     return value;
   }
-
   applyTranslations() {
     document.querySelectorAll('[data-i18n]').forEach(el => {
       const key = el.getAttribute('data-i18n');
       el.textContent = this.t(key);
     });
-
     document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
       const key = el.getAttribute('data-i18n-placeholder');
       el.placeholder = this.t(key);
     });
   }
 }
-
 const i18n = new I18n();
 window.i18n = i18n;
-
 document.addEventListener('DOMContentLoaded', () => {
-  const savedLang = localStorage.getItem('siu2d_lang') || 'pt';
-  
+  const savedLang = localStorage.getItem('siu2d_lang') || 'en';
   i18n.loadLocale(savedLang);
-  
   const btnLanguage = document.getElementById('btnleng');
   const languageMenu = document.getElementById('languageMenu');
   const closeLanguageBtn = document.getElementById('closeLanguageBtn');
-  
   const confirmationModal = document.createElement('div');
   confirmationModal.id = 'confirmation-modal';
   confirmationModal.innerHTML = `
@@ -2670,15 +1841,12 @@ document.addEventListener('DOMContentLoaded', () => {
     </div>
   `;
   document.body.appendChild(confirmationModal);
-  
   let selectedLang = null;
-  
   function showLanguageMenu() {
     languageMenu.style.display = '';
     setTimeout(() => languageMenu.classList.add('open'), 10);
     document.body.style.overflow = 'hidden';
   }
-  
   function hideLanguageMenu() {
     languageMenu.classList.remove('open');
     setTimeout(() => {
@@ -2686,20 +1854,16 @@ document.addEventListener('DOMContentLoaded', () => {
       document.body.style.overflow = '';
     }, 300);
   }
-  
   function showConfirmationModal() {
     confirmationModal.style.display = 'flex';
     document.body.style.overflow = 'hidden';
   }
-  
   function hideConfirmationModal() {
     confirmationModal.style.display = 'none';
     document.body.style.overflow = '';
   }
-  
   btnLanguage.addEventListener('click', showLanguageMenu);
   closeLanguageBtn.addEventListener('click', hideLanguageMenu);
-  
   document.addEventListener('keydown', function(e) {
     if (e.key === 'Escape') {
       if (languageMenu.style.display !== 'none') {
@@ -2710,128 +1874,38 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     }
   });
-  
   const langItems = document.querySelectorAll('.language-list li');
   langItems.forEach(item => {
     item.addEventListener('click', function() {
       const lang = this.getAttribute('data-lang');
-      const currentLang = localStorage.getItem('siu2d_lang') || 'pt';
-      
+      const currentLang = localStorage.getItem('siu2d_lang') || 'en';
       if (lang === currentLang) {
         hideLanguageMenu();
         return;
       }
-      
       selectedLang = lang;
       showConfirmationModal();
       hideLanguageMenu();
     });
   });
-  
   document.getElementById('confirm-restart')?.addEventListener('click', () => {
     localStorage.setItem('siu2d_lang', selectedLang);
+    window.dispatchEvent(new Event('siu2d_lang_changed'));
     location.reload();
   });
-  
   document.getElementById('cancel-restart')?.addEventListener('click', hideConfirmationModal);
 });
 </script>
-<style>
-#confirmation-modal {
-  display: none;
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background-color: rgba(0, 0, 0, 0.7);
-  z-index: 1000;
-  justify-content: center;
-  align-items: center;
-}
-
-#confirmation-modal .modal-content {
-  background: linear-gradient(135deg, #1a2a4a, #0c1427);
-  padding: 30px;
-  border-radius: 15px;
-  width: 90%;
-  max-width: 500px;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
-  border: 1px solid #2a3a5a;
-  text-align: center;
-}
-
-#confirmation-modal h3 {
-  color: #64b5f6;
-  font-size: 24px;
-  margin-bottom: 20px;
-  text-transform: uppercase;
-  letter-spacing: 1px;
-}
-
-#confirmation-modal p {
-  color: #e0f7fa;
-  font-size: 18px;
-  line-height: 1.6;
-  margin-bottom: 30px;
-}
-
-#confirmation-modal .modal-buttons {
-  display: flex;
-  justify-content: center;
-  gap: 20px;
-}
-
-#confirmation-modal button {
-  padding: 12px 30px;
-  border: none;
-  border-radius: 50px;
-  font-size: 16px;
-  font-weight: bold;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  text-transform: uppercase;
-  letter-spacing: 1px;
-}
-
-#confirm-restart {
-  background: linear-gradient(135deg, #4caf50, #2e7d32);
-  color: white;
-  box-shadow: 0 4px 15px rgba(76, 175, 80, 0.4);
-}
-
-#confirm-restart:hover {
-  background: linear-gradient(135deg, #66bb6a, #388e3c);
-  transform: translateY(-3px);
-  box-shadow: 0 6px 20px rgba(76, 175, 80, 0.6);
-}
-
-#cancel-restart {
-  background: linear-gradient(135deg, #f44336, #c62828);
-  color: white;
-  box-shadow: 0 4px 15px rgba(244, 67, 54, 0.4);
-}
-
-#cancel-restart:hover {
-  background: linear-gradient(135deg, #ef5350, #d32f2f);
-  transform: translateY(-3px);
-  box-shadow: 0 6px 20px rgba(244, 67, 54, 0.6);
-}
-</style>
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-
   document.addEventListener('keydown', function(e) {
     const inGameMenu = document.getElementById('inGameMenu');
     const startScreen = document.getElementById('startScreen');
-    
     if (inGameMenu && window.getComputedStyle(inGameMenu).display !== 'none' && 
         (e.key === 'x' || e.key === 'X')) {
-      
       const btnBackToStart = document.getElementById('btnBackToStart');
       if (btnBackToStart) {
         btnBackToStart.click();
-        
         const notification = document.getElementById('notification');
         if (notification) {
           notification.textContent = 'Bk...';
@@ -2849,46 +1923,83 @@ document.addEventListener('DOMContentLoaded', function() {
     <div id="consoleSidebar">
         <div class="console-panel">
             <button class="close-console" id="closeConsoleBtn" title="Fechar Console">&times;</button>
-            
             <div class="console-header">
-                <h2>Emulador</h2>
-                <p>Selecione uma plataforma para emulação</p>
+                <h2 data-i18n="ui.emulator.title">Emulador</h2>
+                <p data-i18n="ui.emulator.description">Selecione uma plataforma para emulação</p>
             </div>
-            
             <div class="console-options">
-                <div class="console-option pc" data-platform="pc">
-                    <i class="fas fa-desktop"></i>
-                    <div class="option-content">
-                        <h3>PC</h3>
-                        <p>Emulação para computadores pessoais</p>
-                    </div>
-                </div>
-                
-                <div class="console-option android" data-platform="android">
-                    <i class="fab fa-android"></i>
-                    <div class="option-content">
-                        <h3>Android</h3>
-                        <p>Emulação para dispositivos Android</p>
-                    </div>
-                </div>
-                
-                <div class="console-option ios" data-platform="ios">
-                    <i class="fab fa-apple"></i>
-                    <div class="option-content">
-                        <h3>iOS</h3>
-                        <p>Emulação para dispositivos Apple iOS</p>
-                    </div>
-                </div>
-            </div>
+        <div class="console-option pc" data-platform="pc">
+          <i class="fas fa-desktop"></i>
+          <div class="option-content">
+            <h3>PC</h3>
+            <p data-i18n="ui.emulator.pc.description">Emulação para computadores pessoais</p>
+            <button class="desc-btn" data-desc="desc-pc">desc</button>
+            <div class="desc-panel" id="desc-pc" style="display:none;" data-i18n="ui.emulator.pc.mode">Modo PC: Use teclado e mouse para controlar o universo. Ideal para computadores e notebooks.</div>
+          </div>
+        </div>
+        <div class="console-option android" data-platform="android">
+          <i class="fas fa-gamepad"></i>
+          <div class="option-content">
+            <h3>Android / iOS / Mobiles</h3>
+            <p data-i18n="ui.emulator.android.description">Emulação para dispositivos móveis (botões)</p>
+            <button class="desc-btn" data-desc="desc-android">desc</button>
+            <div class="desc-panel" id="desc-android" style="display:none;" data-i18n="ui.emulator.android.mode">Modo Botões: Use botões virtuais para mover, criar e controlar o universo em dispositivos móveis.</div>
+          </div>
+        </div>
+        <div class="console-option ios" data-platform="toque">
+          <i class="fas fa-hand"></i>
+          <div class="option-content">
+            <h3>Android / iOS / Mobiles</h3>
+            <p data-i18n="ui.emulator.touch.description">Emulação para dispositivos móveis (Toque)</p>
+            <button class="desc-btn" data-desc="desc-toque">desc</button>
+            <div class="desc-panel" id="desc-toque" style="display:none;">
+              <div data-i18n="ui.emulator.touch.mode">Modo Toque: Controle total por gestos!<br></div>
+              <div data-i18n="ui.emulator.touch.gestures.one">• 1 toque/arraste com 1 dedo: cria Astros<br></div>
+              <div data-i18n="ui.emulator.touch.gestures.two">• 1 toque duplo no astro: configura-lo<br></div>
+              <div data-i18n="ui.emulator.touch.gestures.three">• 2 dedos e arraste: movimenta câmera<br></div>
+              <div data-i18n="ui.emulator.touch.gestures.four">• 2 dedos e arraste para fora/dentro: zoom<br></div>
+              <div data-i18n="ui.emulator.touch.gestures.five">• 2 toques com 2 dedos: deleta universo</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
         </div>
     </div>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  document.querySelectorAll('.desc-btn').forEach(btn => {
+    btn.addEventListener('click', function(e) {
+      e.stopPropagation();
+      const id = btn.getAttribute('data-desc');
+      const panel = document.getElementById(id);
+      if (panel.style.display === 'none') {
+        document.querySelectorAll('.desc-panel').forEach(p => p.style.display = 'none');
+        panel.style.display = 'block';
+      } else {
+        panel.style.display = 'none';
+      }
+    });
+  });
+  const emulacaoBarra = document.getElementById('emulacao-barra');
+  const btnConsole = document.getElementById('btnConsole');
+  const closeConsoleBtn = document.getElementById('closeConsoleBtn');
+  const consoleSidebar = document.getElementById('consoleSidebar');
+  function showEmulacaoBarra() { emulacaoBarra.style.display = 'block'; }
+  function hideEmulacaoBarra() { emulacaoBarra.style.display = 'none'; }
+  if (btnConsole) btnConsole.addEventListener('click', showEmulacaoBarra);
+  if (closeConsoleBtn) closeConsoleBtn.addEventListener('click', hideEmulacaoBarra);
+  if (consoleSidebar) consoleSidebar.addEventListener('click', function(e) {
+    if (e.target === consoleSidebar) hideEmulacaoBarra();
+  });
+});
+</script>
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             const btnConsole = document.getElementById('btnConsole');
             const consoleSidebar = document.getElementById('consoleSidebar');
             const closeConsoleBtn = document.getElementById('closeConsoleBtn');
             const consoleOptions = document.querySelectorAll('.console-option');
-            
             function openConsole() {
                 consoleSidebar.classList.add('open');
                 document.body.style.overflow = 'hidden';
@@ -2897,207 +2008,42 @@ document.addEventListener('DOMContentLoaded', function() {
                 consoleSidebar.classList.remove('open');
                 document.body.style.overflow = '';
             }
-            
             if (btnConsole) {
                 btnConsole.addEventListener('click', openConsole);
             }
-            
             if (closeConsoleBtn) {
                 closeConsoleBtn.addEventListener('click', closeConsole);
             }
-            
             document.addEventListener('keydown', function(e) {
                 if (e.key === 'Escape' && consoleSidebar.classList.contains('open')) {
                     closeConsole();
                 }
             });
-            
             consoleSidebar.addEventListener('click', function(e) {
                 if (e.target === consoleSidebar) {
                     closeConsole();
                 }
             });
-            
             consoleOptions.forEach(option => {
                 option.addEventListener('click', function() {
                     const platform = this.getAttribute('data-platform');
                     console.log(`Plataforma selecionada: ${platform}`);
-                    
                     switch(platform) {
                         case 'pc':
-                            alert('Emulação para PC selecionada');
+                            alert('Emulator has changed to PC');
                             break;
                         case 'android':
-                            alert('Emulação para Android selecionada');
+                            alert('Emulator has changed to Mobile Devices (Buttons)');
                             break;
-                        case 'ios':
-                            alert('Emulação para iOS selecionada');
+                        case 'toque':
+                            alert('Emulator has changed to Mobile Devices (Touch)');
                             break;
                     }
-                    
                     closeConsole();
                 });
             });
         });
     </script>
-<style>
-    #mobileControls {
-        position: fixed;
-        bottom: 20px;
-        left: 0;
-        right: 0;
-        display: none;
-        justify-content: space-between;
-        padding: 0 15px;
-        z-index: 1000;
-        pointer-events: none;
-    }
-
-    #mobileControls .control-group {
-        display: flex;
-        flex-direction: column;
-        gap: 10px;
-        pointer-events: auto;
-    }
-
-    #mobileControls .movement-controls {
-        display: grid;
-        grid-template-areas:
-            ". up ."
-            "left center right"
-            ". down .";
-        gap: 8px;
-    }
-
-    #mobileControls button {
-        width: 20px;
-        height: 20px;
-        border-radius: 50%;
-        background: rgba(255, 255, 255, 0.7);
-        border: 2px solid rgba(0, 0, 0, 0.3);
-        font-size: 18px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        touch-action: manipulation;
-        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
-    }
-
-    #mobileControls button:active {
-        background: rgba(200, 200, 200, 0.9);
-        transform: scale(0.95);
-    }
-
-    #upBtn { grid-area: up; }
-    #leftBtn { grid-area: left; }
-    #centerBtn { grid-area: center; background: rgba(255, 150, 150, 0.7); }
-    #rightBtn { grid-area: right; }
-    #downBtn { grid-area: down; }
-
-    #mobileControls .action-controls {
-        justify-content: flex-end;
-    }
-
-    #mobileControls .action-controls button {
-        width: 25px;
-        height: 25px;
-        font-size: 16px;
-        margin-bottom: 8px;
-    }
-
-    #modeToggleBtn {
-        background: rgba(150, 200, 255, 0.7);
-    }
-
-    #modeToggleBtn.edit-mode {
-        background: rgba(255, 200, 150, 0.9);
-    }
-
-    @media (max-width: 768px) {
-        #mobileControls button {
-            width: 25px;
-            height: 25px;
-            font-size: 16px;
-        }
-        
-        #mobileControls .action-controls button {
-            width: 20px;
-            height: 20px;
-        }
-    }
-
-    @media (max-width: 480px) {
-        #mobileControls {
-            padding: 0 10px;
-        }
-        
-        #mobileControls button {
-            width: 20px;
-            height: 20px;
-            font-size: 14px;
-        }
-        
-        #mobileControls .action-controls button {
-            width: 35px;
-            height: 35px;
-            font-size: 13px;
-        }
-    }
-
-    @media (max-height: 500px) {
-        #mobileControls {
-            bottom: 10px;
-        }
-        
-        #mobileControls button {
-            width: 35px;
-            height: 35px;
-        }
-    }
-
-    @media (orientation: landscape) {
-        #mobileControls {
-            flex-direction: row;
-        }
-    }
-
-    @media (orientation: portrait) {
-        #mobileControls {
-            flex-direction: row;
-            flex-wrap: wrap;
-        }
-        
-        #mobileControls .action-controls {
-            flex-direction: row;
-            gap: 8px;
-        }
-    }
-</style>
-<style>
-    #mobileControls button {
-        width: 50px;
-        height: 50px;
-        border-radius: 50%;
-        background: rgba(255, 255, 255, 0.7);
-        border: 2px solid rgba(0, 0, 0, 0.3);
-        font-size: 18px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        touch-action: manipulation;
-        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
-    }
-
-    #mobileControls button:active {
-        background: rgba(200, 200, 200, 0.9);
-        transform: scale(0.95);
-    }
-
-    #resetUniverseBtn {
-        background: rgba(255, 150, 150, 0.7);
-    }
-</style>
-
 <div id="mobileControls">
     <div class="control-group movement-controls">
         <button id="upBtn">↑</button>
@@ -3105,7 +2051,6 @@ document.addEventListener('DOMContentLoaded', function() {
         <button id="rightBtn">→</button>
         <button id="downBtn">↓</button>
     </div>
-    
     <div class="control-group action-controls">
         <button id="zoomInBtn">+</button>
         <button id="zoomOutBtn">-</button>
