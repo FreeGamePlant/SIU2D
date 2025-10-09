@@ -1,4 +1,15 @@
-//#region game function
+function getRandomBackground() {
+    const backgrounds = [
+        'app/src/data/assets/img/CAPASIU2D.jpg',
+        'app/src/data/assets/img/CAPASIU2D.2.jpg'
+    ];
+    const randomIndex = Math.floor(Math.random() * backgrounds.length);
+    return backgrounds[randomIndex];
+}
+function setRandomBackground() {
+    const randomBg = getRandomBackground();
+    document.body.style.backgroundImage = `url('${randomBg}')`;
+}
 function createParticles() {
     const particlesContainer = document.getElementById('particles');
     for (let i = 0; i < 20; i++) {
@@ -61,6 +72,7 @@ function showRandomQuote(loadingQuotesArr) {
     quoteInterval = setInterval(nextQuote, 8500);
 }
 (function mainLoading() {
+    setRandomBackground();
     createParticles();
     let lang = localStorage.getItem('siu2d_lang') || (navigator.language || navigator.userLanguage || 'en').split('-')[0];
     const supportedLangs = ['pt', 'en', 'es', 'fr', 'de', 'it', 'ja', 'ko', 'ru', 'zh', 'ar', 'nl', 'tr', 'hi'];
@@ -70,7 +82,7 @@ function showRandomQuote(loadingQuotesArr) {
         .then(loadingQuotesArr => {
             setTimeout(() => showRandomQuote(loadingQuotesArr), 100);
         })
-        .catch(() => {/* fail silently */});
+        .catch(() => {});
     setTimeout(updateLoadingText, 5000);
     const minTime = 15000;
     const maxTime = 30000;
@@ -98,9 +110,6 @@ function showRandomQuote(loadingQuotesArr) {
         window.location.href = "app/src/data/html/SIU2Dgame.html";
     }, totalTime);
 })();
-//#endregion
-
-//#region game index info
 const info = [
     '0.0.3',
     'vs code "Engine"',
@@ -108,4 +117,3 @@ const info = [
     'Thank for gaming :D'
 ]
 console.log(info)
-//#endregion
