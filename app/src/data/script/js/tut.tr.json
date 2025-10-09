@@ -6,6 +6,7 @@
   "zoom_instructions": "Harika! Şimdi Q ve E tuşlarını kullanarak yakınlaştırmayı deneyin, oluşturduğunuz gök cismine yaklaşın.",
   "move_camera": "Kamerayı W, A, S ve D tuşlarıyla da hareket ettirebilirsiniz. Kameranın konumunu ayarlamak için bunları kullanın.",
   "camera_adjusted": "Mükemmel! Kamerayı gök cisminin yakınına ayarladınız mı? Evetse bir sonraki adıma geçin.",
+  "open_edit_panel": "Mükemmel! Şimdi bir gök cismine sağ tıklayarak düzenleme panelini açın.",
   "create_second": "Şimdi, ilk gök cisminin yakınına başka bir gök cismi oluşturun ve kütleçekim etkileşimini ve çarpışmayı izleyin!",
   "waiting_second": "Yakında başka bir gök cismi oluşturmanızı bekliyorum...",
   "wait_collision": "Hazır, çarpışmalarını bekleyin ve ne olacağını görün. Çarpışırlarsa bir sonraki adıma geçebilirsiniz.",

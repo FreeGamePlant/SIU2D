@@ -6,6 +6,7 @@
   "zoom_instructions": "Très bien! Essayez de zoomer avec les touches Q et E, rapprochez-vous de l'étoile créée.",
   "move_camera": "Vous pouvez aussi déplacer la caméra avec les touches W, A, S et D, utilisez-les pour ajuster la position de la caméra.",
   "camera_adjusted": "Parfait! Si la caméra est ajustée, passez à l'étape suivante.",
+  "open_edit_panel": "Parfait! Faites un clic droit sur une étoile pour ouvrir le panneau d'édition.",
   "create_second": "Créez maintenant une autre étoile près de la première pour voir l'interaction gravitationnelle et la collision!",
   "waiting_second": "En attente de la création d'une autre étoile...",
   "wait_collision": "Prêt, attendez qu'elles entrent en collision pour voir ce qui se passe. Si elles entrent en collision, vous pouvez passer à l'étape suivante.",

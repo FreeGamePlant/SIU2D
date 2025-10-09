@@ -6,6 +6,7 @@
   "zoom_instructions": "Sehr gut! Probiere das Zoomen mit den Tasten Q und E aus, nähere dich dem erschaffenen Stern.",
   "move_camera": "Du kannst die Kamera auch mit den Tasten W, A, S und D bewegen, um die Position der Kamera anzupassen.",
   "camera_adjusted": "Perfekt! Wenn du die Kamera angepasst hast, gehe zum nächsten Schritt.",
+  "open_edit_panel": "Perfekt! Klicke nun mit der rechten Maustaste auf einen Stern, um das Bearbeitungsfeld zu öffnen.",
   "create_second": "Jetzt erschaffe einen weiteren Stern in der Nähe des ersten, um die Gravitation und Kollision zu sehen!",
   "waiting_second": "Warte darauf, dass du einen weiteren Stern erschaffst...",
   "wait_collision": "Warte, bis sie kollidieren, um zu sehen, was passiert. Wenn sie kollidieren, kannst du zum nächsten Schritt gehen.",

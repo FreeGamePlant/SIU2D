@@ -4,7 +4,7 @@ const TitleGame = ('SIUD2D');
 console.log('SEJA BEM VINDO AO ' + TitleGame)
 console.log('Todos Os direitos reservados da FGP.')
 const canvas = document.getElementById('gameCanvas');
-const versionGame = ('0.0.3');
+const versionGame = ('0.0.0=ALPHA');
 const ctx = canvas.getContext('2d');
 const startScreen = document.getElementById('startScreen');
 const gameMenuBtn = document.getElementById('gameMenuBtn');
@@ -206,6 +206,8 @@ let spectatedAstro = null;
 let controlMode = false;
 let controlledShip = null;
 let keys = {};
+let isLandscape = window.innerWidth > window.innerHeight;
+let orientationWarning = null;
 //#endregion
 if (btnLock) {
     btnLock.addEventListener('click', toggleLock);
@@ -462,10 +464,64 @@ function init() {
     });
     fgpAstroPreview();
     requestAnimationFrame(gameLoop);
+    window.addEventListener('resize', checkOrientation);
+    window.addEventListener('orientationchange', checkOrientation);
+    checkOrientation();
+}
+function lockOrientation() {
+    if (screen.orientation && screen.orientation.lock) {
+        screen.orientation.lock('landscape').catch(function(error) {
+            console.log('O bloqueio de orientação não é suportado: ', error);
+        });
+    }
+}
+function checkOrientation() {
+    isLandscape = window.innerWidth > window.innerHeight;
+    if (!isLandscape) {
+        showOrientationWarning();
+    } else {
+        hideOrientationWarning();
+    }
+    resizeCanvas();
+}
+function showOrientationWarning() {
+    if (!orientationWarning) {
+        orientationWarning = document.createElement('div');
+        orientationWarning.style.cssText = `
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.9);
+            color: white;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 24px;
+            text-align: center;
+            z-index: 10000;
+            padding: 20px;
+        `;
+        orientationWarning.innerHTML = '🔄 Recommended that you rotate your device';
+        document.body.appendChild(orientationWarning);
+    }
+}
+function hideOrientationWarning() {
+    if (orientationWarning) {
+        document.body.removeChild(orientationWarning);
+        orientationWarning = null;
+    }
 }
 function resizeCanvas() {
-    canvas.width = window.innerWidth;
-    canvas.height = window.innerHeight;
+    if (isLandscape) {
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+    } else {
+        const maxWidth = Math.min(window.innerWidth, window.innerHeight * 1.5);
+        canvas.width = maxWidth;
+        canvas.height = maxWidth / 1.5;
+    }
 }
 function calculateMovementDirection(obj) {
     if (obj.vx !== 0 || obj.vy !== 0) {
@@ -5406,6 +5462,7 @@ function startGame() {
         universeAge = 0;
         universeTime = 0;
     }
+    lockOrientation();
 }
 function toggleGameMenu() {
     console.log('[DEBUG] toggleGameMenu chamado. Estado atual:', inGameMenu.classList.contains('active'));

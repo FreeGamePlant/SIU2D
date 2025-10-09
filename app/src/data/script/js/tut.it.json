@@ -6,6 +6,7 @@
   "zoom_instructions": "Ottimo! Ora prova a zoomare con i tasti Q ed E, avvicinati alla stella creata.",
   "move_camera": "Puoi anche muovere la telecamera con i tasti W, A, S e D, usali per regolare la posizione della telecamera.",
   "camera_adjusted": "Perfetto! Se hai regolato la telecamera vicino alla stella, passa al prossimo passo.",
+  "open_edit_panel": "Perfetto! Ora fai clic destro su una stella per aprire il pannello di modifica.",
   "create_second": "Ora crea un'altra stella vicino alla prima per vedere l'interazione gravitazionale e la collisione!",
   "waiting_second": "In attesa che tu crei un'altra stella...",
   "wait_collision": "Pronto, attendi che si scontrino per vedere cosa succede. Se si scontrano, puoi passare al prossimo passo.",

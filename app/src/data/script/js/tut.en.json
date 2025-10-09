@@ -6,6 +6,7 @@
   "zoom_instructions": "Very good! Now try zooming with the Q and E keys, get closer to the created star.",
   "move_camera": "You can also move the camera with the W, A, S, and D keys, use them to adjust the camera position.",
   "camera_adjusted": "Perfect! If you've adjusted the camera near the star, proceed to the next step.",
+  "open_edit_panel": "Perfect! Now right-click on a star to open the edit panel.",
   "create_second": "Now, create another star near the first to see gravitational interaction and collision!",
   "waiting_second": "Waiting for you to create another nearby star...",
   "wait_collision": "Ready, wait for them to collide to see what happens. If they collide, you can proceed to the next step.",

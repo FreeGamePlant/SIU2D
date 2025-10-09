@@ -6,6 +6,7 @@
   "zoom_instructions": "Muito bem! Agora experimente dar zoom usando as teclas Q e E, use para se aproximar do astro criado.",
   "move_camera": "Você também pode mover a câmera com as teclas W, A, S e D, use eles para ajustar a posição da câmera.",
   "camera_adjusted": "Perfeito! você já ajustou a câmera perto do astro né? se sim avance para o próximo passo.",
+  "open_edit_panel": "Perfeito! Agora clique com o botão direito em um astro para abrir o painel de edição.",
   "create_second": "Agora, crie outro astro perto do primeiro para ver a interação gravitacional e colisão!",
   "waiting_second": "Aguardando você criar outro astro próximo...",
   "wait_collision": "Pronto, espere eles se colidirem para ver o que acontece, se eles se colidirem, você pode avançar para o próximo passo.",
@@ -74,8 +75,11 @@
         "cutscene_btn_nicknames": "Você tem Apelidos?",
       
           "cutscene_nicknames": "Tenho Apelidos Sim! Pode me chamar de TS, Singu, Roxinho, Bobão, e vou ter que atravessar o buraco de minhoca agora com você.",
-
     "cutscene_btn_happening": "O que está acontecendo?",
-      
-      "cutscene_response3": "Estamos prestes a atravessar o tempo e o espaço juntos!"
+      "cutscene_response3": "Estamos prestes a atravessar o tempo e o espaço juntos!",
+  "buttons": {
+    "ok": "OK!",
+    "next": "Próximo",
+    "continue": "Continuar"
+  }
 }

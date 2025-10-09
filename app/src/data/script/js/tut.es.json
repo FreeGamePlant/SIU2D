@@ -6,6 +6,7 @@
   "zoom_instructions": "¡Muy bien! Ahora prueba hacer zoom con las teclas Q y E, acércate a la estrella creada.",
   "move_camera": "También puedes mover la cámara con las teclas W, A, S y D, úsalas para ajustar la posición de la cámara.",
   "camera_adjusted": "¡Perfecto! Si ya ajustaste la cámara cerca de la estrella, avanza al siguiente paso.",
+  "open_edit_panel": "¡Perfecto! Ahora haz clic derecho en una estrella para abrir el panel de edición.",
   "create_second": "Ahora, crea otra estrella cerca de la primera para ver la interacción gravitacional y la colisión!",
   "waiting_second": "Esperando a que crees otra estrella cercana...",
   "wait_collision": "Listo, espera a que colisionen para ver qué sucede. Si colisionan, puedes avanzar al siguiente paso.",

@@ -71,9 +71,10 @@ function nextTutorialStep(forceReload = false) {
         );
         document.getElementById('btnTutContinue1').onclick = () => {
           showTutorialSingularity('click_to_create');
-          tutorialSingularityAction.innerHTML = `<span style=\"color:#aaa;font-size:0.98rem;\">${tutI18n.t('waiting_astro')}</span>`;
+          tutorialSingularityAction.innerHTML = `<span style=\"color:#aaa;font-size:0.98rem;\">${tutT('waiting_astro')}</span>`;
           const gameCanvas = document.getElementById('gameCanvas');
           function handleFirstAstroClick(e) {
+            console.log('Clique detectado no canvas', e);
             if (e.button === 0) {
               gameCanvas.removeEventListener('mousedown', handleFirstAstroClick, true);
               tutorialAstroCreated = true;
@@ -81,7 +82,16 @@ function nextTutorialStep(forceReload = false) {
             }
           }
           if (gameCanvas) {
-            gameCanvas.addEventListener('mousedown', handleFirstAstroClick, true);
+            console.log('Canvas encontrado, adicionando listener...');
+            gameCanvas.addEventListener('mousedown', handleFirstAstroClick, false);
+            setTimeout(() => {
+              if (!tutorialAstroCreated) {
+                console.log('Clique não detectado, removendo listener');
+                gameCanvas.removeEventListener('mousedown', handleFirstAstroClick, false);
+              }
+            }, 30000);
+          } else {
+            console.error('Canvas do jogo não encontrado!');
           }
         };
       }, 2200);
@@ -157,7 +167,7 @@ function nextTutorialStep(forceReload = false) {
                       setTimeout(() => {
                         tutorialStep = 6;
                         showTutorialSingularity(
-                          'change_astro_name',
+                          'change_name',
                           `<span style=\"color:#aaa;font-size:0.98rem;\">${tutT('waiting_name')}</span>`
                         );
                         const editName = document.getElementById('editName');
@@ -167,19 +177,19 @@ function nextTutorialStep(forceReload = false) {
                               setTimeout(() => {
                                 tutorialStep = 7;
                                 showTutorialSingularity(
-                                  'edit_attributes',
+                                  'change_attributes',
                                   `<button id="btnTutContinueAtributos" class="cutscene-btn">${tutT('buttons.ok')}</button>`
                                 );
                                 document.getElementById('btnTutContinueAtributos').onclick = () => {
                                   tutorialStep = 8;
                                   showTutorialSingularity(
-                                    'edit_description',
+                                    'change_description',
                                     `<button id="btnTutContinueDescricao" class="cutscene-btn">${tutT('buttons.ok')}</button>`
                                   );
                                   document.getElementById('btnTutContinueDescricao').onclick = () => {
                                     tutorialStep = 9;
                                     showTutorialSingularity(
-                                      'close_edit_panel',
+                                      'close_edit',
                                       `<span style=\"color:#aaa;font-size:0.98rem;\">${tutT('waiting_close')}</span>`
                                     );
                                     const closeBtn = document.querySelector('#editPanel .close-menu');
@@ -188,7 +198,7 @@ function nextTutorialStep(forceReload = false) {
                                       setTimeout(() => {
                                         tutorialStep = 10;
                                         showTutorialSingularity(
-                                          'open_universe_menu',
+                                          'open_menu',
                                           `<span style=\"color:#aaa;font-size:0.98rem;\">${tutT('waiting_menu')}</span>`
                                         );
                                         const inGameMenu = document.getElementById('inGameMenu');
@@ -199,13 +209,13 @@ function nextTutorialStep(forceReload = false) {
                                               setTimeout(() => {
                                                 tutorialStep = 11;
                                                 showTutorialSingularity(
-                                                  'scroll_astro_menu',
+                                                  'see_variety',
                                                   `<button id="btnTutContinueScrollAstros" class="cutscene-btn">${tutT('buttons.ok')}</button>`
                                                 );
                                                 document.getElementById('btnTutContinueScrollAstros').onclick = () => {
                                                   tutorialStep = 12;
                                                   showTutorialSingularity(
-                                                    'create_common_star',
+                                                    'create_star',
                                                     `<span style=\"color:#aaa;font-size:0.98rem;\">${tutT('waiting_star')}</span>`
                                                   );
                                                   const gameCanvas = document.getElementById('gameCanvas');
@@ -255,7 +265,7 @@ function nextTutorialStep(forceReload = false) {
       break;
     case 12:
       showTutorialSingularity(
-        'open_universe_menu',
+        'open_menu_again',
               `<span style=\"color:#aaa;font-size:0.98rem;\">${tutT('waiting_menu')}</span>`
       );
       const inGameMenu = document.getElementById('inGameMenu');
@@ -263,15 +273,14 @@ function nextTutorialStep(forceReload = false) {
         if (inGameMenu && inGameMenu.style.display !== 'none') {
           setTimeout(() => {
             showTutorialSingularity(
-              'create_rocky_planet',
-              '<span style="color:#aaa;font-size:0.98rem;">Aguardando você criar o planeta Rochoso...</span>'
+              'choose_rocky',
             );
             const gameCanvas = document.getElementById('gameCanvas');
             function handleCreateRocky(e) {
               if (e.button === 0) {
                 gameCanvas.removeEventListener('mousedown', handleCreateRocky, true);
                 showTutorialSingularity(
-                  'observe_climate_changes',
+                  'observe_climate',
                   `<button id="btnTutContinueClima" class="cutscene-btn">${tutI18n.t('buttons.next')}</button>`
                 );
                 document.getElementById('btnTutContinueClima').onclick = () => {
@@ -305,8 +314,7 @@ function nextTutorialStep(forceReload = false) {
       if (tutorialStarCreated) {
         tutorialStep = 14;
         showTutorialSingularity(
-          'press_f_key',
-          '<span style="color:#aaa;font-size:0.98rem;">Aguardando você pressionar F...</span>'
+          'press_f',
         );
         function handleFKey(e) {
           if (e.key === 'f' || e.key === 'F') {
@@ -314,8 +322,8 @@ function nextTutorialStep(forceReload = false) {
             setTimeout(() => {
               tutorialStep = 15;
               showTutorialSingularity(
-                'open_universe_menu',
-                '<span style="color:#aaa;font-size:0.98rem;">Aguardando você abrir o menu...</span>'
+                'open_after_f',
+                `<span style=\"color:#aaa;font-size:0.98rem;\">${tutT('waiting_menu')}</span>`
               );
               const inGameMenu = document.getElementById('inGameMenu');
               function advanceIfMenuOpen() {
@@ -323,7 +331,7 @@ function nextTutorialStep(forceReload = false) {
                   setTimeout(() => {
                     tutorialStep = 16;
                     showTutorialSingularity(
-                      'select_t_tauri_star',
+                      'choose_tauri',
                       `<span style=\"color:#aaa;font-size:0.98rem;\">${tutT('create_tauri')}</span>`
                     );
                     const gameCanvas = document.getElementById('gameCanvas');
@@ -333,8 +341,8 @@ function nextTutorialStep(forceReload = false) {
                         setTimeout(() => {
                           tutorialStep = 18;
                           showTutorialSingularity(
-                            'open_universe_menu',
-                            '<span style="color:#aaa;font-size:0.98rem;">Aguardando você abrir o menu...</span>'
+                            'open_after_tauri',
+                            `<span style=\"color:#aaa;font-size:0.98rem;\">${tutT('waiting_menu')}</span>`
                           );
                           const inGameMenu = document.getElementById('inGameMenu');
                           function advanceIfMenuOpen2() {
@@ -342,8 +350,8 @@ function nextTutorialStep(forceReload = false) {
                               setTimeout(() => {
                                 tutorialStep = 19;
                                 showTutorialSingularity(
-                                  'time_control_section',
-                                  'Aguardando você escolher 10x de tempo...'
+                                  'time_control',
+                                  `<span style=\"color:#aaa;font-size:0.98rem;\">${tutT('choose_10x')}</span>`
                                 );
                                 const fastBtn = document.getElementById('timeDistantFuture');
                                 if (fastBtn) {
@@ -352,8 +360,8 @@ function nextTutorialStep(forceReload = false) {
                                     setTimeout(() => {
                                       tutorialStep = 20;
                                       showTutorialSingularity(
-                                        'close_menu',
-                                        '<span style="color:#aaa;font-size:0.98rem;">Aguardando você fechar o menu...</span>'
+                                          'close_menu',
+                                          `<span style=\"color:#aaa;font-size:0.98rem;\">${tutT('waiting_close_menu')}</span>`
                                       );
                                       const closeBtn = inGameMenu.querySelector('.close-menu');
                                       if (closeBtn) {
@@ -362,14 +370,14 @@ function nextTutorialStep(forceReload = false) {
                                           setTimeout(() => {
                                             tutorialStep = 21;
                                             showTutorialSingularity(
-                                              'observe_t_tauri_changes',
+                                              'see_evolution',
                                               `<button id="btnTutContinueEvolucao" class="cutscene-btn">${tutI18n.t('buttons.next')}</button>`
                                             );
                                             document.getElementById('btnTutContinueEvolucao').onclick = () => {
                                               tutorialStep = 22;
                                               showTutorialSingularity(
-                                                'toggle_names',
-                                                '<span style="color:#aaa;font-size:0.98rem;">Aguardando você pressionar N...</span>'
+                                                'press_n',
+                                                `<span style="color:#aaa;font-size:0.98rem;">${tutT('waiting_press_n')}</span>`
                                               );
                                               function handleNKey(e) {
                                                 if (e.key === 'n' || e.key === 'N') {
@@ -377,8 +385,8 @@ function nextTutorialStep(forceReload = false) {
                                                   setTimeout(() => {
                                                     tutorialStep = 22.5;
                                                     showTutorialSingularity(
-                                                      'toggle_temperature_zones',
-                                                      '<span style="color:#aaa;font-size:0.98rem;">Aguardando você pressionar T...</span>'
+                                                      'press_t',
+                                                      `<span style="color:#aaa;font-size:0.98rem;">${tutT('waiting_t')}</span>`
                                                     );
                                                     function handleTKey(e) {
                                                       if (e.key === 't' || e.key === 'T') {
@@ -386,12 +394,12 @@ function nextTutorialStep(forceReload = false) {
                                                         setTimeout(() => {
                                                           tutorialStep = 23;
                                                           showTutorialSingularity(
-                                                            'tutorial_concluded',
+                                                            'tutorial_complete',
                                                             `<button id="btnTutFinalOk" class="cutscene-btn">${tutI18n.t('buttons.ok')}</button>`
                                                           );
                                                           document.getElementById('btnTutFinalOk').onclick = () => {
                                                             showTutorialSingularity(
-                                                              'Encaminhando...',
+                                                              'redirecting',
                                                               ''
                                                             );
                                                             const fadeDiv = document.createElement('div');
