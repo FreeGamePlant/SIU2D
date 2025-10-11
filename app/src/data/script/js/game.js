@@ -208,90 +208,19 @@ let controlledShip = null;
 let keys = {};
 let isLandscape = window.innerWidth > window.innerHeight;
 let orientationWarning = null;
-let zoomInterval;
-let moveIntervals = {
-    up: null,
-    down: null, 
-    left: null,
-    right: null
-};
-let twoFingerTouch = {
-    active: false,
-    startX: 0,
-    startY: 0,
-    currentAstro: null,
-    initialVx: 0,
-    initialVy: 0
-};
-let longTouch = {
-    active: false,
-    startX: 0,
-    startY: 0,
-    currentX: 0,
-    currentY: 0,
-    timeout: null
-};
-let twoFingerRotation = {
-    lastAngle: 0,
-    currentAngle: 0
-};
-let twoFingerDoubleTap = {
-    lastTime: 0,
-    count: 0,
-    timeout: null
-};
-let touchAnalysis = {
-    singleTapTimeout: null,
-    doubleTapTimeout: null,
-    twoFingerTimeout: null,
-    lastTap: { time: 0, x: 0, y: 0, count: 0 }
-};
-let lastTouchDistance = null;
-let lastTouchCenter = null;
-let touchModeActive = false;
-let lastSingleTap = 0;
-let lastSingleTapPos = {x: 0, y: 0};
-let twoTapCount = 0;
-let lastTwoTap = 0;
+let touchStartTime = 0;
+let lastTouchTime = 0;
+let touchStartX = 0;
+let touchStartY = 0;
+let currentTouches = [];
+let touchTimeout = null;
+let isDragging = false;
+let touchMoveThreshold = 10;
+let isEditing = false;
+let isMenuOpen = false;
+
 if (btnLock) {
     btnLock.addEventListener('click', toggleLock);
-}
-function showConsoleInstructions(type) {
-    const instructions = document.getElementById('console-instructions');
-    if (!instructions) return;
-    if (type === 'pc') {
-        instructions.innerHTML = `
-            <b>PC:</b><br>
-            - WASD or arrow keys to move the camera<br>
-            - Mouse to create Astros<br>
-            - Double-click on the Astro to configure it<br>
-            - Scroll to zoom<br>
-            - Delete key to delete the universe
-        `;
-    } else if (type === 'android') {
-        instructions.innerHTML = `
-            <b>Android / iOS (Buttons):</b><br>
-            - Use the on-screen buttons to move the camera<br>
-            - Tap to create Astros<br>
-            - Double-tap the Astro to set it<br>
-            - Zoom buttons to zoom in/out<br>
-            - Delete button to remove the universe
-        `;
-    } else if (type === 'toque') {
-        instructions.innerHTML = `
-            <b>Android / iOS / Mobile Devices (Touch):</b><br>
-            <ul style="text-align: left; margin-left: 1em;">
-            <li><b>Movement:</b> Single tap and drag with <b>two fingers</b></li>
-            <li><b>Create Universes:</b> Single tap and drag with <b>one finger</b> or just one tap</li>
-            <li><b>Configure Universe:</b> Double tap on the universe</li>
-            <li><b>Zoom in:</b> Tap the screen with two fingers and drag outwards</li>
-            <li><b>Zoom out:</b> Tap the screen with two fingers and drag inwards</li>
-            <li><b>Delete Universe:</b> Double-tap the universe with two fingers</li>
-            </ul>
-        `;
-    } else {
-        instructions.innerHTML = 'Unknown platform. No instructions available.';
-    }
 }
 function initBackgroundMusic() {
     const musicVolumeSlider = document.getElementById('musicVolumeSlider');
@@ -430,6 +359,10 @@ function init() {
     modoRetirada = this.checked;
     showNotification(`Withdrawal mode ${modoRetirada ? 'activated' : 'deactivated'}`);
 });
+    canvas.addEventListener('touchstart', handleTouchStart, { passive: false });
+    canvas.addEventListener('touchmove', handleTouchMove, { passive: false });
+    canvas.addEventListener('touchend', handleTouchEnd, { passive: false });
+    canvas.addEventListener('touchcancel', handleTouchEnd, { passive: false });
     window.addEventListener('resize', resizeCanvas);
     canvas.addEventListener('mousedown', handleMouseDown);
     canvas.addEventListener('mouseup', handleMouseUp);
@@ -3838,9 +3771,6 @@ function gameLoop(timestamp) {
         fgpAnimations(deltaTime);
         updateShipMovement(deltaTime);
         cleanupDestroyedShips();
-        if (longTouch.active) {
-            drawTouchDirectionIndicator();
-        }
         updateSpectateCamera();
         if (gameState === 'playing') {
             fgpRocketGeneration(deltaTime);
@@ -5492,32 +5422,6 @@ function stopContinuousZoom() {
         zoomInterval = null;
     }
 }
-function setupZoomButtons() {
-    const zoomInBtn = document.getElementById('zoomInBtn');
-    const zoomOutBtn = document.getElementById('zoomOutBtn');
-    if (zoomInBtn) {
-        zoomInBtn.addEventListener('mousedown', () => startContinuousZoom('in'));
-        zoomInBtn.addEventListener('mouseup', stopContinuousZoom);
-        zoomInBtn.addEventListener('mouseleave', stopContinuousZoom);
-        zoomInBtn.addEventListener('touchstart', (e) => {
-            e.preventDefault();
-            startContinuousZoom('in');
-        });
-        zoomInBtn.addEventListener('touchend', stopContinuousZoom);
-        zoomInBtn.addEventListener('touchcancel', stopContinuousZoom);
-    }
-    if (zoomOutBtn) {
-        zoomOutBtn.addEventListener('mousedown', () => startContinuousZoom('out'));
-        zoomOutBtn.addEventListener('mouseup', stopContinuousZoom);
-        zoomOutBtn.addEventListener('mouseleave', stopContinuousZoom);
-        zoomOutBtn.addEventListener('touchstart', (e) => {
-            e.preventDefault();
-            startContinuousZoom('out');
-        });
-        zoomOutBtn.addEventListener('touchend', stopContinuousZoom);
-        zoomOutBtn.addEventListener('touchcancel', stopContinuousZoom);
-    }
-}
 function startGame() {
     if (!playTimerInterval) {
         playTimerInterval = setInterval(() => {
@@ -5554,6 +5458,7 @@ function startGame() {
     lockOrientation();
 }
 function toggleGameMenu() {
+    isMenuOpen = !isMenuOpen;
     console.log('[DEBUG] toggleGameMenu chamado. Estado atual:', inGameMenu.classList.contains('active'));
     if (!inGameMenu) {
         console.warn('[DEBUG] toggleGameMenu: inGameMenu NÃO encontrado!');
@@ -7416,6 +7321,7 @@ function lightenColor(color, percent) {
     return `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`;
 }
 function openEditPanel(planet) {
+    isEditing = true;
     selectedPlanet = planet;
     editName.value = planet.name || getTypeName(planet.type);
     editType.value = getTypeName(planet.type);
@@ -7452,6 +7358,7 @@ function openEditPanel(planet) {
     }
 }
 function applyAstroChanges() {
+    isEditing = false;
     if (editTemperature && selectedPlanet) {
         const temp = parseFloat(editTemperature.value);
         if (!isNaN(temp)) selectedPlanet.temperature = temp;
@@ -7600,6 +7507,228 @@ function handleScroll(e) {
     mass += e.deltaY > 0 ? -5 : 5;
     mass = Math.max(5, Math.min(500, mass));
 }
+function handleTouchStart(e) {
+    e.preventDefault();
+    const currentTime = Date.now();
+    const touches = Array.from(e.touches);
+    
+    currentTouches = touches;
+    
+    if (touches.length === 1) {
+        // Toque único
+        touchStartTime = currentTime;
+        touchStartX = touches[0].clientX;
+        touchStartY = touches[0].clientY;
+        
+        // Verificar se é double tap (2 toques rápidos)
+        if (currentTime - lastTouchTime < 300) {
+            handleDoubleTap(touches[0]);
+            lastTouchTime = 0;
+        } else {
+            touchTimeout = setTimeout(() => {
+                handleSingleTap(touches[0]);
+            }, 200);
+        }
+        lastTouchTime = currentTime;
+        
+    } else if (touches.length === 2) {
+        // Dois dedos - cancelar qualquer timeout de toque único
+        clearTimeout(touchTimeout);
+        touchTimeout = null;
+        
+        // Iniciar gesto de 2 dedos
+        handleTwoFingerStart(touches);
+    }
+}
+
+function handleTouchMove(e) {
+    e.preventDefault();
+    const touches = Array.from(e.touches);
+    currentTouches = touches;
+    
+    if (touches.length === 1 && !isDragging) {
+        // Verificar se o movimento é significativo o suficiente para ser considerado drag
+        const touch = touches[0];
+        const deltaX = Math.abs(touch.clientX - touchStartX);
+        const deltaY = Math.abs(touch.clientY - touchStartY);
+        
+        if (deltaX > touchMoveThreshold || deltaY > touchMoveThreshold) {
+            // Iniciar drag
+            clearTimeout(touchTimeout);
+            touchTimeout = null;
+            isDragging = true;
+            handleDragStart(touch);
+        }
+    }
+    
+    if (isDragging && touches.length === 1) {
+        handleDragMove(touches[0]);
+    }
+    
+    if (touches.length === 2) {
+        handleTwoFingerMove(touches);
+    }
+}
+
+function handleTouchEnd(e) {
+    e.preventDefault();
+    const touches = Array.from(e.touches);
+    
+    if (e.touches.length === 0) {
+        // Todos os dedos foram levantados
+        if (isDragging) {
+            handleDragEnd();
+            isDragging = false;
+        }
+        currentTouches = [];
+    } else {
+        currentTouches = touches;
+    }
+}
+
+// Implementar os handlers específicos para cada tipo de gesto
+function handleSingleTap(touch) {
+    // 1 toque com 1 dedo para criar astro (clique esquerdo)
+    if (creationMode) {
+        const rect = canvas.getBoundingClientRect();
+        const x = (touch.clientX - rect.left - canvas.width / 2) / camera.zoom + camera.x;
+        const y = (touch.clientY - rect.top - canvas.height / 2) / camera.zoom + camera.y;
+        
+        const newPlanet = createAstro(creationMode, x, y, 0, 0);
+        newPlanet.createdManually = true;
+        showNotification(`Created ${getTypeName(creationMode)}`);
+    } else {
+        // Selecionar astro
+        const rect = canvas.getBoundingClientRect();
+        const x = (touch.clientX - rect.left - canvas.width / 2) / camera.zoom + camera.x;
+        const y = (touch.clientY - rect.top - canvas.height / 2) / camera.zoom + camera.y;
+        
+        for (let i = planets.length - 1; i >= 0; i--) {
+            const planet = planets[i];
+            if (planet.markedForRemoval) continue;
+            
+            const dx = x - planet.x;
+            const dy = y - planet.y;
+            const distance = Math.sqrt(dx * dx + dy * dy);
+            
+            if (distance < planet.radius * 1.2) {
+                selectedPlanet = planet;
+                showNotification(`Selected: ${planet.name}`);
+                break;
+            }
+        }
+    }
+}
+
+function handleDoubleTap(touch) {
+    // 2 toques com 1 dedo em um astro para abrir painel de edição (clique direito)
+    const rect = canvas.getBoundingClientRect();
+    const x = (touch.clientX - rect.left - canvas.width / 2) / camera.zoom + camera.x;
+    const y = (touch.clientY - rect.top - canvas.height / 2) / camera.zoom + camera.y;
+    
+    for (let i = planets.length - 1; i >= 0; i--) {
+        const planet = planets[i];
+        if (planet.markedForRemoval) continue;
+        
+        const dx = x - planet.x;
+        const dy = y - planet.y;
+        const distance = Math.sqrt(dx * dx + dy * dy);
+        
+        if (distance < planet.radius * 1.2) {
+            openEditPanel(planet);
+            break;
+        }
+    }
+}
+
+function handleDragStart(touch) {
+    // Iniciar arrasto para definir velocidade
+    mouse.down = true;
+    mouse.downX = (touch.clientX - canvas.getBoundingClientRect().left - canvas.width / 2) / camera.zoom + camera.x;
+    mouse.downY = (touch.clientY - canvas.getBoundingClientRect().top - canvas.height / 2) / camera.zoom + camera.y;
+    mouse.x = mouse.downX;
+    mouse.y = mouse.downY;
+}
+
+function handleDragMove(touch) {
+    // Atualizar posição durante o arrasto
+    mouse.x = (touch.clientX - canvas.getBoundingClientRect().left - canvas.width / 2) / camera.zoom + camera.x;
+    mouse.y = (touch.clientY - canvas.getBoundingClientRect().top - canvas.height / 2) / camera.zoom + camera.y;
+}
+
+function handleDragEnd() {
+    // Finalizar arrasto e criar astro com velocidade
+    if (creationMode && mouse.down) {
+        const vx = (mouse.x - mouse.downX) * 0.1;
+        const vy = (mouse.y - mouse.downY) * 0.1;
+        
+        const newPlanet = createAstro(creationMode, mouse.downX, mouse.downY, vx, vy);
+        newPlanet.createdManually = true;
+        showNotification(`Created ${getTypeName(creationMode)} with velocity`);
+    }
+    
+    mouse.down = false;
+    trajectoryPoints = [];
+}
+
+function handleTwoFingerStart(touches) {
+    // Iniciar gesto com 2 dedos
+    touchStartX = (touches[0].clientX + touches[1].clientX) / 2;
+    touchStartY = (touches[0].clientY + touches[1].clientY) / 2;
+    
+    // Calcular distância inicial entre os dedos
+    const dx = touches[0].clientX - touches[1].clientX;
+    const dy = touches[0].clientY - touches[1].clientY;
+    this.initialPinchDistance = Math.sqrt(dx * dx + dy * dy);
+    this.initialZoom = camera.zoom;
+}
+
+function handleTwoFingerMove(touches) {
+    if (touches.length !== 2) return;
+    
+    // Calcular ponto médio atual
+    const currentX = (touches[0].clientX + touches[1].clientX) / 2;
+    const currentY = (touches[0].clientY + touches[1].clientY) / 2;
+    
+    // Calcular movimento para WASD
+    const deltaX = currentX - touchStartX;
+    const deltaY = currentY - touchStartY;
+    
+    // Mover câmera (equivalente a WASD)
+    if (Math.abs(deltaX) > 5 || Math.abs(deltaY) > 5) {
+        camera.x -= deltaX * 0.5 / camera.zoom;
+        camera.y -= deltaY * 0.5 / camera.zoom;
+        
+        touchStartX = currentX;
+        touchStartY = currentY;
+    }
+    
+    // Calcular zoom (pinch) - equivalente a Q/E
+    const dx = touches[0].clientX - touches[1].clientX;
+    const dy = touches[0].clientY - touches[1].clientY;
+    const currentDistance = Math.sqrt(dx * dx + dy * dy);
+    
+    if (this.initialPinchDistance) {
+        const zoomFactor = currentDistance / this.initialPinchDistance;
+        camera.zoom = this.initialZoom * zoomFactor;
+        camera.zoom = Math.max(0.1, Math.min(100, camera.zoom));
+    }
+}
+
+// Adicionar handler para 2 toques com 2 dedos (limpar tudo)
+function handleTwoFingerDoubleTap() {
+    // 2 toques com 2 dedos para limpar tudo = tecla 'f'
+    if (!isEditing && !isMenuOpen) {
+        planets = [];
+        universeAge = 0;
+        universeTime = 0;
+        showNotification('Universe cleared');
+        Fcount += 1;
+        if (Fcount >= 20) {
+            unlockAchievement(45);
+        }
+    }
+}
 function handleKeyDown(e) {
     const isEditing = document.activeElement.tagName === 'INPUT' || 
                      document.activeElement.tagName === 'TEXTAREA';
@@ -7631,6 +7760,9 @@ function handleKeyDown(e) {
             clickedPlanet = planet;
             break;
         }
+    }
+    if (currentTouches.length > 0) {
+        return;
     }
     if (clickedPlanet) {
         selectedPlanet = clickedPlanet;
@@ -8448,704 +8580,7 @@ const contagem = setInterval(() => {
     console.log('Parabéns! Você alcançou o tempo máximo de jogo!');
   }
 }, 1000);
-document.addEventListener('DOMContentLoaded', function() {
-  const startScreen = document.getElementById('startScreen');
-  const mobileControls = document.getElementById('mobileControls');
-  if (startScreen && startScreen.style.display !== 'none') {
-    if (mobileControls) {
-      mobileControls.style.display = 'none';
-    }
-  }
-  const gameMenuBtn = document.getElementById('gameMenuBtn');
-  if (gameMenuBtn) {
-    gameMenuBtn.addEventListener('click', function() {
-      adjustOptionsGrid();
-    });
-  }
-  window.addEventListener('resize', adjustOptionsGrid);
-        const modeToggleBtn = document.getElementById('modeToggleBtn');
-        let isEditMode = false;
-        let moveInterval = null;
-        let currentDirection = null;
-        const cameraSpeed = 100;
-        modeToggleBtn.addEventListener('click', function() {
-            isEditMode = !isEditMode;
-            if (isEditMode) {
-                modeToggleBtn.classList.add('edit-mode');
-                showNotification('Modo edição ativado - Clique em um astro para editar');
-            } else {
-                modeToggleBtn.classList.remove('edit-mode');
-                showNotification('Modo criação ativado - Clique para criar astros');
-            }
-        });
-        document.addEventListener('touchstart', function(e) {
-            if (e.touches.length > 1) {
-                e.preventDefault();
-            }
-        }, { passive: false });
-        document.addEventListener('wheel', function(e) {
-            if (e.ctrlKey) {
-                e.preventDefault();
-            }
-        }, { passive: false });
-function startMoving(direction) {
-    stopMoving(direction);
-    const cameraSpeed = 100 / camera.zoom;
-    moveIntervals[direction] = setInterval(() => {
-        switch(direction) {
-            case 'up':
-                camera.y -= cameraSpeed;
-                break;
-            case 'down':
-                camera.y += cameraSpeed;
-                break;
-            case 'left':
-                camera.x -= cameraSpeed;
-                break;
-            case 'right':
-                camera.x += cameraSpeed;
-                break;
-        }
-    }, 16); 
-}
-function stopMoving(direction) {
-    if (moveIntervals[direction]) {
-        clearInterval(moveIntervals[direction]);
-        moveIntervals[direction] = null;
-    }
-}
-        function stopAllMoving() {
-            Object.keys(moveIntervals).forEach(direction => {
-                stopMoving(direction);
-            });
-        }
-        function setupMovementButtons() {
-            const directions = ['up', 'down', 'left', 'right'];
-            directions.forEach(direction => {
-                const button = document.getElementById(direction + 'Btn');
-                if (!button) return;
-                button.addEventListener('mousedown', () => startMoving(direction));
-                button.addEventListener('mouseup', () => stopMoving(direction));
-                button.addEventListener('mouseleave', () => stopMoving(direction));
-                button.addEventListener('touchstart', (e) => {
-                    e.preventDefault();
-                    startMoving(direction);
-                });
-                button.addEventListener('touchend', () => stopMoving(direction));
-                button.addEventListener('touchcancel', () => stopMoving(direction));
-            });
-        }
-function getTouchCenter(touches) {
-    if (touches.length === 0) return { x: 0, y: 0 };
-    let x = 0, y = 0;
-    for (let i = 0; i < touches.length; i++) {
-        x += touches[i].clientX;
-        y += touches[i].clientY;
-    }
-    return {
-        x: x / touches.length,
-        y: y / touches.length
-    };
-}
-function getTouchDistance(touches) {
-    if (touches.length < 2) return 0;
-    const dx = touches[0].clientX - touches[1].clientX;
-    const dy = touches[0].clientY - touches[1].clientY;
-    return Math.sqrt(dx * dx + dy * dy);
-}
-function getTouchAngle(touches) {
-    if (touches.length < 2) return 0;
-    const dx = touches[0].clientX - touches[1].clientX;
-    const dy = touches[0].clientY - touches[1].clientY;
-    return Math.atan2(dy, dx);
-}
-function screenToWorld(x, y) {
-    const rect = canvas.getBoundingClientRect();
-    return {
-        x: (x - rect.left - canvas.width / 2) / camera.zoom + camera.x,
-        y: (y - rect.top - canvas.height / 2) / camera.zoom + camera.y
-    };
-}
-function findAstroAtPosition(worldX, worldY, maxDistance = 50) {
-    let closestAstro = null;
-    let minDistance = Infinity;
-    planets.forEach(planet => {
-        if (planet.markedForRemoval) return;
-        const dx = worldX - planet.x;
-        const dy = worldY - planet.y;
-        const distance = Math.sqrt(dx * dx + dy * dy);
-        if (distance < planet.radius + maxDistance && distance < minDistance) {
-            minDistance = distance;
-            closestAstro = planet;
-        }
-    });
-    return closestAstro;
-}
-function analyzeTouchIntent(e) {
-    const now = Date.now();
-    const touchCount = e.touches.length;
-    clearTimeout(touchAnalysis.singleTapTimeout);
-    clearTimeout(touchAnalysis.doubleTapTimeout);
-    clearTimeout(touchAnalysis.twoFingerTimeout);
-    if (touchCount === 1) {
-        const touch = e.touches[0];
-        const pos = { x: touch.clientX, y: touch.clientY };
-        if (now - touchAnalysis.lastTap.time < 300 && 
-            Math.abs(pos.x - touchAnalysis.lastTap.x) < 30 &&
-            Math.abs(pos.y - touchAnalysis.lastTap.y) < 30) {
-            touchAnalysis.lastTap.count++;
-            if (touchAnalysis.lastTap.count >= 2) {
-                openEditPanelByTouch(pos);
-                touchAnalysis.lastTap.count = 0;
-                return 'double-tap';
-            }
-        } else {
-            touchAnalysis.lastTap = { 
-                time: now, 
-                x: pos.x, 
-                y: pos.y, 
-                count: 1 
-            };
-        }
-        touchAnalysis.singleTapTimeout = setTimeout(() => {
-            if (e.touches.length === 1 && !twoFingerTouch.active) {
-                createAstroByTouch(pos);
-            }
-        }, 200);
-        return 'single-tap-pending';
-    } else if (touchCount === 2) {
-        touchAnalysis.twoFingerTimeout = setTimeout(() => {
-            if (e.touches.length === 2) {
-                twoFingerTouch.active = true;
-            }
-        }, 150);
-        return 'two-finger-pending';
-    }
-    return 'unknown';
-}
-        function addMobileButtonListeners(buttonId, action) {
-            const button = document.getElementById(buttonId);
-            if (!button) return;
-            button.addEventListener('touchstart', action, { passive: true });
-            button.addEventListener('touchend', stopMoving, { passive: true });
-            button.addEventListener('mousedown', action);
-            button.addEventListener('mouseup', stopMoving);
-            button.addEventListener('mouseleave', stopMoving);
-        }
-        addMobileButtonListeners('upBtn', () => startMoving('up'));
-        addMobileButtonListeners('downBtn', () => startMoving('down'));
-        addMobileButtonListeners('leftBtn', () => startMoving('left'));
-        addMobileButtonListeners('rightBtn', () => startMoving('right'));
-        document.getElementById('centerBtn').addEventListener('click', () => {
-            planets = [];
-            universeAge = 0;
-            universeTime = 0;
-            showNotification('Universo reiniciado');
-            Fcount += 1;
-            if (Fcount >= 20) {
-                unlockAchievement(45);
-            }
-        });
-        document.getElementById('zoomInBtn').addEventListener('click', () => {
-            camera.zoom *= 1.1;
-        });
-        document.getElementById('zoomOutBtn').addEventListener('click', () => {
-            camera.zoom /= 1.1;
-        });
-        const originalHandleMouseDown = handleMouseDown;
-        handleMouseDown = function(e) {
-            if (gameState !== 'playing') return;
-            if (e.button === 0 || e.type === 'touchstart') { 
-                if (isEditMode) {
-                    for (let i = planets.length - 1; i >= 0; i--) {
-                        const planet = planets[i];
-                        const dx = (mouse.x - planet.x) * camera.zoom;
-                        const dy = (mouse.y - planet.y) * camera.zoom;
-                        const distance = Math.sqrt(dx * dx + dy * dy);
-                        if (distance < planet.radius * camera.zoom) {
-                            openEditPanel(planet);
-                            break;
-                        }
-                    }
-                    return;
-                }
-                mouse.down = true;
-                mouse.downX = mouse.x;
-                mouse.downY = mouse.y;
-                if (creationMode) {
-                    return;
-                }
-            } else if (e.button === 2) { 
-                mouse.rightDown = true;
-                for (let i = planets.length - 1; i >= 0; i--) {
-                    const planet = planets[i];
-                    const dx = (mouse.x - planet.x) * camera.zoom;
-                    const dy = (mouse.y - planet.y) * camera.zoom;
-                    const distance = Math.sqrt(dx * dx + dy * dy);
-                    if (distance < planet.radius * camera.zoom) {
-                        openEditPanel(planet);
-                        break;
-                    }
-                }
-            }
-        };
-        let touchModeActive = false;
-        let lastTouchDistance = null;
-        let lastTouchCenter = null;
-        let lastTwoTap = 0;
-        let twoTapCount = 0;
-        let lastSingleTap = 0;
-        let lastSingleTapPos = {x:0, y:0};
-        function enableTouchGestures() {
-            if (touchModeActive) return;
-            touchModeActive = true;
-            canvas.addEventListener('touchstart', handleTouchStart, { passive: false });
-            canvas.addEventListener('touchmove', handleTouchMove, { passive: false });
-            canvas.addEventListener('touchend', handleTouchEnd, { passive: false });
-            canvas.addEventListener('touchcancel', handleTouchEnd, { passive: false });
-            console.log('Touch gestures enabled');
-        }
-        function disableTouchGestures() {
-            if (!touchModeActive) return;
-            touchModeActive = false;
-            canvas.removeEventListener('touchstart', handleTouchStart);
-            canvas.removeEventListener('touchmove', handleTouchMove);
-            canvas.removeEventListener('touchend', handleTouchEnd);
-            canvas.removeEventListener('touchcancel', handleTouchEnd);
-            resetTouchStates();
-            stopAllMoving();
-            stopContinuousZoom();
-            console.log('Touch gestures disabled');
-        }
-        function enableButtonMode() {
-            disableTouchGestures();
-            setupZoomButtons();
-            setupMovementButtons();
-            const mobileControls = document.getElementById('mobileControls');
-            if (mobileControls) {
-                mobileControls.style.display = 'flex';
-            }
-            showNotification('Button mode activated - Use on-screen controls');
-        }
-        function enableTouchMode() {
-            disableTouchGestures();
-            enableTouchGestures();
-            const mobileControls = document.getElementById('mobileControls');
-            if (mobileControls) {
-                mobileControls.style.display = 'none';
-            }
-            showNotification('Touch mode activated - Use touch gestures');
-        }
-        function getTouchCenter(touches) {
-            let x = 0, y = 0;
-            for (let i = 0; i < touches.length; i++) {
-                x += touches[i].clientX;
-                y += touches[i].clientY;
-            }
-            return {x: x/touches.length, y: y/touches.length};
-        }
-        function getTouchDistance(touches) {
-            if (touches.length < 2) return 0;
-            const dx = touches[0].clientX - touches[1].clientX;
-            const dy = touches[0].clientY - touches[1].clientY;
-            return Math.sqrt(dx*dx + dy*dy);
-        }
-function handleTouchStart(e) {
-    if (gameState !== 'playing') return;
-    const touchCount = e.touches.length;
-    analyzeTouchIntent(e);
-    if (touchCount === 1) {
-        const touch = e.touches[0];
-        longTouch.active = true;
-        longTouch.startX = touch.clientX;
-        longTouch.startY = touch.clientY;
-        longTouch.currentX = touch.clientX;
-        longTouch.currentY = touch.clientY;
-        longTouch.timeout = setTimeout(() => {
-            if (longTouch.active) {
-                showNotification("Drag to set direction and force");
-            }
-        }, 500);
-    } else if (touchCount === 2) {
-        twoFingerTouch.active = true;
-        lastTouchDistance = getTouchDistance(e.touches);
-        lastTouchCenter = getTouchCenter(e.touches);
-        twoFingerRotation.lastAngle = getTouchAngle(e.touches);
-        const now = Date.now();
-        if (now - twoFingerDoubleTap.lastTime < 500) {
-            twoFingerDoubleTap.count++;
-            if (twoFingerDoubleTap.count >= 2) {
-                deleteAstroUnderTwoFingerTouch(e.touches);
-                twoFingerDoubleTap.count = 0;
-            }
-        } else {
-            twoFingerDoubleTap.count = 1;
-        }
-        twoFingerDoubleTap.lastTime = now;
-        startAstroMovement(e.touches);
-        e.preventDefault();
-    }
-}
-function handleTouchMove(e) {
-    if (gameState !== 'playing') return;
-    const touchCount = e.touches.length;
-    if (touchCount === 1 && longTouch.active) {
-        const touch = e.touches[0];
-        longTouch.currentX = touch.clientX;
-        longTouch.currentY = touch.clientY;
-        e.preventDefault();
-    } else if (touchCount === 2 && twoFingerTouch.active) {
-        const newDist = getTouchDistance(e.touches);
-        const newCenter = getTouchCenter(e.touches);
-        if (twoFingerTouch.currentAstro) {
-            updateAstroMovement(e.touches);
-        } else {
-            if (lastTouchDistance && Math.abs(newDist - lastTouchDistance) > 10) {
-                const zoomFactor = newDist / lastTouchDistance;
-                camera.zoom *= zoomFactor;
-                camera.zoom = Math.max(0.1, Math.min(100, camera.zoom));
-                lastTouchDistance = newDist;
-            }
-            if (lastTouchCenter) {
-                const dx = newCenter.x - lastTouchCenter.x;
-                const dy = newCenter.y - lastTouchCenter.y;
-                camera.x -= dx / camera.zoom;
-                camera.y -= dy / camera.zoom;
-                lastTouchCenter = newCenter;
-            }
-            const currentAngle = getTouchAngle(e.touches);
-            if (twoFingerRotation.lastAngle !== 0) {
-                const angleDelta = currentAngle - twoFingerRotation.lastAngle;
-                if (selectedPlanet) {
-                    selectedPlanet.rotation += angleDelta * 0.5;
-                } else {
-                    camera.rotation = (camera.rotation || 0) + angleDelta * 0.1;
-                }
-            }
-            twoFingerRotation.lastAngle = currentAngle;
-        }
-        e.preventDefault();
-    }
-}
-function handleTouchEnd(e) {
-    const touchCount = e.touches.length;
-    if (touchCount === 0) {
-        if (longTouch.active) {
-            handleLongTouchEnd();
-        }
-        if (twoFingerTouch.active) {
-            endAstroMovement();
-        }
-        resetTouchStates();
-    } else if (touchCount === 1 && twoFingerTouch.active) {
-        twoFingerTouch.active = false;
-        endAstroMovement();
-    }
-}
-function createAstroByTouch(pos) {
-    const worldPos = screenToWorld(pos.x, pos.y);
-    if (window._lastAstroTouch && Date.now() - window._lastAstroTouch < 300) {
-        return;
-    }
-    window._lastAstroTouch = Date.now();
-    const astroType = creationMode || selectedType || 'spaceDust';
-    try {
-        const newPlanet = createAstro(
-            astroType, 
-            worldPos.x, 
-            worldPos.y, 
-            0, 
-            0
-        );
-        if (newPlanet) {
-            newPlanet.createdManually = true;
-            showNotification(`Created ${getTypeName(astroType)}: ${newPlanet.name}`);
-        }
-    } catch (error) {
-        console.error('Error creating astro by touch:', error);
-        showNotification('Error creating celestial body');
-    }
-}
-function createAstroWithVelocity(startPos, endPos) {
-    const startWorld = screenToWorld(startPos.x, startPos.y);
-    const endWorld = screenToWorld(endPos.x, endPos.y);
-    const dx = endWorld.x - startWorld.x;
-    const dy = endWorld.y - startWorld.y;
-    const distance = Math.sqrt(dx * dx + dy * dy);
-    if (distance < 0.1) return;
-    const force = Math.min(distance * 0.5, 10);
-    const vx = (dx / distance) * force;
-    const vy = (dy / distance) * force;
-    const astroType = creationMode || selectedType || 'spaceDust';
-    try {
-        const newPlanet = createAstro(
-            astroType,
-            startWorld.x,
-            startWorld.y,
-            vx,
-            vy
-        );
-        if (newPlanet) {
-            newPlanet.createdManually = true;
-            showNotification(`Launched ${newPlanet.name} with force ${force.toFixed(1)}`);
-        }
-    } catch (error) {
-        console.error('Error creating astro with velocity:', error);
-    }
-}
-function startAstroMovement(touches) {
-    const center = getTouchCenter(touches);
-    const worldPos = screenToWorld(center.x, center.y);
-    twoFingerTouch.currentAstro = findAstroAtPosition(worldPos.x, worldPos.y);
-    if (twoFingerTouch.currentAstro) {
-        twoFingerTouch.startX = center.x;
-        twoFingerTouch.startY = center.y;
-        twoFingerTouch.initialVx = twoFingerTouch.currentAstro.vx;
-        twoFingerTouch.initialVy = twoFingerTouch.currentAstro.vy;
-        showNotification(`Moving ${twoFingerTouch.currentAstro.name}`);
-    } else {
-        twoFingerTouch.active = false;
-    }
-}
-function updateAstroMovement(touches) {
-    if (!twoFingerTouch.currentAstro) return;
-    const currentCenter = getTouchCenter(touches);
-    const dx = (currentCenter.x - twoFingerTouch.startX) / camera.zoom;
-    const dy = (currentCenter.y - twoFingerTouch.startY) / camera.zoom;
-    const speedFactor = 0.3;
-    twoFingerTouch.currentAstro.vx = twoFingerTouch.initialVx + dx * speedFactor;
-    twoFingerTouch.currentAstro.vy = twoFingerTouch.initialVy + dy * speedFactor;
-    twoFingerTouch.startX = currentCenter.x;
-    twoFingerTouch.startY = currentCenter.y;
-}
-function endAstroMovement() {
-    if (twoFingerTouch.currentAstro) {
-        showNotification(`${twoFingerTouch.currentAstro.name} movement updated`);
-        twoFingerTouch.currentAstro = null;
-    }
-    twoFingerTouch.active = false;
-}
-function handleTouchEnd(e) {
-    const touchCount = e.touches.length;
-    if (touchCount === 0) {
-        if (longTouch.active) {
-            handleLongTouchEnd();
-        }
-        if (twoFingerTouch.active) {
-            endAstroMovement();
-        }
-        resetTouchStates();
-    } else if (touchCount === 1 && twoFingerTouch.active) {
-        twoFingerTouch.active = false;
-        endAstroMovement();
-    }
-}
-function handleLongTouchEnd() {
-    const dx = longTouch.currentX - longTouch.startX;
-    const dy = longTouch.currentY - longTouch.startY;
-    const distance = Math.sqrt(dx * dx + dy * dy);
-    if (distance > 20) {
-        createAstroWithVelocity(
-            { x: longTouch.startX, y: longTouch.startY },
-            { x: longTouch.currentX, y: longTouch.currentY }
-        );
-    } else if (distance < 10) {
-        createAstroByTouch({ x: longTouch.startX, y: longTouch.startY });
-    }
-    longTouch.active = false;
-    if (longTouch.timeout) {
-        clearTimeout(longTouch.timeout);
-        longTouch.timeout = null;
-    }
-}
-function resetTouchStates() {
-    longTouch.active = false;
-    twoFingerTouch.active = false;
-    lastTouchDistance = null;
-    lastTouchCenter = null;
-    twoFingerRotation.lastAngle = 0;
-    if (longTouch.timeout) {
-        clearTimeout(longTouch.timeout);
-        longTouch.timeout = null;
-    }
-}
-function deleteAstroUnderTwoFingerTouch(touches) {
-    const center = getTouchCenter(touches);
-    const worldPos = screenToWorld(center.x, center.y);
-    const astroToDelete = findAstroAtPosition(worldPos.x, worldPos.y, 100);
-    if (astroToDelete) {
-        const index = planets.indexOf(astroToDelete);
-        if (index !== -1) {
-            planets.splice(index, 1);
-            showNotification(`Deleted ${astroToDelete.name}`);
-            if (selectedPlanet === astroToDelete) {
-                selectedPlanet = null;
-                editPanel.style.display = 'none';
-            }
-        }
-    } else {
-        showNotification("No celestial body found to delete");
-    }
-}
-function openEditPanelByTouch(pos) {
-    const worldPos = screenToWorld(pos.x, pos.y);
-    const astroToEdit = findAstroAtPosition(worldPos.x, worldPos.y);
-    if (astroToEdit) {
-        openEditPanel(astroToEdit);
-    } else {
-        showNotification("No celestial body found to edit");
-    }
-}
-function drawTouchDirectionIndicator() {
-    if (!longTouch.active) return;
-    const ctx = canvas.getContext('2d');
-    const rect = canvas.getBoundingClientRect();
-    const startX = longTouch.startX - rect.left;
-    const startY = longTouch.startY - rect.top;
-    const endX = longTouch.currentX - rect.left;
-    const endY = longTouch.currentY - rect.top;
-    const dx = endX - startX;
-    const dy = endY - startY;
-    const distance = Math.sqrt(dx * dx + dy * dy);
-    if (distance < 10) return; 
-    ctx.save();
-    ctx.beginPath();
-    ctx.moveTo(startX, startY);
-    ctx.lineTo(endX, endY);
-    ctx.strokeStyle = `rgba(46, 204, 113, ${Math.min(distance / 100, 0.7)})`;
-    ctx.lineWidth = 3;
-    ctx.lineCap = 'round';
-    ctx.stroke();
-    const angle = Math.atan2(dy, dx);
-    const headLength = 15;
-    const arrowHeadX = endX - headLength * Math.cos(angle);
-    const arrowHeadY = endY - headLength * Math.sin(angle);
-    ctx.beginPath();
-    ctx.moveTo(endX, endY);
-    ctx.lineTo(
-        arrowHeadX - headLength * Math.cos(angle - Math.PI / 6),
-        arrowHeadY - headLength * Math.sin(angle - Math.PI / 6)
-    );
-    ctx.lineTo(
-        arrowHeadX - headLength * Math.cos(angle + Math.PI / 6),
-        arrowHeadY - headLength * Math.sin(angle + Math.PI / 6)
-    );
-    ctx.closePath();
-    ctx.fillStyle = 'rgba(46, 204, 113, 0.9)';
-    ctx.fill();
-    const force = Math.min(distance / 50, 2);
-    const radius = 8 + force * 10;
-    ctx.beginPath();
-    ctx.arc(endX, endY, radius, 0, Math.PI * 2);
-    ctx.fillStyle = `rgba(231, 76, 60, ${0.2 + force * 0.3})`;
-    ctx.fill();
-    ctx.restore();
-}
-        function openEditPanelByTouch(pos) {
-            const rect = canvas.getBoundingClientRect();
-            const x = (pos.x - rect.left - canvas.width/2) / camera.zoom + camera.x;
-            const y = (pos.y - rect.top - canvas.height/2) / camera.zoom + camera.y;
-            for (let i = planets.length - 1; i >= 0; i--) {
-                const planet = planets[i];
-                const dx = x - planet.x;
-                const dy = y - planet.y;
-                const dist = Math.sqrt(dx*dx + dy*dy);
-                if (dist < planet.radius) {
-                    openEditPanel(planet);
-                    break;
-                }
-            }
-        }
-        function resetUniverseByTouch() {
-            planets = [];
-            universeAge = 0;
-            universeTime = 0;
-            showNotification('Universe reset!');
-        }
-    setupZoomButtons();
-    setupMovementButtons();
-    const consoleOptions = document.querySelectorAll('.console-option');
-    consoleOptions.forEach(option => {
-        option.addEventListener('click', function() {
-            const platform = this.getAttribute('data-platform');
-            switch(platform) {
-                case 'android':
-                    enableButtonMode();
-                    showConsoleInstructions('android');
-                    break;
-                case 'toque':
-                    enableTouchMode();
-                    showConsoleInstructions('toque');
-                    break;
-                default:
-                    disableTouchGestures();
-                    const mobileControls = document.getElementById('mobileControls');
-                    if (mobileControls) {
-                        mobileControls.style.display = 'none';
-                    }
-                    showConsoleInstructions('pc');
-                    break;
-            }
-        });
-    });
-    const centerBtn = document.getElementById('centerBtn');
-    if (centerBtn) {
-        centerBtn.addEventListener('click', () => {
-            planets = [];
-            universeAge = 0;
-            universeTime = 0;
-            showNotification('Universe reset');
-            Fcount += 1;
-            if (Fcount >= 20) {
-                unlockAchievement(45);
-            }
-        });
-    }
-    console.log('Mobile systems initialized');
-});
-function cleanupTouchIntervals() {
-    stopContinuousZoom();
-    stopAllMoving();
-    if (touchAnalysis.singleTapTimeout) {
-        clearTimeout(touchAnalysis.singleTapTimeout);
-    }
-    if (touchAnalysis.doubleTapTimeout) {
-        clearTimeout(touchAnalysis.doubleTapTimeout);
-    }
-    if (touchAnalysis.twoFingerTimeout) {
-        clearTimeout(touchAnalysis.twoFingerTimeout);
-    }
-    if (twoFingerDoubleTap.timeout) {
-        clearTimeout(twoFingerDoubleTap.timeout);
-    }
-    if (longTouch.timeout) {
-        clearTimeout(longTouch.timeout);
-    }
-}
-function logTouchState() {
-    console.log('Touch State:', {
-        touchModeActive,
-        twoFingerTouch: { ...twoFingerTouch },
-        longTouch: { ...longTouch },
-        touchAnalysis: { ...touchAnalysis }
-    });
-}
-function resetAllTouchSystems() {
-    cleanupTouchIntervals();
-    resetTouchStates();
-    twoFingerDoubleTap = {
-        lastTime: 0,
-        count: 0,
-        timeout: null
-    };
-    touchAnalysis = {
-        singleTapTimeout: null,
-        doubleTapTimeout: null,
-        twoFingerTimeout: null,
-        lastTap: { time: 0, x: 0, y: 0, count: 0 }
-    };
-    console.log('All touch systems reset');
-}
+
 function adjustOptionsGrid() {
 const optionsGrid = document.querySelector('.options-grid');
 if (!optionsGrid) return;
