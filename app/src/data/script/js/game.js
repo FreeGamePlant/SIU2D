@@ -218,13 +218,9 @@ let isDragging = false;
 let touchMoveThreshold = 10;
 let isEditing = false;
 let isMenuOpen = false;
-let twoFingerTapCount = 0;
-let twoFingerTapTimeout = null;
-let lastTwoFingerTapTime = 0;
 if (btnLock) {
     btnLock.addEventListener('click', toggleLock);
 }
-//#endregion
 function initBackgroundMusic() {
     const musicVolumeSlider = document.getElementById('musicVolumeSlider');
     const musicVolumeValue = document.getElementById('musicVolumeValue');
@@ -362,7 +358,6 @@ function init() {
     modoRetirada = this.checked;
     showNotification(`Withdrawal mode ${modoRetirada ? 'activated' : 'deactivated'}`);
 });
-    initTouchControls();
     canvas.addEventListener('touchstart', handleTouchStart, { passive: false });
     canvas.addEventListener('touchmove', handleTouchMove, { passive: false });
     canvas.addEventListener('touchend', handleTouchEnd, { passive: false });
@@ -7515,15 +7510,11 @@ function handleTouchStart(e) {
     e.preventDefault();
     const currentTime = Date.now();
     const touches = Array.from(e.touches);
-    
     currentTouches = touches;
-    
     if (touches.length === 1) {
-        
         touchStartTime = currentTime;
         touchStartX = touches[0].clientX;
         touchStartY = touches[0].clientY;
-        
         if (currentTime - lastTouchTime < 300) {
             handleDoubleTap(touches[0]);
             lastTouchTime = 0;
@@ -7533,53 +7524,12 @@ function handleTouchStart(e) {
             }, 200);
         }
         lastTouchTime = currentTime;
-        
     } else if (touches.length === 2) {
-        
         clearTimeout(touchTimeout);
         touchTimeout = null;
-        
-        
-        const timeSinceLastTwoFingerTap = currentTime - lastTwoFingerTapTime;
-        
-        if (timeSinceLastTwoFingerTap < 500) { 
-            twoFingerTapCount++;
-            
-            if (twoFingerTapCount === 2) {
-                clearTimeout(twoFingerTapTimeout);
-                handleTwoFingerDoubleTap();
-                twoFingerTapCount = 0;
-                lastTwoFingerTapTime = 0;
-            }
-        } else {
-            twoFingerTapCount = 1;
-            twoFingerTapTimeout = setTimeout(() => {
-                twoFingerTapCount = 0;
-            }, 500);
-        }
-        
-        lastTwoFingerTapTime = currentTime;
-        
-        
         handleTwoFingerStart(touches);
     }
 }
-
-
-function handleTwoFingerDoubleTap() {
-    
-    if (!isEditing && !isMenuOpen) {
-        planets = [];
-        universeAge = 0;
-        universeTime = 0;
-        showNotification('Universe cleared with two-finger double tap');
-        Fcount += 1;
-        if (Fcount >= 20) {
-            unlockAchievement(45);
-        }
-    }
-}
-
 function handleTouchMove(e) {
     e.preventDefault();
     const touches = Array.from(e.touches);
@@ -7605,92 +7555,14 @@ function handleTouchMove(e) {
 function handleTouchEnd(e) {
     e.preventDefault();
     const touches = Array.from(e.touches);
-    
     if (e.touches.length === 0) {
-        
         if (isDragging) {
             handleDragEnd();
             isDragging = false;
         }
         currentTouches = [];
-        
-        
-        if (twoFingerTapCount === 1) {
-            clearTimeout(twoFingerTapTimeout);
-            twoFingerTapCount = 0;
-        }
     } else {
         currentTouches = touches;
-    }
-}
-
-
-function handleTouchMove(e) {
-    e.preventDefault();
-    const touches = Array.from(e.touches);
-    currentTouches = touches;
-    
-    
-    if (touches.length === 2) {
-        const touch1 = touches[0];
-        const touch2 = touches[1];
-        
-        
-        const avgX = (touch1.clientX + touch2.clientX) / 2;
-        const avgY = (touch1.clientY + touch2.clientY) / 2;
-        
-        const deltaX = Math.abs(avgX - touchStartX);
-        const deltaY = Math.abs(avgY - touchStartY);
-        
-        
-        if (deltaX > 15 || deltaY > 15) {
-            clearTimeout(twoFingerTapTimeout);
-            twoFingerTapCount = 0;
-        }
-    }
-    
-    if (touches.length === 1 && !isDragging) {
-        const touch = touches[0];
-        const deltaX = Math.abs(touch.clientX - touchStartX);
-        const deltaY = Math.abs(touch.clientY - touchStartY);
-        
-        if (deltaX > touchMoveThreshold || deltaY > touchMoveThreshold) {
-            clearTimeout(touchTimeout);
-            touchTimeout = null;
-            isDragging = true;
-            handleDragStart(touch);
-        }
-    }
-    
-    if (isDragging && touches.length === 1) {
-        handleDragMove(touches[0]);
-    }
-    
-    if (touches.length === 2) {
-        handleTwoFingerMove(touches);
-    }
-}
-
-function showTouchHelp() {
-    showNotification("Touch controls: 1 finger-tap to create/select, 1 finger-drag for velocity, 2 finger-double-tap to clear all");
-}
-
-
-function initTouchControls() {
-    if ('ontouchstart' in window || navigator.maxTouchPoints) {
-        showTouchHelp();
-        
-        
-        const touchHelpBtn = document.createElement('button');
-        touchHelpBtn.textContent = '📱';
-        touchHelpBtn.style.position = 'fixed';
-        touchHelpBtn.style.bottom = '10px';
-        touchHelpBtn.style.right = '10px';
-        touchHelpBtn.style.zIndex = '1000';
-        touchHelpBtn.style.padding = '5px 10px';
-        touchHelpBtn.style.fontSize = '16px';
-        touchHelpBtn.addEventListener('click', showTouchHelp);
-        document.body.appendChild(touchHelpBtn);
     }
 }
 function handleSingleTap(touch) {
