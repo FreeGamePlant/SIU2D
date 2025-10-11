@@ -218,10 +218,13 @@ let isDragging = false;
 let touchMoveThreshold = 10;
 let isEditing = false;
 let isMenuOpen = false;
-
+let twoFingerTapCount = 0;
+let twoFingerTapTimeout = null;
+let lastTwoFingerTapTime = 0;
 if (btnLock) {
     btnLock.addEventListener('click', toggleLock);
 }
+//#endregion
 function initBackgroundMusic() {
     const musicVolumeSlider = document.getElementById('musicVolumeSlider');
     const musicVolumeValue = document.getElementById('musicVolumeValue');
@@ -359,6 +362,7 @@ function init() {
     modoRetirada = this.checked;
     showNotification(`Withdrawal mode ${modoRetirada ? 'activated' : 'deactivated'}`);
 });
+    initTouchControls();
     canvas.addEventListener('touchstart', handleTouchStart, { passive: false });
     canvas.addEventListener('touchmove', handleTouchMove, { passive: false });
     canvas.addEventListener('touchend', handleTouchEnd, { passive: false });
@@ -7515,12 +7519,11 @@ function handleTouchStart(e) {
     currentTouches = touches;
     
     if (touches.length === 1) {
-        // Toque único
+        
         touchStartTime = currentTime;
         touchStartX = touches[0].clientX;
         touchStartY = touches[0].clientY;
         
-        // Verificar se é double tap (2 toques rápidos)
         if (currentTime - lastTouchTime < 300) {
             handleDoubleTap(touches[0]);
             lastTouchTime = 0;
@@ -7532,12 +7535,48 @@ function handleTouchStart(e) {
         lastTouchTime = currentTime;
         
     } else if (touches.length === 2) {
-        // Dois dedos - cancelar qualquer timeout de toque único
+        
         clearTimeout(touchTimeout);
         touchTimeout = null;
         
-        // Iniciar gesto de 2 dedos
+        
+        const timeSinceLastTwoFingerTap = currentTime - lastTwoFingerTapTime;
+        
+        if (timeSinceLastTwoFingerTap < 500) { 
+            twoFingerTapCount++;
+            
+            if (twoFingerTapCount === 2) {
+                clearTimeout(twoFingerTapTimeout);
+                handleTwoFingerDoubleTap();
+                twoFingerTapCount = 0;
+                lastTwoFingerTapTime = 0;
+            }
+        } else {
+            twoFingerTapCount = 1;
+            twoFingerTapTimeout = setTimeout(() => {
+                twoFingerTapCount = 0;
+            }, 500);
+        }
+        
+        lastTwoFingerTapTime = currentTime;
+        
+        
         handleTwoFingerStart(touches);
+    }
+}
+
+
+function handleTwoFingerDoubleTap() {
+    
+    if (!isEditing && !isMenuOpen) {
+        planets = [];
+        universeAge = 0;
+        universeTime = 0;
+        showNotification('Universe cleared with two-finger double tap');
+        Fcount += 1;
+        if (Fcount >= 20) {
+            unlockAchievement(45);
+        }
     }
 }
 
@@ -7545,15 +7584,77 @@ function handleTouchMove(e) {
     e.preventDefault();
     const touches = Array.from(e.touches);
     currentTouches = touches;
+    if (touches.length === 1 && !isDragging) {
+        const touch = touches[0];
+        const deltaX = Math.abs(touch.clientX - touchStartX);
+        const deltaY = Math.abs(touch.clientY - touchStartY);
+        if (deltaX > touchMoveThreshold || deltaY > touchMoveThreshold) {
+            clearTimeout(touchTimeout);
+            touchTimeout = null;
+            isDragging = true;
+            handleDragStart(touch);
+        }
+    }
+    if (isDragging && touches.length === 1) {
+        handleDragMove(touches[0]);
+    }
+    if (touches.length === 2) {
+        handleTwoFingerMove(touches);
+    }
+}
+function handleTouchEnd(e) {
+    e.preventDefault();
+    const touches = Array.from(e.touches);
+    
+    if (e.touches.length === 0) {
+        
+        if (isDragging) {
+            handleDragEnd();
+            isDragging = false;
+        }
+        currentTouches = [];
+        
+        
+        if (twoFingerTapCount === 1) {
+            clearTimeout(twoFingerTapTimeout);
+            twoFingerTapCount = 0;
+        }
+    } else {
+        currentTouches = touches;
+    }
+}
+
+
+function handleTouchMove(e) {
+    e.preventDefault();
+    const touches = Array.from(e.touches);
+    currentTouches = touches;
+    
+    
+    if (touches.length === 2) {
+        const touch1 = touches[0];
+        const touch2 = touches[1];
+        
+        
+        const avgX = (touch1.clientX + touch2.clientX) / 2;
+        const avgY = (touch1.clientY + touch2.clientY) / 2;
+        
+        const deltaX = Math.abs(avgX - touchStartX);
+        const deltaY = Math.abs(avgY - touchStartY);
+        
+        
+        if (deltaX > 15 || deltaY > 15) {
+            clearTimeout(twoFingerTapTimeout);
+            twoFingerTapCount = 0;
+        }
+    }
     
     if (touches.length === 1 && !isDragging) {
-        // Verificar se o movimento é significativo o suficiente para ser considerado drag
         const touch = touches[0];
         const deltaX = Math.abs(touch.clientX - touchStartX);
         const deltaY = Math.abs(touch.clientY - touchStartY);
         
         if (deltaX > touchMoveThreshold || deltaY > touchMoveThreshold) {
-            // Iniciar drag
             clearTimeout(touchTimeout);
             touchTimeout = null;
             isDragging = true;
@@ -7570,47 +7671,46 @@ function handleTouchMove(e) {
     }
 }
 
-function handleTouchEnd(e) {
-    e.preventDefault();
-    const touches = Array.from(e.touches);
-    
-    if (e.touches.length === 0) {
-        // Todos os dedos foram levantados
-        if (isDragging) {
-            handleDragEnd();
-            isDragging = false;
-        }
-        currentTouches = [];
-    } else {
-        currentTouches = touches;
-    }
+function showTouchHelp() {
+    showNotification("Touch controls: 1 finger-tap to create/select, 1 finger-drag for velocity, 2 finger-double-tap to clear all");
 }
 
-// Implementar os handlers específicos para cada tipo de gesto
+
+function initTouchControls() {
+    if ('ontouchstart' in window || navigator.maxTouchPoints) {
+        showTouchHelp();
+        
+        
+        const touchHelpBtn = document.createElement('button');
+        touchHelpBtn.textContent = '📱';
+        touchHelpBtn.style.position = 'fixed';
+        touchHelpBtn.style.bottom = '10px';
+        touchHelpBtn.style.right = '10px';
+        touchHelpBtn.style.zIndex = '1000';
+        touchHelpBtn.style.padding = '5px 10px';
+        touchHelpBtn.style.fontSize = '16px';
+        touchHelpBtn.addEventListener('click', showTouchHelp);
+        document.body.appendChild(touchHelpBtn);
+    }
+}
 function handleSingleTap(touch) {
-    // 1 toque com 1 dedo para criar astro (clique esquerdo)
     if (creationMode) {
         const rect = canvas.getBoundingClientRect();
         const x = (touch.clientX - rect.left - canvas.width / 2) / camera.zoom + camera.x;
         const y = (touch.clientY - rect.top - canvas.height / 2) / camera.zoom + camera.y;
-        
         const newPlanet = createAstro(creationMode, x, y, 0, 0);
         newPlanet.createdManually = true;
         showNotification(`Created ${getTypeName(creationMode)}`);
     } else {
-        // Selecionar astro
         const rect = canvas.getBoundingClientRect();
         const x = (touch.clientX - rect.left - canvas.width / 2) / camera.zoom + camera.x;
         const y = (touch.clientY - rect.top - canvas.height / 2) / camera.zoom + camera.y;
-        
         for (let i = planets.length - 1; i >= 0; i--) {
             const planet = planets[i];
             if (planet.markedForRemoval) continue;
-            
             const dx = x - planet.x;
             const dy = y - planet.y;
             const distance = Math.sqrt(dx * dx + dy * dy);
-            
             if (distance < planet.radius * 1.2) {
                 selectedPlanet = planet;
                 showNotification(`Selected: ${planet.name}`);
@@ -7619,105 +7719,74 @@ function handleSingleTap(touch) {
         }
     }
 }
-
 function handleDoubleTap(touch) {
-    // 2 toques com 1 dedo em um astro para abrir painel de edição (clique direito)
     const rect = canvas.getBoundingClientRect();
     const x = (touch.clientX - rect.left - canvas.width / 2) / camera.zoom + camera.x;
     const y = (touch.clientY - rect.top - canvas.height / 2) / camera.zoom + camera.y;
-    
     for (let i = planets.length - 1; i >= 0; i--) {
         const planet = planets[i];
         if (planet.markedForRemoval) continue;
-        
         const dx = x - planet.x;
         const dy = y - planet.y;
         const distance = Math.sqrt(dx * dx + dy * dy);
-        
         if (distance < planet.radius * 1.2) {
             openEditPanel(planet);
             break;
         }
     }
 }
-
 function handleDragStart(touch) {
-    // Iniciar arrasto para definir velocidade
     mouse.down = true;
     mouse.downX = (touch.clientX - canvas.getBoundingClientRect().left - canvas.width / 2) / camera.zoom + camera.x;
     mouse.downY = (touch.clientY - canvas.getBoundingClientRect().top - canvas.height / 2) / camera.zoom + camera.y;
     mouse.x = mouse.downX;
     mouse.y = mouse.downY;
 }
-
 function handleDragMove(touch) {
-    // Atualizar posição durante o arrasto
     mouse.x = (touch.clientX - canvas.getBoundingClientRect().left - canvas.width / 2) / camera.zoom + camera.x;
     mouse.y = (touch.clientY - canvas.getBoundingClientRect().top - canvas.height / 2) / camera.zoom + camera.y;
 }
-
 function handleDragEnd() {
-    // Finalizar arrasto e criar astro com velocidade
     if (creationMode && mouse.down) {
         const vx = (mouse.x - mouse.downX) * 0.1;
         const vy = (mouse.y - mouse.downY) * 0.1;
-        
         const newPlanet = createAstro(creationMode, mouse.downX, mouse.downY, vx, vy);
         newPlanet.createdManually = true;
         showNotification(`Created ${getTypeName(creationMode)} with velocity`);
     }
-    
     mouse.down = false;
     trajectoryPoints = [];
 }
-
 function handleTwoFingerStart(touches) {
-    // Iniciar gesto com 2 dedos
     touchStartX = (touches[0].clientX + touches[1].clientX) / 2;
     touchStartY = (touches[0].clientY + touches[1].clientY) / 2;
-    
-    // Calcular distância inicial entre os dedos
     const dx = touches[0].clientX - touches[1].clientX;
     const dy = touches[0].clientY - touches[1].clientY;
     this.initialPinchDistance = Math.sqrt(dx * dx + dy * dy);
     this.initialZoom = camera.zoom;
 }
-
 function handleTwoFingerMove(touches) {
     if (touches.length !== 2) return;
-    
-    // Calcular ponto médio atual
     const currentX = (touches[0].clientX + touches[1].clientX) / 2;
     const currentY = (touches[0].clientY + touches[1].clientY) / 2;
-    
-    // Calcular movimento para WASD
     const deltaX = currentX - touchStartX;
     const deltaY = currentY - touchStartY;
-    
-    // Mover câmera (equivalente a WASD)
     if (Math.abs(deltaX) > 5 || Math.abs(deltaY) > 5) {
         camera.x -= deltaX * 0.5 / camera.zoom;
         camera.y -= deltaY * 0.5 / camera.zoom;
-        
         touchStartX = currentX;
         touchStartY = currentY;
     }
-    
-    // Calcular zoom (pinch) - equivalente a Q/E
     const dx = touches[0].clientX - touches[1].clientX;
     const dy = touches[0].clientY - touches[1].clientY;
     const currentDistance = Math.sqrt(dx * dx + dy * dy);
-    
     if (this.initialPinchDistance) {
         const zoomFactor = currentDistance / this.initialPinchDistance;
         camera.zoom = this.initialZoom * zoomFactor;
         camera.zoom = Math.max(0.1, Math.min(100, camera.zoom));
     }
 }
-
-// Adicionar handler para 2 toques com 2 dedos (limpar tudo)
 function handleTwoFingerDoubleTap() {
-    // 2 toques com 2 dedos para limpar tudo = tecla 'f'
     if (!isEditing && !isMenuOpen) {
         planets = [];
         universeAge = 0;
@@ -8580,7 +8649,6 @@ const contagem = setInterval(() => {
     console.log('Parabéns! Você alcançou o tempo máximo de jogo!');
   }
 }, 1000);
-
 function adjustOptionsGrid() {
 const optionsGrid = document.querySelector('.options-grid');
 if (!optionsGrid) return;
