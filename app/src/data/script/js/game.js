@@ -208,7 +208,51 @@ let controlledShip = null;
 let keys = {};
 let isLandscape = window.innerWidth > window.innerHeight;
 let orientationWarning = null;
-//#endregion
+let zoomInterval;
+let moveIntervals = {
+    up: null,
+    down: null, 
+    left: null,
+    right: null
+};
+let twoFingerTouch = {
+    active: false,
+    startX: 0,
+    startY: 0,
+    currentAstro: null,
+    initialVx: 0,
+    initialVy: 0
+};
+let longTouch = {
+    active: false,
+    startX: 0,
+    startY: 0,
+    currentX: 0,
+    currentY: 0,
+    timeout: null
+};
+let twoFingerRotation = {
+    lastAngle: 0,
+    currentAngle: 0
+};
+let twoFingerDoubleTap = {
+    lastTime: 0,
+    count: 0,
+    timeout: null
+};
+let touchAnalysis = {
+    singleTapTimeout: null,
+    doubleTapTimeout: null,
+    twoFingerTimeout: null,
+    lastTap: { time: 0, x: 0, y: 0, count: 0 }
+};
+let lastTouchDistance = null;
+let lastTouchCenter = null;
+let touchModeActive = false;
+let lastSingleTap = 0;
+let lastSingleTapPos = {x: 0, y: 0};
+let twoTapCount = 0;
+let lastTwoTap = 0;
 if (btnLock) {
     btnLock.addEventListener('click', toggleLock);
 }
@@ -3794,6 +3838,9 @@ function gameLoop(timestamp) {
         fgpAnimations(deltaTime);
         updateShipMovement(deltaTime);
         cleanupDestroyedShips();
+        if (longTouch.active) {
+            drawTouchDirectionIndicator();
+        }
         updateSpectateCamera();
         if (gameState === 'playing') {
             fgpRocketGeneration(deltaTime);
@@ -3911,7 +3958,6 @@ function gameLoop(timestamp) {
             isFinite(p.x) && 
             isFinite(p.y)
         );
-        
         if (!astroStillValid) {
             spectateMode = false;
             spectatedAstro = null;
@@ -5429,6 +5475,49 @@ window.addEventListener('DOMContentLoaded', function() {
         advanceTimeBillionYears = undefined;
     }
 });
+function startContinuousZoom(direction) {
+    stopContinuousZoom();
+    zoomInterval = setInterval(() => {
+        if (direction === 'in') {
+            camera.zoom *= 1.05;
+        } else {
+            camera.zoom /= 1.05;
+        }
+        camera.zoom = Math.max(0.1, Math.min(100, camera.zoom));
+    }, 50); 
+}
+function stopContinuousZoom() {
+    if (zoomInterval) {
+        clearInterval(zoomInterval);
+        zoomInterval = null;
+    }
+}
+function setupZoomButtons() {
+    const zoomInBtn = document.getElementById('zoomInBtn');
+    const zoomOutBtn = document.getElementById('zoomOutBtn');
+    if (zoomInBtn) {
+        zoomInBtn.addEventListener('mousedown', () => startContinuousZoom('in'));
+        zoomInBtn.addEventListener('mouseup', stopContinuousZoom);
+        zoomInBtn.addEventListener('mouseleave', stopContinuousZoom);
+        zoomInBtn.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            startContinuousZoom('in');
+        });
+        zoomInBtn.addEventListener('touchend', stopContinuousZoom);
+        zoomInBtn.addEventListener('touchcancel', stopContinuousZoom);
+    }
+    if (zoomOutBtn) {
+        zoomOutBtn.addEventListener('mousedown', () => startContinuousZoom('out'));
+        zoomOutBtn.addEventListener('mouseup', stopContinuousZoom);
+        zoomOutBtn.addEventListener('mouseleave', stopContinuousZoom);
+        zoomOutBtn.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            startContinuousZoom('out');
+        });
+        zoomOutBtn.addEventListener('touchend', stopContinuousZoom);
+        zoomOutBtn.addEventListener('touchcancel', stopContinuousZoom);
+    }
+}
 function startGame() {
     if (!playTimerInterval) {
         playTimerInterval = setInterval(() => {
@@ -8399,33 +8488,141 @@ document.addEventListener('DOMContentLoaded', function() {
                 e.preventDefault();
             }
         }, { passive: false });
-        function startMoving(direction) {
-            if (moveInterval) clearInterval(moveInterval);
-            currentDirection = direction;
-            moveInterval = setInterval(() => {
-                switch(direction) {
-                    case 'up':
-                        camera.y -= cameraSpeed / camera.zoom;
-                        break;
-                    case 'down':
-                        camera.y += cameraSpeed / camera.zoom;
-                        break;
-                    case 'left':
-                        camera.x -= cameraSpeed / camera.zoom;
-                        break;
-                    case 'right':
-                        camera.x += cameraSpeed / camera.zoom;
-                        break;
-                }
-            }, 100);
+function startMoving(direction) {
+    stopMoving(direction);
+    const cameraSpeed = 100 / camera.zoom;
+    moveIntervals[direction] = setInterval(() => {
+        switch(direction) {
+            case 'up':
+                camera.y -= cameraSpeed;
+                break;
+            case 'down':
+                camera.y += cameraSpeed;
+                break;
+            case 'left':
+                camera.x -= cameraSpeed;
+                break;
+            case 'right':
+                camera.x += cameraSpeed;
+                break;
         }
-        function stopMoving() {
-            if (moveInterval) {
-                clearInterval(moveInterval);
-                moveInterval = null;
-                currentDirection = null;
+    }, 16); 
+}
+function stopMoving(direction) {
+    if (moveIntervals[direction]) {
+        clearInterval(moveIntervals[direction]);
+        moveIntervals[direction] = null;
+    }
+}
+        function stopAllMoving() {
+            Object.keys(moveIntervals).forEach(direction => {
+                stopMoving(direction);
+            });
+        }
+        function setupMovementButtons() {
+            const directions = ['up', 'down', 'left', 'right'];
+            directions.forEach(direction => {
+                const button = document.getElementById(direction + 'Btn');
+                if (!button) return;
+                button.addEventListener('mousedown', () => startMoving(direction));
+                button.addEventListener('mouseup', () => stopMoving(direction));
+                button.addEventListener('mouseleave', () => stopMoving(direction));
+                button.addEventListener('touchstart', (e) => {
+                    e.preventDefault();
+                    startMoving(direction);
+                });
+                button.addEventListener('touchend', () => stopMoving(direction));
+                button.addEventListener('touchcancel', () => stopMoving(direction));
+            });
+        }
+function getTouchCenter(touches) {
+    if (touches.length === 0) return { x: 0, y: 0 };
+    let x = 0, y = 0;
+    for (let i = 0; i < touches.length; i++) {
+        x += touches[i].clientX;
+        y += touches[i].clientY;
+    }
+    return {
+        x: x / touches.length,
+        y: y / touches.length
+    };
+}
+function getTouchDistance(touches) {
+    if (touches.length < 2) return 0;
+    const dx = touches[0].clientX - touches[1].clientX;
+    const dy = touches[0].clientY - touches[1].clientY;
+    return Math.sqrt(dx * dx + dy * dy);
+}
+function getTouchAngle(touches) {
+    if (touches.length < 2) return 0;
+    const dx = touches[0].clientX - touches[1].clientX;
+    const dy = touches[0].clientY - touches[1].clientY;
+    return Math.atan2(dy, dx);
+}
+function screenToWorld(x, y) {
+    const rect = canvas.getBoundingClientRect();
+    return {
+        x: (x - rect.left - canvas.width / 2) / camera.zoom + camera.x,
+        y: (y - rect.top - canvas.height / 2) / camera.zoom + camera.y
+    };
+}
+function findAstroAtPosition(worldX, worldY, maxDistance = 50) {
+    let closestAstro = null;
+    let minDistance = Infinity;
+    planets.forEach(planet => {
+        if (planet.markedForRemoval) return;
+        const dx = worldX - planet.x;
+        const dy = worldY - planet.y;
+        const distance = Math.sqrt(dx * dx + dy * dy);
+        if (distance < planet.radius + maxDistance && distance < minDistance) {
+            minDistance = distance;
+            closestAstro = planet;
+        }
+    });
+    return closestAstro;
+}
+function analyzeTouchIntent(e) {
+    const now = Date.now();
+    const touchCount = e.touches.length;
+    clearTimeout(touchAnalysis.singleTapTimeout);
+    clearTimeout(touchAnalysis.doubleTapTimeout);
+    clearTimeout(touchAnalysis.twoFingerTimeout);
+    if (touchCount === 1) {
+        const touch = e.touches[0];
+        const pos = { x: touch.clientX, y: touch.clientY };
+        if (now - touchAnalysis.lastTap.time < 300 && 
+            Math.abs(pos.x - touchAnalysis.lastTap.x) < 30 &&
+            Math.abs(pos.y - touchAnalysis.lastTap.y) < 30) {
+            touchAnalysis.lastTap.count++;
+            if (touchAnalysis.lastTap.count >= 2) {
+                openEditPanelByTouch(pos);
+                touchAnalysis.lastTap.count = 0;
+                return 'double-tap';
             }
+        } else {
+            touchAnalysis.lastTap = { 
+                time: now, 
+                x: pos.x, 
+                y: pos.y, 
+                count: 1 
+            };
         }
+        touchAnalysis.singleTapTimeout = setTimeout(() => {
+            if (e.touches.length === 1 && !twoFingerTouch.active) {
+                createAstroByTouch(pos);
+            }
+        }, 200);
+        return 'single-tap-pending';
+    } else if (touchCount === 2) {
+        touchAnalysis.twoFingerTimeout = setTimeout(() => {
+            if (e.touches.length === 2) {
+                twoFingerTouch.active = true;
+            }
+        }, 150);
+        return 'two-finger-pending';
+    }
+    return 'unknown';
+}
         function addMobileButtonListeners(buttonId, action) {
             const button = document.getElementById(buttonId);
             if (!button) return;
@@ -8492,7 +8689,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             }
         };
-        const consoleOptions = document.querySelectorAll('.console-option');
         let touchModeActive = false;
         let lastTouchDistance = null;
         let lastTouchCenter = null;
@@ -8503,9 +8699,11 @@ document.addEventListener('DOMContentLoaded', function() {
         function enableTouchGestures() {
             if (touchModeActive) return;
             touchModeActive = true;
-            canvas.addEventListener('touchstart', handleTouchStart, {passive:false});
-            canvas.addEventListener('touchmove', handleTouchMove, {passive:false});
-            canvas.addEventListener('touchend', handleTouchEnd, {passive:false});
+            canvas.addEventListener('touchstart', handleTouchStart, { passive: false });
+            canvas.addEventListener('touchmove', handleTouchMove, { passive: false });
+            canvas.addEventListener('touchend', handleTouchEnd, { passive: false });
+            canvas.addEventListener('touchcancel', handleTouchEnd, { passive: false });
+            console.log('Touch gestures enabled');
         }
         function disableTouchGestures() {
             if (!touchModeActive) return;
@@ -8513,6 +8711,30 @@ document.addEventListener('DOMContentLoaded', function() {
             canvas.removeEventListener('touchstart', handleTouchStart);
             canvas.removeEventListener('touchmove', handleTouchMove);
             canvas.removeEventListener('touchend', handleTouchEnd);
+            canvas.removeEventListener('touchcancel', handleTouchEnd);
+            resetTouchStates();
+            stopAllMoving();
+            stopContinuousZoom();
+            console.log('Touch gestures disabled');
+        }
+        function enableButtonMode() {
+            disableTouchGestures();
+            setupZoomButtons();
+            setupMovementButtons();
+            const mobileControls = document.getElementById('mobileControls');
+            if (mobileControls) {
+                mobileControls.style.display = 'flex';
+            }
+            showNotification('Button mode activated - Use on-screen controls');
+        }
+        function enableTouchMode() {
+            disableTouchGestures();
+            enableTouchGestures();
+            const mobileControls = document.getElementById('mobileControls');
+            if (mobileControls) {
+                mobileControls.style.display = 'none';
+            }
+            showNotification('Touch mode activated - Use touch gestures');
         }
         function getTouchCenter(touches) {
             let x = 0, y = 0;
@@ -8528,77 +8750,297 @@ document.addEventListener('DOMContentLoaded', function() {
             const dy = touches[0].clientY - touches[1].clientY;
             return Math.sqrt(dx*dx + dy*dy);
         }
-        function handleTouchStart(e) {
-            if (e.touches.length === 1) {
-                const now = Date.now();
-                const pos = {x: e.touches[0].clientX, y: e.touches[0].clientY};
-                if (now - lastSingleTap < 350 && Math.abs(pos.x - lastSingleTapPos.x) < 30 && Math.abs(pos.y - lastSingleTapPos.y) < 30) {
-                    openEditPanelByTouch(pos);
-                    lastSingleTap = 0;
+function handleTouchStart(e) {
+    if (gameState !== 'playing') return;
+    const touchCount = e.touches.length;
+    analyzeTouchIntent(e);
+    if (touchCount === 1) {
+        const touch = e.touches[0];
+        longTouch.active = true;
+        longTouch.startX = touch.clientX;
+        longTouch.startY = touch.clientY;
+        longTouch.currentX = touch.clientX;
+        longTouch.currentY = touch.clientY;
+        longTouch.timeout = setTimeout(() => {
+            if (longTouch.active) {
+                showNotification("Drag to set direction and force");
+            }
+        }, 500);
+    } else if (touchCount === 2) {
+        twoFingerTouch.active = true;
+        lastTouchDistance = getTouchDistance(e.touches);
+        lastTouchCenter = getTouchCenter(e.touches);
+        twoFingerRotation.lastAngle = getTouchAngle(e.touches);
+        const now = Date.now();
+        if (now - twoFingerDoubleTap.lastTime < 500) {
+            twoFingerDoubleTap.count++;
+            if (twoFingerDoubleTap.count >= 2) {
+                deleteAstroUnderTwoFingerTouch(e.touches);
+                twoFingerDoubleTap.count = 0;
+            }
+        } else {
+            twoFingerDoubleTap.count = 1;
+        }
+        twoFingerDoubleTap.lastTime = now;
+        startAstroMovement(e.touches);
+        e.preventDefault();
+    }
+}
+function handleTouchMove(e) {
+    if (gameState !== 'playing') return;
+    const touchCount = e.touches.length;
+    if (touchCount === 1 && longTouch.active) {
+        const touch = e.touches[0];
+        longTouch.currentX = touch.clientX;
+        longTouch.currentY = touch.clientY;
+        e.preventDefault();
+    } else if (touchCount === 2 && twoFingerTouch.active) {
+        const newDist = getTouchDistance(e.touches);
+        const newCenter = getTouchCenter(e.touches);
+        if (twoFingerTouch.currentAstro) {
+            updateAstroMovement(e.touches);
+        } else {
+            if (lastTouchDistance && Math.abs(newDist - lastTouchDistance) > 10) {
+                const zoomFactor = newDist / lastTouchDistance;
+                camera.zoom *= zoomFactor;
+                camera.zoom = Math.max(0.1, Math.min(100, camera.zoom));
+                lastTouchDistance = newDist;
+            }
+            if (lastTouchCenter) {
+                const dx = newCenter.x - lastTouchCenter.x;
+                const dy = newCenter.y - lastTouchCenter.y;
+                camera.x -= dx / camera.zoom;
+                camera.y -= dy / camera.zoom;
+                lastTouchCenter = newCenter;
+            }
+            const currentAngle = getTouchAngle(e.touches);
+            if (twoFingerRotation.lastAngle !== 0) {
+                const angleDelta = currentAngle - twoFingerRotation.lastAngle;
+                if (selectedPlanet) {
+                    selectedPlanet.rotation += angleDelta * 0.5;
                 } else {
-                    lastSingleTap = now;
-                    lastSingleTapPos = pos;
-                    createAstroByTouch(pos);
+                    camera.rotation = (camera.rotation || 0) + angleDelta * 0.1;
                 }
-            } else if (e.touches.length === 2) {
-                lastTouchDistance = getTouchDistance(e.touches);
-                lastTouchCenter = getTouchCenter(e.touches);
-                const now = Date.now();
-                if (now - lastTwoTap < 400) {
-                    twoTapCount++;
-                    if (twoTapCount >= 2) {
-                        resetUniverseByTouch();
-                        twoTapCount = 0;
-                    }
-                } else {
-                    twoTapCount = 1;
-                }
-                lastTwoTap = now;
+            }
+            twoFingerRotation.lastAngle = currentAngle;
+        }
+        e.preventDefault();
+    }
+}
+function handleTouchEnd(e) {
+    const touchCount = e.touches.length;
+    if (touchCount === 0) {
+        if (longTouch.active) {
+            handleLongTouchEnd();
+        }
+        if (twoFingerTouch.active) {
+            endAstroMovement();
+        }
+        resetTouchStates();
+    } else if (touchCount === 1 && twoFingerTouch.active) {
+        twoFingerTouch.active = false;
+        endAstroMovement();
+    }
+}
+function createAstroByTouch(pos) {
+    const worldPos = screenToWorld(pos.x, pos.y);
+    if (window._lastAstroTouch && Date.now() - window._lastAstroTouch < 300) {
+        return;
+    }
+    window._lastAstroTouch = Date.now();
+    const astroType = creationMode || selectedType || 'spaceDust';
+    try {
+        const newPlanet = createAstro(
+            astroType, 
+            worldPos.x, 
+            worldPos.y, 
+            0, 
+            0
+        );
+        if (newPlanet) {
+            newPlanet.createdManually = true;
+            showNotification(`Created ${getTypeName(astroType)}: ${newPlanet.name}`);
+        }
+    } catch (error) {
+        console.error('Error creating astro by touch:', error);
+        showNotification('Error creating celestial body');
+    }
+}
+function createAstroWithVelocity(startPos, endPos) {
+    const startWorld = screenToWorld(startPos.x, startPos.y);
+    const endWorld = screenToWorld(endPos.x, endPos.y);
+    const dx = endWorld.x - startWorld.x;
+    const dy = endWorld.y - startWorld.y;
+    const distance = Math.sqrt(dx * dx + dy * dy);
+    if (distance < 0.1) return;
+    const force = Math.min(distance * 0.5, 10);
+    const vx = (dx / distance) * force;
+    const vy = (dy / distance) * force;
+    const astroType = creationMode || selectedType || 'spaceDust';
+    try {
+        const newPlanet = createAstro(
+            astroType,
+            startWorld.x,
+            startWorld.y,
+            vx,
+            vy
+        );
+        if (newPlanet) {
+            newPlanet.createdManually = true;
+            showNotification(`Launched ${newPlanet.name} with force ${force.toFixed(1)}`);
+        }
+    } catch (error) {
+        console.error('Error creating astro with velocity:', error);
+    }
+}
+function startAstroMovement(touches) {
+    const center = getTouchCenter(touches);
+    const worldPos = screenToWorld(center.x, center.y);
+    twoFingerTouch.currentAstro = findAstroAtPosition(worldPos.x, worldPos.y);
+    if (twoFingerTouch.currentAstro) {
+        twoFingerTouch.startX = center.x;
+        twoFingerTouch.startY = center.y;
+        twoFingerTouch.initialVx = twoFingerTouch.currentAstro.vx;
+        twoFingerTouch.initialVy = twoFingerTouch.currentAstro.vy;
+        showNotification(`Moving ${twoFingerTouch.currentAstro.name}`);
+    } else {
+        twoFingerTouch.active = false;
+    }
+}
+function updateAstroMovement(touches) {
+    if (!twoFingerTouch.currentAstro) return;
+    const currentCenter = getTouchCenter(touches);
+    const dx = (currentCenter.x - twoFingerTouch.startX) / camera.zoom;
+    const dy = (currentCenter.y - twoFingerTouch.startY) / camera.zoom;
+    const speedFactor = 0.3;
+    twoFingerTouch.currentAstro.vx = twoFingerTouch.initialVx + dx * speedFactor;
+    twoFingerTouch.currentAstro.vy = twoFingerTouch.initialVy + dy * speedFactor;
+    twoFingerTouch.startX = currentCenter.x;
+    twoFingerTouch.startY = currentCenter.y;
+}
+function endAstroMovement() {
+    if (twoFingerTouch.currentAstro) {
+        showNotification(`${twoFingerTouch.currentAstro.name} movement updated`);
+        twoFingerTouch.currentAstro = null;
+    }
+    twoFingerTouch.active = false;
+}
+function handleTouchEnd(e) {
+    const touchCount = e.touches.length;
+    if (touchCount === 0) {
+        if (longTouch.active) {
+            handleLongTouchEnd();
+        }
+        if (twoFingerTouch.active) {
+            endAstroMovement();
+        }
+        resetTouchStates();
+    } else if (touchCount === 1 && twoFingerTouch.active) {
+        twoFingerTouch.active = false;
+        endAstroMovement();
+    }
+}
+function handleLongTouchEnd() {
+    const dx = longTouch.currentX - longTouch.startX;
+    const dy = longTouch.currentY - longTouch.startY;
+    const distance = Math.sqrt(dx * dx + dy * dy);
+    if (distance > 20) {
+        createAstroWithVelocity(
+            { x: longTouch.startX, y: longTouch.startY },
+            { x: longTouch.currentX, y: longTouch.currentY }
+        );
+    } else if (distance < 10) {
+        createAstroByTouch({ x: longTouch.startX, y: longTouch.startY });
+    }
+    longTouch.active = false;
+    if (longTouch.timeout) {
+        clearTimeout(longTouch.timeout);
+        longTouch.timeout = null;
+    }
+}
+function resetTouchStates() {
+    longTouch.active = false;
+    twoFingerTouch.active = false;
+    lastTouchDistance = null;
+    lastTouchCenter = null;
+    twoFingerRotation.lastAngle = 0;
+    if (longTouch.timeout) {
+        clearTimeout(longTouch.timeout);
+        longTouch.timeout = null;
+    }
+}
+function deleteAstroUnderTwoFingerTouch(touches) {
+    const center = getTouchCenter(touches);
+    const worldPos = screenToWorld(center.x, center.y);
+    const astroToDelete = findAstroAtPosition(worldPos.x, worldPos.y, 100);
+    if (astroToDelete) {
+        const index = planets.indexOf(astroToDelete);
+        if (index !== -1) {
+            planets.splice(index, 1);
+            showNotification(`Deleted ${astroToDelete.name}`);
+            if (selectedPlanet === astroToDelete) {
+                selectedPlanet = null;
+                editPanel.style.display = 'none';
             }
         }
-        function handleTouchMove(e) {
-            if (e.touches.length === 1) {
-                const pos = {x: e.touches[0].clientX, y: e.touches[0].clientY};
-                createAstroByTouch(pos);
-            } else if (e.touches.length === 2) {
-                const newDist = getTouchDistance(e.touches);
-                const newCenter = getTouchCenter(e.touches);
-                if (lastTouchDistance && Math.abs(newDist - lastTouchDistance) > 10) {
-                    const zoomFactor = newDist / lastTouchDistance;
-                    camera.zoom *= zoomFactor;
-                    lastTouchDistance = newDist;
-                } else if (lastTouchCenter) {
-                    const dx = newCenter.x - lastTouchCenter.x;
-                    const dy = newCenter.y - lastTouchCenter.y;
-                    camera.x -= dx / camera.zoom;
-                    camera.y -= dy / camera.zoom;
-                    lastTouchCenter = newCenter;
-                }
-                e.preventDefault();
-            }
-        }
-        function createAstroByTouch(pos) {
-            const rect = canvas.getBoundingClientRect();
-            const x = (pos.x - rect.left - canvas.width/2) / camera.zoom + camera.x;
-            const y = (pos.y - rect.top - canvas.height/2) / camera.zoom + camera.y;
-            if (!window._lastAstroTouch || Date.now() - window._lastAstroTouch > 120) {
-                window._lastAstroTouch = Date.now();
-                planets.push({
-                    x, y,
-                    vx: 0, vy: 0,
-                    mass: 50,
-                    radius: 20,
-                    type: 'custom',
-                    color: '#fff',
-                    name: generateRandomName()
-                });
-                showNotification('new astro.');
-            }
-        }
-        function handleTouchEnd(e) {
-            lastTouchDistance = null;
-            lastTouchCenter = null;
-        }
+    } else {
+        showNotification("No celestial body found to delete");
+    }
+}
+function openEditPanelByTouch(pos) {
+    const worldPos = screenToWorld(pos.x, pos.y);
+    const astroToEdit = findAstroAtPosition(worldPos.x, worldPos.y);
+    if (astroToEdit) {
+        openEditPanel(astroToEdit);
+    } else {
+        showNotification("No celestial body found to edit");
+    }
+}
+function drawTouchDirectionIndicator() {
+    if (!longTouch.active) return;
+    const ctx = canvas.getContext('2d');
+    const rect = canvas.getBoundingClientRect();
+    const startX = longTouch.startX - rect.left;
+    const startY = longTouch.startY - rect.top;
+    const endX = longTouch.currentX - rect.left;
+    const endY = longTouch.currentY - rect.top;
+    const dx = endX - startX;
+    const dy = endY - startY;
+    const distance = Math.sqrt(dx * dx + dy * dy);
+    if (distance < 10) return; 
+    ctx.save();
+    ctx.beginPath();
+    ctx.moveTo(startX, startY);
+    ctx.lineTo(endX, endY);
+    ctx.strokeStyle = `rgba(46, 204, 113, ${Math.min(distance / 100, 0.7)})`;
+    ctx.lineWidth = 3;
+    ctx.lineCap = 'round';
+    ctx.stroke();
+    const angle = Math.atan2(dy, dx);
+    const headLength = 15;
+    const arrowHeadX = endX - headLength * Math.cos(angle);
+    const arrowHeadY = endY - headLength * Math.sin(angle);
+    ctx.beginPath();
+    ctx.moveTo(endX, endY);
+    ctx.lineTo(
+        arrowHeadX - headLength * Math.cos(angle - Math.PI / 6),
+        arrowHeadY - headLength * Math.sin(angle - Math.PI / 6)
+    );
+    ctx.lineTo(
+        arrowHeadX - headLength * Math.cos(angle + Math.PI / 6),
+        arrowHeadY - headLength * Math.sin(angle + Math.PI / 6)
+    );
+    ctx.closePath();
+    ctx.fillStyle = 'rgba(46, 204, 113, 0.9)';
+    ctx.fill();
+    const force = Math.min(distance / 50, 2);
+    const radius = 8 + force * 10;
+    ctx.beginPath();
+    ctx.arc(endX, endY, radius, 0, Math.PI * 2);
+    ctx.fillStyle = `rgba(231, 76, 60, ${0.2 + force * 0.3})`;
+    ctx.fill();
+    ctx.restore();
+}
         function openEditPanelByTouch(pos) {
             const rect = canvas.getBoundingClientRect();
             const x = (pos.x - rect.left - canvas.width/2) / camera.zoom + camera.x;
@@ -8620,25 +9062,90 @@ document.addEventListener('DOMContentLoaded', function() {
             universeTime = 0;
             showNotification('Universe reset!');
         }
-        consoleOptions.forEach(option => {
-            option.addEventListener('click', function() {
-                const platform = this.getAttribute('data-platform');
-                if (platform === 'android') {
-                    mobileControls.style.display = 'flex';
+    setupZoomButtons();
+    setupMovementButtons();
+    const consoleOptions = document.querySelectorAll('.console-option');
+    consoleOptions.forEach(option => {
+        option.addEventListener('click', function() {
+            const platform = this.getAttribute('data-platform');
+            switch(platform) {
+                case 'android':
+                    enableButtonMode();
+                    showConsoleInstructions('android');
+                    break;
+                case 'toque':
+                    enableTouchMode();
+                    showConsoleInstructions('toque');
+                    break;
+                default:
                     disableTouchGestures();
-                    showNotification(`ANDROID Mod activated, Touch controls enabled.`);
-                } else if (platform === 'toque') {
-                    mobileControls.style.display = 'none';
-                    enableTouchGestures();
-                    showNotification('TOUCH Mode activated, Touch gestures enabled.');
-                } else {
-                    mobileControls.style.display = 'none';
-                    disableTouchGestures();
-                    showNotification('PC Mode activated.');
-                }
-            });
+                    const mobileControls = document.getElementById('mobileControls');
+                    if (mobileControls) {
+                        mobileControls.style.display = 'none';
+                    }
+                    showConsoleInstructions('pc');
+                    break;
+            }
         });
     });
+    const centerBtn = document.getElementById('centerBtn');
+    if (centerBtn) {
+        centerBtn.addEventListener('click', () => {
+            planets = [];
+            universeAge = 0;
+            universeTime = 0;
+            showNotification('Universe reset');
+            Fcount += 1;
+            if (Fcount >= 20) {
+                unlockAchievement(45);
+            }
+        });
+    }
+    console.log('Mobile systems initialized');
+});
+function cleanupTouchIntervals() {
+    stopContinuousZoom();
+    stopAllMoving();
+    if (touchAnalysis.singleTapTimeout) {
+        clearTimeout(touchAnalysis.singleTapTimeout);
+    }
+    if (touchAnalysis.doubleTapTimeout) {
+        clearTimeout(touchAnalysis.doubleTapTimeout);
+    }
+    if (touchAnalysis.twoFingerTimeout) {
+        clearTimeout(touchAnalysis.twoFingerTimeout);
+    }
+    if (twoFingerDoubleTap.timeout) {
+        clearTimeout(twoFingerDoubleTap.timeout);
+    }
+    if (longTouch.timeout) {
+        clearTimeout(longTouch.timeout);
+    }
+}
+function logTouchState() {
+    console.log('Touch State:', {
+        touchModeActive,
+        twoFingerTouch: { ...twoFingerTouch },
+        longTouch: { ...longTouch },
+        touchAnalysis: { ...touchAnalysis }
+    });
+}
+function resetAllTouchSystems() {
+    cleanupTouchIntervals();
+    resetTouchStates();
+    twoFingerDoubleTap = {
+        lastTime: 0,
+        count: 0,
+        timeout: null
+    };
+    touchAnalysis = {
+        singleTapTimeout: null,
+        doubleTapTimeout: null,
+        twoFingerTimeout: null,
+        lastTap: { time: 0, x: 0, y: 0, count: 0 }
+    };
+    console.log('All touch systems reset');
+}
 function adjustOptionsGrid() {
 const optionsGrid = document.querySelector('.options-grid');
 if (!optionsGrid) return;
