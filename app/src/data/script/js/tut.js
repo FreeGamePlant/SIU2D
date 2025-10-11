@@ -4,10 +4,12 @@ function tutT(key) {
   }
   return key;
 }
+
 let tutorialStep = 0;
 let tutorialAstroCreated = false;
 let tutorialSecondAstroCreated = false;
 let tutorialStarCreated = false;
+
 const tutorialSingularity = document.getElementById('tutorialSingularity');
 if (tutorialSingularity && !document.getElementById('tutorialSingularityText')) {
   tutorialSingularity.innerHTML = `
@@ -18,18 +20,23 @@ if (tutorialSingularity && !document.getElementById('tutorialSingularityText')) 
     <div id="tutorialSingularityAction" style="margin-top:18px;text-align:right;"></div>
   `;
 }
+
 const tutorialSingularityText = document.getElementById('tutorialSingularityText');
 const tutorialSingularityAction = document.getElementById('tutorialSingularityAction');
+
 let tutTypewriterTimeout = null;
 let tutTypewriterId = 0;
+
 function showTutorialSingularity(msgKey, actionHtml = '', highlight = null) {
   const msg = tutT(msgKey) || msgKey;
   tutorialSingularity.style.display = 'block';
   tutorialSingularityText.textContent = '';
+  
   if (tutTypewriterTimeout) clearTimeout(tutTypewriterTimeout);
   tutTypewriterId++;
   const thisId = tutTypewriterId;
   let i = 0;
+  
   function typeChar() {
     if (thisId !== tutTypewriterId) return;
     if (i < msg.length) {
@@ -39,14 +46,17 @@ function showTutorialSingularity(msgKey, actionHtml = '', highlight = null) {
     }
   }
   typeChar();
+  
   tutorialSingularityAction.innerHTML = actionHtml;
   if (highlight) {
     highlight.classList.add('tut-highlight');
   }
 }
+
 function hideTutorialSingularity() {
   tutorialSingularity.style.display = 'none';
 }
+
 function startTutorialSequence() {
   tutorialStep = 0;
   tutorialAstroCreated = false;
@@ -54,11 +64,13 @@ function startTutorialSequence() {
   tutorialStarCreated = false;
   nextTutorialStep();
 }
+
 function isAnyStarCreated() {
   return typeof window.isAnyStarPresent === 'function' 
     ? window.isAnyStarPresent() 
     : false;
 }
+
 function nextTutorialStep(forceReload = false) {
   switch(tutorialStep) {
     case 0:
@@ -67,72 +79,54 @@ function nextTutorialStep(forceReload = false) {
         tutorialStep = 1;
         showTutorialSingularity(
           'intro',
-          `<button id=\"btnTutContinue1\" class=\"cutscene-btn\">${tutT('buttons.ok')}</button>`
+          `<button id="btnTutContinue1" class="cutscene-btn">${tutT('buttons.ok')}</button>`
         );
         document.getElementById('btnTutContinue1').onclick = () => {
-          showTutorialSingularity('click_to_create');
-          tutorialSingularityAction.innerHTML = `<span style=\"color:#aaa;font-size:0.98rem;\">${tutT('waiting_astro')}</span>`;
-          const gameCanvas = document.getElementById('gameCanvas');
-          function handleFirstAstroClick(e) {
-            console.log('Clique detectado no canvas', e);
-            if (e.button === 0) {
-              gameCanvas.removeEventListener('mousedown', handleFirstAstroClick, true);
-              tutorialAstroCreated = true;
-              setTimeout(nextTutorialStep, 300);
-            }
-          }
-          if (gameCanvas) {
-            console.log('Canvas encontrado, adicionando listener...');
-            gameCanvas.addEventListener('mousedown', handleFirstAstroClick, false);
-            setTimeout(() => {
-              if (!tutorialAstroCreated) {
-                console.log('Clique não detectado, removendo listener');
-                gameCanvas.removeEventListener('mousedown', handleFirstAstroClick, false);
-              }
-            }, 30000);
-          } else {
-            console.error('Canvas do jogo não encontrado!');
-          }
+          showTutorialSingularity(
+            'click_to_create',
+            `<button id="btnTutCreateFirst" class="cutscene-btn">${tutT('buttons.next')}</button>`
+          );
+          document.getElementById('btnTutCreateFirst').onclick = () => {
+            tutorialAstroCreated = true;
+            setTimeout(nextTutorialStep, 300);
+          };
         };
       }, 2200);
       break;
+      
     case 1:
       if (tutorialAstroCreated || forceReload) {
         showTutorialSingularity(
           'zoom_instructions',
-          `<button id=\"btnTutContinue2\" class=\"cutscene-btn\">${tutT('buttons.next')}</button>`
+          `<button id="btnTutContinue2" class="cutscene-btn">${tutT('buttons.next')}</button>`
         );
         document.getElementById('btnTutContinue2').onclick = () => {
           tutorialStep = 2;
           showTutorialSingularity(
             'move_camera',
-            `<button id=\"btnTutContinue3\" class=\"cutscene-btn\">${tutT('buttons.next')}</button>`
+            `<button id="btnTutContinue3" class="cutscene-btn">${tutT('buttons.next')}</button>`
           );
           document.getElementById('btnTutContinue3').onclick = () => {
             tutorialStep = 3;
             showTutorialSingularity(
               'camera_adjusted',
-              `<button id=\"btnTutContinue4\" class=\"cutscene-btn\">${tutT('buttons.ok')}</button>`
+              `<button id="btnTutContinue4" class="cutscene-btn">${tutT('buttons.ok')}</button>`
             );
             document.getElementById('btnTutContinue4').onclick = () => {
-              showTutorialSingularity('create_second');
-              tutorialSingularityAction.innerHTML = `<span style=\"color:#aaa;font-size:0.98rem;\">${tutT('waiting_second')}</span>`;
-              const gameCanvas = document.getElementById('gameCanvas');
-              function handleSecondAstroClick(e) {
-                if (e.button === 0) {
-                  gameCanvas.removeEventListener('mousedown', handleSecondAstroClick, true);
-                  tutorialSecondAstroCreated = true;
-                  setTimeout(nextTutorialStep, 300);
-                }
-              }
-              if (gameCanvas) {
-                gameCanvas.addEventListener('mousedown', handleSecondAstroClick, true);
-              }
+              showTutorialSingularity(
+                'create_second',
+                `<button id="btnTutCreateSecond" class="cutscene-btn">${tutT('buttons.next')}</button>`
+              );
+              document.getElementById('btnTutCreateSecond').onclick = () => {
+                tutorialSecondAstroCreated = true;
+                setTimeout(nextTutorialStep, 300);
+              };
             };
           };
         };
       }
       break;
+      
     case 3:
       if (tutorialSecondAstroCreated) {
         tutorialStep = 4;
@@ -141,369 +135,214 @@ function nextTutorialStep(forceReload = false) {
           `<button id="btnTutContinue5" class="cutscene-btn">${tutT('buttons.ok')}</button>`
         );
         document.getElementById('btnTutContinue5').onclick = () => {
-          showTutorialSingularity('create_orbit');
-          tutorialSingularityAction.innerHTML = `<span style=\"color:#aaa;font-size:0.98rem;\">${tutT('waiting_orbit')}</span>`;
-          const gameCanvas = document.getElementById('gameCanvas');
-          let dragStarted = false;
-          function handleOrbitAstroDown(e) {
-            if (e.button === 0) dragStarted = true;
-          }
-          function handleOrbitAstroUp(e) {
-            if (e.button === 0 && dragStarted) {
-              dragStarted = false;
-              gameCanvas.removeEventListener('mousedown', handleOrbitAstroDown, true);
-              gameCanvas.removeEventListener('mouseup', handleOrbitAstroUp, true);
-              setTimeout(() => {
-                tutorialStep = 5;
+          showTutorialSingularity(
+            'create_orbit',
+            `<button id="btnTutCreateOrbit" class="cutscene-btn">${tutT('buttons.next')}</button>`
+          );
+          document.getElementById('btnTutCreateOrbit').onclick = () => {
+            tutorialStep = 5;
+            showTutorialSingularity(
+              'open_edit_panel',
+              `<button id="btnTutOpenEdit" class="cutscene-btn">${tutT('buttons.next')}</button>`
+            );
+            document.getElementById('btnTutOpenEdit').onclick = () => {
+              tutorialStep = 6;
+              showTutorialSingularity(
+                'change_name',
+                `<button id="btnTutChangeName" class="cutscene-btn">${tutT('buttons.next')}</button>`
+              );
+              document.getElementById('btnTutChangeName').onclick = () => {
+                tutorialStep = 7;
                 showTutorialSingularity(
-                  'open_edit_panel',
-                  `<span style=\"color:#aaa;font-size:0.98rem;\">${tutT('waiting_edit')}</span>`
+                  'change_attributes',
+                  `<button id="btnTutContinueAtributos" class="cutscene-btn">${tutT('buttons.ok')}</button>`
                 );
-                const editPanel = document.getElementById('editPanel');
-                if (editPanel) {
-                  const observer = new MutationObserver(() => {
-                    if (editPanel.style.display !== 'none') {
-                      observer.disconnect();
-                      setTimeout(() => {
-                        tutorialStep = 6;
+                document.getElementById('btnTutContinueAtributos').onclick = () => {
+                  tutorialStep = 8;
+                  showTutorialSingularity(
+                    'change_description',
+                    `<button id="btnTutContinueDescricao" class="cutscene-btn">${tutT('buttons.ok')}</button>`
+                  );
+                  document.getElementById('btnTutContinueDescricao').onclick = () => {
+                    tutorialStep = 9;
+                    showTutorialSingularity(
+                      'close_edit',
+                      `<button id="btnTutCloseEdit" class="cutscene-btn">${tutT('buttons.next')}</button>`
+                    );
+                    document.getElementById('btnTutCloseEdit').onclick = () => {
+                      tutorialStep = 10;
+                      showTutorialSingularity(
+                        'open_menu',
+                        `<button id="btnTutOpenMenu" class="cutscene-btn">${tutT('buttons.next')}</button>`
+                      );
+                      document.getElementById('btnTutOpenMenu').onclick = () => {
+                        tutorialStep = 11;
                         showTutorialSingularity(
-                          'change_name',
-                          `<span style=\"color:#aaa;font-size:0.98rem;\">${tutT('waiting_name')}</span>`
+                          'see_variety',
+                          `<button id="btnTutContinueScrollAstros" class="cutscene-btn">${tutT('buttons.ok')}</button>`
                         );
-                        const editName = document.getElementById('editName');
-                        if (editName) {
-                          editName.addEventListener('input', () => {
-                            if (editName.value.trim().length > 0) {
-                              setTimeout(() => {
-                                tutorialStep = 7;
-                                showTutorialSingularity(
-                                  'change_attributes',
-                                  `<button id="btnTutContinueAtributos" class="cutscene-btn">${tutT('buttons.ok')}</button>`
-                                );
-                                document.getElementById('btnTutContinueAtributos').onclick = () => {
-                                  tutorialStep = 8;
-                                  showTutorialSingularity(
-                                    'change_description',
-                                    `<button id="btnTutContinueDescricao" class="cutscene-btn">${tutT('buttons.ok')}</button>`
-                                  );
-                                  document.getElementById('btnTutContinueDescricao').onclick = () => {
-                                    tutorialStep = 9;
-                                    showTutorialSingularity(
-                                      'close_edit',
-                                      `<span style=\"color:#aaa;font-size:0.98rem;\">${tutT('waiting_close')}</span>`
-                                    );
-                                    const closeBtn = document.querySelector('#editPanel .close-menu');
-                                    function closeHandler() {
-                                      closeBtn.removeEventListener('click', closeHandler);
-                                      setTimeout(() => {
-                                        tutorialStep = 10;
-                                        showTutorialSingularity(
-                                          'open_menu',
-                                          `<span style=\"color:#aaa;font-size:0.98rem;\">${tutT('waiting_menu')}</span>`
-                                        );
-                                        const inGameMenu = document.getElementById('inGameMenu');
-                                        if (inGameMenu) {
-                                          const menuObserver = new MutationObserver(() => {
-                                            if (inGameMenu.style.display !== 'none') {
-                                              menuObserver.disconnect();
-                                              setTimeout(() => {
-                                                tutorialStep = 11;
-                                                showTutorialSingularity(
-                                                  'see_variety',
-                                                  `<button id="btnTutContinueScrollAstros" class="cutscene-btn">${tutT('buttons.ok')}</button>`
-                                                );
-                                                document.getElementById('btnTutContinueScrollAstros').onclick = () => {
-                                                  tutorialStep = 12;
-                                                  showTutorialSingularity(
-                                                    'create_star',
-                                                    `<span style=\"color:#aaa;font-size:0.98rem;\">${tutT('waiting_star')}</span>`
-                                                  );
-                                                  const gameCanvas = document.getElementById('gameCanvas');
-                                                  function handleCreateStar(e) {
-                                                    if (e.button === 0) {
-                                                      gameCanvas.removeEventListener('mousedown', handleCreateStar, true);
-                                                      tutorialStarCreated = true;
-                                                      setTimeout(nextTutorialStep, 300);
-                                                    }
-                                                  }
-                                                  gameCanvas.addEventListener('mousedown', handleCreateStar, true);
-                                                };
-                                              }, 600);
-                                            }
-                                          });
-                                          menuObserver.observe(inGameMenu, { 
-                                            attributes: true, 
-                                            attributeFilter: ['style'] 
-                                          });
-                                        }
-                                      }, 600);
-                                    }
-                                    if (closeBtn) {
-                                      closeBtn.addEventListener('click', closeHandler);
-                                    }
-                                  };
-                                };
-                              }, 300);
-                            }
-                          });
-                        }
-                      }, 600);
-                    }
-                  });
-                  observer.observe(editPanel, { 
-                    attributes: true, 
-                    attributeFilter: ['style'] 
-                  });
-                }
-              }, 600);
-            }
-          }
-          gameCanvas.addEventListener('mousedown', handleOrbitAstroDown, true);
-          gameCanvas.addEventListener('mouseup', handleOrbitAstroUp, true);
+                        document.getElementById('btnTutContinueScrollAstros').onclick = () => {
+                          tutorialStep = 12;
+                          showTutorialSingularity(
+                            'create_star',
+                            `<button id="btnTutCreateStar" class="cutscene-btn">${tutT('buttons.next')}</button>`
+                          );
+                          document.getElementById('btnTutCreateStar').onclick = () => {
+                            tutorialStarCreated = true;
+                            setTimeout(nextTutorialStep, 300);
+                          };
+                        };
+                      };
+                    };
+                  };
+                };
+              };
+            };
+          };
         };
       }
       break;
+      
     case 12:
       showTutorialSingularity(
         'open_menu_again',
-              `<span style=\"color:#aaa;font-size:0.98rem;\">${tutT('waiting_menu')}</span>`
+        `<button id="btnTutOpenMenuAgain" class="cutscene-btn">${tutT('buttons.next')}</button>`
       );
-      const inGameMenu = document.getElementById('inGameMenu');
-      function advanceIfMenuOpenRocky() {
-        if (inGameMenu && inGameMenu.style.display !== 'none') {
-          setTimeout(() => {
-            showTutorialSingularity(
-              'choose_rocky',
-            );
-            const gameCanvas = document.getElementById('gameCanvas');
-            function handleCreateRocky(e) {
-              if (e.button === 0) {
-                gameCanvas.removeEventListener('mousedown', handleCreateRocky, true);
-                showTutorialSingularity(
-                  'observe_climate',
-                  `<button id="btnTutContinueClima" class="cutscene-btn">${tutI18n.t('buttons.next')}</button>`
-                );
-                document.getElementById('btnTutContinueClima').onclick = () => {
-                  tutorialStarCreated = true;
-                  setTimeout(nextTutorialStep, 300);
-                  tutorialStep = 13;
-                };
-              }
-            }
-            if (gameCanvas) {
-              gameCanvas.addEventListener('mousedown', handleCreateRocky, true);
-            }
-          }, 600);
-          return true;
-        }
-        return false;
-      }
-      if (!advanceIfMenuOpenRocky() && inGameMenu) {
-        const menuObserverRocky = new MutationObserver(() => {
-          if (advanceIfMenuOpenRocky()) {
-            menuObserverRocky.disconnect();
-          }
-        });
-        menuObserverRocky.observe(inGameMenu, {
-          attributes: true,
-          attributeFilter: ['style']
-        });
-      }
+      document.getElementById('btnTutOpenMenuAgain').onclick = () => {
+        showTutorialSingularity(
+          'choose_rocky',
+          `<button id="btnTutChooseRocky" class="cutscene-btn">${tutT('buttons.next')}</button>`
+        );
+        document.getElementById('btnTutChooseRocky').onclick = () => {
+          showTutorialSingularity(
+            'observe_climate',
+            `<button id="btnTutContinueClima" class="cutscene-btn">${tutT('buttons.next')}</button>`
+          );
+          document.getElementById('btnTutContinueClima').onclick = () => {
+            tutorialStarCreated = true;
+            setTimeout(nextTutorialStep, 300);
+            tutorialStep = 13;
+          };
+        };
+      };
       break;
+      
     case 13:
       if (tutorialStarCreated) {
         tutorialStep = 14;
         showTutorialSingularity(
           'press_f',
+          `<button id="btnTutPressF" class="cutscene-btn">${tutT('buttons.next')}</button>`
         );
-        function handleFKey(e) {
-          if (e.key === 'f' || e.key === 'F') {
-            window.removeEventListener('keydown', handleFKey, true);
-            setTimeout(() => {
-              tutorialStep = 15;
+        document.getElementById('btnTutPressF').onclick = () => {
+          tutorialStep = 15;
+          showTutorialSingularity(
+            'open_after_f',
+            `<button id="btnTutOpenAfterF" class="cutscene-btn">${tutT('buttons.next')}</button>`
+          );
+          document.getElementById('btnTutOpenAfterF').onclick = () => {
+            tutorialStep = 16;
+            showTutorialSingularity(
+              'choose_tauri',
+              `<button id="btnTutChooseTauri" class="cutscene-btn">${tutT('buttons.next')}</button>`
+            );
+            document.getElementById('btnTutChooseTauri').onclick = () => {
+              tutorialStep = 18;
               showTutorialSingularity(
-                'open_after_f',
-                `<span style=\"color:#aaa;font-size:0.98rem;\">${tutT('waiting_menu')}</span>`
+                'open_after_tauri',
+                `<button id="btnTutOpenAfterTauri" class="cutscene-btn">${tutT('buttons.next')}</button>`
               );
-              const inGameMenu = document.getElementById('inGameMenu');
-              function advanceIfMenuOpen() {
-                if (inGameMenu && inGameMenu.style.display !== 'none') {
-                  setTimeout(() => {
-                    tutorialStep = 16;
+              document.getElementById('btnTutOpenAfterTauri').onclick = () => {
+                tutorialStep = 19;
+                showTutorialSingularity(
+                  'time_control',
+                  `<button id="btnTutTimeControl" class="cutscene-btn">${tutT('buttons.next')}</button>`
+                );
+                document.getElementById('btnTutTimeControl').onclick = () => {
+                  tutorialStep = 20;
+                  showTutorialSingularity(
+                    'close_menu',
+                    `<button id="btnTutCloseMenu" class="cutscene-btn">${tutT('buttons.next')}</button>`
+                  );
+                  document.getElementById('btnTutCloseMenu').onclick = () => {
+                    tutorialStep = 21;
                     showTutorialSingularity(
-                      'choose_tauri',
-                      `<span style=\"color:#aaa;font-size:0.98rem;\">${tutT('create_tauri')}</span>`
+                      'see_evolution',
+                      `<button id="btnTutContinueEvolucao" class="cutscene-btn">${tutT('buttons.next')}</button>`
                     );
-                    const gameCanvas = document.getElementById('gameCanvas');
-                    function handleCreateTauri(e) {
-                      if (e.button === 0) {
-                        gameCanvas.removeEventListener('mousedown', handleCreateTauri, true);
-                        setTimeout(() => {
-                          tutorialStep = 18;
+                    document.getElementById('btnTutContinueEvolucao').onclick = () => {
+                      tutorialStep = 22;
+                      showTutorialSingularity(
+                        'press_n',
+                        `<button id="btnTutPressN" class="cutscene-btn">${tutT('buttons.next')}</button>`
+                      );
+                      document.getElementById('btnTutPressN').onclick = () => {
+                        tutorialStep = 22.5;
+                        showTutorialSingularity(
+                          'press_t',
+                          `<button id="btnTutPressT" class="cutscene-btn">${tutT('buttons.next')}</button>`
+                        );
+                        document.getElementById('btnTutPressT').onclick = () => {
+                          tutorialStep = 23;
                           showTutorialSingularity(
-                            'open_after_tauri',
-                            `<span style=\"color:#aaa;font-size:0.98rem;\">${tutT('waiting_menu')}</span>`
+                            'tutorial_complete',
+                            `<button id="btnTutFinalOk" class="cutscene-btn">${tutT('buttons.ok')}</button>`
                           );
-                          const inGameMenu = document.getElementById('inGameMenu');
-                          function advanceIfMenuOpen2() {
-                            if (inGameMenu && inGameMenu.style.display !== 'none') {
+                          document.getElementById('btnTutFinalOk').onclick = () => {
+                            showTutorialSingularity(
+                              'redirecting',
+                              ''
+                            );
+                            const fadeDiv = document.createElement('div');
+                            fadeDiv.style.position = 'fixed';
+                            fadeDiv.style.left = '0';
+                            fadeDiv.style.top = '0';
+                            fadeDiv.style.width = '100vw';
+                            fadeDiv.style.height = '100vh';
+                            fadeDiv.style.background = '#fff';
+                            fadeDiv.style.opacity = '0';
+                            fadeDiv.style.zIndex = '99999';
+                            fadeDiv.style.transition = 'opacity 1.2s';
+                            document.body.appendChild(fadeDiv);
+                            setTimeout(() => {
+                              fadeDiv.style.opacity = '1';
                               setTimeout(() => {
-                                tutorialStep = 19;
-                                showTutorialSingularity(
-                                  'time_control',
-                                  `<span style=\"color:#aaa;font-size:0.98rem;\">${tutT('choose_10x')}</span>`
-                                );
-                                const fastBtn = document.getElementById('timeDistantFuture');
-                                if (fastBtn) {
-                                  fastBtn.addEventListener('click', function selectFast() {
-                                    fastBtn.removeEventListener('click', selectFast);
-                                    setTimeout(() => {
-                                      tutorialStep = 20;
-                                      showTutorialSingularity(
-                                          'close_menu',
-                                          `<span style=\"color:#aaa;font-size:0.98rem;\">${tutT('waiting_close_menu')}</span>`
-                                      );
-                                      const closeBtn = inGameMenu.querySelector('.close-menu');
-                                      if (closeBtn) {
-                                        closeBtn.addEventListener('click', function closeMenu() {
-                                          closeBtn.removeEventListener('click', closeMenu);
-                                          setTimeout(() => {
-                                            tutorialStep = 21;
-                                            showTutorialSingularity(
-                                              'see_evolution',
-                                              `<button id="btnTutContinueEvolucao" class="cutscene-btn">${tutI18n.t('buttons.next')}</button>`
-                                            );
-                                            document.getElementById('btnTutContinueEvolucao').onclick = () => {
-                                              tutorialStep = 22;
-                                              showTutorialSingularity(
-                                                'press_n',
-                                                `<span style="color:#aaa;font-size:0.98rem;">${tutT('waiting_press_n')}</span>`
-                                              );
-                                              function handleNKey(e) {
-                                                if (e.key === 'n' || e.key === 'N') {
-                                                  window.removeEventListener('keydown', handleNKey, true);
-                                                  setTimeout(() => {
-                                                    tutorialStep = 22.5;
-                                                    showTutorialSingularity(
-                                                      'press_t',
-                                                      `<span style="color:#aaa;font-size:0.98rem;">${tutT('waiting_t')}</span>`
-                                                    );
-                                                    function handleTKey(e) {
-                                                      if (e.key === 't' || e.key === 'T') {
-                                                        window.removeEventListener('keydown', handleTKey, true);
-                                                        setTimeout(() => {
-                                                          tutorialStep = 23;
-                                                          showTutorialSingularity(
-                                                            'tutorial_complete',
-                                                            `<button id="btnTutFinalOk" class="cutscene-btn">${tutI18n.t('buttons.ok')}</button>`
-                                                          );
-                                                          document.getElementById('btnTutFinalOk').onclick = () => {
-                                                            showTutorialSingularity(
-                                                              'redirecting',
-                                                              ''
-                                                            );
-                                                            const fadeDiv = document.createElement('div');
-                                                            fadeDiv.style.position = 'fixed';
-                                                            fadeDiv.style.left = '0';
-                                                            fadeDiv.style.top = '0';
-                                                            fadeDiv.style.width = '100vw';
-                                                            fadeDiv.style.height = '100vh';
-                                                            fadeDiv.style.background = '#fff';
-                                                            fadeDiv.style.opacity = '0';
-                                                            fadeDiv.style.zIndex = '99999';
-                                                            fadeDiv.style.transition = 'opacity 1.2s';
-                                                            document.body.appendChild(fadeDiv);
-                                                            setTimeout(() => {
-                                                              fadeDiv.style.opacity = '1';
-                                                              setTimeout(() => {
-                                                                window.location.href = '../html/SIU2Dgame.html';
-                                                              }, 5000);
-                                                            }, 400);
-                                                          };
-                                                        }, 1200);
-                                                      }
-                                                    }
-                                                    window.addEventListener('keydown', handleTKey, true);
-                                                  }, 1200);
-                                                }
-                                              }
-                                              window.addEventListener('keydown', handleNKey, true);
-                                            };
-                                          }, 600);
-                                        });
-                                      }
-                                    }, 600);
-                                  });
-                                }
-                              }, 600);
-                              return true;
-                            }
-                            return false;
-                          }
-                          if (!advanceIfMenuOpen2() && inGameMenu) {
-                            const menuObserver2 = new MutationObserver(() => {
-                              if (advanceIfMenuOpen2()) {
-                                menuObserver2.disconnect();
-                              }
-                            });
-                            menuObserver2.observe(inGameMenu, {
-                              attributes: true,
-                              attributeFilter: ['style']
-                            });
-                          }
-                        }, 600);
-                      }
-                    }
-                    if (gameCanvas) {
-                      gameCanvas.addEventListener('mousedown', handleCreateTauri, true);
-                    }
-                  }, 600);
-                }
-              }
-              if (!advanceIfMenuOpen() && inGameMenu) {
-                const menuObserver = new MutationObserver(() => {
-                  if (advanceIfMenuOpen()) {
-                    menuObserver.disconnect();
-                  }
-                });
-                menuObserver.observe(inGameMenu, {
-                  attributes: true,
-                  attributeFilter: ['style']
-                });
-              }
-            }, 600);
-          }
-        }
-        window.addEventListener('keydown', handleFKey, true);
+                                window.location.href = '../html/SIU2Dgame.html';
+                              }, 5000);
+                            }, 400);
+                          };
+                        };
+                      };
+                    };
+                  };
+                };
+              };
+            };
+          };
+        };
       }
       break;
   }
 }
+
 window.tutorialNotifyAstroCreated = function(type) {
-  if (tutorialStep === 1 && !tutorialAstroCreated) {
-    tutorialAstroCreated = true;
-    setTimeout(nextTutorialStep, 300);
-  } 
-  else if (tutorialStep === 3 && !tutorialSecondAstroCreated) {
-    tutorialSecondAstroCreated = true;
-    setTimeout(nextTutorialStep, 300);
-  }
-  else if (tutorialStep === 12 && type === 'rocky') {
-    tutorialStarCreated = true;
-    setTimeout(nextTutorialStep, 300);
-  }
+  // Esta função pode ser mantida para compatibilidade, mas não é mais necessária
 };
+
 function startTutorialAfterCutscene() {
   setTimeout(() => {
     startTutorialSequence();
   }, 100);
 }
+
 const cutsceneOverlay = document.getElementById('cutsceneOverlay');
 const cutsceneDialogue = document.getElementById('cutsceneDialogue');
 const cutsceneChoices = document.getElementById('cutsceneChoices');
+
 let cutsceneStep = 0;
 let cutsceneFadeTimeout = null;
 let typingTimeout = null;
+
 function typeText(element, text, speed = 28, callback) {
   if (!element) return;
   let i = 0;
@@ -519,6 +358,7 @@ function typeText(element, text, speed = 28, callback) {
   }
   typeChar();
 }
+
 let warpCanvas = null;
 let warpCtx = null;
 let warpAnimId = null;
@@ -528,6 +368,7 @@ let warpSpeedMultiplier = 1;
 let whiteFadeAlpha = 0;
 let whiteFadeDirection = 0; 
 let whiteFadeCallback = null;
+
 function createWarpElements() {
   if (warpCanvas) return;
   warpCanvas = document.createElement('canvas');
@@ -544,11 +385,13 @@ function createWarpElements() {
   warpCtx = warpCanvas.getContext('2d');
   window.addEventListener('resize', resizeWarpCanvas);
 }
+
 function resizeWarpCanvas() {
   if (!warpCanvas) return;
   warpCanvas.width = window.innerWidth;
   warpCanvas.height = window.innerHeight;
 }
+
 function initWarpObjects() {
   const w = warpCanvas.width, h = warpCanvas.height;
   warpStripes = [];
@@ -577,6 +420,7 @@ function initWarpObjects() {
     });
   }
 }
+
 function drawWarp() {
   if (!warpCanvas || !warpCtx) return;
   const w = warpCanvas.width, h = warpCanvas.height;
@@ -648,6 +492,7 @@ function drawWarp() {
   }
   warpAnimId = requestAnimationFrame(drawWarp);
 }
+
 function startWarpAnimation() {
   createWarpElements();
   resizeWarpCanvas();
@@ -655,6 +500,7 @@ function startWarpAnimation() {
   if (warpAnimId) cancelAnimationFrame(warpAnimId);
   warpAnimId = requestAnimationFrame(drawWarp);
 }
+
 function stopWarpAnimation() {
   if (warpAnimId) cancelAnimationFrame(warpAnimId);
   warpAnimId = null;
@@ -665,6 +511,7 @@ function stopWarpAnimation() {
   }
   window.removeEventListener('resize', resizeWarpCanvas);
 }
+
 function startCutscene() {
   cutsceneOverlay.style.opacity = '1';
   cutsceneOverlay.style.display = 'flex';
@@ -683,6 +530,7 @@ function startCutscene() {
     });
   });
 }
+
 function dramaticCutsceneEnd() {
   warpSpeedMultiplier = 6;
   const avatar = document.querySelector('#cutsceneOverlay img');
@@ -741,13 +589,14 @@ function dramaticCutsceneEnd() {
     };
   }, 900);
 }
+
 function handleCutsceneChoice(e) {
   const choice = e.target.getAttribute('data-choice');
   if (choice === '1') {
     cutsceneStep = 1;
     const response = tutT('cutscene_response1');
     updateCutsceneDialogue(response, () => {
-  setTimeout(dramaticCutsceneEnd, 10000);
+      setTimeout(dramaticCutsceneEnd, 10000);
     });
   } 
   else if (choice === '2') {
@@ -802,6 +651,7 @@ function handleCutsceneChoice(e) {
     });
   }
 }
+
 function updateCutsceneDialogue(text, callback) {
   if (typingTimeout) clearTimeout(typingTimeout);
   cutsceneChoices.innerHTML = '';
@@ -821,6 +671,7 @@ function updateCutsceneDialogue(text, callback) {
     if (callback) callback();
   }, 2000);
 }
+
 function showCutsceneOptions(options) {
   cutsceneChoices.innerHTML = '';
   options.forEach((option, idx) => {
@@ -835,6 +686,7 @@ function showCutsceneOptions(options) {
     }
   });
 }
+
 function startCutscene() {
   cutsceneOverlay.style.opacity = '1';
   cutsceneOverlay.style.display = 'flex';
@@ -850,63 +702,75 @@ function startCutscene() {
     ]);
   });
 }
+
 window.addEventListener('DOMContentLoaded', startCutscene);
-        const gravitySliderConfig = document.getElementById('gravityFactor');
-        const gravityValueConfig = document.getElementById('gravityValue');
-        if (gravitySliderConfig && gravityValueConfig) {
-          function updateGravityValueConfig() {
-            gravityValueConfig.textContent = (gravitySliderConfig.value * 100).toFixed(0) + '%';
-          }
-          gravitySliderConfig.addEventListener('input', updateGravityValueConfig);
-          updateGravityValueConfig();
-        }
-        document.querySelectorAll('.setting-control input[type="range"]').forEach(function(slider) {
-          slider.classList.add('slider');
-        });
-        document.querySelectorAll('.tab').forEach(tab => {
-          tab.addEventListener('click', function() {
-            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-            document.querySelectorAll('.tab-content').forEach(tc => tc.classList.remove('active'));
-            tab.classList.add('active');
-            document.getElementById(tab.getAttribute('data-tab')).classList.add('active');
-          });
-        });
-        document.getElementById('btnWarnings').addEventListener('click', function() {
-          document.getElementById('warningsSidebar').classList.add('active');
-        });
-        document.getElementById('closeWarningsBtn').addEventListener('click', function() {
-          document.getElementById('warningsSidebar').classList.remove('active');
-        });
-        window.addEventListener('DOMContentLoaded', function() {
-          if (typeof startGame === 'function') startGame();
-          if (typeof startTutorial === 'function') startTutorial();
-        });
-        document.getElementById('btnOptions').addEventListener('click', () => {
-          document.getElementById('configSidebar').classList.add('active');
-        });
-        document.getElementById('closeConfigBtn').addEventListener('click', () => {
-          document.getElementById('configSidebar').classList.remove('active');
-        });
-        document.getElementById('exitBtn').addEventListener('click', () => {
-          if (confirm('Deseja realmente sair do SIU 2D?')) {
-            window.close();
-          }
-        });
-        const btnInstruction = document.getElementById('btnInstruction');
-        if (btnInstruction) {
-          btnInstruction.addEventListener('click', function() {
-            const startScreen = document.getElementById('startScreen');
-            if (startScreen) {
-              startScreen.style.transition = 'opacity 0.7s';
-              startScreen.style.opacity = '0';
-              setTimeout(() => {
-                window.location.href = 'tut.html';
-              }, 700);
-            } else {
-              window.location.href = 'tut.html';
-            }
-          });
-        }
+
+const gravitySliderConfig = document.getElementById('gravityFactor');
+const gravityValueConfig = document.getElementById('gravityValue');
+if (gravitySliderConfig && gravityValueConfig) {
+  function updateGravityValueConfig() {
+    gravityValueConfig.textContent = (gravitySliderConfig.value * 100).toFixed(0) + '%';
+  }
+  gravitySliderConfig.addEventListener('input', updateGravityValueConfig);
+  updateGravityValueConfig();
+}
+
+document.querySelectorAll('.setting-control input[type="range"]').forEach(function(slider) {
+  slider.classList.add('slider');
+});
+
+document.querySelectorAll('.tab').forEach(tab => {
+  tab.addEventListener('click', function() {
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.tab-content').forEach(tc => tc.classList.remove('active'));
+    tab.classList.add('active');
+    document.getElementById(tab.getAttribute('data-tab')).classList.add('active');
+  });
+});
+
+document.getElementById('btnWarnings').addEventListener('click', function() {
+  document.getElementById('warningsSidebar').classList.add('active');
+});
+
+document.getElementById('closeWarningsBtn').addEventListener('click', function() {
+  document.getElementById('warningsSidebar').classList.remove('active');
+});
+
+window.addEventListener('DOMContentLoaded', function() {
+  if (typeof startGame === 'function') startGame();
+  if (typeof startTutorial === 'function') startTutorial();
+});
+
+document.getElementById('btnOptions').addEventListener('click', () => {
+  document.getElementById('configSidebar').classList.add('active');
+});
+
+document.getElementById('closeConfigBtn').addEventListener('click', () => {
+  document.getElementById('configSidebar').classList.remove('active');
+});
+
+document.getElementById('exitBtn').addEventListener('click', () => {
+  if (confirm('Deseja realmente sair do SIU 2D?')) {
+    window.close();
+  }
+});
+
+const btnInstruction = document.getElementById('btnInstruction');
+if (btnInstruction) {
+  btnInstruction.addEventListener('click', function() {
+    const startScreen = document.getElementById('startScreen');
+    if (startScreen) {
+      startScreen.style.transition = 'opacity 0.7s';
+      startScreen.style.opacity = '0';
+      setTimeout(() => {
+        window.location.href = 'tut.html';
+      }, 700);
+    } else {
+      window.location.href = 'tut.html';
+    }
+  });
+}
+
 document.addEventListener('DOMContentLoaded', function() {
   const btnTSingularity = document.getElementById('btnTSingularity');
   const tsingularitySidebar = document.getElementById('tsingularitySidebar');

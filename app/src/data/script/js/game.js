@@ -371,6 +371,8 @@ function init() {
     document.addEventListener('keydown', handleKeyDown);
     document.getElementById('btnResetAchievements').addEventListener('click', resetAchievements);
     document.getElementById('btnPlay').addEventListener('click', startGame);
+    document.getElementById('btnResetUniverse').addEventListener('click', resetUniverse);
+    document.getElementById('btnResetCamera').addEventListener('click', resetCamera);
     gameMenuBtn.addEventListener('click', toggleGameMenu);
     closeMenuBtn.addEventListener('click', toggleGameMenu);
     volumeSlider.addEventListener('input', fgpVolume);
@@ -518,6 +520,27 @@ function calculateMovementDirection(obj) {
         obj.direction = Math.atan2(obj.vy, obj.vx);
     }
     return obj.direction || 0;
+}
+function resetUniverse() {
+    if (confirm("Are you sure you want to reset the universe? This will remove ALL celestial bodies!")) {
+        planets = [];
+        selectedPlanet = null;
+        universeAge = 0;
+        universeTime = 0;
+        spaceDustCreated = 0;
+        pulsarCount = 0;
+        Fcount = 0;
+        warnigCount = 0;
+        Acount = 0;
+        showNotification("Universe has been reset!");
+        fgpInfoPanel();
+    }
+}
+function resetCamera() {
+    camera.x = 0;
+    camera.y = 0;
+    camera.zoom = 1;
+    showNotification("Camera position reset!");
 }
 function roundRect(ctx, x, y, width, height, radius, fill, stroke) {
     if (typeof radius === 'undefined') radius = 5;
@@ -8558,6 +8581,8 @@ optionCards.forEach(card => {
 }
 }
 //#endregion
+//#endregion
+
 //#region coments
 /*
 thanks for playing my game :D
