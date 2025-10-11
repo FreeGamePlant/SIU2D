@@ -1310,6 +1310,25 @@ document.getElementById('tsingu').addEventListener('contextmenu', (e) => {
                 </div>
             </div>
             <div class="menu-section">
+                <h3 class="section-title"><i class="fas fa-sync-alt"></i> Universe Controls</h3>
+                <div class="detail-row">
+                    <div class="detail-label"><i class="fas fa-globe-americas"></i> Reset Universe:</div>
+                    <div class="detail-value">
+                        <button class="action-btn secondary" id="btnResetUniverse" style="margin: 5px 0;">
+                            <i class="fas fa-trash"></i> Reset Universe
+                        </button>
+                    </div>
+                </div>
+                <div class="detail-row">
+                    <div class="detail-label"><i class="fas fa-camera"></i> Reset Camera:</div>
+                    <div class="detail-value">
+                        <button class="action-btn secondary" id="btnResetCamera" style="margin: 5px 0;">
+                            <i class="fas fa-crosshairs"></i> Reset Camera
+                        </button>
+                    </div>
+                </div>
+            </div>
+            <div class="menu-section">
                 <h3 class="section-title"><i class="fas fa-sliders-h"></i></h3>
                 <div class="slider-container">
                     <label data-i18n="ui.inGameMenu.options.volume"><span id="volumeValue">70</span>%</label>
@@ -1331,9 +1350,9 @@ document.getElementById('tsingu').addEventListener('contextmenu', (e) => {
                     </label>
                 </div>
                 <div style="display: flex; align-items: center; margin-top: 15px;">
-                    <label style="margin-right: 15px;" ></label>
+                    <label style="margin-right: 15px;" data-i18n="ui.inGameMenu.options.tempZones"></label>
                     <label class="toggle-switch">
-                        <input type="checkbox" id="showTempZones" checked  data-i18n="ui.inGameMenu.options.tempZones">
+                        <input type="checkbox" id="showTempZones" checked>
                         <span class="slider"></span>
                     </label>
                 </div>
@@ -1345,6 +1364,7 @@ document.getElementById('tsingu').addEventListener('contextmenu', (e) => {
                     </label>
                 </div>
             </div>
+            
             <div class="menu-section">
                 <h3 class="section-title"><i class="fas fa-atom"></i></h3>
                 <div class="slider-container">
