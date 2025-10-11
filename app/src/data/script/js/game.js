@@ -443,6 +443,20 @@ function init() {
     window.addEventListener('resize', checkOrientation);
     window.addEventListener('orientationchange', checkOrientation);
     checkOrientation();
+    document.querySelectorAll('.option-card').forEach(card => {
+    card.addEventListener('click', () => {
+        creationMode = card.dataset.type;
+        selectedType = creationMode; 
+        creationModeText.textContent = getTypeName(creationMode);
+        creationModeIndicator.style.display = 'block';
+        toggleGameMenu();
+        showNotification(`Creation Mode: ${getTypeName(creationMode)}. Click and drag to set the velocity.`);
+    });
+});
+    creationMode = 'asteroid';
+    selectedType = 'asteroid';
+    creationModeText.textContent = getTypeName(creationMode);
+    creationModeIndicator.style.display = 'block';
 }
 function lockOrientation() {
     if (screen.orientation && screen.orientation.lock) {
