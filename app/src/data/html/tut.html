@@ -1429,20 +1429,16 @@
     <link rel="stylesheet" href="../style/css/editPanelOverride.css">
 <script src="../script/js/i18n.class.js"></script>
 <script>
-// Inicialização do sistema i18n para o tutorial
 const i18n = new I18n();
 window.i18n = i18n;
 const savedLang = localStorage.getItem('siu2d_lang') || 'pt';
 console.log('[TUTORIAL] Inicializando i18n com idioma:', savedLang);
 async function loadTutorialLocale(lang) {
-    // Carrega o global
     await i18n.loadLocale(lang);
-    // Carrega o tutorial
     try {
         const tutResp = await fetch(`../script/js/tut.${lang}.json`);
         if (tutResp.ok) {
             const tutData = await tutResp.json();
-            // Mescla as traduções do tutorial no objeto global
             Object.assign(i18n.translations[lang], tutData);
             console.log('[TUTORIAL] Traduções do tutorial carregadas:', tutData);
         } else {
@@ -1608,116 +1604,6 @@ document.addEventListener('DOMContentLoaded', function() {
           </div>
         </div>
 <div id="achievementNotification" style="display:none;"></div>
-    <div id="consoleSidebar">
-        <div class="console-panel">
-            <button class="close-console" id="closeConsoleBtn" title="Fechar Console">&times;</button>
-            <div class="console-header">
-                <h2 data-i18n="ui.emulator.title">Emulador</h2>
-                <p data-i18n="ui.emulator.description">Selecione uma plataforma para emulação</p>
-            </div>
-            <div class="console-options">
-        <div class="console-option pc" data-platform="pc">
-          <i class="fas fa-desktop"></i>
-          <div class="option-content">
-            <h3>PC</h3>
-            <p data-i18n="ui.emulator.pc.description">Emulação para computadores pessoais</p>
-            <button class="desc-btn" data-desc="desc-pc">desc</button>
-            <div class="desc-panel" id="desc-pc" style="display:none;" data-i18n="ui.emulator.pc.mode">Modo PC: Use teclado e mouse para controlar o universo. Ideal para computadores e notebooks.</div>
-          </div>
-        </div>
-        <div class="console-option android" data-platform="android">
-          <i class="fas fa-gamepad"></i>
-          <div class="option-content">
-            <h3>Android / iOS / Mobiles</h3>
-            <p data-i18n="ui.emulator.android.description">Emulação para dispositivos móveis (botões)</p>
-            <button class="desc-btn" data-desc="desc-android">desc</button>
-            <div class="desc-panel" id="desc-android" style="display:none;" data-i18n="ui.emulator.android.mode">Modo Botões: Use botões virtuais para mover, criar e controlar o universo em dispositivos móveis.</div>
-          </div>
-        </div>
-        <div class="console-option ios" data-platform="toque">
-          <i class="fas fa-hand"></i>
-          <div class="option-content">
-            <h3>Android / iOS / Mobiles</h3>
-            <p data-i18n="ui.emulator.touch.description">Emulação para dispositivos móveis (Toque)</p>
-            <button class="desc-btn" data-desc="desc-toque">desc</button>
-            <div class="desc-panel" id="desc-toque" style="display:none;">
-              <div data-i18n="ui.emulator.touch.mode">Modo Toque: Controle total por gestos!<br></div>
-              <div data-i18n="ui.emulator.touch.gestures.one">• 1 toque/arraste com 1 dedo: cria Astros<br></div>
-              <div data-i18n="ui.emulator.touch.gestures.two">• 1 toque duplo no astro: configura-lo<br></div>
-              <div data-i18n="ui.emulator.touch.gestures.three">• 2 dedos e arraste: movimenta câmera<br></div>
-              <div data-i18n="ui.emulator.touch.gestures.four">• 2 dedos e arraste para fora/dentro: zoom<br></div>
-              <div data-i18n="ui.emulator.touch.gestures.five">• 2 toques com 2 dedos: deleta universo</div>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-        </div>
-    </div>
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            const btnConsole = document.getElementById('btnConsole');
-            const consoleSidebar = document.getElementById('consoleSidebar');
-            const closeConsoleBtn = document.getElementById('closeConsoleBtn');
-            const consoleOptions = document.querySelectorAll('.console-option');
-            function openConsole() {
-                consoleSidebar.classList.add('open');
-                document.body.style.overflow = 'hidden';
-            }
-            function closeConsole() {
-                consoleSidebar.classList.remove('open');
-                document.body.style.overflow = '';
-            }
-            if (btnConsole) {
-                btnConsole.addEventListener('click', openConsole);
-            }
-            if (closeConsoleBtn) {
-                closeConsoleBtn.addEventListener('click', closeConsole);
-            }
-            document.addEventListener('keydown', function(e) {
-                if (e.key === 'Escape' && consoleSidebar.classList.contains('open')) {
-                    closeConsole();
-                }
-            });
-            consoleSidebar.addEventListener('click', function(e) {
-                if (e.target === consoleSidebar) {
-                    closeConsole();
-                }
-            });
-            consoleOptions.forEach(option => {
-                option.addEventListener('click', function() {
-                    const platform = this.getAttribute('data-platform');
-                    console.log(`Plataforma selecionada: ${platform}`);
-                    switch(platform) {
-                        case 'pc':
-                            alert('Emulação para PC selecionada');
-                            break;
-                        case 'android':
-                            alert('Emulação para Android selecionada');
-                            break;
-                        case 'ios':
-                            alert('Emulação para iOS selecionada');
-                            break;
-                    }
-                    closeConsole();
-                });
-            });
-        });
-    </script>
-<div id="mobileControls">
-    <div class="control-group movement-controls">
-        <button id="upBtn">↑</button>
-        <button id="leftBtn">←</button>
-        <button id="rightBtn">→</button>
-        <button id="downBtn">↓</button>
-    </div>
-    <div class="control-group action-controls">
-        <button id="zoomInBtn">+</button>
-        <button id="zoomOutBtn">-</button>
-        <button id="centerBtn">F</button>
-        <button id="modeToggleBtn">R</button>
-    </div>
-</div>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <script>
 document.documentElement.setAttribute('data-lang', savedLang);
