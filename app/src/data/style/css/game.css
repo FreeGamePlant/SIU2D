@@ -991,25 +991,6 @@ font-size: 0.8rem;
 font-size: 0.7rem;
 }
 }
-@media (max-width: 1024px) {
-.start-options {
-gap: 15px;
-margin-top: 30px;
-}
-}
-@media (max-width: 768px) {
-.start-options {
-gap: 10px;
-margin-top: 20px;
-}
-}
-@media (max-width: 480px) {
-.start-options {
-gap: 8px;
-margin-top: 15px;
-justify-content: center;
-}
-}
 * {
 -webkit-user-select: none;
 -moz-user-select: none;
@@ -1051,10 +1032,10 @@ font-size: 24px;
 z-index: 9999;
 }
 #gameCanvas {
-display: none !important;
+display: none ;
 }  
 #startScreen {
-display: none !important;
+display: none ;
 }
 }
 @media screen and (orientation: landscape) {
@@ -1064,305 +1045,305 @@ display: none;
 }
 @media screen and (max-width: 1024px) and (orientation: landscape) {
 .hex-btn {
-width: 50px !important;
-height: 58px !important;
-font-size: 0.6rem !important;
-padding: 2px !important;
-margin: 2px !important;
+width: 50px ;
+height: 58px ;
+font-size: 0.6rem ;
+padding: 2px ;
+margin: 2px ;
 }
 .hex-btn i {
-font-size: 0.9rem !important;
-margin-bottom: 2px !important;
+font-size: 0.9rem ;
+margin-bottom: 2px ;
 }
 .hex-btn span {
-font-size: 0.55rem !important;
-line-height: 1 !important;
+font-size: 0.55rem ;
+line-height: 1 ;
 }
 .btn-group {
-gap: 5px !important;
-margin-top: 10px !important;
-flex-wrap: wrap !important;
-justify-content: center !important;
+gap: 5px ;
+margin-top: 10px ;
+flex-wrap: wrap ;
+justify-content: center ;
 }
 .options-grid {
-grid-template-columns: repeat(4, 1fr) !important;
-gap: 8px !important;
-padding: 5px !important;
+grid-template-columns: repeat(4, 1fr) ;
+gap: 8px ;
+padding: 5px ;
 }
 .option-card {
-min-width: auto !important;
-padding: 6px !important;
-margin: 0 !important;
+min-width: auto ;
+padding: 6px ;
+margin: 0 ;
 }
 .option-card h3 {
-font-size: 0.75rem !important;
-margin-bottom: 5px !important;
-flex-direction: column !important;
-text-align: center !important;
-gap: 3px !important;
+font-size: 0.75rem ;
+margin-bottom: 5px ;
+flex-direction: column ;
+text-align: center ;
+gap: 3px ;
 }
 .option-card h3 i {
-font-size: 1rem !important;
+font-size: 1rem ;
 }
 .option-card p {
-font-size: 0.65rem !important;
-line-height: 1.2 !important;
+font-size: 0.65rem ;
+line-height: 1.2 ;
 display: none; 
 }
 #inGameMenu {
-padding: 10px !important;
-overflow-y: auto !important;
+padding: 10px ;
+overflow-y: auto ;
 }
 .menu-title {
-font-size: 1.5rem !important;
-margin: 10px 0 15px !important;
+font-size: 1.5rem ;
+margin: 10px 0 15px ;
 }
 .menu-section {
-padding: 12px !important;
-margin-bottom: 15px !important;
+padding: 12px ;
+margin-bottom: 15px ;
 }
 .section-title {
-font-size: 1.1rem !important;
-margin-bottom: 10px !important;
+font-size: 1.1rem ;
+margin-bottom: 10px ;
 }
 #infoPanel {
-max-width: 200px !important;
-padding: 10px !important;
+max-width: 200px ;
+padding: 10px ;
 }
 .info-row {
-margin: 3px 0 !important;
+margin: 3px 0 ;
 }
 .info-label {
-width: 80px !important;
-font-size: 0.8rem !important;
+width: 80px ;
+font-size: 0.8rem ;
 }
 .info-value {
-font-size: 0.8rem !important;
+font-size: 0.8rem ;
 }
 }
 @media screen and (max-width: 740px) and (orientation: landscape) {
 .hex-btn {
-width: 45px !important;
-height: 52px !important;
-font-size: 0.55rem !important;
+width: 45px ;
+height: 52px ;
+font-size: 0.55rem ;
 }
 .hex-btn i {
-font-size: 0.8rem !important;
+font-size: 0.8rem ;
 }
 .options-grid {
-grid-template-columns: repeat(4, 1fr) !important;
-gap: 6px !important;
+grid-template-columns: repeat(4, 1fr) ;
+gap: 6px ;
 }
 .option-card h3 {
-font-size: 0.7rem !important;
+font-size: 0.7rem ;
 }
 }
 @media screen and (min-width: 741px) and (max-width: 1024px) and (orientation: landscape) {
 .options-grid {
-grid-template-columns: repeat(4, 1fr) !important;
-gap: 10px !important;
+grid-template-columns: repeat(4, 1fr) ;
+gap: 10px ;
 }
 .option-card h3 {
-font-size: 0.8rem !important;
+font-size: 0.8rem ;
 }
 .option-card p {
-font-size: 0.7rem !important;
+font-size: 0.7rem ;
 display: block; 
 }
 }
 @media screen and (orientation: landscape) {
 #gameMenuBtn {
-width: 50px !important;
-height: 50px !important;
-font-size: 1.5rem !important;
-top: 10px !important;
-right: 10px !important;
+width: 50px ;
+height: 50px ;
+font-size: 1.5rem ;
+top: 10px ;
+right: 10px ;
 }
 .notification {
-top: 10px !important;
-padding: 8px 15px !important;
-font-size: 0.9rem !important;
+top: 10px ;
+padding: 8px 15px ;
+font-size: 0.9rem ;
 }
 #creationModeIndicator {
-top: 10px !important;
-padding: 8px 15px !important;
-font-size: 0.9rem !important;
+top: 10px ;
+padding: 8px 15px ;
+font-size: 0.9rem ;
 }
 }
 #inGameMenu {
--webkit-overflow-scrolling: touch !important;
+-webkit-overflow-scrolling: touch ;
 }
 .hex-btn {
-transition: all 0.2s ease !important;
+transition: all 0.2s ease ;
 }
 .hex-btn:active {
-transform: scale(0.95) !important;
+transform: scale(0.95) ;
 }
 .options-grid {
-align-items: start !important;
+align-items: start ;
 }
 .option-card {
-display: flex !important;
-flex-direction: column !important;
-justify-content: flex-start !important;
-min-height: 80px !important;
+display: flex ;
+flex-direction: column ;
+justify-content: flex-start ;
+min-height: 80px ;
 }
 [class*="hex-btn"], 
 [class*="hexagonal"], 
 [class*="btn-hex"] {
-width: 50px !important;
-height: 58px !important;
-font-size: 0.6rem !important;
+width: 50px ;
+height: 58px ;
+font-size: 0.6rem ;
 }
 .btn-container, 
 .button-group, 
 .control-panel {
-display: flex !important;
-flex-wrap: wrap !important;
-justify-content: center !important;
-gap: 5px !important;
-max-height: 70px !important;
-overflow-y: auto !important;
+display: flex ;
+flex-wrap: wrap ;
+justify-content: center ;
+gap: 5px ;
+max-height: 70px ;
+overflow-y: auto ;
 }
 @media screen and (max-width: 1024px) and (orientation: landscape) {
 .game-title {
-font-size: 2rem !important;
-margin-bottom: 1rem !important;
-text-shadow: 0 0 10px rgba(0, 150, 255, 0.7) !important;
-padding: 0 10px !important;
+font-size: 2rem ;
+margin-bottom: 1rem ;
+text-shadow: 0 0 10px rgba(0, 150, 255, 0.7) ;
+padding: 0 10px ;
 }
 @media screen and (max-height: 400px) {
 .game-title {
-font-size: 1.5rem !important;
-margin-bottom: 0.5rem !important;
+font-size: 1.5rem ;
+margin-bottom: 0.5rem ;
 }
 }
 @media screen and (min-width: 768px) and (max-width: 1024px) and (orientation: landscape) {
 .game-title {
-font-size: 2.5rem !important;
+font-size: 2.5rem ;
 }
 }
 }
 @media screen and (max-width: 1024px) and (orientation: landscape) {
 #startScreen {
-justify-content: flex-start !important;
-padding-top: 2vh !important;
-overflow-y: auto !important;
+justify-content: flex-start ;
+padding-top: 2vh ;
+overflow-y: auto ;
 }
 .start-options {
-width: 90% !important;
-max-width: 400px !important;
-margin-top: 2vh !important;
+width: 90% ;
+max-width: 400px ;
+margin-top: 2vh ;
 }
 .start-btn {
-padding: 10px 20px !important;
-font-size: 1rem !important;
-margin: 2px 0 !important;
+padding: 10px 20px ;
+font-size: 1rem ;
+margin: 2px 0 ;
 }
 }
 @media screen and (max-height: 320px) and (orientation: landscape) {
 .game-title {
-font-size: 1.2rem !important;
-margin-bottom: 0.3rem !important;
+font-size: 1.2rem ;
+margin-bottom: 0.3rem ;
 }
 #startScreen {
-padding-top: 1vh !important;
+padding-top: 1vh ;
 }
 }
 [class*="title"], 
 [class*="game-title"],
 [class*="main-title"] {
-font-size: 2rem !important;
+font-size: 2rem ;
 }
 #startScreen h1 {
-font-size: 2rem !important;
+font-size: 2rem ;
 }
 @supports (padding: max(0px)) {
 @media screen and (max-width: 1024px) and (orientation: landscape) {
 #startScreen {
-padding-top: max(2vh, env(safe-area-inset-top)) !important;
-padding-left: env(safe-area-inset-left) !important;
-padding-right: env(safe-area-inset-right) !important;
+padding-top: max(2vh, env(safe-area-inset-top)) ;
+padding-left: env(safe-area-inset-left) ;
+padding-right: env(safe-area-inset-right) ;
 }
 }
 }
 @media screen and (max-width: 1024px) and (orientation: landscape) {
 #btnTSingularity.hex-btn {
-position: relative !important;
-z-index: 1 !important;
-display: flex !important;
-flex-direction: column !important;
-align-items: center !important;
-justify-content: center !important;
-padding: 2px !important;
+position: relative ;
+z-index: 1 ;
+display: flex ;
+flex-direction: column ;
+align-items: center ;
+justify-content: center ;
+padding: 2px ;
 }
 #btnTSingularity.hex-btn img {
-width: 16px !important;
-height: 16px !important;
-margin-bottom: 2px !important;
-object-fit: contain !important;
+width: 16px ;
+height: 16px ;
+margin-bottom: 2px ;
+object-fit: contain ;
 }
 #btnTSingularity.hex-btn span {
-font-size: 0.5rem !important;
-line-height: 1 !important;
-display: block !important;
-height: 16px !important;
-overflow: hidden !important;
-text-overflow: ellipsis !important;
-white-space: nowrap !important;
-padding: 0 1px !important;
-margin: 0 !important;
+font-size: 0.5rem ;
+line-height: 1 ;
+display: block ;
+height: 16px ;
+overflow: hidden ;
+text-overflow: ellipsis ;
+white-space: nowrap ;
+padding: 0 1px ;
+margin: 0 ;
 }
 }
 @media screen and (max-width: 740px) and (orientation: landscape) {
 #btnTSingularity.hex-btn img {
-width: 14px !important;
-height: 14px !important;
-margin-bottom: 1px !important;
+width: 14px ;
+height: 14px ;
+margin-bottom: 1px ;
 }
 #btnTSingularity.hex-btn span {
-font-size: 0.45rem !important;
-height: 14px !important;
+font-size: 0.45rem ;
+height: 14px ;
 }
 }
 @media screen and (min-width: 768px) and (max-width: 1024px) and (orientation: landscape) {
 #btnTSingularity.hex-btn img {
-width: 18px !important;
-height: 18px !important;
-margin-bottom: 3px !important;
+width: 18px ;
+height: 18px ;
+margin-bottom: 3px ;
 }
 #btnTSingularity.hex-btn span {
-font-size: 0.55rem !important;
-height: 18px !important;
+font-size: 0.55rem ;
+height: 18px ;
 }
 }
 @media screen and (max-width: 1024px) and (orientation: landscape) {
 .hex-btn {
-display: flex !important;
-flex-direction: column !important;
-align-items: center !important;
-justify-content: center !important;
-text-align: center !important;
+display: flex ;
+flex-direction: column ;
+align-items: center ;
+justify-content: center ;
+text-align: center ;
 }
 .hex-btn img {
-max-width: 100% !important;
-height: auto !important;
+max-width: 100% ;
+height: auto ;
 }
 }
 @media screen and (max-width: 1024px) and (orientation: landscape) {
 .hex-btn img {
-width: 16px !important;
-height: 16px !important;
-margin-bottom: 2px !important;
-object-fit: contain !important;
+width: 16px ;
+height: 16px ;
+margin-bottom: 2px ;
+object-fit: contain ;
 }
 .hex-btn span {
-font-size: 0.5rem !important;
-line-height: 1 !important;
-height: 16px !important;
-overflow: hidden !important;
-text-overflow: ellipsis !important;
-white-space: nowrap !important;
+font-size: 0.5rem ;
+line-height: 1 ;
+height: 16px ;
+overflow: hidden ;
+text-overflow: ellipsis ;
+white-space: nowrap ;
 }
 }
 .slider-container select {
@@ -1457,4 +1438,507 @@ font-size: 1.1rem;
 }
 .slider-container.graphics-quality select {
 padding-left: 40px;
+}
+
+@media screen and (max-width: 768px) {
+    .start-options {
+        gap: 12px;
+        padding: 15px;
+        flex-direction: row;
+        flex-wrap: wrap;
+        width: 100%;
+        max-width: 500px;
+    }
+    
+    .hex-btn {
+        width: 70px;
+        height: 80px;
+        font-size: 0.7rem;
+        padding: 6px;
+        margin: 4px;
+    }
+    
+    .hex-btn i {
+        font-size: 1.2rem;
+        margin-bottom: 4px;
+    }
+    
+    .hex-btn span {
+        font-size: 0.65rem;
+    }
+    
+    .hex-btn img {
+        width: 20px;
+        height: 20px;
+        margin-bottom: 4px;
+    }
+    
+    .game-title {
+        font-size: 3rem;
+        margin-bottom: 1.5rem;
+    }
+}
+@media screen and (max-width: 480px) {
+    .start-options {
+        gap: 8px;
+        padding: 10px;
+    }
+    
+    .hex-btn {
+        width: 60px;
+        height: 70px;
+        font-size: 0.6rem;
+        padding: 4px;
+        margin: 3px;
+    }
+    
+    .hex-btn i {
+        font-size: 1rem;
+        margin-bottom: 3px;
+    }
+    
+    .hex-btn span {
+        font-size: 0.6rem;
+    }
+    
+    .hex-btn img {
+        width: 18px;
+        height: 18px;
+        margin-bottom: 3px;
+    }
+    
+    .game-title {
+        font-size: 2.5rem;
+        margin-bottom: 1rem;
+    }
+}
+@media screen and (max-width: 360px) {
+    .start-options {
+        gap: 6px;
+        padding: 8px;
+    }
+    
+    .hex-btn {
+        width: 55px;
+        height: 63px;
+        font-size: 0.55rem;
+        padding: 3px;
+        margin: 2px;
+    }
+    
+    .hex-btn i {
+        font-size: 0.9rem;
+        margin-bottom: 2px;
+    }
+    
+    .hex-btn span {
+        font-size: 0.55rem;
+    }
+    
+    .hex-btn img {
+        width: 16px;
+        height: 16px;
+        margin-bottom: 2px;
+    }
+    
+    .game-title {
+        font-size: 2rem;
+        margin-bottom: 0.8rem;
+    }
+}
+@media screen and (max-width: 1024px) and (orientation: landscape) {
+    .start-options {
+        flex-direction: row;
+        flex-wrap: wrap;
+        gap: 10px;
+        padding: 15px;
+        width: 100%;
+        max-width: 600px;
+    }
+    
+    .hex-btn {
+        width: 70px;
+        height: 80px;
+        font-size: 0.7rem;
+        padding: 5px;
+        margin: 3px;
+    }
+    
+    .hex-btn i {
+        font-size: 1.2rem;
+        margin-bottom: 4px;
+    }
+    
+    .hex-btn span {
+        font-size: 0.65rem;
+    }
+    
+    .hex-btn img {
+        width: 20px;
+        height: 20px;
+        margin-bottom: 4px;
+    }
+    
+    .game-title {
+        font-size: 2.5rem;
+        margin-bottom: 1rem;
+    }
+}
+@media screen and (max-width: 740px) and (orientation: landscape) {
+    .start-options {
+        gap: 8px;
+        padding: 10px;
+    }
+    
+    .hex-btn {
+        width: 60px;
+        height: 70px;
+        font-size: 0.65rem;
+        padding: 4px;
+        margin: 2px;
+    }
+    
+    .hex-btn i {
+        font-size: 1rem;
+        margin-bottom: 3px;
+    }
+    
+    .hex-btn span {
+        font-size: 0.6rem;
+    }
+    
+    .hex-btn img {
+        width: 18px;
+        height: 18px;
+        margin-bottom: 3px;
+    }
+    
+    .game-title {
+        font-size: 2rem;
+        margin-bottom: 0.8rem;
+    }
+}
+.start-options {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    justify-content: center;
+    align-items: center;
+    gap: 20px;
+    padding: 30px;
+    width: 100%;
+    max-width: 800px;
+    margin: 0 auto;
+}
+.hex-btn {
+    width: 100px;
+    height: 115px;
+    background: linear-gradient(135deg, #0277bd, #01579b);
+    color: white;
+    border: none;
+    border-radius: 12px;
+    font-size: 0.85rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 12px;
+    margin: 8px;
+    position: relative;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    clip-path: polygon(25% 0%, 75% 0%, 100% 50%, 75% 100%, 25% 100%, 0% 50%);
+}
+
+.hex-btn i {
+    font-size: 1.8rem;
+    margin-bottom: 8px;
+}
+
+.hex-btn span {
+    font-size: 0.8rem;
+    line-height: 1.1;
+    display: block;
+}
+
+.hex-btn:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 20px rgba(0, 100, 255, 0.4);
+    background: linear-gradient(135deg, #039be5, #0277bd);
+}
+
+.hex-btn:active {
+    transform: translateY(1px);
+}
+
+.hex-btn img {
+    width: 32px;
+    height: 32px;
+    margin-bottom: 8px;
+    object-fit: contain;
+}
+#btnTSingularity.hex-btn {
+    background: linear-gradient(135deg, #8e24aa, #6a1b9a);
+}
+
+#btnTSingularity.hex-btn:hover {
+    background: linear-gradient(135deg, #9c27b0, #7b1fa2);
+}
+
+#btnTSingularity.hex-btn img {
+    filter: brightness(0) invert(1);
+}
+#startScreen {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    overflow-y: auto;
+    padding: 20px;
+}
+
+.game-title {
+    font-size: 4.5rem;
+    margin-bottom: 2rem;
+    text-align: center;
+}
+
+
+/* ===== ESTILOS BASE PARA BOTÕES HEXAGONAIS (TELAS GRANDES - DESKTOP) ===== */
+.start-options {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    justify-content: center;
+    align-items: center;
+    gap: 20px;
+    padding: 30px;
+    width: 100%;
+    max-width: 800px;
+    margin: 0 auto;
+}
+
+.hex-btn {
+    width: 100px;
+    height: 115px;
+    background: linear-gradient(135deg, #0277bd, #01579b);
+    color: white;
+    border: none;
+    border-radius: 12px;
+    font-size: 0.85rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 12px;
+    margin: 8px;
+    position: relative;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    clip-path: polygon(25% 0%, 75% 0%, 100% 50%, 75% 100%, 25% 100%, 0% 50%);
+}
+
+.hex-btn i {
+    font-size: 1.8rem;
+    margin-bottom: 8px;
+}
+
+.hex-btn span {
+    font-size: 0.8rem;
+    line-height: 1.1;
+    display: block;
+}
+
+.hex-btn img {
+    width: 32px;
+    height: 32px;
+    margin-bottom: 8px;
+    object-fit: contain;
+}
+
+/* ===== MEDIA QUERIES COM !important PARA TELAS MENORES ===== */
+
+/* Tablets (768px ou menos) */
+@media screen and (max-width: 768px) {
+    .start-options {
+        gap: 15px !important;
+        padding: 20px !important;
+        flex-direction: row !important;
+        flex-wrap: wrap !important;
+    }
+    
+    .hex-btn {
+        width: 80px !important;
+        height: 92px !important;
+        font-size: 0.75rem !important;
+        padding: 8px !important;
+        margin: 5px !important;
+    }
+    
+    .hex-btn i {
+        font-size: 1.4rem !important;
+        margin-bottom: 5px !important;
+    }
+    
+    .hex-btn span {
+        font-size: 0.7rem !important;
+    }
+    
+    .hex-btn img {
+        width: 24px !important;
+        height: 24px !important;
+        margin-bottom: 5px !important;
+    }
+    
+    .game-title {
+        font-size: 3rem !important;
+        margin-bottom: 1.5rem !important;
+    }
+}
+
+/* Mobile (480px ou menos) */
+@media screen and (max-width: 480px) {
+    .start-options {
+        gap: 10px !important;
+        padding: 15px !important;
+    }
+    
+    .hex-btn {
+        width: 70px !important;
+        height: 80px !important;
+        font-size: 0.7rem !important;
+        padding: 6px !important;
+        margin: 4px !important;
+    }
+    
+    .hex-btn i {
+        font-size: 1.2rem !important;
+        margin-bottom: 4px !important;
+    }
+    
+    .hex-btn span {
+        font-size: 0.65rem !important;
+    }
+    
+    .hex-btn img {
+        width: 20px !important;
+        height: 20px !important;
+        margin-bottom: 4px !important;
+    }
+    
+    .game-title {
+        font-size: 2.5rem !important;
+        margin-bottom: 1rem !important;
+    }
+}
+
+/* Mobile muito pequeno (360px ou menos) */
+@media screen and (max-width: 360px) {
+    .start-options {
+        gap: 8px !important;
+        padding: 10px !important;
+    }
+    
+    .hex-btn {
+        width: 60px !important;
+        height: 70px !important;
+        font-size: 0.65rem !important;
+        padding: 5px !important;
+        margin: 3px !important;
+    }
+    
+    .hex-btn i {
+        font-size: 1rem !important;
+        margin-bottom: 3px !important;
+    }
+    
+    .hex-btn span {
+        font-size: 0.6rem !important;
+    }
+    
+    .hex-btn img {
+        width: 18px !important;
+        height: 18px !important;
+        margin-bottom: 3px !important;
+    }
+    
+    .game-title {
+        font-size: 2rem !important;
+        margin-bottom: 0.8rem !important;
+    }
+}
+
+/* Landscape em dispositivos móveis */
+@media screen and (max-width: 1024px) and (orientation: landscape) {
+    .start-options {
+        flex-direction: row !important;
+        flex-wrap: wrap !important;
+        gap: 12px !important;
+        padding: 15px !important;
+        max-width: 600px !important;
+        overflow-x: hidden !important;
+    }
+    
+    .hex-btn {
+        width: 75px !important;
+        height: 86px !important;
+        font-size: 0.7rem !important;
+        padding: 6px !important;
+        margin: 4px !important;
+    }
+    
+    .hex-btn i {
+        font-size: 1.3rem !important;
+        margin-bottom: 4px !important;
+    }
+    
+    .hex-btn span {
+        font-size: 0.65rem !important;
+    }
+    
+    .hex-btn img {
+        width: 22px !important;
+        height: 22px !important;
+        margin-bottom: 4px !important;
+    }
+    
+    .game-title {
+        font-size: 1.5rem !important;
+        margin-bottom: -4rem !important;
+    }
+}
+
+/* ===== ESTILO ESPECÍFICO PARA O BOTÃO T SINGULARITY ===== */
+#btnTSingularity.hex-btn {
+    background: linear-gradient(135deg, #8e24aa, #6a1b9a);
+}
+
+#btnTSingularity.hex-btn:hover {
+    background: linear-gradient(135deg, #9c27b0, #7b1fa2);
+}
+
+#btnTSingularity.hex-btn img {
+    filter: brightness(0) invert(1);
+}
+
+/* ===== GARANTIR QUE O LAYOUT SEJA APLICADO ===== */
+#startScreen {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    overflow-y: auto;
+    padding: 20px;
+}
+
+.game-title {
+    font-size: 4.5rem;
+    margin-bottom: 2rem;
+    text-align: center;
 }
