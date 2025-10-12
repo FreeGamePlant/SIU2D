@@ -2099,3 +2099,264 @@ font-size: 0.9em;
 background: linear-gradient(135deg, #5a6268, #495057);
 transform: translateY(-2px);
 }
+@media screen and (max-width: 768px) {
+#tutorialSingularity {
+padding: 8px 12px 6px 12px !important;
+margin: 5px !important;
+border-radius: 8px !important;
+min-height: auto !important;
+}
+#tutorialSingularity .star {
+width: 24px !important;
+height: 24px !important;
+min-width: 24px !important;
+}
+#tutorialSingularity .star-point.main {
+width: 1.5px !important;
+height: 8px !important;
+left: 11.25px !important;
+transform-origin: 50% 12px !important;
+}
+#tutorialSingularity .star-core {
+width: 8px !important;
+height: 8px !important;
+left: 8px !important;
+top: 8px !important;
+}
+#tutorialSingularityText {
+font-size: 0.7rem !important;
+line-height: 1.2 !important;
+margin: 0 !important;
+padding: 0 8px !important;
+}
+#tutorialSingularityAction {
+margin-top: 4px !important;
+padding: 0 !important;
+}
+.cutscene-btn {
+font-size: 0.7rem !important;
+padding: 4px 8px !important;
+margin: 2px !important;
+min-height: auto !important;
+}
+}
+@media screen and (max-width: 480px) {
+#tutorialSingularity {
+padding: 6px 8px 4px 8px !important;
+margin: 3px !important;
+border-radius: 6px !important;
+}
+#tutorialSingularity .star {
+width: 20px !important;
+height: 20px !important;
+min-width: 20px !important;
+}
+#tutorialSingularity .star-point.main {
+width: 1px !important;
+height: 6px !important;
+left: 9.5px !important;
+transform-origin: 50% 10px !important;
+}
+#tutorialSingularity .star-core {
+width: 6px !important;
+height: 6px !important;
+left: 7px !important;
+top: 7px !important;
+}
+#tutorialSingularityText {
+font-size: 0.65rem !important;
+padding: 0 4px !important;
+}
+.cutscene-btn {
+font-size: 0.65rem !important;
+padding: 3px 6px !important;
+margin: 1px !important;
+}
+#tutorialSingularity .star-point:not(.main) {
+display: none !important;
+}
+}
+@media screen and (max-width: 1024px) and (orientation: landscape) {
+#tutorialSingularity {
+position: absolute !important;
+top: 5px !important;
+left: 5px !important;
+right: auto !important;
+bottom: auto !important;
+transform: none !important;
+width: 200px !important;
+max-height: 80px !important;
+padding: 4px 6px !important;
+}
+#tutorialSingularity > div {
+flex-direction: row !important;
+align-items: center !important;
+gap: 6px !important;
+}
+#tutorialSingularity .star {
+width: 16px !important;
+height: 16px !important;
+min-width: 16px !important;
+flex-shrink: 0 !important;
+}
+#tutorialSingularityText {
+font-size: 0.6rem !important;
+line-height: 1.1 !important;
+flex: 1 !important;
+}
+#tutorialSingularityAction {
+margin-top: 0 !important;
+flex-shrink: 0 !important;
+}
+.cutscene-btn {
+font-size: 0.6rem !important;
+padding: 2px 4px !important;
+}
+}
+@media screen and (max-width: 768px) {
+#tutorialSingularity {
+animation-duration: 0.3s !important;
+transition: all 0.2s !important;
+}
+.cutscene-btn {
+transition: none !important;
+animation: none !important;
+}
+}
+@media screen and (max-width: 768px) {
+#skipTutorialBtn {
+position: absolute !important;
+top: 2px !important;
+right: 2px !important;
+background: rgba(255, 0, 0, 0.7) !important;
+color: white !important;
+border: none !important;
+border-radius: 3px !important;
+padding: 2px 4px !important;
+font-size: 0.5rem !important;
+z-index: 1000 !important;
+cursor: pointer !important;
+}
+}
+@media screen and (max-width: 768px) {
+#btnTSingularity.hex-btn {
+width: 50px !important;
+height: 58px !important;
+padding: 3px !important;
+margin: 2px !important;
+clip-path: polygon(25% 0%, 75% 0%, 100% 50%, 75% 100%, 25% 100%, 0% 50%) !important;
+}
+#btnTSingularity.hex-btn img {
+width: 12px !important;
+height: 12px !important;
+margin-bottom: 2px !important;
+}
+#btnTSingularity.hex-btn span {
+font-size: 0.5rem !important;
+line-height: 1 !important;
+height: 10px !important;
+overflow: hidden !important;
+}
+@media screen and (max-width: 480px) {
+#btnTSingularity.hex-btn {
+width: 45px !important;
+height: 52px !important;
+padding: 2px !important;
+margin: 1px !important;
+}
+#btnTSingularity.hex-btn img {
+width: 10px !important;
+height: 10px !important;
+margin-bottom: 1px !important;
+}
+#btnTSingularity.hex-btn span {
+font-size: 0.45rem !important;
+height: 8px !important;
+}
+}
+}
+@media screen and (max-width: 1024px) and (orientation: landscape) {
+#btnTSingularity.hex-btn {
+width: 40px !important;
+height: 46px !important;
+padding: 2px !important;
+margin: 1px !important;
+}
+#btnTSingularity.hex-btn img {
+width: 10px !important;
+height: 10px !important;
+margin-bottom: 1px !important;
+}
+#btnTSingularity.hex-btn span {
+font-size: 0.4rem !important;
+height: 8px !important;
+}
+}
+@media screen and (max-width: 740px) and (orientation: landscape) {
+#btnTSingularity.hex-btn {
+width: 35px !important;
+height: 40px !important;
+padding: 1px !important;
+}
+#btnTSingularity.hex-btn img {
+width: 8px !important;
+height: 8px !important;
+margin-bottom: 0 !important;
+}
+#btnTSingularity.hex-btn span {
+font-size: 0.35rem !important;
+height: 6px !important;
+display: none !important; 
+}
+}
+@media screen and (max-width: 768px) {
+.start-options {
+gap: 5px !important;
+padding: 10px !important;
+}
+.hex-btn {
+width: 50px !important;
+height: 58px !important;
+padding: 3px !important;
+margin: 2px !important;
+}
+.hex-btn img {
+width: 14px !important;
+height: 14px !important;
+margin-bottom: 2px !important;
+}
+.hex-btn span {
+font-size: 0.5rem !important;
+height: 10px !important;
+}
+}
+@media screen and (max-width: 768px) {
+.options-grid .option-card[data-type="singularity"],
+.menu-section [data-action="singularity"] {
+min-height: 40px !important;
+padding: 5px !important;
+}
+.options-grid .option-card[data-type="singularity"] h3,
+.menu-section [data-action="singularity"] h3 {
+font-size: 0.8rem !important;
+margin-bottom: 3px !important;
+}
+.options-grid .option-card[data-type="singularity"] p,
+.menu-section [data-action="singularity"] p {
+font-size: 0.6rem !important;
+line-height: 1.1 !important;
+display: none !important; 
+}
+}
+@media screen and (max-width: 768px) {
+.singularity-effect,
+.singularity-particles,
+.singularity-glow {
+transform: scale(0.5) !important;
+opacity: 0.7 !important;
+}
+.singularity-animation {
+animation-duration: 0.5s !important;
+animation-iteration-count: 1 !important;
+}
+}
