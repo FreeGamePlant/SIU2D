@@ -75,6 +75,64 @@ const musicInterval = 30000;
 const MAX_ASTROS_RETIRADA = 600;
 const btnLock = document.getElementById('btnLock');
 const DEBUG_EVOLUTION = true;
+const achievementRewards = {
+    1: 100,    // O Básico
+    2: 150,    // A Colisão!!
+    3: 200,    // Um Núcleo Quente..
+    4: 250,    // Em CHAMAS!
+    5: 300,    // A Vida está vivendo!
+    6: 100,    // NÃO FAÇA ISSO! SEU MONSTRO!
+    7: 400,    // O Exigente..
+    8: 500,    // O Verdadeiro Farol Cósmico!
+    9: 600,    // Física Reversa
+    10: 700,   // Quebrador da Física
+    11: 800,   // Isso parece Estranho..
+    12: 900,   // Dançe Comigo!
+    13: 1000,  // O Verdadeiro Espetáculo!
+    14: 350,   // Tão Pequeno..
+    15: 1200,  // A Luz do Cosmos
+    16: 1500,  // O Colossal!!
+    17: 1200,  // Big Bang?
+    18: 800,   // Portal Cósmico
+    19: 1100,  // Maior que a Tarântula!
+    20: 400,   // Um Grande Sistema!
+    21: 600,   // Uma Pequena Galáxia
+    22: 800,   // A Galáxia!
+    23: 1000,  // Um Novo Universo!
+    24: 1200,  // Um Universo de crashar...
+    25: 300,   // A Queda...
+    26: 200,   // Bem-vindo mais uma vez!
+    27: 2000,  // Missão Impossível.
+    28: 900,   // Chernobyl Cósmico.
+    29: 700,   // Come Poeira!
+    30: 1300,  // O Último Suspiro..
+    31: 400,   // Congelado.
+    32: 300,   // Calma, ele não vai fugir.
+    33: 800,   // Zero Absoluto!
+    34: 1100,  // O Diferentão
+    35: 500,   // Já viu o aviso?
+    36: 400,   // A Endrenagem Louca
+    37: 600,   // Extremamente Frio..
+    38: 1200,  // Colorido Como um Arco-Íris.
+    39: 900,   // O Pequenino, Sem Tempo, Evaporou..
+    40: 700,   // Easter egg 4444
+    41: 2000,  // ????? (Multielemental)
+    42: 400,   // Comentando igual a um Cometa!
+    43: 1800,  // SACRIFÍCIO!!
+    44: 300,   // OLHA! UM ESPAÇO DIFERENTE!
+    45: 500,   // O Exterminador..
+    46: 800,   // Na Velocidade da Luz!
+    47: 2500,  // Ao Infinito e Impossível!
+    48: 200,   // Olha! Ele se Moveu!
+    49: 300,   // Olha, mudou de nome!
+    50: 5000,  // :) (Todas as conquistas)
+    51: 400,   // Passarinho espacial
+    52: 450,   // Atenção! Há mísseis espaciais!
+    53: 500,   // Uma Casa no meio do nada..
+    54: 600,   // A essa Altura? é exagero?
+    55: 700,   // Milionário da Inteligência
+    0: 0       // Em breve...
+};
 function debugLog(...args) {
     if (DEBUG_EVOLUTION) {
         console.log(...args);
@@ -148,7 +206,7 @@ const astroLogger = {
 //#region let
 let customColorEnabled = false;
 let gameState = 'menu'; 
-let camera = { x: 0, y: 0, zoom: 1 };
+let camera = { x: 0, y: 0, zoom: 10 };
 let planets = [];
 let selectedPlanet = null;
 let mouse = { x: 0, y: 0, down: false, rightDown: false, downX: 0, downY: 0 };
@@ -218,6 +276,11 @@ let isDragging = false;
 let touchMoveThreshold = 10;
 let isEditing = false;
 let isMenuOpen = false;
+let tsCoins = parseInt(localStorage.getItem('tsCoins') || '0');
+let hasAgreedToWarnings = localStorage.getItem('hasAgreedToWarnings') === 'true';
+let tsCoinsAnimation = null;
+let currentDisplayCoins = tsCoins;
+
 if (btnLock) {
     btnLock.addEventListener('click', toggleLock);
 }
@@ -284,6 +347,171 @@ function toggleCustomColor() {
         showNotification("Custom color disabled - following climate colors");
     }
     fgpAstroPreview();
+}
+function animateTSCoinsChange(targetCoins, duration = 1000) {
+    if (tsCoinsAnimation) {
+        cancelAnimationFrame(tsCoinsAnimation);
+    }
+
+    const startCoins = currentDisplayCoins;
+    const coinDifference = targetCoins - startCoins;
+    const startTime = performance.now();
+
+    function updateAnimation(currentTime) {
+        const elapsedTime = currentTime - startTime;
+        const progress = Math.min(elapsedTime / duration, 1);
+        
+        // Easing function para animação suave
+        const easeOutQuart = 1 - Math.pow(1 - progress, 4);
+        
+        currentDisplayCoins = Math.floor(startCoins + (coinDifference * easeOutQuart));
+        
+        updateTSCoinsDisplay();
+        
+        if (progress < 1) {
+            tsCoinsAnimation = requestAnimationFrame(updateAnimation);
+        } else {
+            currentDisplayCoins = targetCoins;
+            updateTSCoinsDisplay();
+            tsCoinsAnimation = null;
+            
+            // Efeito visual extra quando completa
+            if (coinDifference > 0) {
+                showCoinGainEffect();
+            }
+        }
+    }
+
+    tsCoinsAnimation = requestAnimationFrame(updateAnimation);
+}
+
+function showCoinGainEffect() {
+    const tsCoinsDisplay = document.getElementById('tsCoinsDisplay');
+    if (tsCoinsDisplay) {
+        // Efeito de pulso
+        tsCoinsDisplay.style.transform = 'scale(1.1)';
+        tsCoinsDisplay.style.transition = 'transform 0.3s ease';
+        
+        setTimeout(() => {
+            tsCoinsDisplay.style.transform = 'scale(1)';
+        }, 300);
+
+        // Criar partículas de coins
+        createCoinParticles();
+    }
+}
+
+function createCoinParticles() {
+    const tsCoinsDisplay = document.getElementById('tsCoinsDisplay');
+    if (!tsCoinsDisplay) return;
+
+    const rect = tsCoinsDisplay.getBoundingClientRect();
+    const centerX = rect.left + rect.width / 2;
+    const centerY = rect.top + rect.height / 2;
+
+    for (let i = 0; i < 8; i++) {
+        createCoinParticle(centerX, centerY);
+    }
+}
+
+function createCoinParticle(startX, startY) {
+    const particle = document.createElement('div');
+    particle.innerHTML = '🪙';
+    particle.style.cssText = `
+        position: fixed;
+        left: ${startX}px;
+        top: ${startY}px;
+        font-size: 16px;
+        pointer-events: none;
+        z-index: 10000;
+        opacity: 1;
+        transition: all 0.8s ease-out;
+    `;
+
+    document.body.appendChild(particle);
+
+    // Direção aleatória
+    const angle = Math.random() * Math.PI * 2;
+    const distance = 50 + Math.random() * 80;
+    const targetX = startX + Math.cos(angle) * distance;
+    const targetY = startY + Math.sin(angle) * distance;
+
+    // Animação
+    setTimeout(() => {
+        particle.style.left = `${targetX}px`;
+        particle.style.top = `${targetY}px`;
+        particle.style.opacity = '0';
+        particle.style.transform = 'scale(0.5) rotate(360deg)';
+    }, 10);
+
+    // Remover após animação
+    setTimeout(() => {
+        if (particle.parentNode) {
+            particle.parentNode.removeChild(particle);
+        }
+    }, 1000);
+}
+
+function updateTSCoinsDisplay() {
+    const tsCoinsValue = document.getElementById('tsCoinsValue');
+    if (tsCoinsValue) {
+        tsCoinsValue.textContent = currentDisplayCoins.toLocaleString();
+        
+        // Efeito de destaque quando muda
+        if (parseInt(tsCoinsValue.dataset.lastValue || '0') !== currentDisplayCoins) {
+            tsCoinsValue.style.color = '#ffd700';
+            tsCoinsValue.style.transform = 'scale(1.1)';
+            tsCoinsValue.style.transition = 'all 0.2s ease';
+            
+            setTimeout(() => {
+                tsCoinsValue.style.color = '#8b6914';
+                tsCoinsValue.style.transform = 'scale(1)';
+            }, 200);
+            
+            tsCoinsValue.dataset.lastValue = currentDisplayCoins;
+        }
+    }
+}
+
+function addTSCoins(amount) {
+    const oldCoins = tsCoins;
+    tsCoins += amount;
+    localStorage.setItem('tsCoins', tsCoins.toString());
+    
+    // Iniciar animação
+    animateTSCoinsChange(tsCoins, Math.min(1000, Math.abs(amount) * 50));
+    
+    showNotification(`+${amount} TS Coins! Total: ${tsCoins}`);
+    
+    // Achievement por ganhar muitas coins de uma vez
+    if (amount >= 1000) {
+        unlockAchievement(48); // Achievement para ganhar 1000+ coins de uma vez
+    }
+}
+
+function spendTSCoins(amount) {
+    if (tsCoins >= amount) {
+        const oldCoins = tsCoins;
+        tsCoins -= amount;
+        localStorage.setItem('tsCoins', tsCoins.toString());
+        
+        // Animação de diminuição
+        animateTSCoinsChange(tsCoins, 800);
+        
+        showNotification(`-${amount} TS Coins gastos. Restante: ${tsCoins}`);
+        return true;
+    } else {
+        showNotification("TS Coins insuficientes!");
+        // Efeito de shake quando não tem coins suficientes
+        const tsCoinsDisplay = document.getElementById('tsCoinsDisplay');
+        if (tsCoinsDisplay) {
+            tsCoinsDisplay.style.animation = 'shake 0.5s ease-in-out';
+            setTimeout(() => {
+                tsCoinsDisplay.style.animation = '';
+            }, 500);
+        }
+        return false;
+    }
 }
 function toggleControlMode() {
     if (!selectedPlanet) {
@@ -358,6 +586,26 @@ function init() {
     modoRetirada = this.checked;
     showNotification(`Withdrawal mode ${modoRetirada ? 'activated' : 'deactivated'}`);
 });
+    updateTSCoinsDisplay();
+    if (!hasAgreedToWarnings) {
+        setTimeout(() => {
+            showImportantWarnings();
+        }, 2000);
+    }
+    setTimeout(() => {
+        animateTSCoinsChange(tsCoins, 1500);
+    }, 1000);
+    const tsCoinsDisplay = document.getElementById('tsCoinsDisplay');
+    if (tsCoinsDisplay) {
+        tsCoinsDisplay.addEventListener('click', () => {
+            tsCoinsDisplay.classList.add('ts-coins-pulse');
+            setTimeout(() => {
+                tsCoinsDisplay.classList.remove('ts-coins-pulse');
+            }, 500);
+            
+            showNotification(`Você tem ${tsCoins} TS Coins!`);
+        });
+    }
     canvas.addEventListener('touchstart', handleTouchStart, { passive: false });
     canvas.addEventListener('touchmove', handleTouchMove, { passive: false });
     canvas.addEventListener('touchend', handleTouchEnd, { passive: false });
@@ -5346,6 +5594,106 @@ function transformToBigBang(planet) {
                          (dustCount + nebulaCount + asteroidCount));
     }
 }
+function addTSCoins(amount) {
+    tsCoins += amount;
+    localStorage.setItem('tsCoins', tsCoins.toString());
+    updateTSCoinsDisplay();
+    showNotification(`+${amount} TS Coins! Total: ${tsCoins}`);
+}
+function updateTSCoinsDisplay() {
+    const tsCoinsDisplay = document.getElementById('tsCoinsDisplay');
+    if (tsCoinsDisplay) {
+        tsCoinsDisplay.textContent = tsCoins;
+    }
+}
+function watchAdForCoins() {
+    showNotification("Assistindo anúncio...");
+    const tsCoinsDisplay = document.getElementById('tsCoinsDisplay');
+    if (tsCoinsDisplay) {
+        tsCoinsDisplay.style.opacity = '0.7';
+    }
+    setTimeout(() => {
+        if (tsCoinsDisplay) {
+            tsCoinsDisplay.style.opacity = '1';
+        }
+        addTSCoins(1000);
+        showNotification("Anúncio concluído! +1000 TS Coins");
+    }, 3000);
+}
+function openShop() {
+    const shopOverlay = document.getElementById('shopOverlay');
+    if (shopOverlay) {
+        shopOverlay.style.display = 'flex';
+        setTimeout(() => {
+            shopOverlay.classList.add('active');
+        }, 10);
+        document.body.style.overflow = 'hidden';
+    }
+}
+function closeShop() {
+    const shopOverlay = document.getElementById('shopOverlay');
+    if (shopOverlay) {
+        shopOverlay.classList.remove('active');
+        setTimeout(() => {
+            shopOverlay.style.display = 'none';
+            document.body.style.overflow = '';
+        }, 300);
+    }
+}
+function openManual() {
+    const manualOverlay = document.getElementById('manualOverlay');
+    if (manualOverlay) {
+        manualOverlay.style.display = 'flex';
+        setTimeout(() => {
+            manualOverlay.classList.add('active');
+        }, 10);
+        document.body.style.overflow = 'hidden';
+    }
+}
+function closeManual() {
+    const manualOverlay = document.getElementById('manualOverlay');
+    if (manualOverlay) {
+        manualOverlay.classList.remove('active');
+        setTimeout(() => {
+            manualOverlay.style.display = 'none';
+            document.body.style.overflow = '';
+        }, 300);
+    }
+}
+function nextManualPage() {
+    showNotification("Próxima página do manual");
+}
+function prevManualPage() {
+    showNotification("Página anterior do manual");
+}
+function showImportantWarnings() {
+    if (!hasAgreedToWarnings) {
+        const warningsOverlay = document.getElementById('importantWarningsOverlay');
+        if (warningsOverlay) {
+            warningsOverlay.style.display = 'flex';
+            setTimeout(() => {
+                warningsOverlay.classList.add('active');
+            }, 10);
+            document.body.style.overflow = 'hidden';
+        }
+    }
+}
+function agreeToWarnings() {
+    hasAgreedToWarnings = true;
+    localStorage.setItem('hasAgreedToWarnings', 'true');
+    closeImportantWarnings();
+    showNotification("Avisos aceitos. Não serão mostrados novamente.");
+}
+function closeImportantWarnings() {
+    const warningsOverlay = document.getElementById('importantWarningsOverlay');
+    if (warningsOverlay) {
+        warningsOverlay.classList.remove('active');
+        setTimeout(() => {
+            warningsOverlay.style.display = 'none';
+            document.body.style.overflow = '';
+        }, 300);
+    }
+}
 function createExpelledMatter(type, x, y, minMass, maxMass) {
     const angle = Math.random() * Math.PI * 2;
     const distance = Math.random() * 100;
@@ -8461,31 +8809,46 @@ document.addEventListener('keydown', function(e) {
     }
 });
 function showAchievementNotification(id) {
-const a = achievements.find(x => x.id === id);
-if (!a) return;
-const notif = document.getElementById('achievementNotification');
-notif.innerHTML = `<img src="${a.img}" alt="${a.name}"> <span>Achievement Unlocked :D <b>${a.name}</b></span>`;
-notif.classList.remove('show');
-void notif.offsetWidth;
-notif.style.display = 'flex';
-notif.classList.add('show');
-setTimeout(() => {
+    const a = achievements.find(x => x.id === id);
+    if (!a) return;
+    
+    const coins = achievementRewards[id] || 100;
+    const notif = document.getElementById('achievementNotification');
+    notif.innerHTML = `
+        <img src="${a.img}" alt="${a.name}"> 
+        <span>
+            Achievement Unlocked :D <b>${a.name}</b>
+            <br><small>+${coins} TS Coins!</small>
+        </span>
+    `;
     notif.classList.remove('show');
+    void notif.offsetWidth;
+    notif.style.display = 'flex';
+    notif.classList.add('show');
+    
     setTimeout(() => {
-    notif.style.display = 'none';
-    }, 700);
-}, 3500);
+        notif.classList.remove('show');
+        setTimeout(() => {
+            notif.style.display = 'none';
+        }, 700);
+    }, 3500);
 }
 function unlockAchievement(id) {
-if (achievementsState[id]) return; 
-achievementsState[id] = true;
-localStorage.setItem('siu2d_achievements', JSON.stringify(achievementsState));
-renderAchievementsList();
-showAchievementNotification(id);
-if (id !== 50) {
-    const allUnlocked = Object.keys(achievementsState).length >= 49;
-    if (allUnlocked) unlockAchievement(50);
-}
+    if (achievementsState[id]) return; 
+    achievementsState[id] = true;
+
+    localStorage.setItem('siu2d_achievements', JSON.stringify(achievementsState));
+    renderAchievementsList();
+    showAchievementNotification(id);
+
+    // Adicionar TS Coins baseado na conquista
+    const coins = achievementRewards[id] || 100; // Valor padrão 100 se não encontrado
+    addTSCoins(coins);
+
+    if (id !== 55) {
+        const allUnlocked = Object.keys(achievementsState).length >= 54;
+        if (allUnlocked) unlockAchievement(50);
+    }
 }
 document.getElementById('btn10000x').onclick = () => {
     unlockAchievement(46);
