@@ -3084,3 +3084,68 @@ padding: 10px;
 max-width: 600px;
 }
 }
+#mobileCreationToggle {
+position: fixed;
+bottom: 20px;
+right: 20px;
+width: 50px;
+height: 50px;
+border-radius: 50%;
+background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+border: none;
+color: white;
+font-size: 20px;
+cursor: pointer;
+box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+z-index: 1000;
+display: none;
+align-items: center;
+justify-content: center;
+transition: all 0.3s ease;
+}
+#mobileCreationToggle:hover {
+transform: scale(1.1);
+box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4);
+}
+#mobileCreationToggle.active {
+background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+}
+@media (max-width: 768px) {
+#mobileCreationToggle {
+display: flex;
+}
+.mobile-only {
+display: block !important;
+}
+}
+#cancelCreationBtn {
+position: fixed;
+bottom: 0px;
+left: 15px;
+width: 30px;
+height: 30px;
+border-radius: 50%;
+background: #ff0000;
+border: 2px solid white;
+color: white;
+font-size: 16px;
+cursor: pointer;
+box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+z-index: 1000;
+display: none;
+align-items: center;
+justify-content: center;
+transition: all 0.2s ease;
+}
+#cancelCreationBtn:hover {
+background: #ff0000;
+transform: scale(1.1);
+}
+#cancelCreationBtn:active {
+transform: scale(0.95);
+}
+@media (max-width: 768px), (orientation: portrait) {
+#cancelCreationBtn {
+    display: flex;
+}
+}
