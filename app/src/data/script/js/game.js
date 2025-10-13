@@ -8715,11 +8715,11 @@ async function loadAchievementsI18n(lang) {
             48: "../script/assets/img/ch48.jpg",
             49: "../script/assets/img/ch49.jpg",
             50: "../script/assets/img/ch50.jpg",
-            51: "../script/assets/img/new51.jpg",
-            52: "../script/assets/img/new52.jpg",
-            53: "../script/assets/img/new53.jpg",
-            54: "../script/assets/img/new54.jpg",
-            55: "../script/assets/img/new55.jpg",
+            51: "../script/assets/img/ch51.jpg",
+            52: "../script/assets/img/ch52.jpg",
+            53: "../script/assets/img/ch53.jpg",
+            54: "../script/assets/img/ch54.jpg",
+            55: "../script/assets/img/ch55.jpg",
             0: ""
         };
         achievements = data.map(a => ({ ...a, img: imgMap[a.id] || "" }));
