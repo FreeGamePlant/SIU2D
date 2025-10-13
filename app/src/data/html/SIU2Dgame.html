@@ -41,6 +41,7 @@ input, textarea {
 -ms-user-select: text;
 user-select: text;
 }
+
 </style>
 </head>
 <body>
@@ -113,7 +114,10 @@ user-select: text;
   </div>
 </div>
 <div id="gameContainer">
-  <canvas id="gameCanvas"></canvas>
+    <button id="cancelCreationBtn" class="mobile-only" style="display: none;">
+        <i class="fas fa-times"></i>
+    </button>
+    <canvas id="gameCanvas"></canvas>
     <div id="startScreen">
       <div id="mainSingularityIcon">
         <img src="../assets/img/singularity.png" alt="T Singularity">
@@ -291,10 +295,12 @@ user-select: text;
         <div id="manualOverlay" class="overlay">
             <div class="overlay-content manual-content">
                 <button class="close-overlay" onclick="closeManual()">&times;</button>
-                <h2>📖 Manual do TS</h2>
+                <h2>📖 TS Manual</h2>
                 <div class="manual-page">
                     <div class="manual-animation">
-                        <div class="animation-placeholder">Pg 1</div>
+                        <div class="animation-placeholder">Pg 1
+                            <video src="../assets/video/tsmanual_1.mp4" loop autoplay class="animation"></video>
+                        </div>
                     </div>
                     <div class="manual-text">
                         <div class="ts-speech-bubble">
