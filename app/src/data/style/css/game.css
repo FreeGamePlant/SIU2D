@@ -3084,3 +3084,27 @@ padding: 10px;
 max-width: 600px;
 }
 }
+@media screen and (max-width: 768px) {
+.chat-container {
+padding: 5px !important;
+gap: 10px !important;
+}
+.star-container {
+margin-bottom: 5px !important;
+}
+.star {
+transform: scale(0.7);
+margin-bottom: 5px !important;
+}
+#chat-box {
+margin: 0 !important;
+padding: 8px !important;
+}
+* {
+margin: 0 !important;
+padding: 0 !important;
+}
+.chat-container > * {
+margin: 5px 0 !important;
+}
+}
