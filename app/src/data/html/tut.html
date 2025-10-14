@@ -1851,6 +1851,27 @@ document.addEventListener('DOMContentLoaded', function() {
   });
 });
 </script>
+<script>
+// Inicializa ou recupera a contagem
+let recarregamentos = parseInt(localStorage.getItem('recarregamentos')) || 0;
+const maxRecarregamentos = 1;
+
+console.log(`Recarregamento ${recarregamentos + 1} de ${maxRecarregamentos}`);
+
+if (recarregamentos < maxRecarregamentos) {
+    // Incrementa a contagem
+    localStorage.setItem('recarregamentos', recarregamentos + 1);
+    
+    // Recarrega após 1 segundo
+    setTimeout(() => {
+        location.reload();
+    }, 1000);
+} else {
+    // Reseta a contagem quando terminar
+    localStorage.removeItem('recarregamentos');
+    console.log('Todos os recarregamentos foram concluídos!');
+}
+</script>
         <div id="achievementsSidebar" class="sidebar-overlay" style="display:none;">
           <div class="sidebar-panel achievements-panel">
             <button class="close-sidebar" id="closeAchievementsBtn" title="Close">&times;</button>
