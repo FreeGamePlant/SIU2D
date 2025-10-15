@@ -712,14 +712,22 @@ function hideOrientationWarning() {
     }
 }
 function resizeCanvas() {
+  if (window.innerWidth >= 1025) {
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+  } else {
     if (isLandscape) {
-        canvas.width = window.innerWidth;
-        canvas.height = window.innerHeight;
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
     } else {
-        const maxWidth = Math.min(window.innerWidth, window.innerHeight * 1.5);
-        canvas.width = maxWidth;
-        canvas.height = maxWidth / 1.5;
+      const maxWidth = Math.min(window.innerWidth, window.innerHeight * 1.5);
+      canvas.width = maxWidth;
+      canvas.height = maxWidth / 1.5;
     }
+  }
+  if (gameState === 'playing') {
+    fgpInfoPanel();
+  }
 }
 function calculateMovementDirection(obj) {
     if (obj.vx !== 0 || obj.vy !== 0) {
@@ -4017,6 +4025,9 @@ function gameLoop(timestamp) {
         if (gameState === 'playing') {
             fgpRocketGeneration(deltaTime);
         }
+        if (timestamp % 5000 < deltaTime) {
+            cleanupOrphanedSatellites();
+        }
         ctx.fillStyle = spaceColor;
         ctx.fillRect(0, 0, canvas.width, canvas.height);
         planets.forEach(planet => {
@@ -4947,6 +4958,21 @@ function removeFromOriginLists(obj) {
     if (!obj.originPlanet) return;
     if (obj.type === 'satellite' && Array.isArray(obj.originPlanet.satellites)) {
         obj.originPlanet.satellites = obj.originPlanet.satellites.filter(s => s !== obj);
+    }
+    if (obj.type === 'rockyPlanet') {
+        console.log(`🛑 Cleaning up planet: ${obj.name}`);
+        if (obj._satelliteSpawnerTimeout) {
+            clearTimeout(obj._satelliteSpawnerTimeout);
+            obj._satelliteSpawnerTimeout = null;
+        }
+        obj._satelliteSpawnerActive = false;
+        obj._stopSatelliteSpawner = true;
+        if (Array.isArray(obj.satellites)) {
+            obj.satellites.forEach(satellite => {
+                satellite.markedForRemoval = true;
+            });
+            obj.satellites = [];
+        }
     }
     if (obj.type === 'rocket' && Array.isArray(obj.originPlanet.rockets)) {
         obj.originPlanet.rockets = obj.originPlanet.rockets.filter(s => s !== obj);
@@ -7221,17 +7247,36 @@ function fgpLifeEvolution(planet) {
 }
 function startPlanetSatelliteSpawner(planet) {
     if (planet._satelliteSpawnerActive) return;
+    
+    // Verifica se o planeta é válido antes de iniciar
+    if (planet.markedForRemoval || !planet.hasIntelligentLife) {
+        return;
+    }
+    
     planet._satelliteSpawnerActive = true;
+    planet._stopSatelliteSpawner = false;
+
     function spawnNext() {
-        if (!planet.hasIntelligentLife || planet.lifeChance === 0 || planet.population < 100) {
+        if (planet._stopSatelliteSpawner || 
+            planet.markedForRemoval || 
+            !planetExists(planet) ||
+            !planet.hasIntelligentLife || 
+            planet.lifeChance === 0 || 
+            planet.population < 100) {
+            
+            console.log(`🛑 STOPPING satellite spawner for planet: ${planet.name}`);
             planet._satelliteSpawnerActive = false;
             return;
         }
         createSatellites(planet, 1);
         const nextTime = 1000 + Math.random() * 9000;
-        setTimeout(spawnNext, nextTime);
+        planet._satelliteSpawnerTimeout = setTimeout(spawnNext, nextTime);
     }
+
     spawnNext();
+}
+function planetExists(planet) {
+    return planets.includes(planet) && !planet.markedForRemoval;
 }
 function handleKnowledgeMilestones(planet) {
     if (!planet.hasIntelligentLife || planet.lifeChance === 0) {
@@ -7285,6 +7330,10 @@ function handleKnowledgeMilestones(planet) {
     }
 }
 function createSatellites(planet, count) {
+    if (!planetExists(planet) || planet.markedForRemoval || !planet.hasIntelligentLife) {
+        console.log(`❌ Cannot create satellites - planet invalid: ${planet.name}`);
+        return;
+    }
     for (let i = 0; i < count; i++) {
         const angle = Math.random() * Math.PI * 2;
         const distance = planet.radius * 1;
@@ -7302,7 +7351,7 @@ function createSatellites(planet, count) {
         }
         const satellite = {
             type: 'satellite',
-            name: 'satellite',
+            name: `Satellite-${Math.floor(Math.random() * 10000)}`,
             x: planet.x + Math.cos(angle) * distance,
             y: planet.y + Math.sin(angle) * distance,
             vx: planet.vx - Math.sin(angle) * 2,
@@ -7314,10 +7363,26 @@ function createSatellites(planet, count) {
             angle: angle,
             parentPlanetId: planet.id || Math.random().toString(36).substr(2, 9),
             direction: 0,
-            modules: modules
+            modules: modules,
+            markedForRemoval: false
         };
         planets.push(satellite);
+        if (!planet.satellites) {
+            planet.satellites = [];
+        }
         planet.satellites.push(satellite);
+        console.log(`🛰️ Created satellite for planet: ${planet.name}`);
+    }
+}
+function cleanupOrphanedSatellites() {
+    for (let i = planets.length - 1; i >= 0; i--) {
+        const obj = planets[i];
+        if (obj.type === 'satellite' && obj.originPlanet) {
+            if (!planetExists(obj.originPlanet) || obj.originPlanet.markedForRemoval) {
+                console.log(`🗑️ Removing orphaned satellite from destroyed planet`);
+                obj.markedForRemoval = true;
+            }
+        }
     }
 }
 function activateCreationMode(type) {
@@ -8914,7 +8979,6 @@ optionCards.forEach(card => {
 });
 }
 }
-//#endregion
 //#endregion
 //#region coments
 /*
