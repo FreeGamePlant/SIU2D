@@ -41,7 +41,7 @@ input, textarea {
 -ms-user-select: text;
 user-select: text;
 }
-@media screen and (max-width: 10068px) {
+@media screen and (max-width: 1100px) {
 #tutorialSingularity {
 position: fixed !important;
 bottom: 10px !important;
@@ -1852,22 +1852,15 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 </script>
 <script>
-// Inicializa ou recupera a contagem
 let recarregamentos = parseInt(localStorage.getItem('recarregamentos')) || 0;
 const maxRecarregamentos = 1;
-
 console.log(`Recarregamento ${recarregamentos + 1} de ${maxRecarregamentos}`);
-
 if (recarregamentos < maxRecarregamentos) {
-    // Incrementa a contagem
     localStorage.setItem('recarregamentos', recarregamentos + 1);
-    
-    // Recarrega após 1 segundo
     setTimeout(() => {
         location.reload();
     }, 1000);
 } else {
-    // Reseta a contagem quando terminar
     localStorage.removeItem('recarregamentos');
     console.log('Todos os recarregamentos foram concluídos!');
 }
