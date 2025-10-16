@@ -3,8 +3,6 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="../style/css/game.css?v=1.1">
     <title>SIU 2D</title>
     <link rel="stylesheet" href="../style/css/style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -1895,19 +1893,5 @@ document.addEventListener('DOMContentLoaded', function() {
     </span>
     <span id="tsCoinsValue">0</span>
 </div>
-<script>
-console.log('Viewport width:', window.innerWidth);
-console.log('Viewport height:', window.innerHeight);
-console.log('Device pixel ratio:', window.devicePixelRatio);
-console.log('User agent:', navigator.userAgent);
-
-// Forçar modo desktop
-if (window.innerWidth > 768) {
-  const viewport = document.querySelector('meta[name="viewport"]');
-  if (viewport) {
-    viewport.setAttribute('content', 'width=1200, initial-scale=1.0');
-  }
-}
-</script>
 </body>
 </html>
