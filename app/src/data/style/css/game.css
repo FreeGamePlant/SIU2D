@@ -4233,7 +4233,7 @@ align-items: center;
 min-height: 100vh;
 overflow-y: auto;
 padding: calc(1vw + 10px);
-}*/
+}
 #tsCoinsDisplay {
 position: fixed;
 bottom: calc(1vw + 10px);
@@ -4353,7 +4353,7 @@ transform: scale(1.1);
 }
 #cancelCreationBtn:active {
 transform: scale(0.95);
-}
+}*/
 .manual-animation {
 position: relative;
 width: 100%;
@@ -4446,7 +4446,7 @@ color: #81d4fa;
 font-size: calc(0.4vw + 0.8rem);
 min-width: calc(5vw + 60px);
 text-align: center;
-}
+}/*
 #deleteModeBtn {
 background: linear-gradient(to bottom, #ff6b6b, #ee5a52);
 border: 2px solid #ff4757;
@@ -4508,4 +4508,4 @@ font-size: 1.2rem;
 width: 120px;
 height: 138px;
 }
-}
+}*/
