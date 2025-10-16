@@ -4509,24 +4509,3 @@ width: 120px;
 height: 138px;
 }
 }
-@media screen and (min-width: 769px) {
-  .start-options {
-    flex-direction: row !important;
-    gap: 30px !important;
-  }
-  
-  .hex-btn {
-    width: 120px !important;
-    height: 140px !important;
-    font-size: 1rem !important;
-  }
-  
-  .game-title {
-    font-size: 4.5rem !important;
-  }
-  
-  #startScreen {
-    justify-content: center !important;
-    padding: 40px !important;
-  }
-}
