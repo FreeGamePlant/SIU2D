@@ -1013,7 +1013,7 @@ input, textarea {
 -moz-user-select: text;
 -ms-user-select: text;
 user-select: text;
-}
+}/*
 @media screen and (orientation: portrait) {
 body::before {
 content: "";
@@ -1036,7 +1036,7 @@ display: none ;
 #startScreen {
 display: none ;
 }
-}
+}*/
 @media screen and (orientation: landscape) {
 body::before {
 display: none;
@@ -4508,4 +4508,25 @@ font-size: 1.2rem;
 width: 120px;
 height: 138px;
 }
+}
+@media screen and (min-width: 769px) {
+  .start-options {
+    flex-direction: row !important;
+    gap: 30px !important;
+  }
+  
+  .hex-btn {
+    width: 120px !important;
+    height: 140px !important;
+    font-size: 1rem !important;
+  }
+  
+  .game-title {
+    font-size: 4.5rem !important;
+  }
+  
+  #startScreen {
+    justify-content: center !important;
+    padding: 40px !important;
+  }
 }
