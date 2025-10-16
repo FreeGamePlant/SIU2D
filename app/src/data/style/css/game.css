@@ -4099,7 +4099,7 @@ transition: opacity 0.3s, transform 0.3s;
 body {
 overflow-x: hidden;
 overflow-y: hidden;
-}
+}/*
 * {
 -webkit-user-select: none;
 -moz-user-select: none;
@@ -4233,7 +4233,7 @@ align-items: center;
 min-height: 100vh;
 overflow-y: auto;
 padding: calc(1vw + 10px);
-}
+}*/
 #tsCoinsDisplay {
 position: fixed;
 bottom: calc(1vw + 10px);
