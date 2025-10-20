@@ -545,17 +545,26 @@ margin-top: 10px;
 padding: 10px;
 color: rgb(63, 95, 0);
 }
+.Ultra-Legendario {
+text-align: center;
+background: #00ff2f;
+border-radius: 3px;
+overflow: hidden;
+margin-top: 10px;
+padding: 10px;
+color: rgb(4, 138, 255);
+}
 #editPanel {
 position: absolute;
-top: 50%;
-left: 50%;
+top: 100%;
+left: 100%;
 transform: translate(-50%, -50%);
 background: rgba(2, 48, 71, 0.98);
 border-radius: 15px;
 padding: 25px;
 z-index: 50;
-width: 90%;
-max-width: 600px;
+width: 100%;
+max-width: 1000px;
 box-shadow: 0 15px 40px rgba(0, 0, 0, 0.7);
 border: 2px solid #4fc3f7;
 display: none;
@@ -3786,18 +3795,22 @@ padding: calc(0.5vw + 5px);
 .legendario { background: #e5ff00; color: rgb(63, 95, 0); }
 #editPanel {
 position: absolute;
-top: 50%;
-left: 50%;
+top: 100%;
+left: 100%;
 transform: translate(-50%, -50%);
 background: rgba(2, 48, 71, 0.98);
 border-radius: calc(0.8vw + 10px);
 padding: calc(1.5vw + 15px);
 z-index: 50;
-width: 90%;
+width: 100% !important;
 max-width: calc(30vw + 400px);
 box-shadow: 0 calc(0.8vw + 10px) calc(2vw + 20px) rgba(0, 0, 0, 0.7);
 border: 2px solid #4fc3f7;
 display: none;
+}
+#btnCustomColor{
+padding: 5px;
+border-radius: 100px;
 }
 .edit-header {
 display: flex;
@@ -4099,7 +4112,7 @@ transition: opacity 0.3s, transform 0.3s;
 body {
 overflow-x: hidden;
 overflow-y: hidden;
-}/*
+}
 * {
 -webkit-user-select: none;
 -moz-user-select: none;
@@ -4114,14 +4127,14 @@ user-select: text;
 }
 #editPanel {
 position: absolute;
-top: 50%;
-left: 50%;
+top: 100%;
+left: 100%;
 transform: translate(-50%, -50%);
 background: rgba(2, 48, 71, 0.98);
 border-radius: calc(0.8vw + 10px);
 padding: calc(1.5vw + 15px);
 z-index: 50;
-width: 90%;
+width: 100%;
 max-width: calc(30vw + 400px);
 box-shadow: 0 calc(0.8vw + 10px) calc(2vw + 20px) rgba(0, 0, 0, 0.7);
 border: 2px solid #4fc3f7;
@@ -4353,7 +4366,7 @@ transform: scale(1.1);
 }
 #cancelCreationBtn:active {
 transform: scale(0.95);
-}*/
+}
 .manual-animation {
 position: relative;
 width: 100%;
@@ -4446,7 +4459,7 @@ color: #81d4fa;
 font-size: calc(0.4vw + 0.8rem);
 min-width: calc(5vw + 60px);
 text-align: center;
-}/*
+}
 #deleteModeBtn {
 background: linear-gradient(to bottom, #ff6b6b, #ee5a52);
 border: 2px solid #ff4757;
@@ -4508,68 +4521,178 @@ font-size: 1.2rem;
 width: 120px;
 height: 138px;
 }
-}*/
-
+}
 .options-grid {
-    display: grid;
-    grid-template-columns: repeat(5, 1fr);
-    gap: 15px;
+display: grid;
+grid-template-columns: repeat(5, 1fr);
+gap: 15px;
 }
-
 @media (max-width: 1400px) {
-    .options-grid {
-        grid-template-columns: repeat(4, 1fr);
-    }
+.options-grid {
+grid-template-columns: repeat(4, 1fr);
 }
-
+}
 @media (max-width: 1200px) {
-    .options-grid {
-        grid-template-columns: repeat(3, 1fr);
-        gap: 15px;
-    }
+.options-grid {
+grid-template-columns: repeat(3, 1fr);
+gap: 15px;
 }
-
+}
 @media (max-width: 992px) {
-    .options-grid {
-        grid-template-columns: repeat(3, 1fr);
-        gap: 12px;
-    }
-    .option-card {
-        padding: 12px;
-    }
-    .option-card h3 {
-        font-size: 1.1rem;
-    }
+.options-grid {
+grid-template-columns: repeat(3, 1fr);
+gap: 12px;
 }
-
+.option-card {
+padding: 12px;
+}
+.option-card h3 {
+font-size: 1.1rem;
+}
+}
 @media (max-width: 768px) {
-    .game-title {
-        font-size: 3rem;
-    }
-    .options-grid {
-        grid-template-columns: repeat(2, 1fr);
-        gap: 10px;
-    }
-    .option-card {
-        padding: 10px;
-    }
-    .option-card h3 {
-        font-size: 1rem;
-        flex-direction: column;
-        text-align: center;
-        gap: 5px;
-    }
-    .option-card h3 i {
-        font-size: 1.4rem;
-    }
+.game-title {
+font-size: 3rem;
 }
-
+.options-grid {
+grid-template-columns: repeat(2, 1fr);
+gap: 10px;
+}
+.option-card {
+padding: 10px;
+}
+.option-card h3 {
+font-size: 1rem;
+flex-direction: column;
+text-align: center;
+gap: 5px;
+}
+.option-card h3 i {
+font-size: 1.4rem;
+}
+}
 @media (max-width: 576px) {
-    .options-grid {
-        grid-template-columns: 1fr;
-        gap: 8px;
-    }
-    .option-card {
-        padding: 12px;
-    }
+.options-grid {
+grid-template-columns: 1fr;
+gap: 8px;
+}
+.option-card {
+padding: 12px;
+}
+}
+.shop-item .tsCoinsIcon {
+width: 16px !important;
+height: 16px !important;
+vertical-align: middle;
+margin-left: 4px;
+display: inline-block !important;
+}
+.shop-item-price {
+font-size: 14px;
+font-weight: bold;
+color: #ffd700;
+display: flex;
+align-items: center;
+justify-content: center;
+gap: 4px;
+}
+.shop-content .tsCoinsIcon {
+width: 16px !important;
+height: 16px !important;
+}
+#tsCoinsIcon {
+width: 16px !important;
+height: 16px !important;
+}
+#tsCoinsDisplay img {
+width: 20px;
+height: 20px;
+}
+.shop-items .shop-item .shop-item-price img {
+width: 16px !important;
+height: 16px !important;
+display: inline-block !important;
+}
+.purchased-badge {
+color: #4CAF50;
+font-weight: bold;
+font-size: 14px;
+padding: 4px 8px;
+background: rgba(76, 175, 80, 0.1);
+border-radius: 12px;
+border: 1px solid #4CAF50;
+}
+.shop-item.purchased {
+opacity: 0.8;
+background: linear-gradient(135deg, rgba(45, 90, 39, 0.3) 0%, rgba(30, 60, 26, 0.3) 100%);
+border: 2px solid #4CAF50;
+position: relative;
+}
+.shop-item.purchased::before {
+content: "✓";
+position: absolute;
+top: 10px;
+right: 10px;
+background: #4CAF50;
+color: white;
+width: 20px;
+height: 20px;
+border-radius: 50%;
+display: flex;
+align-items: center;
+justify-content: center;
+font-size: 12px;
+font-weight: bold;
+}
+.shop-item img {
+max-width: none !important;
+max-height: none !important;
+}
+.shop-item-price * {
+box-sizing: border-box;
+}
+.shop-item .tsCoinsIcon {
+transform: none !important;
+transition: none !important;
+}
+.toggle-switch input:disabled + .slider {
+opacity: 0.5;
+cursor: not-allowed;
+}
+.toggle-switch input:disabled + .slider:before {
+background-color: #ccc;
+}
+.pixel-mode canvas {
+image-rendering: pixelated;
+image-rendering: crisp-edges;
+}
+.shop-item.purchased {
+opacity: 0.7;
+background: linear-gradient(45deg, #2d5a2d, #1e3a1e);
+}
+.shop-item.purchased::after {
+content: "✓ PURCHASED";
+position: absolute;
+top: 10px;
+right: 10px;
+background: #4CAF50;
+color: white;
+padding: 2px 8px;
+border-radius: 10px;
+font-size: 0.7em;
+}
+.shop-item.purchased {
+background: linear-gradient(45deg, #2d5a2d, #1e3a1e);
+opacity: 0.7;
+}
+.purchased-badge {
+position: absolute;
+top: 10px;
+right: 10px;
+background: #4CAF50;
+color: white;
+padding: 2px 8px;
+border-radius: 10px;
+font-size: 0.7em;
+font-weight: bold;
 }
