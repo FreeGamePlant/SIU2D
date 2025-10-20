@@ -280,6 +280,11 @@ let tsCoins = parseInt(localStorage.getItem('tsCoins') || '0');
 let hasAgreedToWarnings = localStorage.getItem('hasAgreedToWarnings') === 'true';
 let tsCoinsAnimation = null;
 let currentDisplayCoins = tsCoins;
+let purchasedItems = JSON.parse(localStorage.getItem('siu2d_purchased_items') || '{}');
+let funSpaceMode = false;
+let funSpaceHue = 0;
+let funSpaceSpeed = 0.5;
+let pixelMode = false;
 //#endregion
 if (btnLock) {
     btnLock.addEventListener('click', toggleLock);
@@ -331,6 +336,202 @@ function toggleLock() {
         btnLock.textContent = "🔒 Lock";
     }
     showNotification(`Astro ${selectedPlanet.locked ? 'Locked' : 'Unlocked'}: ${selectedPlanet.name}`);
+}
+function toggleFunSpace() {
+    funSpaceMode = !funSpaceMode;
+    if (funSpaceMode) {
+        showNotification("Fun Space Mode activated - Space colors will cycle smoothly");
+    } else {
+        showNotification("Fun Space Mode deactivated - Using default space color");
+        spaceColor = '#000000';
+        document.getElementById('spaceColor').value = '#000000';
+    }
+    localStorage.setItem('funSpaceMode', funSpaceMode.toString());
+}
+function togglePixelMode() {
+    pixelMode = !pixelMode;
+    if (pixelMode) {
+        showNotification("Pixel Mode activated - All graphics will be pixelated");
+    } else {
+        showNotification("Pixel Mode deactivated - Using normal graphics");
+    }
+    localStorage.setItem('pixelMode', pixelMode.toString());
+    setTimeout(() => {
+        location.reload();
+    }, 1000);
+}
+function applyPixelEffect(ctx, x, y, width, height) {
+    if (!pixelMode) return;
+    const originalImageData = ctx.getImageData(x, y, width, height);
+    const pixelSize = 2;    
+    for (let y = 0; y < height; y += pixelSize) {
+        for (let x = 0; x < width; x += pixelSize) {
+            const pixelIndex = (y * width + x) * 4;
+            const r = originalImageData.data[pixelIndex];
+            const g = originalImageData.data[pixelIndex + 1];
+            const b = originalImageData.data[pixelIndex + 2];
+            const a = originalImageData.data[pixelIndex + 3];
+            
+            ctx.fillStyle = `rgba(${r}, ${g}, ${b}, ${a/255})`;
+            ctx.fillRect(x, y, pixelSize, pixelSize);
+        }
+    }
+}
+function drawPixelPlanet(planet, ctx, x, y, radius) {
+    if (!pixelMode) return false;
+    
+    const pixelSize = Math.max(2, Math.floor(radius / 15));
+    const scaledRadius = Math.floor(radius / pixelSize) * pixelSize;
+    
+    ctx.save();
+    ctx.translate(x, y);
+    
+    // Desenhar corpo principal com estilo pixelado
+    ctx.fillStyle = planet.color || '#cccccc';
+    
+    // Usar approach mais eficiente - desenhar círculo pixelado
+    for (let angle = 0; angle < Math.PI * 2; angle += Math.PI / 16) {
+        const segmentRadius = scaledRadius - (Math.sin(angle * 3) * pixelSize * 0.5);
+        const px = Math.cos(angle) * segmentRadius;
+        const py = Math.sin(angle) * segmentRadius;
+        
+        if (angle === 0) {
+            ctx.beginPath();
+            ctx.moveTo(px, py);
+        } else {
+            ctx.lineTo(px, py);
+        }
+    }
+    ctx.closePath();
+    ctx.fill();
+    
+    // Adicionar detalhes baseados no tipo
+    switch(planet.type) {
+        case 'star':
+        case 'redDwarf':
+        case 'brownDwarf':
+            // Brilho estelar pixelado
+            ctx.fillStyle = '#ffff00';
+            for (let i = 0; i < 4; i++) {
+                const spikeLength = scaledRadius * 1.5;
+                const spikeWidth = pixelSize * 2;
+                ctx.fillRect(-spikeWidth/2, -spikeLength, spikeWidth, spikeLength);
+                ctx.rotate(Math.PI / 2);
+            }
+            break;
+            
+        case 'gasGiant':
+            // Faixas pixeladas
+            ctx.strokeStyle = planet.secondaryColor || '#ff9900';
+            ctx.lineWidth = pixelSize;
+            for (let i = -3; i <= 3; i++) {
+                const bandY = (i / 3) * scaledRadius * 0.6;
+                ctx.beginPath();
+                ctx.arc(0, 0, scaledRadius * 0.8, bandY - pixelSize, bandY + pixelSize);
+                ctx.stroke();
+            }
+            break;
+            
+        case 'rockyPlanet':
+            // Continentes pixelados
+            if (planet.landColor) {
+                ctx.fillStyle = planet.landColor;
+                for (let i = 0; i < 3; i++) {
+                    const contAngle = (i / 3) * Math.PI * 2;
+                    const contSize = scaledRadius * 0.3;
+                    ctx.fillRect(
+                        Math.cos(contAngle) * scaledRadius * 0.5 - contSize/2,
+                        Math.sin(contAngle) * scaledRadius * 0.5 - contSize/2,
+                        contSize, contSize
+                    );
+                }
+            }
+            break;
+    }
+    
+    // Anéis pixelados
+    if (planet.rings) {
+        const ringRadius = scaledRadius * 1.8;
+        ctx.strokeStyle = planet.ringColor || 'rgba(180,180,180,0.7)';
+        ctx.lineWidth = pixelSize * 3;
+        ctx.beginPath();
+        ctx.arc(0, 0, ringRadius, 0, Math.PI * 2);
+        ctx.stroke();
+        
+        // Detalhes do anel
+        ctx.strokeStyle = 'rgba(255,255,255,0.3)';
+        ctx.lineWidth = pixelSize;
+        ctx.beginPath();
+        ctx.arc(0, 0, ringRadius + pixelSize, 0, Math.PI * 2);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.arc(0, 0, ringRadius - pixelSize, 0, Math.PI * 2);
+        ctx.stroke();
+    }
+    
+    ctx.restore();
+    return true;
+}
+function applyPixelFilter() {
+    if (!pixelMode) return;
+    
+    // Aplicar filtro de pixelação em todo o canvas
+    const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+    const pixelSize = 2;
+    
+    for (let y = 0; y < canvas.height; y += pixelSize) {
+        for (let x = 0; x < canvas.width; x += pixelSize) {
+            const pixelIndex = (y * canvas.width + x) * 4;
+            const r = imageData.data[pixelIndex];
+            const g = imageData.data[pixelIndex + 1];
+            const b = imageData.data[pixelIndex + 2];
+            
+            // Preencher área do pixel
+            for (let dy = 0; dy < pixelSize; dy++) {
+                for (let dx = 0; dx < pixelSize; dx++) {
+                    const currentX = x + dx;
+                    const currentY = y + dy;
+                    if (currentX < canvas.width && currentY < canvas.height) {
+                        const currentIndex = (currentY * canvas.width + currentX) * 4;
+                        imageData.data[currentIndex] = r;
+                        imageData.data[currentIndex + 1] = g;
+                        imageData.data[currentIndex + 2] = b;
+                    }
+                }
+            }
+        }
+    }
+    
+    ctx.putImageData(imageData, 0, 0);
+}
+function fgpSpaceColor() {
+    if (!funSpaceMode) {
+        spaceColor = document.getElementById('spaceColor').value;
+    }
+}
+function updateFunSpaceColors(deltaTime) {
+    if (!funSpaceMode) return;
+    funSpaceHue = (funSpaceHue + funSpaceSpeed * (deltaTime / 1000)) % 360;
+    const hue = funSpaceHue;
+    const saturation = 80;
+    const lightness = 15;
+    const h = hue / 60;
+    const c = (1 - Math.abs(2 * (lightness/100) - 1)) * (saturation/100);
+    const x = c * (1 - Math.abs(h % 2 - 1));
+    const m = (lightness/100) - c/2;
+    let r, g, b;
+    if (h >= 0 && h < 1) { [r, g, b] = [c, x, 0]; }
+    else if (h >= 1 && h < 2) { [r, g, b] = [x, c, 0]; }
+    else if (h >= 2 && h < 3) { [r, g, b] = [0, c, x]; }
+    else if (h >= 3 && h < 4) { [r, g, b] = [0, x, c]; }
+    else if (h >= 4 && h < 5) { [r, g, b] = [x, 0, c]; }
+    else { [r, g, b] = [c, 0, x]; }
+    const toHex = (color) => {
+        const hex = Math.round((color + m) * 255).toString(16);
+        return hex.length === 1 ? '0' + hex : hex;
+    };
+    spaceColor = `#${toHex(r)}${toHex(g)}${toHex(b)}`;
+    document.getElementById('spaceColor').value = spaceColor;
 }
 function toggleCustomColor() {
     if (!selectedPlanet) return;
@@ -545,11 +746,6 @@ function init() {
     showNotification(`Withdrawal mode ${modoRetirada ? 'activated' : 'deactivated'}`);
 });
     updateTSCoinsDisplay();
-    if (!hasAgreedToWarnings) {
-        setTimeout(() => {
-            showImportantWarnings();
-        }, 2000);
-    }
     setTimeout(() => {
         animateTSCoinsChange(tsCoins, 1500);
     }, 1000);
@@ -567,6 +763,26 @@ function init() {
     if (cancelBtn) {
         cancelBtn.addEventListener('click', deactivateCreationMode);
     }
+    funSpaceMode = localStorage.getItem('funSpaceMode') === 'true';
+    document.getElementById('funSpaceToggle').checked = funSpaceMode;
+    document.getElementById('funSpaceToggle').addEventListener('change', toggleFunSpace);
+    if (funSpaceMode) {
+        funSpaceHue = Math.random() * 360;
+    }
+    initializeShop();
+    Object.keys(purchasedItems).forEach(itemId => {
+        if (purchasedItems[itemId]) {
+            applyPurchasedItem(itemId);
+        }
+    });
+    updateCreationGrid();
+    const btnResetEverythingDev = document.getElementById('btnResetEverythingDev');
+    if (btnResetEverythingDev) {
+        btnResetEverythingDev.addEventListener('click', resetEverythingDev);
+    }
+    pixelMode = localStorage.getItem('pixelMode') === 'true';
+    document.getElementById('pixelModeToggle').checked = pixelMode;
+    document.getElementById('pixelModeToggle').addEventListener('change', togglePixelMode);
     canvas.addEventListener('touchstart', handleTouchStart, { passive: false });
     canvas.addEventListener('touchmove', handleTouchMove, { passive: false });
     canvas.addEventListener('touchend', handleTouchEnd, { passive: false });
@@ -603,16 +819,17 @@ function init() {
     document.getElementById('graphicsQuality').addEventListener('change', fgpGraphicsQuality);
     document.getElementById('btnResetPhysics').addEventListener('click', resetPhysics);
     window.selectedType = null;
-    document.querySelectorAll('.option-card').forEach(card => {
-        card.addEventListener('click', () => {
-            creationMode = card.dataset.type;
-            selectedType = creationMode; 
-            creationModeText.textContent = getTypeName(creationMode);
-            creationModeIndicator.style.display = 'block';
-            toggleGameMenu();
-            showNotification(`Creation Mode: ${getTypeName(creationMode)}. Click and drag to set the velocity.`);
-        });
+document.querySelectorAll('.option-card').forEach(card => {
+    card.addEventListener('click', (e) => {
+        e.stopPropagation();
+        creationMode = card.dataset.type;
+        selectedType = creationMode;
+        creationModeText.textContent = getTypeName(creationMode);
+        creationModeIndicator.style.display = 'block';
+        closeGameMenu();
+        showNotification(`Creation Mode: ${getTypeName(creationMode)}. Click and drag to set the velocity.`);
     });
+});
     document.getElementById('btnCustomColor').addEventListener('click', toggleCustomColor);
     primaryColor.addEventListener('input', fgpAstroPreview);
     secondaryColor.addEventListener('input', fgpAstroPreview);
@@ -665,6 +882,13 @@ function init() {
     selectedType = 'asteroid';
     creationModeText.textContent = getTypeName(creationMode);
     creationModeIndicator.style.display = 'block';
+}
+function closeGameMenu() {
+    if (inGameMenu) {
+        inGameMenu.classList.remove('active');
+        inGameMenu.style.display = 'none';
+        isMenuOpen = false;
+    }
 }
 function lockOrientation() {
     if (screen.orientation && screen.orientation.lock) {
@@ -954,6 +1178,21 @@ const drawAccretionDisk = (innerRadius, outerRadius, colors) => {
     ctx.fill();
     ctx.filter = 'none';
   };
+    // Se pixel mode está ativo, tentar desenhar versão pixelada
+    if (pixelMode) {
+        // Para tipos complexos, usar desenho normal com filtro posterior
+        const complexTypes = ['blackHole', 'quasar', 'wormhole', 'whiteHole', 'ttauriStar'];
+        if (complexTypes.includes(planet.type)) {
+            // Desenhar normalmente, o filtro global vai pixelar
+        } else {
+            // Tentar desenhar versão pixelada
+            const pixelDrawn = drawPixelPlanet(planet, ctx, x, y, radius);
+            if (pixelDrawn) {
+                // Se desenhou com sucesso em pixel art, sair
+                return;
+            }
+        }
+    }
   switch(planet.type) {
 case 'rocket':
     ctx.save();
@@ -1200,31 +1439,77 @@ case 'rockyPlanet':
       ctx.lineWidth = 2;
       ctx.stroke();
       break;
-    case 'ttauriStar':
-    const scaledRadiusTauri = planet.radius * camera.zoom;
-    drawAccretionDisk(0, radius * 2, [
-        'rgba(255, 165, 0, 0.3)',
-        'rgba(255, 69, 0, 0.1)'
+case 'ttauriStar':
+    const ttauriRadius = planet.radius * camera.zoom;
+    const ttauriTime = Date.now() * 0.001;
+    drawAccretionDisk(
+        ttauriRadius * 1.2, 
+        ttauriRadius * 224.5, 
+        [
+            'rgba(255, 215, 0, 0.8)',
+            'rgba(255, 165, 0, 0.6)',
+            'rgba(255, 69, 0, 0.4)',
+            'rgba(139, 0, 0, 0.2)'
+        ],
+        (planet.rotation || 0) * visualTimeScale,
+        planet
+    );
+    const ttauriPulse = 1 + Math.sin(ttauriTime * 4) * 0.3;
+    const ttauriGradient = ctx.createRadialGradient(0, 0, 0, 0, 0, ttauriRadius);
+    ttauriGradient.addColorStop(0, '#FFD700');
+    ttauriGradient.addColorStop(0.5, '#FF8C00');
+    ttauriGradient.addColorStop(1, '#FF4500');
+    ctx.beginPath();
+    ctx.arc(0, 0, ttauriRadius * ttauriPulse, 0, Math.PI * 2);
+    ctx.fillStyle = ttauriGradient;
+    ctx.fill();
+    const jetCycle = Math.sin(ttauriTime * 1.5);
+    if (jetCycle > 0.7) {
+        const jetStrength = (jetCycle - 0.7) / 0.3;
+        const jetLength = ttauriRadius * 15 * jetStrength;
+        const jetWidthStart = ttauriRadius * 0.4 * jetStrength;
+        const jetWidthEnd = ttauriRadius * 2.5 * jetStrength;
+        ctx.save();
+        ctx.rotate(planet.jetAngle || 0);
+        drawJet(jetLength, jetWidthStart, jetWidthEnd, [
+            { position: 0, color: `rgba(255, 255, 255, ${0.8 * jetStrength})` },
+            { position: 0.3, color: `rgba(255, 200, 100, ${0.6 * jetStrength})` },
+            { position: 0.6, color: `rgba(255, 100, 50, ${0.4 * jetStrength})` },
+            { position: 1, color: `rgba(255, 50, 0, 0)` }
         ]);
+        ctx.rotate(Math.PI);
+        drawJet(jetLength, jetWidthStart, jetWidthEnd, [
+            { position: 0, color: `rgba(255, 255, 255, ${0.8 * jetStrength})` },
+            { position: 0.3, color: `rgba(255, 200, 100, ${0.6 * jetStrength})` },
+            { position: 0.6, color: `rgba(255, 100, 50, ${0.4 * jetStrength})` },
+            { position: 1, color: `rgba(255, 50, 0, 0)` }
+        ]);
+        ctx.restore();
+        if (Math.random() < 0.1 * jetStrength) {
+            generateTtauriDebris(planet);
+        }
+    }
+    const glowPulse = 1 + Math.sin(ttauriTime * 3) * 0.2;
+    ctx.beginPath();
+    ctx.arc(0, 0, ttauriRadius * 2.5 * glowPulse, 0, Math.PI * 2);
+    const glowGradient = ctx.createRadialGradient(0, 0, ttauriRadius, 0, 0, ttauriRadius * 2.5);
+    glowGradient.addColorStop(0, 'rgba(255, 215, 0, 0.4)');
+    glowGradient.addColorStop(1, 'rgba(255, 140, 0, 0)');
+    ctx.fillStyle = glowGradient;
+    ctx.fill();
+    for (let i = 0; i < 3; i++) {
+        const ringSize = ttauriRadius * (1.5 + i * 0.8);
+        const ringPulse = Math.sin(ttauriTime * 2 + i) * 0.3 + 0.7;
         ctx.beginPath();
-        ctx.arc(0, 0, radius * (1 + pulseFactor * 0.2), 0, Math.PI * 2);
-        const ttauriGradient = ctx.createRadialGradient(0, 0, 0, 0, 0, radius);
-        ttauriGradient.addColorStop(0, '#FFD700');
-        ttauriGradient.addColorStop(1, '#FF8C00');
-        ctx.fillStyle = ttauriGradient;
-        ctx.fill();
-        ctx.strokeStyle = 'rgba(255, 255, 255, 0.35)';
-        ctx.lineWidth = 2;
-        ctx.beginPath();
-        ctx.moveTo(0, -radius);
-        ctx.lineTo(0, -radius * 3);
-        ctx.moveTo(0, radius);
-        ctx.lineTo(0, radius * 3);
-        ctx.stroke();
-        ctx.strokeStyle = '#000000';
+        ctx.arc(0, 0, ringSize * ringPulse, 0, Math.PI * 2);
+        ctx.strokeStyle = `rgba(255, 165, 0, ${0.4 - i * 0.1})`;
         ctx.lineWidth = 2;
         ctx.stroke();
-        break;
+    }
+    ctx.strokeStyle = '#000000';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+    break;
     case 'star':
     case 'redDwarf':
     case 'brownDwarf':
@@ -1310,19 +1595,52 @@ case 'rockyPlanet':
         drawGravitationalLens();
       }
       break;
-    case 'blackHole':
-    drawGravitationalLens(radius, 'attractive', 1.2);
-      ctx.beginPath();
-      ctx.arc(0, 0, radius, 0, Math.PI * 2);
-      ctx.fillStyle = '#000000';
-      ctx.fill();
-      ctx.beginPath();
-      ctx.arc(0, 0, radius * 1.2, 0, Math.PI * 2);
-      ctx.strokeStyle = 'rgba(255, 255, 255, 0.5)';
-      ctx.lineWidth = 1;
-      ctx.stroke();
-      break;
-        break;
+case 'blackHole':
+    const blackHoleRadius = planet.radius * camera.zoom;
+    const blackHoleTime = Date.now() * 0.001;
+    drawAccretionDisk(
+        blackHoleRadius * 1.5, 
+        blackHoleRadius * 4, 
+        [
+            'rgba(255, 215, 0, 0.9)',
+            'rgba(255, 140, 0, 0.7)',
+            'rgba(255, 69, 0, 0.5)',
+            'rgba(128, 0, 128, 0.3)',
+            'rgba(0, 0, 0, 0.1)'
+        ],
+        (planet.rotation || 0) * visualTimeScale * 2,
+        planet
+    );
+    ctx.beginPath();
+    ctx.arc(0, 0, blackHoleRadius, 0, Math.PI * 2);
+    const blackHoleGradient = ctx.createRadialGradient(0, 0, 0, 0, 0, blackHoleRadius);
+    blackHoleGradient.addColorStop(0, '#000000');
+    blackHoleGradient.addColorStop(0.7, '#1a1a1a');
+    blackHoleGradient.addColorStop(1, '#333333');
+    ctx.fillStyle = blackHoleGradient;
+    ctx.fill();
+    ctx.beginPath();
+    ctx.arc(0, 0, blackHoleRadius * 1.05, 0, Math.PI * 2);
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.8)';
+    ctx.lineWidth = 3;
+    ctx.stroke();
+    drawGravitationalLens(blackHoleRadius, 'attractive', 2.0);
+    if (graphicsQuality !== 'low') {
+        ctx.globalAlpha = 0.6;
+        for (let i = 0; i < 8; i++) {
+            const particleAngle = (i / 8) * Math.PI * 2 + blackHoleTime;
+            const spiralProgress = (blackHoleTime * 0.5 + i * 0.2) % 1;
+            const spiralRadius = blackHoleRadius * (1.5 + spiralProgress * 2.5);
+            const x = Math.cos(particleAngle) * spiralRadius;
+            const y = Math.sin(particleAngle) * spiralRadius;
+            ctx.beginPath();
+            ctx.arc(x, y, blackHoleRadius * 0.1, 0, Math.PI * 2);
+            ctx.fillStyle = `rgba(255, 255, 255, ${1 - spiralProgress})`;
+            ctx.fill();
+        }
+        ctx.globalAlpha = 1;
+    }
+    break;
     case 'wormhole':
       const safeRadius = Math.max(1, radius);
       const safeInnerRadius = Math.max(0.1, safeRadius * 0.7);
@@ -1359,85 +1677,141 @@ case 'rockyPlanet':
       ctx.stroke();
       break;
 case 'quasar':
+    const quasarRadius = planet.radius * camera.zoom;
+    const quasarTime = Date.now() * 0.001;
+    drawAccretionDisk(
+        quasarRadius * 1.2, 
+        quasarRadius * 6, 
+        [
+            'rgba(255, 255, 0, 0.9)',
+            'rgba(255, 215, 0, 0.8)',
+            'rgba(255, 140, 0, 0.7)',
+            'rgba(255, 69, 0, 0.6)',
+            'rgba(128, 0, 128, 0.4)',
+            'rgba(0, 0, 0, 0.2)'
+        ],
+        (planet.rotation || 0) * visualTimeScale * 3,
+        planet
+    );
     ctx.beginPath();
-    ctx.arc(0, 0, radius, 0, Math.PI * 2);
+    ctx.arc(0, 0, quasarRadius, 0, Math.PI * 2);
     ctx.fillStyle = '#000000';
     ctx.fill();
-    const scaledRadiusQuasar = planet.radius * camera.zoom;
-    drawAccretionDisk(scaledRadiusQuasar * 1.2, scaledRadiusQuasar * 4, [
-        'rgba(255, 215, 0, 0.6)',
-        'rgba(255, 140, 0, 0.4)',
-        'rgba(255, 69, 0, 0.2)'
-    ]);
     if (graphicsQuality !== 'low' && planet.jets) {
-        const jetLength = radius * 20;
-        const jetWidthStart = radius * 0.1;
-        const jetWidthEnd = radius * 2.5;
+        const jetLength = quasarRadius * 35;
+        const jetWidthStart = quasarRadius * 0.3;
+        const jetWidthEnd = quasarRadius * 8;
         ctx.save();
         ctx.rotate(planet.jetAngle + (planet.rotation || 0));
         drawJet(jetLength, jetWidthStart, jetWidthEnd, [
-            { position: 0, color: 'rgba(255,255,255,1)' },
-            { position: 0.5, color: 'rgba(255,255,150,0.5)' },
-            { position: 1, color: 'rgba(255,255,100,0.01)' }
+            { position: 0, color: 'rgba(255, 255, 255, 1)' },
+            { position: 0.2, color: 'rgba(255, 255, 200, 0.9)' },
+            { position: 0.4, color: 'rgba(255, 255, 150, 0.7)' },
+            { position: 0.6, color: 'rgba(255, 255, 100, 0.5)' },
+            { position: 0.8, color: 'rgba(255, 255, 50, 0.3)' },
+            { position: 1, color: 'rgba(255, 255, 0, 0)' }
         ]);
         ctx.rotate(Math.PI);
         drawJet(jetLength, jetWidthStart, jetWidthEnd, [
-            { position: 0, color: 'rgba(255,255,255,1)' },
-            { position: 0.5, color: 'rgba(255,255,150,0.5)' },
-            { position: 1, color: 'rgba(255,255,100,0.01)' }
+            { position: 0, color: 'rgba(255, 255, 255, 1)' },
+            { position: 0.2, color: 'rgba(255, 255, 200, 0.9)' },
+            { position: 0.4, color: 'rgba(255, 255, 150, 0.7)' },
+            { position: 0.6, color: 'rgba(255, 255, 100, 0.5)' },
+            { position: 0.8, color: 'rgba(255, 255, 50, 0.3)' },
+            { position: 1, color: 'rgba(255, 255, 0, 0)' }
         ]);
         ctx.restore();
     }
-    drawGravitationalLens(radius, 'attractive', 1.5);
+    drawGravitationalLens(quasarRadius, 'attractive', 3.0);
+    ctx.beginPath();
+    ctx.arc(0, 0, quasarRadius * 8, 0, Math.PI * 2);
+    const radiationGradient = ctx.createRadialGradient(0, 0, quasarRadius * 2, 0, 0, quasarRadius * 8);
+    radiationGradient.addColorStop(0, 'rgba(255, 255, 0, 0.3)');
+    radiationGradient.addColorStop(1, 'rgba(255, 255, 0, 0)');
+    ctx.fillStyle = radiationGradient;
+    ctx.fill();
     break;
 case 'whiteHole':
+    const whiteHoleRadius = planet.radius * camera.zoom;
+    const whiteHoleTime = Date.now() * 0.001;
+    drawAccretionDisk(
+        whiteHoleRadius * 1.2, 
+        whiteHoleRadius * 5, 
+        [
+            'rgba(173, 216, 230, 0.9)',
+            'rgba(135, 206, 250, 0.8)',
+            'rgba(0, 191, 255, 0.7)',
+            'rgba(30, 144, 255, 0.6)',
+            'rgba(0, 0, 139, 0.4)',
+            'rgba(0, 0, 0, 0.2)'
+        ],
+        (planet.rotation || 0) * visualTimeScale * -2,
+        planet
+    );
+    const whiteHoleGradient = ctx.createRadialGradient(0, 0, 0, 0, 0, whiteHoleRadius);
+    whiteHoleGradient.addColorStop(0, '#FFFFFF');
+    whiteHoleGradient.addColorStop(0.3, '#E6F7FF');
+    whiteHoleGradient.addColorStop(0.7, '#B3E0FF');
+    whiteHoleGradient.addColorStop(1, '#66C2FF');
     ctx.beginPath();
-    ctx.arc(0, 0, radius, 0, Math.PI * 2);
-    const whiteHoleGradient = ctx.createRadialGradient(0, 0, 0, 0, 0, radius);
-    whiteHoleGradient.addColorStop(0, '#ffffff');
-    whiteHoleGradient.addColorStop(1, '#e0ffff');
+    ctx.arc(0, 0, whiteHoleRadius, 0, Math.PI * 2);
     ctx.fillStyle = whiteHoleGradient;
     ctx.fill();
-    if (graphicsQuality !== 'low') {
-        ctx.beginPath();
-        ctx.arc(0, 0, radius * 1.5, 0, Math.PI * 2);
-        const glowGradient = ctx.createRadialGradient(0, 0, radius, 0, 0, radius * 1.5);
-        glowGradient.addColorStop(0, 'rgba(255, 255, 255, 0.5)');
-        glowGradient.addColorStop(1, 'rgba(224, 255, 255, 0)');
-        ctx.fillStyle = glowGradient;
-        ctx.fill();
-    }
     if (graphicsQuality !== 'low' && planet.jets) {
-        const jetLength = radius * 5;
-        const jetWidthStart = radius * 0.1;
-        const jetWidthEnd = radius * 1.2;
+        const jetLength = whiteHoleRadius * 25;
+        const jetWidthStart = whiteHoleRadius * 0.3;
+        const jetWidthEnd = whiteHoleRadius * 6;
         ctx.save();
         ctx.rotate(planet.jetAngle + (planet.rotation || 0));
         drawJet(jetLength, jetWidthStart, jetWidthEnd, [
-            { position: 0, color: 'rgba(255,255,255,1)' },
-            { position: 0.5, color: 'rgba(200,220,255,0.6)' },
-            { position: 1, color: 'rgba(150,200,255,0.01)' }
+            { position: 0, color: 'rgba(255, 255, 255, 1)' },
+            { position: 0.2, color: 'rgba(200, 230, 255, 0.9)' },
+            { position: 0.4, color: 'rgba(150, 200, 255, 0.7)' },
+            { position: 0.6, color: 'rgba(100, 180, 255, 0.5)' },
+            { position: 0.8, color: 'rgba(50, 150, 255, 0.3)' },
+            { position: 1, color: 'rgba(0, 100, 255, 0)' }
         ]);
         ctx.rotate(Math.PI);
         drawJet(jetLength, jetWidthStart, jetWidthEnd, [
-            { position: 0, color: 'rgba(255,255,255,1)' },
-            { position: 0.5, color: 'rgba(200,220,255,0.6)' },
-            { position: 1, color: 'rgba(150,200,255,0.01)' }
+            { position: 0, color: 'rgba(255, 255, 255, 1)' },
+            { position: 0.2, color: 'rgba(200, 230, 255, 0.9)' },
+            { position: 0.4, color: 'rgba(150, 200, 255, 0.7)' },
+            { position: 0.6, color: 'rgba(100, 180, 255, 0.5)' },
+            { position: 0.8, color: 'rgba(50, 150, 255, 0.3)' },
+            { position: 1, color: 'rgba(0, 100, 255, 0)' }
         ]);
         ctx.restore();
     }
-    drawGravitationalLens(radius, 'repulsive', 1.0);
-    const expansionFactor = 1 + Math.sin(Date.now() * 0.005) * 0.1;
+    drawGravitationalLens(whiteHoleRadius, 'repulsive', 2.0);
+    const expansionFactor = 1 + Math.sin(whiteHoleTime * 0.008) * 0.2;
     ctx.beginPath();
-    ctx.arc(0, 0, radius * 1.8 * expansionFactor, 0, Math.PI * 2);
+    ctx.arc(0, 0, whiteHoleRadius * 2.2 * expansionFactor, 0, Math.PI * 2);
     const expansionGradient = ctx.createRadialGradient(
-        0, 0, radius * 0.5,
-        0, 0, radius * 1.8 * expansionFactor
+        0, 0, whiteHoleRadius * 0.8,
+        0, 0, whiteHoleRadius * 2.2 * expansionFactor
     );
-    expansionGradient.addColorStop(0, 'rgba(100, 180, 255, 0.5)');
-    expansionGradient.addColorStop(1, 'rgba(100, 180, 255, 0)');
+    expansionGradient.addColorStop(0, 'rgba(173, 216, 230, 0.6)');
+    expansionGradient.addColorStop(0.7, 'rgba(135, 206, 250, 0.3)');
+    expansionGradient.addColorStop(1, 'rgba(0, 191, 255, 0)');
     ctx.fillStyle = expansionGradient;
     ctx.fill();
+    if (graphicsQuality !== 'low') {
+        ctx.globalAlpha = 0.7;
+        for (let i = 0; i < 6; i++) {
+            const particleAngle = (i / 6) * Math.PI * 2 + whiteHoleTime;
+            const particleDistance = whiteHoleRadius * (1.8 + Math.sin(whiteHoleTime * 2 + i) * 0.5);
+            const particleSize = whiteHoleRadius * 0.15;
+            ctx.beginPath();
+            ctx.arc(
+                Math.cos(particleAngle) * particleDistance,
+                Math.sin(particleAngle) * particleDistance,
+                particleSize, 0, Math.PI * 2
+            );
+            ctx.fillStyle = '#FFFFFF';
+            ctx.fill();
+        }
+        ctx.globalAlpha = 1;
+    }
     ctx.strokeStyle = '#000000';
     ctx.lineWidth = 2;
     ctx.stroke();
@@ -1690,6 +2064,36 @@ case 'strangeStar': {
     ctx.stroke();
     break;
 }
+case 'chronosStar':
+    drawChronosStar(planet, ctx, radius, camera, graphicsQuality, visualTimeScale);
+    break;
+case 'phantomStar':
+    drawPhantomStar(planet, ctx, radius, camera, graphicsQuality, visualTimeScale);
+    break;
+case 'vortexStar':
+    drawVortexStar(planet, ctx, radius, camera, graphicsQuality, visualTimeScale);
+    break;
+case 'crystalStar':
+    drawCrystalStar(planet, ctx, radius, camera, graphicsQuality, visualTimeScale);
+    break;
+case 'neuralStar':
+    drawNeuralStar(planet, ctx, radius, camera, graphicsQuality, visualTimeScale);
+    break;
+case 'hologramStar':
+    drawHologramStar(planet, ctx, radius, camera, graphicsQuality, visualTimeScale);
+    break;
+case 'quantumFoamStar':
+    drawQuantumFoamStar(planet, ctx, radius, camera, graphicsQuality, visualTimeScale);
+    break;
+case 'prismStar':
+    drawPrismStar(planet, ctx, radius, camera, graphicsQuality, visualTimeScale);
+    break;
+case 'echoStar':
+    drawEchoStar(planet, ctx, radius, camera, graphicsQuality, visualTimeScale);
+    break;
+case 'singularityStar':
+    drawSingularityStar(planet, ctx, radius, camera, graphicsQuality, visualTimeScale);
+    break;
     case 'magnetar':
         drawGravitationalLens(radius, 'attractive', 1.1);
         for (let i = 0; i < 8; i++) {
@@ -1853,6 +2257,707 @@ if (shadowsEnabled && graphicsQuality ==='high' && ![
       ctx.fillText(planet.planetClass, x, y - radius - 25);
     }
   }
+}
+function drawAccretionDisk(innerRadius, outerRadius, colors, rotation = 0, planet = null) {
+    ctx.save();
+    ctx.rotate(rotation);
+    const diskGradient = ctx.createRadialGradient(0, 0, innerRadius, 0, 0, outerRadius);
+    colors.forEach((color, i) => {
+        const stopPosition = i / (colors.length - 1);
+        diskGradient.addColorStop(stopPosition, color);
+    });
+    ctx.beginPath();
+    ctx.arc(0, 0, outerRadius, 0, Math.PI * 2);
+    ctx.fillStyle = diskGradient;
+    ctx.fill();
+    if (graphicsQuality === 'high' && planet) {
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
+        ctx.lineWidth = 1;
+        for (let i = 0; i < 3; i++) {
+            const spiralTurns = 2;
+            ctx.beginPath();
+            for (let t = 0; t <= 100; t++) {
+                const progress = t / 100;
+                const angle = progress * Math.PI * 2 * spiralTurns + rotation;
+                const spiralRadius = innerRadius + progress * (outerRadius - innerRadius);
+                const x = Math.cos(angle) * spiralRadius;
+                const y = Math.sin(angle) * spiralRadius;
+                if (t === 0) ctx.moveTo(x, y);
+                else ctx.lineTo(x, y);
+            }
+            ctx.stroke();
+        }
+    }
+    ctx.restore();
+}
+function drawJet(length, startWidth, endWidth, colorStops) {
+    const jetGradient = ctx.createLinearGradient(0, 0, 0, -length);
+    colorStops.forEach(stop => {
+        jetGradient.addColorStop(stop.position, stop.color);
+    });
+    if (length > 100) {
+        ctx.filter = `blur(${Math.min(8, length * 0.02)}px)`;
+    }
+    ctx.beginPath();
+    ctx.moveTo(-startWidth/2, 0);
+    ctx.lineTo(startWidth/2, 0);
+    ctx.lineTo(endWidth/2, -length);
+    ctx.lineTo(-endWidth/2, -length);
+    ctx.closePath();
+    ctx.fillStyle = jetGradient;
+    ctx.fill();
+    ctx.filter = 'none';
+    if (graphicsQuality === 'high') {
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(0, 0);
+        ctx.lineTo(0, -length);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.moveTo(-startWidth/4, 0);
+        ctx.lineTo(-endWidth/4, -length);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.moveTo(startWidth/4, 0);
+        ctx.lineTo(endWidth/4, -length);
+        ctx.stroke();
+    }
+}
+function drawChronosStar(planet, ctx, radius, camera, graphicsQuality, visualTimeScale) {
+    const chronosRadius = planet.radius * camera.zoom;
+    const time = Date.now() * 0.001;
+    const pulse = Math.sin(time * 3) * 0.2 + 1;
+    const chronosGradient = ctx.createRadialGradient(0, 0, 0, 0, 0, chronosRadius * pulse);
+    chronosGradient.addColorStop(0, '#87CEEB');
+    chronosGradient.addColorStop(0.3, '#00BFFF');
+    chronosGradient.addColorStop(0.7, '#00008B');
+    chronosGradient.addColorStop(1, '#191970');
+    ctx.beginPath();
+    ctx.arc(0, 0, chronosRadius * pulse, 0, Math.PI * 2);
+    ctx.fillStyle = chronosGradient;
+    ctx.fill();
+    for (let i = 0; i < 6; i++) {
+        const ringSize = chronosRadius * (1.3 + i * 0.4);
+        const ringSpeed = 0.5 + i * 0.3;
+        const rotation = time * ringSpeed;
+        ctx.save();
+        ctx.rotate(rotation);
+        ctx.beginPath();
+        ctx.arc(0, 0, ringSize, 0, Math.PI * 2);
+        ctx.strokeStyle = `rgba(135, 206, 235, ${0.5 - i * 0.08})`;
+        ctx.lineWidth = 2 + i * 0.5;
+        ctx.setLineDash([5, 10]);
+        ctx.stroke();
+        ctx.setLineDash([]);
+        for (let j = 0; j < 12; j++) {
+            const markerAngle = (j / 12) * Math.PI * 2;
+            const markerX = Math.cos(markerAngle) * ringSize;
+            const markerY = Math.sin(markerAngle) * ringSize;
+            ctx.beginPath();
+            ctx.arc(markerX, markerY, 2, 0, Math.PI * 2);
+            ctx.fillStyle = `rgba(255, 255, 255, ${0.8 - j * 0.06})`;
+            ctx.fill();
+        }
+        ctx.restore();
+    }
+    if (graphicsQuality !== 'low') {
+        ctx.globalAlpha = 0.3;
+        for (let i = 0; i < 8; i++) {
+            const waveSize = chronosRadius * (1.5 + Math.sin(time * 2 + i) * 0.3);
+            ctx.beginPath();
+            ctx.arc(0, 0, waveSize, 0, Math.PI * 2);
+            ctx.strokeStyle = `rgba(0, 191, 255, ${0.4 - i * 0.05})`;
+            ctx.lineWidth = 1;
+            ctx.stroke();
+        }
+        ctx.globalAlpha = 1;
+    }
+}
+function drawPhantomStar(planet, ctx, radius, camera, graphicsQuality, visualTimeScale) {
+    const phantomRadius = planet.radius * camera.zoom;
+    const time = Date.now() * 0.003;
+    const phase = Math.sin(time) * 0.5 + 0.5;
+    ctx.globalAlpha = 0.2 + phase * 0.8;
+    const phantomGradient = ctx.createRadialGradient(0, 0, 0, 0, 0, phantomRadius);
+    phantomGradient.addColorStop(0, '#DDA0DD');
+    phantomGradient.addColorStop(0.5, '#9400D3');
+    phantomGradient.addColorStop(1, '#4B0082');
+    ctx.beginPath();
+    ctx.arc(0, 0, phantomRadius, 0, Math.PI * 2);
+    ctx.fillStyle = phantomGradient;
+    ctx.fill();
+    for (let i = 0; i < 12; i++) {
+        const angle = (i / 12) * Math.PI * 2 + time;
+        const spectralLength = phantomRadius * (2 + Math.sin(time * 4 + i) * 1.5);
+        const spectralWidth = phantomRadius * 0.1;
+        ctx.save();
+        ctx.rotate(angle);
+        const spectralGradient = ctx.createLinearGradient(0, 0, 0, -spectralLength);
+        spectralGradient.addColorStop(0, `rgba(221, 160, 221, ${0.8})`);
+        spectralGradient.addColorStop(0.7, `rgba(148, 0, 211, ${0.4})`);
+        spectralGradient.addColorStop(1, 'transparent');
+        ctx.beginPath();
+        ctx.moveTo(-spectralWidth/2, 0);
+        ctx.lineTo(spectralWidth/2, 0);
+        ctx.lineTo(spectralWidth/4, -spectralLength);
+        ctx.lineTo(-spectralWidth/4, -spectralLength);
+        ctx.closePath();
+        ctx.fillStyle = spectralGradient;
+        ctx.fill();
+        ctx.restore();
+    }
+    if (graphicsQuality !== 'low') {
+        ctx.globalAlpha = 0.6;
+        for (let i = 0; i < 8; i++) {
+            const fragmentAngle = (i / 8) * Math.PI * 2 + time * 0.5;
+            const fragmentDistance = phantomRadius * (1.2 + Math.sin(time * 3 + i) * 0.3);
+            const fragmentSize = phantomRadius * 0.3;
+            ctx.save();
+            ctx.rotate(fragmentAngle);
+            ctx.translate(fragmentDistance, 0);
+            ctx.beginPath();
+            ctx.arc(0, 0, fragmentSize, 0, Math.PI * 2);
+            ctx.fillStyle = `rgba(148, 0, 211, ${0.5})`;
+            ctx.fill();
+            ctx.restore();
+        }
+    }
+    ctx.globalAlpha = 1;
+}
+function drawVortexStar(planet, ctx, radius, camera, graphicsQuality, visualTimeScale) {
+    const vortexRadius = planet.radius * camera.zoom;
+    const time = Date.now() * 0.002;
+    ctx.save();
+    ctx.rotate(time * 2);
+    for (let layer = 0; layer < 4; layer++) {
+        const layerRadius = vortexRadius * (0.4 + layer * 0.2);
+        const points = 8 + layer * 4;
+        const layerRotation = time * (1 + layer * 0.5);
+        ctx.save();
+        ctx.rotate(layerRotation);
+        ctx.beginPath();
+        for (let i = 0; i < points; i++) {
+            const angle = (i / points) * Math.PI * 2;
+            const radiusVar = layerRadius * (0.7 + Math.sin(angle * 5 + time * 3) * 0.3);
+            const x = Math.cos(angle) * radiusVar;
+            const y = Math.sin(angle) * radiusVar;
+            if (i === 0) ctx.moveTo(x, y);
+            else ctx.lineTo(x, y);
+        }
+        ctx.closePath();
+        const vortexGradient = ctx.createRadialGradient(0, 0, 0, 0, 0, layerRadius);
+        vortexGradient.addColorStop(0, '#32CD32');
+        vortexGradient.addColorStop(0.7, '#008000');
+        vortexGradient.addColorStop(1, '#006400');
+        ctx.fillStyle = vortexGradient;
+        ctx.fill();
+        ctx.restore();
+    }
+    for (let i = 0; i < 3; i++) {
+        const spiralTurns = 3;
+        const spiralMaxRadius = vortexRadius * 2.5;
+        ctx.beginPath();
+        for (let t = 0; t <= 100; t++) {
+            const progress = t / 100;
+            const angle = progress * Math.PI * 2 * spiralTurns + time * 2 + i * Math.PI * 2/3;
+            const spiralRadius = progress * spiralMaxRadius;
+            const x = Math.cos(angle) * spiralRadius;
+            const y = Math.sin(angle) * spiralRadius;
+            if (t === 0) ctx.moveTo(x, y);
+            else ctx.lineTo(x, y);
+        }
+        ctx.strokeStyle = `rgba(50, 205, 50, ${0.3})`;
+        ctx.lineWidth = 2;
+        ctx.stroke();
+    }
+    ctx.restore();
+}
+function drawCrystalStar(planet, ctx, radius, camera, graphicsQuality, visualTimeScale) {
+    const crystalRadius = planet.radius * camera.zoom;
+    const time = Date.now() * 0.001;
+    const crystalGradient = ctx.createRadialGradient(0, 0, 0, 0, 0, crystalRadius);
+    crystalGradient.addColorStop(0, '#E6E6FA');
+    crystalGradient.addColorStop(0.3, '#9370DB');
+    crystalGradient.addColorStop(0.7, '#8A2BE2');
+    crystalGradient.addColorStop(1, '#4B0082');
+    ctx.beginPath();
+    ctx.arc(0, 0, crystalRadius, 0, Math.PI * 2);
+    ctx.fillStyle = crystalGradient;
+    ctx.fill();
+    const facets = 16;
+    for (let i = 0; i < facets; i++) {
+        const angle1 = (i / facets) * Math.PI * 2;
+        const angle2 = ((i + 1) / facets) * Math.PI * 2;
+        const facetPulse = 1 + Math.sin(time * 2 + i) * 0.2;
+        const innerRadius = crystalRadius * 0.6 * facetPulse;
+        const outerRadius = crystalRadius * 1.2 * facetPulse;
+        const x1 = Math.cos(angle1) * innerRadius;
+        const y1 = Math.sin(angle1) * innerRadius;
+        const x2 = Math.cos(angle2) * innerRadius;
+        const y2 = Math.sin(angle2) * innerRadius;
+        const x3 = Math.cos((angle1 + angle2) / 2) * outerRadius;
+        const y3 = Math.sin((angle1 + angle2) / 2) * outerRadius;
+        ctx.beginPath();
+        ctx.moveTo(x1, y1);
+        ctx.lineTo(x2, y2);
+        ctx.lineTo(x3, y3);
+        ctx.closePath();
+        const facetGradient = ctx.createLinearGradient(x1, y1, x3, y3);
+        facetGradient.addColorStop(0, 'rgba(255, 255, 255, 0.8)');
+        facetGradient.addColorStop(1, 'rgba(230, 230, 250, 0.3)');
+        ctx.fillStyle = facetGradient;
+        ctx.fill();
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.6)';
+        ctx.lineWidth = 1;
+        ctx.stroke();
+    }
+    if (graphicsQuality !== 'low') {
+        ctx.globalAlpha = 0.4;
+        for (let i = 0; i < 8; i++) {
+            const reflexAngle = (i / 8) * Math.PI * 2 + time;
+            const reflexDistance = crystalRadius * 0.3;
+            const reflexSize = crystalRadius * 0.15;
+            ctx.save();
+            ctx.rotate(reflexAngle);
+            ctx.translate(reflexDistance, 0);
+            ctx.beginPath();
+            ctx.arc(0, 0, reflexSize, 0, Math.PI * 2);
+            ctx.fillStyle = '#FFFFFF';
+            ctx.fill();
+            ctx.restore();
+        }
+        ctx.globalAlpha = 1;
+    }
+}
+function drawNeuralStar(planet, ctx, radius, camera, graphicsQuality, visualTimeScale) {
+    const neuralRadius = planet.radius * camera.zoom;
+    const time = Date.now() * 0.002;
+    const neuralGradient = ctx.createRadialGradient(0, 0, 0, 0, 0, neuralRadius);
+    neuralGradient.addColorStop(0, '#FF69B4');
+    neuralGradient.addColorStop(0.5, '#DC143C');
+    neuralGradient.addColorStop(1, '#8B0000');
+    ctx.beginPath();
+    ctx.arc(0, 0, neuralRadius, 0, Math.PI * 2);
+    ctx.fillStyle = neuralGradient;
+    ctx.fill();
+    const neurons = 12;
+    const neuronPositions = [];
+    for (let i = 0; i < neurons; i++) {
+        const angle = (i / neurons) * Math.PI * 2;
+        const distance = neuralRadius * (0.4 + Math.random() * 0.4);
+        const neuronX = Math.cos(angle) * distance;
+        const neuronY = Math.sin(angle) * distance;
+        const neuronSize = neuralRadius * 0.1 * (0.8 + Math.sin(time * 3 + i) * 0.4);
+        neuronPositions.push({ x: neuronX, y: neuronY, size: neuronSize });
+        ctx.beginPath();
+        ctx.arc(neuronX, neuronY, neuronSize, 0, Math.PI * 2);
+        const neuronGradient = ctx.createRadialGradient(neuronX, neuronY, 0, neuronX, neuronY, neuronSize);
+        neuronGradient.addColorStop(0, '#FFFFFF');
+        neuronGradient.addColorStop(1, '#FF69B4');
+        ctx.fillStyle = neuronGradient;
+        ctx.fill();
+        ctx.beginPath();
+        ctx.arc(neuronX, neuronY, neuronSize * 0.4, 0, Math.PI * 2);
+        ctx.fillStyle = '#DC143C';
+        ctx.fill();
+    }
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.6)';
+    ctx.lineWidth = 1;
+    for (let i = 0; i < neurons; i++) {
+        for (let j = i + 1; j < neurons; j++) {
+            if (Math.random() > 0.7) {
+                const neuronA = neuronPositions[i];
+                const neuronB = neuronPositions[j];
+                ctx.beginPath();
+                ctx.moveTo(neuronA.x, neuronA.y);
+                ctx.lineTo(neuronB.x, neuronB.y);
+                ctx.stroke();
+                const pulseProgress = (time * 2) % 1;
+                const pulseX = neuronA.x + (neuronB.x - neuronA.x) * pulseProgress;
+                const pulseY = neuronA.y + (neuronB.y - neuronA.y) * pulseProgress;
+                ctx.beginPath();
+                ctx.arc(pulseX, pulseY, neuralRadius * 0.03, 0, Math.PI * 2);
+                ctx.fillStyle = '#FFFF00';
+                ctx.fill();
+            }
+        }
+    }
+    if (graphicsQuality !== 'low') {
+        ctx.globalAlpha = 0.3;
+        ctx.beginPath();
+        ctx.arc(0, 0, neuralRadius * 1.5, 0, Math.PI * 2);
+        const awarenessGradient = ctx.createRadialGradient(0, 0, neuralRadius, 0, 0, neuralRadius * 1.5);
+        awarenessGradient.addColorStop(0, 'rgba(255, 105, 180, 0.5)');
+        awarenessGradient.addColorStop(1, 'rgba(139, 0, 0, 0)');
+        ctx.fillStyle = awarenessGradient;
+        ctx.fill();
+        ctx.globalAlpha = 1;
+    }
+}
+function drawHologramStar(planet, ctx, radius, camera, graphicsQuality, visualTimeScale) {
+    const hologramRadius = planet.radius * camera.zoom;
+    const time = Date.now() * 0.0015;
+    const layers = 4;
+    for (let layer = 0; layer < layers; layer++) {
+        const layerOffset = layer * 0.3;
+        const layerSize = hologramRadius * (0.8 + layer * 0.15);
+        const layerRotation = time * (0.5 + layer * 0.3);
+        ctx.save();
+        ctx.rotate(layerRotation);
+        ctx.translate(layerOffset, layerOffset);
+        ctx.strokeStyle = `rgba(0, 255, 255, ${0.3 - layer * 0.08})`;
+        ctx.lineWidth = 1;
+        const gridLines = 8;
+        for (let i = -gridLines; i <= gridLines; i++) {
+            const pos = (i / gridLines) * layerSize;
+            ctx.beginPath();
+            ctx.moveTo(-layerSize, pos);
+            ctx.lineTo(layerSize, pos);
+            ctx.stroke();
+            ctx.beginPath();
+            ctx.moveTo(pos, -layerSize);
+            ctx.lineTo(pos, layerSize);
+            ctx.stroke();
+        }
+        const projections = 3;
+        for (let i = 0; i < projections; i++) {
+            const projAngle = (i / projections) * Math.PI * 2 + time;
+            const projDistance = layerSize * 0.5;
+            const projSize = layerSize * 0.4;
+            ctx.save();
+            ctx.rotate(projAngle);
+            ctx.translate(projDistance, 0);
+            ctx.beginPath();
+            ctx.arc(0, 0, projSize, 0, Math.PI * 2);
+            ctx.strokeStyle = `rgba(0, 255, 255, ${0.6})`;
+            ctx.lineWidth = 2;
+            ctx.stroke();
+            ctx.restore();
+        }
+        ctx.restore();
+    }
+    const corePulse = 1 + Math.sin(time * 4) * 0.3;
+    const coreGradient = ctx.createRadialGradient(0, 0, 0, 0, 0, hologramRadius * 0.3 * corePulse);
+    coreGradient.addColorStop(0, '#00FFFF');
+    coreGradient.addColorStop(1, '#008B8B');
+    ctx.beginPath();
+    ctx.arc(0, 0, hologramRadius * 0.3 * corePulse, 0, Math.PI * 2);
+    ctx.fillStyle = coreGradient;
+    ctx.fill();
+    if (graphicsQuality !== 'low') {
+        ctx.globalAlpha = 0.2;
+        for (let i = 0; i < 20; i++) {
+            const noiseX = (Math.random() - 0.5) * hologramRadius * 2;
+            const noiseY = (Math.random() - 0.5) * hologramRadius * 2;
+            const noiseSize = hologramRadius * 0.1 * Math.random();
+            ctx.beginPath();
+            ctx.arc(noiseX, noiseY, noiseSize, 0, Math.PI * 2);
+            ctx.fillStyle = `rgba(0, 255, 255, ${Math.random() * 0.3})`;
+            ctx.fill();
+        }
+        ctx.globalAlpha = 1;
+    }
+}
+function drawQuantumFoamStar(planet, ctx, radius, camera, graphicsQuality, visualTimeScale) {
+    const foamRadius = planet.radius * camera.zoom;
+    const time = Date.now() * 0.004;
+    const foamGradient = ctx.createRadialGradient(0, 0, 0, 0, 0, foamRadius);
+    foamGradient.addColorStop(0, '#F0E68C');
+    foamGradient.addColorStop(0.5, '#DAA520');
+    foamGradient.addColorStop(1, '#B8860B');
+    ctx.beginPath();
+    ctx.arc(0, 0, foamRadius, 0, Math.PI * 2);
+    ctx.fillStyle = foamGradient;
+    ctx.fill();
+    const bubbles = 25;
+    for (let i = 0; i < bubbles; i++) {
+        const angle = (i / bubbles) * Math.PI * 2;
+        const baseDistance = foamRadius * 0.3;
+        const wobble = Math.sin(time * 2 + i) * 0.2;
+        const distance = baseDistance * (1 + wobble);
+        const bubbleX = Math.cos(angle) * distance;
+        const bubbleY = Math.sin(angle) * distance;
+        const bubbleSize = foamRadius * 0.08 * (0.7 + Math.sin(time * 3 + i) * 0.5);
+        const visibility = (Math.sin(time * 4 + i) + 1) / 2;
+        if (visibility > 0.3) {
+            ctx.globalAlpha = visibility;
+            ctx.beginPath();
+            ctx.arc(bubbleX, bubbleY, bubbleSize, 0, Math.PI * 2);
+            const bubbleGradient = ctx.createRadialGradient(bubbleX, bubbleY, 0, bubbleX, bubbleY, bubbleSize);
+            bubbleGradient.addColorStop(0, '#FFFFFF');
+            bubbleGradient.addColorStop(0.7, '#F0E68C');
+            bubbleGradient.addColorStop(1, 'rgba(218, 165, 32, 0)');
+            ctx.fillStyle = bubbleGradient;
+            ctx.fill();
+            ctx.strokeStyle = '#DAA520';
+            ctx.lineWidth = 1;
+            ctx.stroke();
+        }
+    }
+    ctx.globalAlpha = 1;
+    if (graphicsQuality !== 'low') {
+        ctx.globalAlpha = 0.4;
+        for (let i = 0; i < 15; i++) {
+            const fluctuationAngle = Math.random() * Math.PI * 2;
+            const fluctuationDistance = foamRadius * (0.5 + Math.random() * 0.5);
+            const fluctuationSize = foamRadius * 0.05 * Math.random();
+            ctx.save();
+            ctx.rotate(fluctuationAngle);
+            ctx.translate(fluctuationDistance, 0);
+            ctx.beginPath();
+            ctx.arc(0, 0, fluctuationSize, 0, Math.PI * 2);
+            ctx.fillStyle = `rgba(255, 255, 255, ${Math.random() * 0.5})`;
+            ctx.fill();
+            ctx.restore();
+        }
+        ctx.globalAlpha = 1;
+    }
+    const boilSize = foamRadius * (1 + Math.sin(time * 5) * 0.1);
+    ctx.beginPath();
+    ctx.arc(0, 0, boilSize, 0, Math.PI * 2);
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+}
+function drawPrismStar(planet, ctx, radius, camera, graphicsQuality, visualTimeScale) {
+    const prismRadius = planet.radius * camera.zoom;
+    const time = Date.now() * 0.002;
+    const prismGradient = ctx.createRadialGradient(0, 0, 0, 0, 0, prismRadius);
+    prismGradient.addColorStop(0, '#FFD700');
+    prismGradient.addColorStop(0.3, '#FF8C00');
+    prismGradient.addColorStop(0.7, '#FF4500');
+    prismGradient.addColorStop(1, '#DC143C');
+    ctx.beginPath();
+    ctx.arc(0, 0, prismRadius, 0, Math.PI * 2);
+    ctx.fillStyle = prismGradient;
+    ctx.fill();
+    const spectrum = ['#FF0000', '#FF7F00', '#FFFF00', '#00FF00', '#0000FF', '#4B0082', '#9400D3'];
+    const rays = 14;
+    for (let i = 0; i < rays; i++) {
+        const angle = (i / rays) * Math.PI * 2 + time;
+        const colorIndex = i % spectrum.length;
+        const rayLength = prismRadius * 4;
+        const rayWidth = Math.PI / 20;
+        ctx.save();
+        ctx.rotate(angle);
+        const rayGradient = ctx.createLinearGradient(0, 0, 0, -rayLength);
+        rayGradient.addColorStop(0, spectrum[colorIndex]);
+        rayGradient.addColorStop(0.5, `${spectrum[colorIndex]}80`);
+        rayGradient.addColorStop(1, 'transparent');
+        ctx.beginPath();
+        ctx.moveTo(0, 0);
+        ctx.arc(0, 0, rayLength, -rayWidth, rayWidth);
+        ctx.closePath();
+        ctx.fillStyle = rayGradient;
+        ctx.fill();
+        ctx.restore();
+    }
+    if (graphicsQuality !== 'low') {
+        ctx.globalAlpha = 0.6;
+        for (let i = 0; i < 8; i++) {
+            const refractionAngle = (i / 8) * Math.PI * 2 + time * 0.5;
+            const refractionDistance = prismRadius * 0.6;
+            const refractionSize = prismRadius * 0.2;
+            ctx.save();
+            ctx.rotate(refractionAngle);
+            ctx.translate(refractionDistance, 0);
+            ctx.beginPath();
+            ctx.arc(0, 0, refractionSize, 0, Math.PI * 2);
+            ctx.fillStyle = spectrum[i % spectrum.length];
+            ctx.fill();
+            ctx.restore();
+        }
+        ctx.globalAlpha = 1;
+    }
+    const dispersionSize = prismRadius * (1.2 + Math.sin(time * 3) * 0.3);
+    ctx.beginPath();
+    ctx.arc(0, 0, dispersionSize, 0, Math.PI * 2);
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.4)';
+    ctx.lineWidth = 3;
+    ctx.stroke();
+}
+function drawEchoStar(planet, ctx, radius, camera, graphicsQuality, visualTimeScale) {
+    const echoRadius = planet.radius * camera.zoom;
+    const time = Date.now() * 0.001;
+    const echoGradient = ctx.createRadialGradient(0, 0, 0, 0, 0, echoRadius);
+    echoGradient.addColorStop(0, '#98FB98');
+    echoGradient.addColorStop(0.4, '#32CD32');
+    echoGradient.addColorStop(0.8, '#006400');
+    echoGradient.addColorStop(1, '#004d00');
+    ctx.beginPath();
+    ctx.arc(0, 0, echoRadius, 0, Math.PI * 2);
+    ctx.fillStyle = echoGradient;
+    ctx.fill();
+    const waves = 6;
+    for (let i = 0; i < waves; i++) {
+        const waveProgress = (time + i * 0.3) % 1;
+        const waveSize = echoRadius * (1 + waveProgress * 1.5);
+        const alpha = 1 - waveProgress;
+        ctx.beginPath();
+        ctx.arc(0, 0, waveSize, 0, Math.PI * 2);
+        ctx.strokeStyle = `rgba(152, 251, 152, ${alpha * 0.7})`;
+        ctx.lineWidth = 2 + i * 0.5;
+        ctx.stroke();
+        for (let j = 0; j < 8; j++) {
+            const markerAngle = (j / 8) * Math.PI * 2;
+            const markerX = Math.cos(markerAngle) * waveSize;
+            const markerY = Math.sin(markerAngle) * waveSize;
+            ctx.beginPath();
+            ctx.arc(markerX, markerY, 3, 0, Math.PI * 2);
+            ctx.fillStyle = `rgba(255, 255, 255, ${alpha * 0.9})`;
+            ctx.fill();
+        }
+    }
+    if (graphicsQuality !== 'low') {
+        ctx.globalAlpha = 0.4;
+        for (let i = 0; i < 4; i++) {
+            const resonanceSize = echoRadius * (0.8 + i * 0.4);
+            const resonanceRotation = time * (1 + i * 0.5);
+            ctx.save();
+            ctx.rotate(resonanceRotation);
+            ctx.beginPath();
+            for (let j = 0; j < 12; j++) {
+                const angle = (j / 12) * Math.PI * 2;
+                const pulse = Math.sin(time * 4 + j) * 0.2 + 1;
+                const x = Math.cos(angle) * resonanceSize * pulse;
+                const y = Math.sin(angle) * resonanceSize * pulse;
+                if (j === 0) ctx.moveTo(x, y);
+                else ctx.lineTo(x, y);
+            }
+            ctx.closePath();
+            ctx.strokeStyle = `rgba(50, 205, 50, ${0.6 - i * 0.15})`;
+            ctx.lineWidth = 1;
+            ctx.stroke();
+            ctx.restore();
+        }
+        ctx.globalAlpha = 1;
+    }
+}
+function generateTtauriDebris(ttauriStar) {
+    const debrisTypes = ['nebula', 'radiation', 'spaceDust', 'meteoroid', 'asteroid', 'comet'];
+    const debrisType = debrisTypes[Math.floor(Math.random() * debrisTypes.length)];
+    const angle = (ttauriStar.jetAngle || 0) + (Math.random() - 0.5) * Math.PI;
+    const minDistance = ttauriStar.radius * 3;
+    const maxDistance = ttauriStar.radius * 8;
+    const distance = minDistance + Math.random() * (maxDistance - minDistance);
+    const x = ttauriStar.x + Math.cos(angle) * distance;
+    const y = ttauriStar.y + Math.sin(angle) * distance;
+    const orbitalVelocity = calculateOrbitalVelocity(ttauriStar, distance);
+    const tangentAngle = angle + Math.PI / 2;
+    const velocityMultiplier = 0.7 + Math.random() * 0.6;
+    const finalSpeed = orbitalVelocity * velocityMultiplier;
+    const vx = ttauriStar.vx + Math.cos(tangentAngle) * finalSpeed;
+    const vy = ttauriStar.vy + Math.sin(tangentAngle) * finalSpeed;
+    const mass = debrisType === 'nebula' ? 50 : 
+                 debrisType === 'radiation' ? 0.1 :
+                 debrisType === 'spaceDust' ? 0.05 : 0.2;
+    const newAstro = createAstro(debrisType, x, y, vx, vy, mass);
+    if (newAstro) {
+        newAstro.origin = 'ttauri';
+        newAstro.lifeTime = 15000 + Math.random() * 20000;
+        newAstro.creationTime = Date.now();
+        newAstro.creationGlow = 1.0;
+    }
+    return newAstro;
+}
+function calculateOrbitalVelocity(centralBody, distance) {
+    const G = 6.67430e-2;
+    const M = centralBody.mass;
+    const r = Math.max(distance, centralBody.radius * 1.1);
+    const orbitalVelocity = Math.sqrt(G * M / r);
+    return orbitalVelocity * 0.8;
+}
+function drawSingularityStar(planet, ctx, radius, camera, graphicsQuality, visualTimeScale) {
+    const singularityRadius = planet.radius * camera.zoom;
+    const time = Date.now() * 0.001;
+    const centralGradient = ctx.createRadialGradient(0, 0, 0, 0, 0, singularityRadius * 0.8);
+    centralGradient.addColorStop(0, '#ffffffff');
+    centralGradient.addColorStop(0.3, '#4B0082');
+    centralGradient.addColorStop(0.7, '#2E0854');
+    centralGradient.addColorStop(1, '#000000');
+    ctx.beginPath();
+    ctx.arc(0, 0, singularityRadius * 0.8, 0, Math.PI * 2);
+    ctx.fillStyle = centralGradient;
+    ctx.fill();
+    const singularities = 3;
+    for (let i = 0; i < singularities; i++) {
+        const orbitAngle = (i / singularities) * Math.PI * 2 + time * (1 + i * 0.3);
+        const orbitDistance = singularityRadius * 0.6;
+        const singRadius = singularityRadius * 0.25;
+        const singX = Math.cos(orbitAngle) * orbitDistance;
+        const singY = Math.sin(orbitAngle) * orbitDistance;
+        ctx.save();
+        ctx.translate(singX, singY);
+        const singGradient = ctx.createRadialGradient(0, 0, 0, 0, 0, singRadius);
+        singGradient.addColorStop(0, '#ffffffff');
+        singGradient.addColorStop(0.5, '#9500ffff');
+        singGradient.addColorStop(1, '#6919b9ff');
+        ctx.beginPath();
+        ctx.arc(0, 0, singRadius, 0, Math.PI * 2);
+        ctx.fillStyle = singGradient;
+        ctx.fill();
+        ctx.beginPath();
+        ctx.arc(0, 0, singRadius * 1.3, 0, Math.PI * 2);
+        ctx.strokeStyle = `rgba(138, 43, 226, 0.8)`;
+        ctx.lineWidth = 3;
+        ctx.stroke();
+        ctx.restore();
+        if (i < singularities - 1) {
+            const nextAngle = ((i + 1) / singularities) * Math.PI * 2 + time * (1 + (i + 1) * 0.3);
+            const nextX = Math.cos(nextAngle) * orbitDistance;
+            const nextY = Math.sin(nextAngle) * orbitDistance;
+            ctx.beginPath();
+            ctx.moveTo(singX, singY);
+            ctx.lineTo(nextX, nextY);
+            ctx.strokeStyle = `rgba(134, 21, 215, 0.6)`;
+            ctx.lineWidth = 2;
+            ctx.stroke();
+        }
+    }
+    if (graphicsQuality !== 'low') {
+        ctx.globalAlpha = 0.3;
+        for (let i = 0; i < 12; i++) {
+            const distortionAngle = (i / 12) * Math.PI * 2;
+            const distortionWaves = 5;
+            ctx.save();
+            ctx.rotate(distortionAngle);
+            ctx.beginPath();
+            for (let j = 0; j <= 50; j++) {
+                const progress = j / 50;
+                const wave = Math.sin(progress * Math.PI * distortionWaves + time * 2) * 0.1;
+                const distortionRadius = singularityRadius * (1.5 + progress * 0.5 + wave);
+                const x = Math.cos(progress * Math.PI) * distortionRadius;
+                const y = Math.sin(progress * Math.PI) * distortionRadius;
+                if (j === 0) ctx.moveTo(x, y);
+                else ctx.lineTo(x, y);
+            }
+            ctx.strokeStyle = `rgba(138, 43, 226, ${0.5})`;
+            ctx.lineWidth = 1;
+            ctx.stroke();
+            ctx.restore();
+        }
+        ctx.globalAlpha = 1;
+    }
+    const distortionSize = singularityRadius * (1.2 + Math.sin(time * 2) * 0.3);
+    ctx.beginPath();
+    ctx.arc(0, 0, distortionSize, 0, Math.PI * 2);
+    ctx.strokeStyle = 'rgba(75, 0, 130, 0.7)';
+    ctx.lineWidth = 4;
+    ctx.stroke();
+}
+function createStarParticles(planet, count, color, size) {
+    if (!planet.particles) planet.particles = [];
+    for (let i = 0; i < count; i++) {
+        planet.particles.push({
+            x: (Math.random() - 0.5) * planet.radius * 2,
+            y: (Math.random() - 0.5) * planet.radius * 2,
+            size: size * (0.5 + Math.random() * 0.5),
+            color: color,
+            life: 1,
+            speed: 0.1 + Math.random() * 0.2
+        });
+    }
 }
 function drawRocketDetails(rocket, ctx, screenRadius) {
     const radius = (typeof screenRadius === 'number') ? screenRadius : (rocket.radius * camera.zoom);
@@ -4022,6 +5127,18 @@ function gameLoop(timestamp) {
         updateShipMovement(deltaTime);
         cleanupDestroyedShips();
         updateSpectateCamera();
+        updateFunSpaceColors(deltaTime);
+        planets.forEach(planet => {
+            if (planet.type === 'ttauriStar' && planet.debrisGeneration) {
+                const currentTime = Date.now();
+                if (currentTime - planet.lastDebrisGeneration > planet.debrisCooldown) {
+                    if (Math.random() < 0.3) {
+                        generateTtauriDebris(planet);
+                    }
+                    planet.lastDebrisGeneration = currentTime;
+                }
+            }
+        });
         if (gameState === 'playing') {
             fgpRocketGeneration(deltaTime);
         }
@@ -4989,6 +6106,27 @@ function spawnRocketPeriodically() {
 function isSpaceshipType(type) {
     return ['rocket', 'spaceship', 'superShip', 'satellite'].includes(type);
 }
+function resetMemoryVariables() {
+    tsCoins = 0;
+    gameStartCount = 0;
+    purchasedItems = {};
+    unlockedAstroTypes = [];
+    unlockedConfigs = [];
+    achievementsState = {};
+    hasAgreedToWarnings = false;
+    planets = [];
+    universeAge = 0;
+    universeTime = 0;
+    camera = { x: 0, y: 0, zoom: 10 };
+    timeScale = 1;
+    spaceColor = '#000000';
+    gravityFactor = 1.0;
+    dragFactor = 0.0;
+}
+const secretResetBtn = document.getElementById('secretResetBtn');
+if (secretResetBtn) {
+    secretResetBtn.addEventListener('click', resetEverythingDev);
+}
 function cleanupDestroyedShips() {
     for (let i = planets.length - 1; i >= 0; i--) {
         const obj = planets[i];
@@ -5612,6 +6750,15 @@ function openShop() {
             shopOverlay.classList.add('active');
         }, 10);
         document.body.style.overflow = 'hidden';
+        updateShopDisplay();
+        setTimeout(() => {
+            const allIcons = document.querySelectorAll('.shop-item .tsCoinsIcon');
+            allIcons.forEach(icon => {
+                icon.style.width = '16px';
+                icon.style.height = '16px';
+                icon.style.display = 'inline-block';
+            });
+        }, 100);
     }
 }
 function closeShop() {
@@ -5634,6 +6781,1584 @@ function openManual() {
         document.body.style.overflow = 'hidden';
     }
 }
+function isItemPurchased(itemId) {
+    return purchasedItems[itemId] === true;
+}
+function purchaseItem(itemId, price) {
+    if (tsCoins >= price) {
+        tsCoins -= price;
+        localStorage.setItem('tsCoins', tsCoins.toString());
+        purchasedItems[itemId] = true;
+        localStorage.setItem('siu2d_purchased_items', JSON.stringify(purchasedItems));
+        updateTSCoinsDisplay();
+        showNotification(`Purchased ${getItemName(itemId)} for ${price} TS Coins! Reloading...`);
+        applyPurchasedItem(itemId);
+        setTimeout(() => {
+            location.reload();
+        }, 1500);
+        
+        return true;
+    } else {
+        showNotification("Not enough TS Coins!");
+        return false;
+    }
+}
+function getItemName(itemId) {
+    const itemNames = {
+        'solar_system': 'Solar System',
+        'complete_solar_system': 'Alternative Solar System',
+        'habitable_alpha': 'HABITABLE - ALPHA',
+        'trappist_1': 'TRAPPIST-1',
+        'bizarre_stars': 'Bizarre Stars',
+        'fun_space': 'The Fun Space',
+        'pixel_by_pixel': 'Pixel by Pixel'
+    };
+    return itemNames[itemId] || itemId;
+}
+function applyPurchasedItem(itemId) {
+    switch(itemId) {
+        case 'solar_system':
+            createSolarSystemSave();
+            break;
+        case 'complete_solar_system':
+            createCompleteSolarSystemSave();
+            break;
+        case 'habitable_alpha':
+            createHabitableAlphaSave();
+            break;
+        case 'trappist_1':
+            createTrappist1Save();
+            break;
+        case 'bizarre_stars':
+            unlockBizarreStars();
+            break;
+        case 'fun_space':
+            unlockFunSpace();
+            break;
+        case 'pixel_by_pixel':
+            unlockPixelMode();
+            break;
+        case 'singularity':
+            unlockSingularity();
+            break;
+    }
+}
+function updateShopDisplay() {
+    document.querySelectorAll('.shop-item').forEach(item => {
+        const itemId = item.getAttribute('data-item-id');
+        if (itemId && purchasedItems[itemId]) {
+            item.classList.add('purchased');
+            item.style.pointerEvents = 'none';
+            item.style.opacity = '0.7';
+        }
+    });
+}
+function initializeShop() {
+    updateShopDisplay();
+    document.querySelectorAll('.shop-item').forEach(item => {
+        const itemId = item.getAttribute('data-item-id');
+        const price = parseInt(item.getAttribute('data-price'));
+        if (itemId && price) {
+            item.addEventListener('click', function() {
+                if (!isItemPurchased(itemId)) {
+                    purchaseItem(itemId, price);
+                } else {
+                    applyPurchasedItem(itemId);
+                    showNotification(`${getItemName(itemId)} já está ativo!`);
+                }
+            });
+        }
+    });
+    if (purchasedItems.fun_space) {
+        const funSpaceToggle = document.getElementById('funSpaceToggle');
+        if (funSpaceToggle) {
+            funSpaceToggle.disabled = false;
+            funSpaceToggle.parentElement.style.opacity = "1";
+        }
+    } else {
+        const funSpaceToggle = document.getElementById('funSpaceToggle');
+        if (funSpaceToggle) {
+            funSpaceToggle.disabled = true;
+            funSpaceToggle.parentElement.style.opacity = "0.5";
+        }
+    }
+    if (purchasedItems.pixel_by_pixel) {
+        const pixelModeToggle = document.getElementById('pixelModeToggle');
+        if (pixelModeToggle) {
+            pixelModeToggle.disabled = false;
+            pixelModeToggle.parentElement.style.opacity = "1";
+            pixelMode = localStorage.getItem('pixelMode') === 'true';
+            pixelModeToggle.checked = pixelMode;
+        }
+    } else {
+        const pixelModeToggle = document.getElementById('pixelModeToggle');
+        if (pixelModeToggle) {
+            pixelModeToggle.disabled = true;
+            pixelModeToggle.parentElement.style.opacity = "0.5";
+            pixelModeToggle.checked = false;
+        }
+    }
+    const pixelModeToggle = document.getElementById('pixelModeToggle');
+    if (pixelModeToggle) {
+        pixelModeToggle.addEventListener('change', function() {
+            if (purchasedItems.pixel_by_pixel) {
+                togglePixelMode();
+            } else {
+                this.checked = false;
+                showNotification("Purchase Pixel Mode from the shop first!");
+            }
+        });
+    }
+    if (purchasedItems.solar_system) {
+        const solarSystemItem = document.querySelector('[data-item-id="solar_system"]');
+        if (solarSystemItem) {
+            solarSystemItem.classList.add('purchased');
+        }
+    }
+    if (purchasedItems.complete_solar_system) {
+        const altSolarSystemItem = document.querySelector('[data-item-id="complete_solar_system"]');
+        if (altSolarSystemItem) {
+            altSolarSystemItem.classList.add('purchased');
+        }
+    }
+    if (purchasedItems.habitable_alpha) {
+        const habitableAlphaItem = document.querySelector('[data-item-id="habitable_alpha"]');
+        if (habitableAlphaItem) {
+            habitableAlphaItem.classList.add('purchased');
+        }
+    }
+    if (purchasedItems.trappist_1) {
+        const trappistItem = document.querySelector('[data-item-id="trappist_1"]');
+        if (trappistItem) {
+            trappistItem.classList.add('purchased');
+        }
+    }
+    if (purchasedItems.bizarre_stars) {
+        const bizarreStarsItem = document.querySelector('[data-item-id="bizarre_stars"]');
+        if (bizarreStarsItem) {
+            bizarreStarsItem.classList.add('purchased');
+        }
+    }
+    document.querySelectorAll('.shop-item').forEach(item => {
+        const itemId = item.getAttribute('data-item-id');
+        if (itemId && purchasedItems[itemId]) {
+            item.classList.add('purchased');
+            if (!item.querySelector('.purchased-badge')) {
+                const badge = document.createElement('div');
+                badge.className = 'purchased-badge';
+                badge.textContent = 'PURCHASED';
+                badge.style.cssText = `
+                    position: absolute;
+                    top: 10px;
+                    right: 10px;
+                    background: #4CAF50;
+                    color: white;
+                    padding: 2px 8px;
+                    border-radius: 10px;
+                    font-size: 0.7em;
+                    font-weight: bold;
+                `;
+                item.appendChild(badge);
+            }
+        }
+    });
+}
+function createSpecialSave(saveName, saveData) {
+    const saves = JSON.parse(localStorage.getItem('siu2d_saves') || '[]');
+    const existingIndex = saves.findIndex(save => save.name === saveName && save.isSpecial);
+    const specialSave = {
+        name: saveName,
+        date: Date.now(),
+        data: saveData,
+        isSpecial: true,
+        cannotDelete: true,
+        description: getSaveDescription(saveName),
+        thumbnail: getSaveThumbnail(saveName)
+    };
+    if (existingIndex !== -1) {
+        saves[existingIndex] = specialSave;
+    } else {
+        saves.push(specialSave);
+    }
+    localStorage.setItem('siu2d_saves', JSON.stringify(saves));
+    showNotification(`Save especial "${saveName}" criado com sucesso!`);
+}
+function getSaveDescription(saveName) {
+    const descriptions = {
+    "Solar System": "Our solar system with all 8 major planets",
+    "Habitable System ALPHA": "Star system with a perfectly habitable planet",
+    "TRAPPIST-1": "System with 7 rocky planets, 3 in the habitable zone"
+    };
+    return descriptions[saveName] || "Special Save";
+}
+function getSaveThumbnail(saveName) {
+    return null;
+}
+function createSolarSystemSave() {
+    const solarSystemData = {
+        planets: [
+            { 
+                type: 'star', 
+                x: 0, y: 0, 
+                vx: 0, vy: 0, 
+                mass: 500000,
+                radius: 30,
+                name: "Sun",
+                color: "#FFD700",
+                temperature: 10000,
+                locked: true,
+            },
+            { 
+                type: 'meteoroid', 
+                x: 0, y: 0, 
+                vx: 0, vy: 0, 
+                mass: 1, 
+                radius: 1,
+                name: "a:code",
+                locked: true
+            },
+            { 
+                type: 'rockyPlanet', 
+                x: 1800, y: 0, 
+                vx: 0, vy: 8.5, 
+                mass: 3.3,
+                radius: 3,
+                name: "Mercúrio",
+                color: "#8C7853",
+                temperature: 167,
+                gasValue: 2,
+                waterValue: 10,
+                cloudsValue: 1,
+                locked: true
+            },
+            { 
+                type: 'rockyPlanet', 
+                x: 3500, y: 0, 
+                vx: 0, vy: 7.3, 
+                mass: 48.7,
+                radius: 6,
+                name: "Vênus",
+                color: "#E6E6FA",
+                temperature: 462,
+                gasValue: 100,
+                waterValue: 30,
+                cloudsValue: 100,
+                locked: true,
+            },
+            { 
+                type: 'rockyPlanet', 
+                x: 6000, y: 0, 
+                vx: 0, vy: 6.2, 
+                mass: 50,
+                radius: 6.5,
+                name: "Terra",
+                color: "#1E90FF",
+                landColor: "#228B22",
+                waterValue: 50,
+                cloudsValue: 50,
+                gasValue: 50,
+                temperature: 20,
+                lifeChance: 100,
+                biomass: 5000,
+                population: 8000000000,
+                intelligentSpecies: ["Homo Sapiens Sapiens"],
+                knowledgePoints: 1500,
+                locked: true,
+                continents: [
+                    [
+                        {x: 0.2, y: 0.3}, {x: 0.4, y: 0.2}, {x: 0.6, y: 0.4}, 
+                        {x: 0.5, y: 0.6}, {x: 0.3, y: 0.5}
+                    ],
+                    [
+                        {x: -0.3, y: -0.4}, {x: -0.1, y: -0.2}, {x: 0.1, y: -0.4},
+                        {x: 0.0, y: -0.6}
+                    ]
+                ]
+            },
+            { 
+                type: 'planetoid', 
+                x: 6005, y: 15, 
+                vx: 1.2, vy: 6.0, 
+                mass: 0.6,
+                radius: 1.8,
+                name: "Lua",
+                color: "#C0C0C0",
+                locked: true
+            },
+            { 
+                type: 'rockyPlanet', 
+                x: 7000, y: 0, 
+                vx: 0, vy: 5.0, 
+                mass: 5.3,
+                radius: 4,
+                name: "Marte",
+                color: "#FF4500",
+                temperature: -63,
+                waterValue: 40,
+                cloudsValue: 10,
+                locked: true,
+            },
+            { 
+                type: 'asteroid', 
+                x: 7005, y: 40, 
+                vx: 0, vy: 4.8, 
+                mass: 0.2,
+                radius: 2,
+                name: "Phobos",
+                locked: true
+            },
+            { 
+                type: 'asteroid', 
+                x: 7010, y: 40, 
+                vx: 0, vy: 4.8, 
+                mass: 0.5,
+                radius: 2,
+                name: "Deimos",
+                locked: true
+            },
+            { 
+                type: 'asteroid', 
+                x: 7503, y: 10, 
+                vx: 0, vy: 4.8, 
+                mass: 0.2,
+                radius: 2,
+                name: "Asteroid",
+                locked: true
+            },
+            { 
+                type: 'asteroid', 
+                x: 7513, y: 20, 
+                vx: 0, vy: 4.8, 
+                mass: 0.2,
+                radius: 2,
+                name: "Asteroid",
+                locked: true
+            },
+            { 
+                type: 'asteroid', 
+                x: 7503, y: 1, 
+                vx: 0, vy: 4.8, 
+                mass: 0.2,
+                radius: 2,
+                name: "Asteroid",
+                locked: true
+            },
+            { 
+                type: 'asteroid', 
+                x: 7517, y: 50, 
+                vx: 0, vy: 4.8, 
+                mass: 0.2,
+                radius: 2,
+                name: "Asteroid",
+                locked: true
+            },
+            { 
+                type: 'planetoid', 
+                x: 7500, y: 40, 
+                vx: 0, vy: 4.8, 
+                mass: 1,
+                radius: 2,
+                name: "Ceres",
+                locked: true
+            },
+            { 
+                type: 'gasGiant', 
+                x: 17000, y: 0, 
+                vx: 0, vy: 4.2, 
+                mass: 15890,
+                radius: 18,
+                name: "Júpiter",
+                color: "#DAA520",
+                temperature: -108,
+                gasValue: 95,
+                locked: true
+            },
+            { 
+                type: 'planetoid', 
+                x: 17010, y: 50, 
+                vx: 0.5, vy: 4.2, 
+                mass: 0.8,
+                radius: 2.5,
+                name: "Io",
+                color: "#FFA500",
+                locked: true
+            },
+            { 
+                type: 'planetoid', 
+                x: 17020, y: 80, 
+                vx: 0.4, vy: 4.2, 
+                mass: 0.9,
+                radius: 2.7,
+                name: "Europa",
+                color: "#FFD700",
+                locked: true
+            },
+            { 
+                type: 'planetoid', 
+                x: 17030, y: 110, 
+                vx: 0.3, vy: 4.2, 
+                mass: 1.2,
+                radius: 3.0,
+                name: "Ganymede",
+                color: "#DAA520",
+                locked: true
+            },
+            { 
+                type: 'planetoid', 
+                x: 17040, y: 140, 
+                vx: 0.2, vy: 4.2, 
+                mass: 1.1,
+                radius: 2.9,
+                name: "Callisto",
+                color: "#A9A9A9",
+                locked: true
+            },
+            { 
+                type: 'gasGiant', 
+                x: 20000, y: 0, 
+                vx: 0, vy: 3.4, 
+                mass: 4760,
+                radius: 15,
+                name: "Saturno",
+                color: "#F0E68C",
+                temperature: -139,
+                gasValue: 90,
+                rings: true,
+                ringMass: 40,
+                locked: true
+            },
+            { 
+                type: 'planetoid', 
+                x: 20010, y: 40, 
+                vx: 0.4, vy: 3.4, 
+                mass: 0.6,
+                radius: 2.2,
+                name: "Mimas",
+                color: "#C0C0C0",
+                locked: true
+            },
+            { 
+                type: 'planetoid', 
+                x: 20020, y: 70, 
+                vx: 0.3, vy: 3.4, 
+                mass: 0.7,
+                radius: 2.5,
+                name: "Enceladus",
+                color: "#F5F5F5",
+                locked: true
+            },
+            { 
+                type: 'planetoid', 
+                x: 20030, y: 100, 
+                vx: 0.2, vy: 3.4, 
+                mass: 1.0,
+                radius: 3.0,
+                name: "Titan",
+                color: "#FFA500",
+                locked: true
+            },
+            { 
+                type: 'gasGiant', 
+                x: 25000, y: 0, 
+                vx: 0, vy: 2.9, 
+                mass: 725,
+                radius: 12,
+                name: "Urano",
+                color: "#AFEEEE",
+                temperature: -197,
+                gasValue: 85,
+                locked: true
+            },
+            { 
+                type: 'planetoid', 
+                x: 25010, y: 30, 
+                vx: 0.3, vy: 2.9, 
+                mass: 0.5,
+                radius: 2.0,
+                name: "Miranda",
+                color: "#D3D3D3",
+                locked: true
+            },
+            { 
+                type: 'planetoid', 
+                x: 25020, y: 60, 
+                vx: 0.2, vy: 2.9, 
+                mass: 0.6,
+                radius: 2.3,
+                name: "Ariel",
+                color: "#F0F8FF",
+                locked: true
+            },
+            { 
+                type: 'planetoid', 
+                x: 25030, y: 90, 
+                vx: 0.1, vy: 2.9, 
+                mass: 0.7,
+                radius: 2.5,
+                name: "Umbriel",
+                color: "#A9A9A9",
+                locked: true
+            },
+            { 
+                type: 'planetoid', 
+                x: 25040, y: 120, 
+                vx: 0.1, vy: 2.9, 
+                mass: 0.8,
+                radius: 2.7,
+                name: "Titania",
+                color: "#F5F5F5",
+                locked: true
+            },
+            { 
+                type: 'planetoid', 
+                x: 25050, y: 150, 
+                vx: 0.1, vy: 2.9, 
+                mass: 0.8,
+                radius: 2.7,
+                name: "Oberon",
+                color: "#D3D3D3",
+                locked: true
+            },
+            { 
+                type: 'gasGiant', 
+                x: 28000, y: 0, 
+                vx: 0, vy: 2.6, 
+                mass: 855,
+                radius: 11,
+                name: "Netuno",
+                color: "#1E90FF",
+                temperature: -201,
+                gasValue: 85,
+                locked: true
+            },
+            { 
+                type: 'planetoid', 
+                x: 28010, y: 40, 
+                vx: 0.3, vy: 2.6, 
+                mass: 0.7,
+                radius: 2.5,
+                name: "Triton",
+                color: "#ADD8E6",
+                locked: true
+            },
+            { 
+                type: 'planetoid', 
+                x: 45000, y: -35, 
+                vx: 0, vy: 4.9, 
+                mass: 1.1,
+                radius: 1.5,
+                name: "Plutão",
+                locked: true
+            },
+            { 
+                type: 'planetoid', 
+                x: 45005, y: -30, 
+                vx: 0.1, vy: 4.9, 
+                mass: 0.3,
+                radius: 1.0,
+                name: "Caronte",
+                locked: true
+            }
+        ],
+        universeAge: 4.6e9,
+        universeTime: 0,
+        camera: { x: 0, y: 0, zoom: 0.8 }
+    };
+    createSpecialSave("Solar System", solarSystemData);
+}
+function createCompleteSolarSystemSave() {
+    const completeSolarSystemData = {
+        planets: [
+            { 
+                type: 'star', 
+                x: 0, y: 0, 
+                vx: 0, vy: 0, 
+                mass: 500000,
+                radius: 30,
+                name: "Sun",
+                color: "#FFD700",
+                temperature: 10000,
+                locked: true
+            },
+            { 
+                type: 'redDwarf', 
+                x: 500, y: 0, 
+                vx: 0, vy: 0, 
+                mass: 500000,
+                radius: 30,
+                name: "Nêmisis",
+                color: "#f00050",
+                temperature: 10000,
+                locked: true
+            },
+            { 
+                type: 'meteoroid', 
+                x: 0, y: 0, 
+                vx: 0, vy: 0, 
+                mass: 1, 
+                radius: 1,
+                name: "a:code",
+                locked: true
+            },
+            { 
+                type: 'meteoroid', 
+                x: 500, y: 0, 
+                vx: 0, vy: 0, 
+                mass: 1, 
+                radius: 1,
+                name: "b:code",
+                locked: true
+            },
+            { 
+                type: 'rockyPlanet', 
+                x: 1800, y: 0, 
+                vx: 0, vy: 8.5, 
+                mass: 3.3,
+                radius: 3,
+                name: "Mercúrio",
+                color: "#8C7853",
+                temperature: 167,
+                gasValue: 2,
+                waterValue: 10,
+                cloudsValue: 1,
+                locked: true
+            },
+            { 
+                type: 'rockyPlanet', 
+                x: 3500, y: 0, 
+                vx: 0, vy: 7.3, 
+                mass: 48.7,
+                radius: 6,
+                name: "Vênus",
+                color: "#E6E6FA",
+                temperature: 462,
+                gasValue: 100,
+                waterValue: 30,
+                cloudsValue: 100,
+                locked: true,
+            },
+            { 
+                type: 'rockyPlanet', 
+                x: 6000, y: 0, 
+                vx: 0, vy: 6.2, 
+                mass: 50,
+                radius: 6.5,
+                name: "Terra",
+                color: "#1E90FF",
+                landColor: "#228B22",
+                waterValue: 50,
+                cloudsValue: 50,
+                gasValue: 50,
+                temperature: 20,
+                lifeChance: 100,
+                biomass: 5000,
+                population: 8000000000,
+                intelligentSpecies: ["Homo Sapiens Sapiens"],
+                knowledgePoints: 1500,
+                locked: true,
+                continents: [
+                    [
+                        {x: 0.2, y: 0.3}, {x: 0.4, y: 0.2}, {x: 0.6, y: 0.4}, 
+                        {x: 0.5, y: 0.6}, {x: 0.3, y: 0.5}
+                    ],
+                    [
+                        {x: -0.3, y: -0.4}, {x: -0.1, y: -0.2}, {x: 0.1, y: -0.4},
+                        {x: 0.0, y: -0.6}
+                    ]
+                ]
+            },
+            { 
+                type: 'planetoid', 
+                x: 6005, y: 15, 
+                vx: 1.2, vy: 6.0, 
+                mass: 0.6,
+                radius: 1.8,
+                name: "Lua",
+                color: "#C0C0C0",
+                locked: true
+            },
+            { 
+                type: 'rockyPlanet', 
+                x: 6500, y: 0, 
+                vx: 0, vy: 5.0, 
+                mass: 5.3,
+                radius: 4,
+                name: "Theia",
+                color: "#a0f880",
+                temperature: -63,
+                waterValue: 40,
+                cloudsValue: 10,
+                locked: true,
+                rings: true,
+                ringMass: 40,
+                continents: [
+                    [
+                        {x: 0.2, y: 0.3}, {x: 0.4, y: 0.2}, {x: 0.6, y: 0.4}, 
+                        {x: 0.5, y: 0.6}, {x: 0.3, y: 0.5}
+                    ],
+                    [
+                        {x: -0.3, y: -0.4}, {x: -0.1, y: -0.2}, {x: 0.1, y: -0.4},
+                        {x: 0.0, y: -0.6}
+                    ]
+                ]
+            },
+            { 
+                type: 'rockyPlanet', 
+                x: 6650, y: 0, 
+                vx: 0, vy: 5.0, 
+                mass: 5.3,
+                radius: 4,
+                name: "Planet - V",
+                color: "#a0f880",
+                temperature: -63,
+                waterValue: 40,
+                cloudsValue: 10,
+                locked: true,
+                rings: true,
+                ringMass: 40,
+                continents: [
+                    [
+                        {x: 0.2, y: 0.3}, {x: 0.4, y: 0.2}, {x: 0.6, y: 0.4}, 
+                        {x: 0.5, y: 0.6}, {x: 0.3, y: 0.5}
+                    ],
+                    [
+                        {x: -0.3, y: -0.4}, {x: -0.1, y: -0.2}, {x: 0.1, y: -0.4},
+                        {x: 0.0, y: -0.6}
+                    ]
+                ]
+            },
+            { 
+                type: 'rockyPlanet', 
+                x: 7000, y: 0, 
+                vx: 0, vy: 5.0, 
+                mass: 5.3,
+                radius: 4,
+                name: "Marte",
+                color: "#FF4500",
+                temperature: -63,
+                waterValue: 40,
+                cloudsValue: 10,
+                locked: true,
+                continents: [
+                    [
+                        {x: 0.2, y: 0.3}, {x: 0.4, y: 0.2}, {x: 0.6, y: 0.4}, 
+                        {x: 0.5, y: 0.6}, {x: 0.3, y: 0.5}
+                    ],
+                    [
+                        {x: -0.3, y: -0.4}, {x: -0.1, y: -0.2}, {x: 0.1, y: -0.4},
+                        {x: 0.0, y: -0.6}
+                    ]
+                ]
+            },
+            { 
+                type: 'asteroid', 
+                x: 7005, y: 40, 
+                vx: 0, vy: 4.8, 
+                mass: 0.2,
+                radius: 2,
+                name: "Phobos",
+                locked: true
+            },
+            { 
+                type: 'asteroid', 
+                x: 7010, y: 40, 
+                vx: 0, vy: 4.8, 
+                mass: 0.5,
+                radius: 2,
+                name: "Deimos",
+                locked: true
+            },
+            { 
+                type: 'asteroid', 
+                x: 7503, y: 10, 
+                vx: 0, vy: 4.8, 
+                mass: 0.2,
+                radius: 2,
+                name: "Asteroid",
+                locked: true
+            },
+            { 
+                type: 'asteroid', 
+                x: 7513, y: 20, 
+                vx: 0, vy: 4.8, 
+                mass: 0.2,
+                radius: 2,
+                name: "Asteroid",
+                locked: true
+            },
+            { 
+                type: 'asteroid', 
+                x: 7503, y: 1, 
+                vx: 0, vy: 4.8, 
+                mass: 0.2,
+                radius: 2,
+                name: "Asteroid",
+                locked: true
+            },
+            { 
+                type: 'asteroid', 
+                x: 7517, y: 50, 
+                vx: 0, vy: 4.8, 
+                mass: 0.2,
+                radius: 2,
+                name: "Asteroid",
+                locked: true
+            },
+            { 
+                type: 'planetoid', 
+                x: 7500, y: 40, 
+                vx: 0, vy: 4.8, 
+                mass: 1,
+                radius: 2,
+                name: "Ceres",
+                locked: true
+            },
+            { 
+                type: 'rockyPlanet', 
+                x: 6900, y: 0, 
+                vx: 0, vy: 5.0, 
+                mass: 5.3,
+                radius: 4,
+                name: "Faetonte",
+                color: "#a0a880",
+                temperature: -63,
+                waterValue: 40,
+                cloudsValue: 10,
+                locked: true,
+                continents: [
+                    [
+                        {x: 0.2, y: 0.3}, {x: 0.4, y: 0.2}, {x: 0.6, y: 0.4}, 
+                        {x: 0.5, y: 0.6}, {x: 0.3, y: 0.5}
+                    ],
+                    [
+                        {x: -0.3, y: -0.4}, {x: -0.1, y: -0.2}, {x: 0.1, y: -0.4},
+                        {x: 0.0, y: -0.6}
+                    ]
+                ]
+            },
+            { 
+                type: 'gasGiant', 
+                x: 17000, y: 0, 
+                vx: 0, vy: 4.2, 
+                mass: 15890,
+                radius: 18,
+                name: "Júpiter",
+                color: "#DAA520",
+                temperature: -108,
+                gasValue: 95,
+                rings: true,
+                ringMass: 2,
+                locked: true
+            },
+            { 
+                type: 'planetoid', 
+                x: 17010, y: 50, 
+                vx: 0.5, vy: 4.2, 
+                mass: 0.8,
+                radius: 2.5,
+                name: "Io",
+                color: "#FFA500",
+                locked: true
+            },
+            { 
+                type: 'planetoid', 
+                x: 17020, y: 80, 
+                vx: 0.4, vy: 4.2, 
+                mass: 0.9,
+                radius: 2.7,
+                name: "Europa",
+                color: "#FFD700",
+                locked: true
+            },
+            { 
+                type: 'planetoid', 
+                x: 17030, y: 110, 
+                vx: 0.3, vy: 4.2, 
+                mass: 1.2,
+                radius: 3.0,
+                name: "Ganymede",
+                color: "#DAA520",
+                locked: true
+            },
+            { 
+                type: 'planetoid', 
+                x: 17040, y: 140, 
+                vx: 0.2, vy: 4.2, 
+                mass: 1.1,
+                radius: 2.9,
+                name: "Callisto",
+                color: "#A9A9A9",
+                locked: true
+            },
+            { 
+                type: 'gasGiant', 
+                x: 20000, y: 0, 
+                vx: 0, vy: 3.4, 
+                mass: 4760,
+                radius: 15,
+                name: "Saturno",
+                color: "#F0E68C",
+                temperature: -139,
+                gasValue: 90,
+                rings: true,
+                ringMass: 40,
+                locked: true
+            },
+            { 
+                type: 'planetoid', 
+                x: 20010, y: 40, 
+                vx: 0.4, vy: 3.4, 
+                mass: 0.6,
+                radius: 2.2,
+                name: "Mimas",
+                color: "#C0C0C0",
+                locked: true
+            },
+            { 
+                type: 'planetoid', 
+                x: 20020, y: 70, 
+                vx: 0.3, vy: 3.4, 
+                mass: 0.7,
+                radius: 2.5,
+                name: "Enceladus",
+                color: "#F5F5F5",
+                locked: true
+            },
+            { 
+                type: 'planetoid', 
+                x: 20030, y: 100, 
+                vx: 0.2, vy: 3.4, 
+                mass: 1.0,
+                radius: 3.0,
+                name: "Titan",
+                color: "#FFA500",
+                locked: true
+            },
+            { 
+                type: 'gasGiant', 
+                x: 25000, y: 0, 
+                vx: 0, vy: 2.9, 
+                mass: 725,
+                radius: 12,
+                name: "Urano",
+                color: "#AFEEEE",
+                temperature: -197,
+                gasValue: 85,
+                rings: true,
+                ringMass: 10,
+                locked: true
+            },
+            { 
+                type: 'planetoid', 
+                x: 25010, y: 30, 
+                vx: 0.3, vy: 2.9, 
+                mass: 0.5,
+                radius: 2.0,
+                name: "Miranda",
+                color: "#D3D3D3",
+                locked: true
+            },
+            { 
+                type: 'planetoid', 
+                x: 25020, y: 60, 
+                vx: 0.2, vy: 2.9, 
+                mass: 0.6,
+                radius: 2.3,
+                name: "Ariel",
+                color: "#F0F8FF",
+                locked: true
+            },
+            { 
+                type: 'planetoid', 
+                x: 25030, y: 90, 
+                vx: 0.1, vy: 2.9, 
+                mass: 0.7,
+                radius: 2.5,
+                name: "Umbriel",
+                color: "#A9A9A9",
+                locked: true
+            },
+            { 
+                type: 'planetoid', 
+                x: 25040, y: 120, 
+                vx: 0.1, vy: 2.9, 
+                mass: 0.8,
+                radius: 2.7,
+                name: "Titania",
+                color: "#F5F5F5",
+                locked: true
+            },
+            { 
+                type: 'planetoid', 
+                x: 25050, y: 150, 
+                vx: 0.1, vy: 2.9, 
+                mass: 0.8,
+                radius: 2.7,
+                name: "Oberon",
+                color: "#D3D3D3",
+                locked: true
+            },
+            { 
+                type: 'gasGiant', 
+                x: 28000, y: 0, 
+                vx: 0, vy: 2.6, 
+                mass: 855,
+                radius: 11,
+                name: "Netuno",
+                color: "#1E90FF",
+                temperature: -201,
+                gasValue: 85,
+                ring: true,
+                ringMass: 5,
+                locked: true
+            },
+            { 
+                type: 'planetoid', 
+                x: 28010, y: 40, 
+                vx: 0.3, vy: 2.6, 
+                mass: 0.7,
+                radius: 2.5,
+                name: "Triton",
+                color: "#ADD8E6",
+                locked: true
+            },{ 
+                type: 'gasGiant', 
+                x: 28000, y: 0, 
+                vx: 0, vy: 2.6, 
+                mass: 855,
+                radius: 11,
+                name: "Planet - X",
+                color: "#1020FF",
+                temperature: -201,
+                gasValue: 85,
+                ring: true,
+                ringMass: 5,
+                locked: true
+            },
+            { 
+                type: 'planetoid', 
+                x: 45000, y: -35, 
+                vx: 0, vy: 4.9, 
+                mass: 1.1,
+                radius: 1.5,
+                name: "Plutão",
+                locked: true
+            },
+            { 
+                type: 'planetoid', 
+                x: 45005, y: -30, 
+                vx: 0.1, vy: 4.9, 
+                mass: 0.3,
+                radius: 1.0,
+                name: "Caronte",
+                locked: true
+            }
+        ],
+        universeAge: 4.6e9,
+        universeTime: 0,
+        camera: { x: 0, y: 0, zoom: 0.8 }
+    };
+    createSpecialSave("Alternative Solar System", completeSolarSystemData);
+}
+function createHabitableAlphaSave() {
+    const habitableSystem = {
+        planets: [
+            { 
+                type: 'star', 
+                x: 0, y: 0, 
+                vx: 0, vy: 0, 
+                mass: 500000,
+                radius: calculateRadiusForType(),
+                name: "Alpha Centauri A",
+                color: "#FFD700",
+                temperature: 10000,
+                locked: true
+            },
+            { 
+                type: 'meteoroid', 
+                x: 0, y: 0, 
+                vx: 0, vy: 0, 
+                mass:50,
+                radius: calculateRadiusForType(),
+                name: "Alpha Centauri A",
+                color: "#FFD700",
+                temperature: 10000,
+                locked: true
+            },
+            {
+                type: 'rockyPlanet',
+                x: 6000, y: 0,
+                vx: 0, vy: 5.8,
+                mass: 300,
+                radius: calculateRadiusForType(),
+                name: "Habitable Planet",
+                color: "#1E90FF",
+                landColor: "#32CD32",
+                waterValue: 60,
+                gasValue: 60,
+                cloudsValue: 60,
+                temperature: 18,
+                lifeChance: 92,
+                biomassValue: 12000,
+                populationValue: 25000000,
+                intelligentSpecies: ["-.-"],
+                knowledgePoints: 800,
+                locked: true,
+                continents: [
+                    [
+                        {x: 0.2, y: 0.3}, {x: 0.4, y: 0.2}, {x: 0.6, y: 0.4}, 
+                        {x: 0.5, y: 0.6}, {x: 0.3, y: 0.5}
+                    ],
+                    [
+                        {x: -0.3, y: -0.4}, {x: -0.1, y: -0.2}, {x: 0.1, y: -0.4},
+                        {x: 0.0, y: -0.6}
+                    ]
+                ]
+            },
+            {
+                type: 'planetoid',
+                x: 6005, y: 20,
+                vx: 1.5, vy: 5.7,
+                mass: 0.8,
+                radius: 2,
+                name: "B-0001",
+                color: "#D3D3D3",
+                locked: true,
+            },
+            {
+                type: 'rockyPlanet',
+                x: 1100, y: 0,
+                vx: 0, vy: 7.2,
+                mass: 45,
+                radius: 6,
+                name: "Ignis",
+                color: "#FF6347",
+                temperature: 450,
+                cloudsValue: 95,
+                locked: true,
+            },
+            {
+                type: 'rockyPlanet',
+                x: 7000, y: 0,
+                vx: 0, vy: 4.5,
+                mass: 28,
+                radius: 5,
+                name: "Aridus",
+                color: "#CD5C5C",
+                temperature: -40,
+                waterValue: 5,
+                locked: true,
+            },
+            {
+                type: 'gasGiant',
+                x: 9500, y: 0,
+                vx: 0, vy: 3.2,
+                mass: 8500,
+                radius: 14,
+                name: "Jovian",
+                color: "#DEB887",
+                temperature: -120,
+                gasValue: 88,
+                rings: true,
+                ringMass: 35,
+                locked: true,
+            }
+        ],
+        universeAge: 5.2e9,
+        universeTime: 0,
+        camera: { x: 0, y: 0, zoom: 0.7 }
+    };
+    createSpecialSave("Sistema Habitável ALPHA", habitableSystem);
+}
+function resetEverythingDev() {
+    const keysToRemove = [
+        'siu2d_achievements',
+        'siu2d_purchased_items',
+        'siu2d_unlocked_astros',
+        'siu2d_unlocked_configs',
+        'siu2d_saves',
+        'tsCoins',
+        'siu2d_lang',
+        'gameStartCount',
+        'hasAgreedToWarnings',
+        'crazyClicks',
+    ];
+    keysToRemove.forEach(key => {
+        localStorage.removeItem(key);
+    });
+    for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (key && key.startsWith('siu2d_')) {
+            localStorage.removeItem(key);
+        }
+    }
+    resetMemoryVariables();
+    showNotification("Reset completo realizado! Recarregando...", 3000);
+    setTimeout(() => {
+        location.reload();
+    }, 1000);
+}
+function createTrappist1Save() {
+    const trappistSystem = {
+        planets: [
+            {
+                type: 'redDwarf',
+                x: 0, y: 0,
+                vx: 0, vy: 0,
+                mass: 80000,
+                radius: 8,
+                name: "TRAPPIST-1",
+                color: "#FF4500",
+                temperature: 300,
+                lock: true
+            },
+            {
+                type: 'rockyPlanet',
+                x: 25, y: 0,
+                vx: 0, vy: 12.5,
+                mass: 12,
+                radius: 4,
+                name: "TRAPPIST-1b",
+                color: "#8B4513",
+                temperature: 400,
+                continents: [
+                    [
+                        {x: 0.2, y: 0.3}, {x: 0.4, y: 0.2}, {x: 0.6, y: 0.4}, 
+                        {x: 0.5, y: 0.6}, {x: 0.3, y: 0.5}
+                    ],
+                    [
+                        {x: -0.3, y: -0.4}, {x: -0.1, y: -0.2}, {x: 0.1, y: -0.4},
+                        {x: 0.0, y: -0.6}
+                    ]
+                ]
+            },
+            {
+                type: 'rockyPlanet',
+                x: 40, y: 0,
+                vx: 0, vy: 10.0,
+                mass: 14,
+                radius: 4.5,
+                name: "TRAPPIST-1c",
+                color: "#A0522D",
+                temperature: 340,
+                continents: [
+                    [
+                        {x: 0.2, y: 0.3}, {x: 0.4, y: 0.2}, {x: 0.6, y: 0.4}, 
+                        {x: 0.5, y: 0.6}, {x: 0.3, y: 0.5}
+                    ],
+                    [
+                        {x: -0.3, y: -0.4}, {x: -0.1, y: -0.2}, {x: 0.1, y: -0.4},
+                        {x: 0.0, y: -0.6}
+                    ]
+                ]
+            },
+            {
+                type: 'rockyPlanet',
+                x: 55, y: 0,
+                vx: 0, vy: 8.5,
+                mass: 8,
+                radius: 3.5,
+                name: "TRAPPIST-1d",
+                color: "#1E90FF",
+                landColor: "#8FBC8F",
+                waterValue: 60,
+                cloudsValue: 30,
+                gasValue: 30,
+                temperature: 15,
+                continents: [
+                    [
+                        {x: 0.2, y: 0.3}, {x: 0.4, y: 0.2}, {x: 0.6, y: 0.4}, 
+                        {x: 0.5, y: 0.6}, {x: 0.3, y: 0.5}
+                    ],
+                    [
+                        {x: -0.3, y: -0.4}, {x: -0.1, y: -0.2}, {x: 0.1, y: -0.4},
+                        {x: 0.0, y: -0.6}
+                    ]
+                ]
+            },
+            {
+                type: 'rockyPlanet',
+                x: 70, y: 0,
+                vx: 0, vy: 7.2,
+                mass: 22,
+                radius: 5,
+                name: "TRAPPIST-1e",
+                color: "#1E90FF",
+                landColor: "#2E8B57",
+                waterValue: 65,
+                cloudsValue: 50,
+                gasValue: 50,
+                temperature: 12,
+                lifeChance: 78,
+                continents: [
+                    [
+                        {x: 0.2, y: 0.3}, {x: 0.4, y: 0.2}, {x: 0.6, y: 0.4}, 
+                        {x: 0.5, y: 0.6}, {x: 0.3, y: 0.5}
+                    ],
+                    [
+                        {x: -0.3, y: -0.4}, {x: -0.1, y: -0.2}, {x: 0.1, y: -0.4},
+                        {x: 0.0, y: -0.6}
+                    ]
+                ]
+            },
+            {
+                type: 'rockyPlanet',
+                x: 85, y: 0,
+                vx: 0, vy: 6.3,
+                mass: 18,
+                radius: 4.8,
+                name: "TRAPPIST-1f",
+                color: "#1E90FF",
+                landColor: "#556B2F",
+                water: 70,
+                clouds: 40,
+                temperature: -30,
+                lifeChance: 35,
+                biomass: 500,
+                continents: [
+                    [
+                        {x: 0.2, y: 0.3}, {x: 0.4, y: 0.2}, {x: 0.6, y: 0.4}, 
+                        {x: 0.5, y: 0.6}, {x: 0.3, y: 0.5}
+                    ],
+                    [
+                        {x: -0.3, y: -0.4}, {x: -0.1, y: -0.2}, {x: 0.1, y: -0.4},
+                        {x: 0.0, y: -0.6}
+                    ]
+                ]
+            },
+            {
+                type: 'rockyPlanet',
+                x: 100, y: 0,
+                vx: 0, vy: 5.6,
+                mass: 26,
+                radius: 5.5,
+                name: "TRAPPIST-1g",
+                color: "#1E90FF",
+                landColor: "#696969",
+                water: 50,
+                clouds: 60,
+                temperature: -55,
+                lifeChance: 20,
+                continents: [
+                    [
+                        {x: 0.2, y: 0.3}, {x: 0.4, y: 0.2}, {x: 0.6, y: 0.4}, 
+                        {x: 0.5, y: 0.6}, {x: 0.3, y: 0.5}
+                    ],
+                    [
+                        {x: -0.3, y: -0.4}, {x: -0.1, y: -0.2}, {x: 0.1, y: -0.4},
+                        {x: 0.0, y: -0.6}
+                    ]
+                ]
+            },
+            {
+                type: 'rockyPlanet',
+                x: 120, y: 0,
+                vx: 0, vy: 4.8,
+                mass: 15,
+                radius: 4.2,
+                name: "TRAPPIST-1h",
+                color: "#778899",
+                temperature: -80,
+                water: 10,
+                continents: [
+                    [
+                        {x: 0.2, y: 0.3}, {x: 0.4, y: 0.2}, {x: 0.6, y: 0.4}, 
+                        {x: 0.5, y: 0.6}, {x: 0.3, y: 0.5}
+                    ],
+                    [
+                        {x: -0.3, y: -0.4}, {x: -0.1, y: -0.2}, {x: 0.1, y: -0.4},
+                        {x: 0.0, y: -0.6}
+                    ]
+                ]
+            }
+        ],
+        universeAge: 7.6e9,
+        universeTime: 0,
+        camera: { x: 0, y: 0, zoom: 1.2 }
+    };
+    createSpecialSave("TRAPPIST-1", trappistSystem);
+}
+let unlockedAstroTypes = JSON.parse(localStorage.getItem('siu2d_unlocked_astros') || '[]');
+function unlockBizarreStars() {
+    const newStarTypes = [
+        'chronosStar',
+        'phantomStar',
+        'vortexStar',
+        'crystalStar',
+        'neuralStar',
+        'hologramStar',
+        'quantumFoamStar',
+        'prismStar',
+        'echoStar',
+        'singularityStar'
+    ];
+    newStarTypes.forEach(starType => {
+        if (!unlockedAstroTypes.includes(starType)) {
+            unlockedAstroTypes.push(starType);
+        }
+    });
+    localStorage.setItem('siu2d_unlocked_astros', JSON.stringify(unlockedAstroTypes));
+    updateCreationGrid();
+}
+function unlockSingularity() {
+    if (!unlockedAstroTypes.includes('singularity')) {
+        unlockedAstroTypes.push('singularity');
+        localStorage.setItem('siu2d_unlocked_astros', JSON.stringify(unlockedAstroTypes));
+        updateCreationGrid();
+    }
+}
+let unlockedConfigs = JSON.parse(localStorage.getItem('siu2d_unlocked_configs') || '[]');
+function unlockFunSpace() {
+    if (!unlockedConfigs.includes('fun_space')) {
+        unlockedConfigs.push('fun_space');
+        localStorage.setItem('siu2d_unlocked_configs', JSON.stringify(unlockedConfigs));
+        showNotification("Go to Options");
+    }
+}
+function unlockPixelMode() {
+    if (!unlockedConfigs.includes('pixel_mode')) {
+        unlockedConfigs.push('pixel_mode');
+        localStorage.setItem('siu2d_unlocked_configs', JSON.stringify(unlockedConfigs));
+        showNotification("Go to Options");
+    }
+}
+function updateCreationGrid() {
+    const optionsGrid = document.querySelector('.options-grid');
+    if (!optionsGrid) return;
+    unlockedAstroTypes.forEach(astroType => {
+        if (!document.querySelector(`[data-type="${astroType}"]`)) {
+            const astroCard = createAstroCard(astroType);
+            optionsGrid.appendChild(astroCard);
+        }
+    });
+}
+function createAstroCard(type) {
+    const card = document.createElement('div');
+    card.className = 'option-card';
+    card.setAttribute('data-type', type);
+    const config = getAstroConfig(type);
+    card.innerHTML = `
+        <h3><i class="${config.icon}"></i>${config.name}</h3>
+        <p>${config.description}</p>
+        <div class="progress-bar">
+            <div class="progress-fill" style="width: ${config.massPercent}%"></div>
+        </div>
+        <div class="mass-label">Massa: ${config.massRange}</div>
+        <div class="${config.rarity}">${config.rarityText}</div>
+    `;
+    card.addEventListener('click', () => {
+        creationMode = type;
+        selectedType = type;
+        creationModeText.textContent = config.name;
+        creationModeIndicator.style.display = 'block';
+        toggleGameMenu();
+        showNotification(`Modo Criação: ${config.name}. Clique e arraste para definir a velocidade.`);
+    });
+    return card;
+}
+function getAstroConfig(type) {
+    const configs = {
+        'chronosStar': {
+            icon: 'fas fa-clock',
+            name: 'Chronosstar',
+            description: '???',
+            massPercent: 92,
+            massRange: '600M - 1.8B',
+            rarity: 'ultra-raro',
+            rarityText: 'Unknown...'
+        },
+        'phantomStar': {
+            icon: 'fas fa-ghost',
+            name: 'Phantomstar',
+            description: '???',
+            massPercent: 85,
+            massRange: '300M - 900M',
+            rarity: 'ultra-raro',
+            rarityText: 'Unknown...'
+        },
+        'vortexStar': {
+            icon: 'fas fa-tornado',
+            name: 'Vortexstar',
+            description: '???',
+            massPercent: 94,
+            massRange: '800M - 2.2B',
+            rarity: 'ultra-raro',
+            rarityText: 'Unknown...'
+        },
+        'crystalStar': {
+            icon: 'fas fa-gem',
+            name: 'Crystalstar',
+            description: '???',
+            massPercent: 88,
+            massRange: '500M - 1.5B',
+            rarity: 'ultra-raro',
+            rarityText: 'Unknown...'
+        },
+        'neuralStar': {
+            icon: 'fas fa-brain',
+            name: 'Neuralstar',
+            description: '???',
+            massPercent: 90,
+            massRange: '700M - 1.9B',
+            rarity: 'ultra-raro',
+            rarityText: 'Unknown...'
+        },
+        'hologramStar': {
+            icon: 'fas fa-project-diagram',
+            name: 'Hologramstar',
+            description: '???',
+            massPercent: 87,
+            massRange: '400M - 1.2B',
+            rarity: 'ultra-raro',
+            rarityText: 'Unknown...'
+        },
+        'quantumFoamStar': {
+            icon: 'fas fa-water',
+            name: 'Quantum Foam Star',
+            description: '???',
+            massPercent: 96,
+            massRange: '1B - 3B',
+            rarity: 'ultra-raro',
+            rarityText: 'Unknown...'
+        },
+        'prismStar': {
+            icon: 'fas fa-rainbow',
+            name: 'Prismstar',
+            description: '???',
+            massPercent: 89,
+            massRange: '600M - 1.6B',
+            rarity: 'ultra-raro',
+            rarityText: 'Unknown...'
+        },
+        'echoStar': {
+            icon: 'fas fa-wave-square',
+            name: 'Echostar',
+            description: '???',
+            massPercent: 91,
+            massRange: '750M - 2B',
+            rarity: 'ultra-raro',
+            rarityText: 'Unknown...'
+        },
+        'singularityStar': {
+            icon: 'fas fa-infinity',
+            name: 'Singularity',
+            description: 'The heaviest object in the universe and the origin of the big bang!',
+            massPercent: 100,
+            massRange: '5B - 15B',
+            rarity: 'Ultra-Legendario',
+            rarityText: 'Ultra-Legendary'
+        }
+    };
+    return configs[type] || {
+        icon: 'fas fa-star',
+        name: type,
+        description: 'Novo tipo de astro',
+        massPercent: 50,
+        massRange: '1 - 100',
+        rarity: 'comum',
+        rarityText: 'Comum'
+    };
+}
 function closeManual() {
     const manualOverlay = document.getElementById('manualOverlay');
     if (manualOverlay) {
@@ -5649,34 +8374,6 @@ function nextManualPage() {
 }
 function prevManualPage() {
     showNotification("Página anterior do manual");
-}
-function showImportantWarnings() {
-    if (!hasAgreedToWarnings) {
-        const warningsOverlay = document.getElementById('importantWarningsOverlay');
-        if (warningsOverlay) {
-            warningsOverlay.style.display = 'flex';
-            setTimeout(() => {
-                warningsOverlay.classList.add('active');
-            }, 10);
-            document.body.style.overflow = 'hidden';
-        }
-    }
-}
-function agreeToWarnings() {
-    hasAgreedToWarnings = true;
-    localStorage.setItem('hasAgreedToWarnings', 'true');
-    closeImportantWarnings();
-    showNotification("Avisos aceitos. Não serão mostrados novamente.");
-}
-function closeImportantWarnings() {
-    const warningsOverlay = document.getElementById('importantWarningsOverlay');
-    if (warningsOverlay) {
-        warningsOverlay.classList.remove('active');
-        setTimeout(() => {
-            warningsOverlay.style.display = 'none';
-            document.body.style.overflow = '';
-        }, 300);
-    }
 }
 function createExpelledMatter(type, x, y, minMass, maxMass) {
     const angle = Math.random() * Math.PI * 2;
@@ -5743,6 +8440,16 @@ function calculateRadiusForType(type, mass) {
             rocket: 0.12,
             spaceship: 0.2,
             superShip: 4,
+            chronosStar: 9,
+            phantomStar: 11,
+            vortexStar: 8,
+            crystalStar: 7,
+            neuralStar: 7,
+            hologramStar: 12,
+            quantumFoamStar: 13,
+            prismStar: 9.5,
+            echoStar: 8.8,
+            singularityStar: 0.000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000001,
     };
     const base = baseRadius[type] || 10;
     const calculatedRadius = base * Math.pow(mass / 1000, 0.3);
@@ -5823,29 +8530,25 @@ function startGame() {
         universeAge = 0;
         universeTime = 0;
     }
+    if (pixelMode) {
+        document.body.classList.add('pixel-mode');
+    } else {
+        document.body.classList.remove('pixel-mode');
+    }
     lockOrientation();
 }
 function toggleGameMenu() {
     isMenuOpen = !isMenuOpen;
-    console.log('[DEBUG] toggleGameMenu chamado. Estado atual:', inGameMenu.classList.contains('active'));
     if (!inGameMenu) {
-        console.warn('[DEBUG] toggleGameMenu: inGameMenu NÃO encontrado!');
+        console.warn('inGameMenu not found!');
         return;
     }
-    console.log('[DEBUG] toggleGameMenu: display:', inGameMenu.style.display, 'classList:', inGameMenu.className);
-    const willActivate = !inGameMenu.classList.contains('active');
-    inGameMenu.classList.toggle('active');
-    if (willActivate) {
+    if (isMenuOpen) {
+        inGameMenu.classList.add('active');
         inGameMenu.style.display = 'block';
     } else {
+        inGameMenu.classList.remove('active');
         inGameMenu.style.display = 'none';
-    }
-    console.log('[DEBUG] toggleGameMenu finalizado. Novo estado:', inGameMenu.classList.contains('active'), 'display:', inGameMenu.style.display);
-    if (!gameMenuBtn) {
-        console.warn('[DEBUG] toggleGameMenu: gameMenuBtn NÃO encontrado!');
-    }
-    if (!closeMenuBtn) {
-        console.warn('[DEBUG] toggleGameMenu: closeMenuBtn NÃO encontrado!');
     }
 }
 function fgpVolume() {
@@ -6438,6 +9141,10 @@ function createAstro(type, x, y, vx = 0, vy = 0, customMass = null, originPlanet
             planet.diskSize = planet.radius * 4.5;
             planet.maxLifeTime = 0.001 + Math.random() * 2;
             planet.temperature = 54000;
+            planet.debrisGeneration = true;
+            planet.lastDebrisGeneration = 0;
+            planet.debrisCooldown = 2000;
+            planet.jetAngle = Math.random() * Math.PI * 2;
             Acount = (Acount || 0) + 1;
         if (Acount >= 20){
             unlockAchievement(20);
@@ -7005,6 +9712,96 @@ function createAstro(type, x, y, vx = 0, vy = 0, customMass = null, originPlanet
         }
         console.log('Astros no total : ' + Acount + ' quantidades ' )
         break;
+        case 'chronosStar':
+            planet.mass = Math.max(600000000, customMass || astroSettings.mass * 6000000);
+            planet.color = '#87CEEB';
+            planet.glowColor = '#00BFFF';
+            planet.radius = calculateRadiusForType('chronosStar', planet.mass);
+            planet.temperature = 12000;
+            planet.timeField = true;
+            planet.timeDilation = 2.0;
+            break;
+        case 'phantomStar':
+            planet.mass = Math.max(300000000, customMass || astroSettings.mass * 3000000);
+            planet.color = '#DDA0DD';
+            planet.glowColor = '#9400D3';
+            planet.radius = calculateRadiusForType('phantomStar', planet.mass);
+            planet.temperature = 8000;
+            planet.phaseShift = true;
+            planet.ethereal = true;
+            break;
+        case 'vortexStar':
+            planet.mass = Math.max(800000000, customMass || astroSettings.mass * 8000000);
+            planet.color = '#32CD32';
+            planet.glowColor = '#008000';
+            planet.radius = calculateRadiusForType('vortexStar', planet.mass);
+            planet.temperature = 18000;
+            planet.vortexLayers = 3;
+            planet.dimensionalSpin = true;
+            break;
+        case 'crystalStar':
+            planet.mass = Math.max(500000000, customMass || astroSettings.mass * 5000000);
+            planet.color = '#E6E6FA';
+            planet.glowColor = '#9370DB';
+            planet.radius = calculateRadiusForType('crystalStar', planet.mass);
+            planet.temperature = 14000;
+            planet.crystalLattice = true;
+            planet.refractionIndex = 2.5;
+            break;
+        case 'neuralStar':
+            planet.mass = Math.max(700000000, customMass || astroSettings.mass * 7000000);
+            planet.color = '#FF69B4';
+            planet.glowColor = '#DC143C';
+            planet.radius = calculateRadiusForType('neuralStar', planet.mass);
+            planet.temperature = 16000;
+            planet.neuralNetwork = true;
+            planet.consciousness = true;
+            break;
+        case 'hologramStar':
+            planet.mass = Math.max(400000000, customMass || astroSettings.mass * 4000000);
+            planet.color = '#00FFFF';
+            planet.glowColor = '#008B8B';
+            planet.radius = calculateRadiusForType('hologramStar', planet.mass);
+            planet.temperature = 10000;
+            planet.holographic = true;
+            planet.projections = 3;
+            break;
+        case 'quantumFoamStar':
+            planet.mass = Math.max(1000000000, customMass || astroSettings.mass * 10000000);
+            planet.color = '#F0E68C';
+            planet.glowColor = '#DAA520';
+            planet.radius = calculateRadiusForType('quantumFoamStar', planet.mass);
+            planet.temperature = 22000;
+            planet.quantumFoam = true;
+            planet.vacuumFluctuations = true;
+            break;
+        case 'prismStar':
+            planet.mass = Math.max(600000000, customMass || astroSettings.mass * 6000000);
+            planet.color = '#FFD700';
+            planet.glowColor = '#FF8C00';
+            planet.radius = calculateRadiusForType('prismStar', planet.mass);
+            planet.temperature = 13000;
+            planet.prismatic = true;
+            planet.lightBending = true;
+            break;
+        case 'echoStar':
+            planet.mass = Math.max(750000000, customMass || astroSettings.mass * 7500000);
+            planet.color = '#98FB98';
+            planet.glowColor = '#006400';
+            planet.radius = calculateRadiusForType('echoStar', planet.mass);
+            planet.temperature = 15000;
+            planet.echoField = true;
+            planet.temporalResonance = true;
+            break;
+        case 'singularityStar':
+            planet.mass = Math.max(5000000000000000000000000000000000000000000000000000000000000000000000000000000000, customMass || astroSettings.mass * 50000000);
+            planet.color = '#000000';
+            planet.glowColor = '#4B0082';
+            planet.radius = calculateRadiusForType('singularityStar', planet.mass);
+            planet.temperature = 50000;
+            planet.multipleSingularities = true;
+            planet.realityDistortion = true;
+            break;
         default:
             planet.mass = customMass || 1000;
             planet.color = '#cccccc';
@@ -7170,6 +9967,7 @@ function getTypeName(type) {
         'rocket':'rocket',
         'spaceship':'spaceship',
         'superShip':'Super Ship',
+        'redHypergiant' : 'Ultranuclestar', 
     };
     return names[type] || 'Astro';
 }
@@ -7247,15 +10045,11 @@ function fgpLifeEvolution(planet) {
 }
 function startPlanetSatelliteSpawner(planet) {
     if (planet._satelliteSpawnerActive) return;
-    
-    // Verifica se o planeta é válido antes de iniciar
     if (planet.markedForRemoval || !planet.hasIntelligentLife) {
         return;
     }
-    
     planet._satelliteSpawnerActive = true;
     planet._stopSatelliteSpawner = false;
-
     function spawnNext() {
         if (planet._stopSatelliteSpawner || 
             planet.markedForRemoval || 
@@ -7263,7 +10057,6 @@ function startPlanetSatelliteSpawner(planet) {
             !planet.hasIntelligentLife || 
             planet.lifeChance === 0 || 
             planet.population < 100) {
-            
             console.log(`🛑 STOPPING satellite spawner for planet: ${planet.name}`);
             planet._satelliteSpawnerActive = false;
             return;
@@ -7272,15 +10065,53 @@ function startPlanetSatelliteSpawner(planet) {
         const nextTime = 1000 + Math.random() * 9000;
         planet._satelliteSpawnerTimeout = setTimeout(spawnNext, nextTime);
     }
-
     spawnNext();
 }
 function planetExists(planet) {
     return planets.includes(planet) && !planet.markedForRemoval;
 }
+function initializeMissingPlanetProperties(planet) {
+    const defaultProperties = {
+        satellites: [],
+        rockets: [],
+        spaceships: [],
+        superShips: [],
+        intelligentSpecies: [],
+        biomass: 0,
+        population: 0,
+        knowledgePoints: 0,
+        lifeChance: 0,
+        waterValue: 0,
+        cloudsValue: 0,
+        gasValue: 0,
+        ignoreColorChanges: false,
+        locked: false
+    };
+    for (const [key, value] of Object.entries(defaultProperties)) {
+        if (typeof planet[key] === 'undefined') {
+            planet[key] = value;
+        }
+    }
+    return planet;
+}
+function safeLoadSave(saveData) {
+    if (saveData.planets) {
+        saveData.planets = saveData.planets.map(initializeMissingPlanetProperties);
+    }
+    loadUniverseData(saveData);
+}
 function handleKnowledgeMilestones(planet) {
     if (!planet.hasIntelligentLife || planet.lifeChance === 0) {
         return;
+    }
+    if (!planet || !planet.intelligentSpecies) {
+        return;
+    }
+    if (!Array.isArray(planet.intelligentSpecies)) {
+        planet.intelligentSpecies = [planet.intelligentSpecies];
+    }
+    const speciesCount = planet.intelligentSpecies.length;
+    if (planet.knowledgePoints >= 1000 && speciesCount > 0) {
     }
     if (planet.biomass < 50 || planet.population < 100) {
         return;
@@ -7392,7 +10223,6 @@ function activateCreationMode(type) {
     creationModeIndicator.style.display = 'block';
     const cancelBtn = document.getElementById('cancelCreationBtn');
     if (cancelBtn) cancelBtn.style.display = 'flex';
-
     showNotification(`Modo criação: ${getTypeName(type)}`);
 }
 function deactivateCreationMode() {
@@ -7401,7 +10231,6 @@ function deactivateCreationMode() {
     creationModeIndicator.style.display = 'none';
     const cancelBtn = document.getElementById('cancelCreationBtn');
     if (cancelBtn) cancelBtn.style.display = 'none';
-
     showNotification("Modo criação desativado");
 }
 function createRockets(planet, count) {
@@ -7519,8 +10348,8 @@ function fgpRocketBehavior(rocket, deltaTime) {
     }
 }
 let rocketGenerationTimer = 0;
-const MIN_ROCKET_INTERVAL = 5000;
-const MAX_ROCKET_INTERVAL = 30000;
+const MIN_ROCKET_INTERVAL = 50000;
+const MAX_ROCKET_INTERVAL = 120000;
 let nextRocketInterval = getRandomRocketInterval();
 function getRandomRocketInterval() {
     return MIN_ROCKET_INTERVAL + Math.random() * (MAX_ROCKET_INTERVAL - MIN_ROCKET_INTERVAL);
@@ -8085,17 +10914,38 @@ function handleTwoFingerMove(touches) {
         camera.zoom = Math.max(0.001, Math.min(1000, camera.zoom));
     }
 }
-function handleTwoFingerDoubleTap() {
-    if (!isEditing && !isMenuOpen) {
-        planets = [];
-        universeAge = 0;
-        universeTime = 0;
-        showNotification('Universe cleared');
-        Fcount += 1;
-        if (Fcount >= 20) {
-            unlockAchievement(45);
-        }
+function renderSavesList() {
+    const saves = getAllSaves();
+    savesList.innerHTML = '';
+    if (saves.length === 0) {
+        noSavesMsg.style.display = '';
+        return;
     }
+    noSavesMsg.style.display = 'none';
+    saves.forEach((save, idx) => {
+        const li = document.createElement('li');
+        li.className = 'save-item' + (save.isSpecial ? ' special-save' : '');
+        li.style.display = 'flex';
+        li.style.alignItems = 'center';
+        li.style.justifyContent = 'space-between';
+        li.style.padding = '8px 0';
+        li.style.borderBottom = '1px solid #333';
+        li.innerHTML = `
+            <div style='flex:1;'>
+                <div class='save-name' style='font-weight:bold;'>${save.name}</div>
+                <div style='color:#aaa;font-size:0.8em;'>
+                    ${new Date(save.date).toLocaleString()}
+                    ${save.description ? `<br><small>${save.description}</small>` : ''}
+                </div>
+                ${save.isSpecial ? '<div style="color:gold; margin-top:4px;">⭐ Save Especial</div>' : ''}
+            </div>
+            <div>
+                <button class='btn' style='margin-right:6px;' onclick='loadSave(${idx})'>Carregar</button>
+                ${save.cannotDelete ? '' : `<button class='btn secondary' onclick='deleteSave(${idx})'>Excluir</button>`}
+            </div>
+        `;
+        savesList.appendChild(li);
+    });
 }
 function handleKeyDown(e) {
     const isEditing = document.activeElement.tagName === 'INPUT' || 
@@ -8588,41 +11438,35 @@ function fgpAnimations(deltaTime) {
         }
     }
 }
-function drawGravitationalLens(radius, type = 'attractive', strength = 1) {
-    const lensRadius = radius * (type === 'attractive' ? 2.5 : 3.0);
+function drawGravitationalLens(radius, type, intensity) {
+    const lensRadius = radius * 1.5 * intensity;
     const gradient = ctx.createRadialGradient(0, 0, 0, 0, 0, lensRadius);
-    if (type === 'attractive') {
-        gradient.addColorStop(0, 'rgba(0, 0, 0, 0.8)');
-        gradient.addColorStop(0.6, 'rgba(50, 50, 50, 0.4)');
-        gradient.addColorStop(0.8, 'rgba(100, 100, 100, 0.2)');
-        gradient.addColorStop(1, 'rgba(150, 150, 150, 0)');
-    } else {
-        gradient.addColorStop(0, 'rgba(255, 255, 255, 0.8)');
-        gradient.addColorStop(0.6, 'rgba(200, 220, 255, 0.4)');
-        gradient.addColorStop(0.8, 'rgba(150, 200, 255, 0.2)');
-        gradient.addColorStop(1, 'rgba(100, 180, 255, 0)');
+    switch(type) {
+        case 'attractive':
+            gradient.addColorStop(0, 'rgba(255, 255, 255, 0.1)');
+            gradient.addColorStop(0.6, 'rgba(200, 200, 255, 0.05)');
+            gradient.addColorStop(0.8, 'rgba(150, 150, 255, 0)');
+            gradient.addColorStop(1, 'rgba(100, 100, 255, 0.05)');
+            break;
+        case 'repulsive':
+            gradient.addColorStop(0, 'rgba(255, 255, 255, 0.15)');
+            gradient.addColorStop(0.4, 'rgba(200, 230, 255, 0.1)');
+            gradient.addColorStop(0.7, 'rgba(150, 200, 255, 0.05)');
+            gradient.addColorStop(1, 'rgba(100, 150, 255, 0)');
+            break;
+        case 'energetic':
+            gradient.addColorStop(0, 'rgba(255, 255, 0, 0.2)');
+            gradient.addColorStop(0.6, 'rgba(255, 200, 0, 0.1)');
+            gradient.addColorStop(1, 'rgba(255, 150, 0, 0.05)');
+            break;
+        default:
+            gradient.addColorStop(0, 'rgba(255, 255, 255, 0.1)');
+            gradient.addColorStop(0.8, 'rgba(255, 255, 255, 0)');
     }
     ctx.beginPath();
     ctx.arc(0, 0, lensRadius, 0, Math.PI * 2);
     ctx.fillStyle = gradient;
     ctx.fill();
-    if (strength > 0.7 && graphicsQuality === 'high') {
-        ctx.strokeStyle = type === 'attractive' 
-            ? 'rgba(0, 0, 0, 0.3)' 
-            : 'rgba(255, 255, 255, 0.3)';
-        ctx.lineWidth = 1;
-        for (let i = 0; i < 3; i++) {
-            const waveRadius = lensRadius * (1.1 + i * 0.2);
-            const distortion = Math.sin(Date.now() * 0.001 + i) * 0.1 * strength;
-            ctx.beginPath();
-            for (let a = 0; a < Math.PI * 2; a += 0.1) {
-                const r = waveRadius * (1 + Math.sin(a * 10) * distortion);
-                ctx.lineTo(Math.cos(a) * r, Math.sin(a) * r);
-            }
-            ctx.closePath();
-            ctx.stroke();
-        }
-    }
 }
 function generateExoticName() {
     const prefixes = ['Crystalline', 'Magnetic', 'Radioative', 'Vibrational', 'Quantum'];
@@ -8708,6 +11552,16 @@ window.loadUniverseData = function(data) {
     planets = data.planets || [];
     universeAge = data.universeAge || 0;
     universeTime = data.universeTime || 0;
+};
+window.loadSave = function(idx) {
+    const saves = getAllSaves();
+    if (typeof loadUniverseData === 'function') {
+        const saveData = saves[idx].data;
+        safeLoadSave(saveData);
+        hideSavesSidebar();
+    } else {
+        alert('Função loadUniverseData não encontrada!');
+    }
 };
 let warningCount = 0;
 function handleWarningClick() {
@@ -8981,12 +11835,10 @@ optionCards.forEach(card => {
 }
 //#endregion
 //#region coments
-/*
-thanks for playing my game :D
-this is the first game sa FGP
-please, any error, please let us know
-if you have any idea to improve the game, please let us know
-¯\_(ツ)_/¯
-*/
+//#region thanks for playing my game :D
+//#region this is the first game sa FGP
+//#region please, any error, please let us know
+//#region if you have any idea to improve the game, please let us know
+//#region  ¯\_(ツ)_/¯
 console.log(versionGame);
 //#endregion
