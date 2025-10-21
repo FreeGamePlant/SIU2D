@@ -284,7 +284,6 @@ let purchasedItems = JSON.parse(localStorage.getItem('siu2d_purchased_items') ||
 let funSpaceMode = false;
 let funSpaceHue = 0;
 let funSpaceSpeed = 0.5;
-let pixelMode = false;
 //#endregion
 if (btnLock) {
     btnLock.addEventListener('click', toggleLock);
@@ -347,162 +346,6 @@ function toggleFunSpace() {
         document.getElementById('spaceColor').value = '#000000';
     }
     localStorage.setItem('funSpaceMode', funSpaceMode.toString());
-}
-function togglePixelMode() {
-    pixelMode = !pixelMode;
-    if (pixelMode) {
-        showNotification("Pixel Mode activated - All graphics will be pixelated");
-    } else {
-        showNotification("Pixel Mode deactivated - Using normal graphics");
-    }
-    localStorage.setItem('pixelMode', pixelMode.toString());
-    setTimeout(() => {
-        location.reload();
-    }, 1000);
-}
-function applyPixelEffect(ctx, x, y, width, height) {
-    if (!pixelMode) return;
-    const originalImageData = ctx.getImageData(x, y, width, height);
-    const pixelSize = 2;    
-    for (let y = 0; y < height; y += pixelSize) {
-        for (let x = 0; x < width; x += pixelSize) {
-            const pixelIndex = (y * width + x) * 4;
-            const r = originalImageData.data[pixelIndex];
-            const g = originalImageData.data[pixelIndex + 1];
-            const b = originalImageData.data[pixelIndex + 2];
-            const a = originalImageData.data[pixelIndex + 3];
-            
-            ctx.fillStyle = `rgba(${r}, ${g}, ${b}, ${a/255})`;
-            ctx.fillRect(x, y, pixelSize, pixelSize);
-        }
-    }
-}
-function drawPixelPlanet(planet, ctx, x, y, radius) {
-    if (!pixelMode) return false;
-    
-    const pixelSize = Math.max(2, Math.floor(radius / 15));
-    const scaledRadius = Math.floor(radius / pixelSize) * pixelSize;
-    
-    ctx.save();
-    ctx.translate(x, y);
-    
-    // Desenhar corpo principal com estilo pixelado
-    ctx.fillStyle = planet.color || '#cccccc';
-    
-    // Usar approach mais eficiente - desenhar círculo pixelado
-    for (let angle = 0; angle < Math.PI * 2; angle += Math.PI / 16) {
-        const segmentRadius = scaledRadius - (Math.sin(angle * 3) * pixelSize * 0.5);
-        const px = Math.cos(angle) * segmentRadius;
-        const py = Math.sin(angle) * segmentRadius;
-        
-        if (angle === 0) {
-            ctx.beginPath();
-            ctx.moveTo(px, py);
-        } else {
-            ctx.lineTo(px, py);
-        }
-    }
-    ctx.closePath();
-    ctx.fill();
-    
-    // Adicionar detalhes baseados no tipo
-    switch(planet.type) {
-        case 'star':
-        case 'redDwarf':
-        case 'brownDwarf':
-            // Brilho estelar pixelado
-            ctx.fillStyle = '#ffff00';
-            for (let i = 0; i < 4; i++) {
-                const spikeLength = scaledRadius * 1.5;
-                const spikeWidth = pixelSize * 2;
-                ctx.fillRect(-spikeWidth/2, -spikeLength, spikeWidth, spikeLength);
-                ctx.rotate(Math.PI / 2);
-            }
-            break;
-            
-        case 'gasGiant':
-            // Faixas pixeladas
-            ctx.strokeStyle = planet.secondaryColor || '#ff9900';
-            ctx.lineWidth = pixelSize;
-            for (let i = -3; i <= 3; i++) {
-                const bandY = (i / 3) * scaledRadius * 0.6;
-                ctx.beginPath();
-                ctx.arc(0, 0, scaledRadius * 0.8, bandY - pixelSize, bandY + pixelSize);
-                ctx.stroke();
-            }
-            break;
-            
-        case 'rockyPlanet':
-            // Continentes pixelados
-            if (planet.landColor) {
-                ctx.fillStyle = planet.landColor;
-                for (let i = 0; i < 3; i++) {
-                    const contAngle = (i / 3) * Math.PI * 2;
-                    const contSize = scaledRadius * 0.3;
-                    ctx.fillRect(
-                        Math.cos(contAngle) * scaledRadius * 0.5 - contSize/2,
-                        Math.sin(contAngle) * scaledRadius * 0.5 - contSize/2,
-                        contSize, contSize
-                    );
-                }
-            }
-            break;
-    }
-    
-    // Anéis pixelados
-    if (planet.rings) {
-        const ringRadius = scaledRadius * 1.8;
-        ctx.strokeStyle = planet.ringColor || 'rgba(180,180,180,0.7)';
-        ctx.lineWidth = pixelSize * 3;
-        ctx.beginPath();
-        ctx.arc(0, 0, ringRadius, 0, Math.PI * 2);
-        ctx.stroke();
-        
-        // Detalhes do anel
-        ctx.strokeStyle = 'rgba(255,255,255,0.3)';
-        ctx.lineWidth = pixelSize;
-        ctx.beginPath();
-        ctx.arc(0, 0, ringRadius + pixelSize, 0, Math.PI * 2);
-        ctx.stroke();
-        ctx.beginPath();
-        ctx.arc(0, 0, ringRadius - pixelSize, 0, Math.PI * 2);
-        ctx.stroke();
-    }
-    
-    ctx.restore();
-    return true;
-}
-function applyPixelFilter() {
-    if (!pixelMode) return;
-    
-    // Aplicar filtro de pixelação em todo o canvas
-    const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-    const pixelSize = 2;
-    
-    for (let y = 0; y < canvas.height; y += pixelSize) {
-        for (let x = 0; x < canvas.width; x += pixelSize) {
-            const pixelIndex = (y * canvas.width + x) * 4;
-            const r = imageData.data[pixelIndex];
-            const g = imageData.data[pixelIndex + 1];
-            const b = imageData.data[pixelIndex + 2];
-            
-            // Preencher área do pixel
-            for (let dy = 0; dy < pixelSize; dy++) {
-                for (let dx = 0; dx < pixelSize; dx++) {
-                    const currentX = x + dx;
-                    const currentY = y + dy;
-                    if (currentX < canvas.width && currentY < canvas.height) {
-                        const currentIndex = (currentY * canvas.width + currentX) * 4;
-                        imageData.data[currentIndex] = r;
-                        imageData.data[currentIndex + 1] = g;
-                        imageData.data[currentIndex + 2] = b;
-                    }
-                }
-            }
-        }
-    }
-    
-    ctx.putImageData(imageData, 0, 0);
 }
 function fgpSpaceColor() {
     if (!funSpaceMode) {
@@ -780,9 +623,6 @@ function init() {
     if (btnResetEverythingDev) {
         btnResetEverythingDev.addEventListener('click', resetEverythingDev);
     }
-    pixelMode = localStorage.getItem('pixelMode') === 'true';
-    document.getElementById('pixelModeToggle').checked = pixelMode;
-    document.getElementById('pixelModeToggle').addEventListener('change', togglePixelMode);
     canvas.addEventListener('touchstart', handleTouchStart, { passive: false });
     canvas.addEventListener('touchmove', handleTouchMove, { passive: false });
     canvas.addEventListener('touchend', handleTouchEnd, { passive: false });
@@ -1178,21 +1018,6 @@ const drawAccretionDisk = (innerRadius, outerRadius, colors) => {
     ctx.fill();
     ctx.filter = 'none';
   };
-    // Se pixel mode está ativo, tentar desenhar versão pixelada
-    if (pixelMode) {
-        // Para tipos complexos, usar desenho normal com filtro posterior
-        const complexTypes = ['blackHole', 'quasar', 'wormhole', 'whiteHole', 'ttauriStar'];
-        if (complexTypes.includes(planet.type)) {
-            // Desenhar normalmente, o filtro global vai pixelar
-        } else {
-            // Tentar desenhar versão pixelada
-            const pixelDrawn = drawPixelPlanet(planet, ctx, x, y, radius);
-            if (pixelDrawn) {
-                // Se desenhou com sucesso em pixel art, sair
-                return;
-            }
-        }
-    }
   switch(planet.type) {
 case 'rocket':
     ctx.save();
@@ -6796,7 +6621,6 @@ function purchaseItem(itemId, price) {
         setTimeout(() => {
             location.reload();
         }, 1500);
-        
         return true;
     } else {
         showNotification("Not enough TS Coins!");
@@ -6810,8 +6634,7 @@ function getItemName(itemId) {
         'habitable_alpha': 'HABITABLE - ALPHA',
         'trappist_1': 'TRAPPIST-1',
         'bizarre_stars': 'Bizarre Stars',
-        'fun_space': 'The Fun Space',
-        'pixel_by_pixel': 'Pixel by Pixel'
+        'fun_space': 'The Fun Space'
     };
     return itemNames[itemId] || itemId;
 }
@@ -6834,9 +6657,6 @@ function applyPurchasedItem(itemId) {
             break;
         case 'fun_space':
             unlockFunSpace();
-            break;
-        case 'pixel_by_pixel':
-            unlockPixelMode();
             break;
         case 'singularity':
             unlockSingularity();
@@ -6881,33 +6701,6 @@ function initializeShop() {
             funSpaceToggle.disabled = true;
             funSpaceToggle.parentElement.style.opacity = "0.5";
         }
-    }
-    if (purchasedItems.pixel_by_pixel) {
-        const pixelModeToggle = document.getElementById('pixelModeToggle');
-        if (pixelModeToggle) {
-            pixelModeToggle.disabled = false;
-            pixelModeToggle.parentElement.style.opacity = "1";
-            pixelMode = localStorage.getItem('pixelMode') === 'true';
-            pixelModeToggle.checked = pixelMode;
-        }
-    } else {
-        const pixelModeToggle = document.getElementById('pixelModeToggle');
-        if (pixelModeToggle) {
-            pixelModeToggle.disabled = true;
-            pixelModeToggle.parentElement.style.opacity = "0.5";
-            pixelModeToggle.checked = false;
-        }
-    }
-    const pixelModeToggle = document.getElementById('pixelModeToggle');
-    if (pixelModeToggle) {
-        pixelModeToggle.addEventListener('change', function() {
-            if (purchasedItems.pixel_by_pixel) {
-                togglePixelMode();
-            } else {
-                this.checked = false;
-                showNotification("Purchase Pixel Mode from the shop first!");
-            }
-        });
     }
     if (purchasedItems.solar_system) {
         const solarSystemItem = document.querySelector('[data-item-id="solar_system"]');
@@ -8215,13 +8008,6 @@ function unlockFunSpace() {
         showNotification("Go to Options");
     }
 }
-function unlockPixelMode() {
-    if (!unlockedConfigs.includes('pixel_mode')) {
-        unlockedConfigs.push('pixel_mode');
-        localStorage.setItem('siu2d_unlocked_configs', JSON.stringify(unlockedConfigs));
-        showNotification("Go to Options");
-    }
-}
 function updateCreationGrid() {
     const optionsGrid = document.querySelector('.options-grid');
     if (!optionsGrid) return;
@@ -8529,11 +8315,6 @@ function startGame() {
         planets = [];
         universeAge = 0;
         universeTime = 0;
-    }
-    if (pixelMode) {
-        document.body.classList.add('pixel-mode');
-    } else {
-        document.body.classList.remove('pixel-mode');
     }
     lockOrientation();
 }
