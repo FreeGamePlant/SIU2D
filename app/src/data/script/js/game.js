@@ -284,6 +284,8 @@ let purchasedItems = JSON.parse(localStorage.getItem('siu2d_purchased_items') ||
 let funSpaceMode = false;
 let funSpaceHue = 0;
 let funSpaceSpeed = 0.5;
+let currentManualPage = 1;
+const totalManualPages = 5;
 //#endregion
 if (btnLock) {
     btnLock.addEventListener('click', toggleLock);
@@ -6599,6 +6601,8 @@ function closeShop() {
 function openManual() {
     const manualOverlay = document.getElementById('manualOverlay');
     if (manualOverlay) {
+        currentManualPage = 1;
+        updateManualPage();
         manualOverlay.style.display = 'flex';
         setTimeout(() => {
             manualOverlay.classList.add('active');
@@ -8156,11 +8160,53 @@ function closeManual() {
     }
 }
 function nextManualPage() {
-    showNotification("Próxima página do manual");
+    if (currentManualPage < totalManualPages) {
+        currentManualPage++;
+        updateManualPage();
+        showNotification(`Página ${currentManualPage} de ${totalManualPages}`);
+    }
 }
 function prevManualPage() {
-    showNotification("Página anterior do manual");
+    if (currentManualPage > 1) {
+        currentManualPage--;
+        updateManualPage();
+        showNotification(`Página ${currentManualPage} de ${totalManualPages}`);
+    }
 }
+function updateManualPage() {
+    const pages = document.querySelectorAll('.manual-page');
+    pages.forEach(page => {
+        page.classList.remove('active');
+    });
+    const currentPage = document.querySelector(`.manual-page[data-page="${currentManualPage}"]`);
+    if (currentPage) {
+        currentPage.classList.add('active');
+    }
+    const indicator = document.querySelector('.manual-page-indicator');
+    if (indicator) {
+        indicator.textContent = `Página ${currentManualPage} de ${totalManualPages}`;
+    }
+    const prevBtn = document.querySelector('.manual-controls .manual-btn:first-child');
+    const nextBtn = document.querySelector('.manual-controls .manual-btn:last-child');
+    if (prevBtn) {
+        prevBtn.disabled = currentManualPage === 1;
+    }
+    if (nextBtn) {
+        nextBtn.disabled = currentManualPage === totalManualPages;
+    }
+}
+document.addEventListener('keydown', function(e) {
+    const manualOverlay = document.getElementById('manualOverlay');
+    if (manualOverlay && manualOverlay.style.display === 'flex') {
+        if (e.key === 'ArrowRight') {
+            nextManualPage();
+        } else if (e.key === 'ArrowLeft') {
+            prevManualPage();
+        } else if (e.key === 'Escape') {
+            closeManual();
+        }
+    }
+});
 function createExpelledMatter(type, x, y, minMass, maxMass) {
     const angle = Math.random() * Math.PI * 2;
     const distance = Math.random() * 100;
