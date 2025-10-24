@@ -286,6 +286,7 @@ let funSpaceHue = 0;
 let funSpaceSpeed = 0.5;
 let currentManualPage = 1;
 const totalManualPages = 5;
+let medusaExplosionInterval;
 //#endregion
 if (btnLock) {
     btnLock.addEventListener('click', toggleLock);
@@ -354,7 +355,7 @@ function fgpSpaceColor() {
         spaceColor = document.getElementById('spaceColor').value;
     }
 }
-function updateFunSpaceColors(deltaTime) {
+function fgpFunSpaceColors(deltaTime) {
     if (!funSpaceMode) return;
     funSpaceHue = (funSpaceHue + funSpaceSpeed * (deltaTime / 1000)) % 360;
     const hue = funSpaceHue;
@@ -401,24 +402,24 @@ function animateTSCoinsChange(targetCoins, duration = 1000) {
     const startCoins = currentDisplayCoins;
     const coinDifference = targetCoins - startCoins;
     const startTime = performance.now();
-    function updateAnimation(currentTime) {
+    function fgpAnimation(currentTime) {
         const elapsedTime = currentTime - startTime;
         const progress = Math.min(elapsedTime / duration, 1);
         const easeOutQuart = 1 - Math.pow(1 - progress, 4);
         currentDisplayCoins = Math.floor(startCoins + (coinDifference * easeOutQuart));
-        updateTSCoinsDisplay();
+        fgpTSCoinsDisplay();
         if (progress < 1) {
-            tsCoinsAnimation = requestAnimationFrame(updateAnimation);
+            tsCoinsAnimation = requestAnimationFrame(fgpAnimation);
         } else {
             currentDisplayCoins = targetCoins;
-            updateTSCoinsDisplay();
+            fgpTSCoinsDisplay();
             tsCoinsAnimation = null;
             if (coinDifference > 0) {
                 showCoinGainEffect();
             }
         }
     }
-    tsCoinsAnimation = requestAnimationFrame(updateAnimation);
+    tsCoinsAnimation = requestAnimationFrame(fgpAnimation);
 }
 function showCoinGainEffect() {
     const tsCoinsDisplay = document.getElementById('tsCoinsDisplay');
@@ -471,7 +472,7 @@ function createCoinParticle(startX, startY) {
         }
     }, 1000);
 }
-function updateTSCoinsDisplay() {
+function fgpTSCoinsDisplay() {
     const tsCoinsValue = document.getElementById('tsCoinsValue');
     if (tsCoinsValue) {
         tsCoinsValue.textContent = currentDisplayCoins.toLocaleString();
@@ -590,7 +591,7 @@ function init() {
     modoRetirada = this.checked;
     showNotification(`Withdrawal mode ${modoRetirada ? 'activated' : 'deactivated'}`);
 });
-    updateTSCoinsDisplay();
+    fgpTSCoinsDisplay();
     setTimeout(() => {
         animateTSCoinsChange(tsCoins, 1500);
     }, 1000);
@@ -620,7 +621,7 @@ function init() {
             applyPurchasedItem(itemId);
         }
     });
-    updateCreationGrid();
+    fgpCreationGrid();
     const btnResetEverythingDev = document.getElementById('btnResetEverythingDev');
     if (btnResetEverythingDev) {
         btnResetEverythingDev.addEventListener('click', resetEverythingDev);
@@ -809,7 +810,10 @@ function resetUniverse() {
         universeTime = 0;
         spaceDustCreated = 0;
         pulsarCount = 0;
-        Fcount = 0;
+        Fcount += 1;
+        if (Fcount >= 20) {
+            unlockAchievement(45);
+        }
         warnigCount = 0;
         Acount = 0;
         showNotification("Universe has been reset!");
@@ -1918,6 +1922,9 @@ case 'prismStar':
 case 'echoStar':
     drawEchoStar(planet, ctx, radius, camera, graphicsQuality, visualTimeScale);
     break;
+case 'medusaStar':
+    drawMedusaStar(planet, ctx, radius, camera, graphicsQuality, visualTimeScale);
+    break;
 case 'singularityStar':
     drawSingularityStar(planet, ctx, radius, camera, graphicsQuality, visualTimeScale);
     break;
@@ -2084,6 +2091,615 @@ if (shadowsEnabled && graphicsQuality ==='high' && ![
       ctx.fillText(planet.planetClass, x, y - radius - 25);
     }
   }
+}
+function drawMedusaStar(planet, ctx, radius, camera, graphicsQuality, visualTimeScale) {
+    const medusaRadius = planet.radius * camera.zoom;
+    const time = Date.now() * 0.001;
+    const primaryGreen = '#00FF00';
+    const darkGreen = '#006400';
+    const lightGreen = '#90EE90';
+    const electricGreen = '#7CFC00';
+    const venomGreen = '#39FF14';
+    const deepGreen = '#003300';
+    const glowGreen = '#32CD32';
+    const toxicGreen = '#41FF00';
+    const isExplosionActive = planet.explosionActive || false;
+    const explosionProgress = planet.explosionProgress || 0;
+    const jetsVisible = planet.jetsVisible || false;
+    const explosionIntensity = isExplosionActive ? Math.min(1, explosionProgress * 2) : 0;
+    ctx.save();
+    if (isExplosionActive) {
+        drawExpandingShockwave(medusaRadius, ctx, explosionProgress, time, planet);
+    }
+    if (isExplosionActive && explosionProgress > 0.3) {
+        drawAttackGrid(medusaRadius, ctx, explosionProgress, time, planet);
+    }
+    if (graphicsQuality !== 'low') {
+        drawEnhancedAccretionDisk(medusaRadius, planet, ctx, time, visualTimeScale, explosionIntensity);
+    }
+    drawRadiationAura(medusaRadius, ctx, explosionIntensity, time);
+    drawPulsatingCore(medusaRadius, ctx, time, explosionIntensity);
+    if (graphicsQuality !== 'low') {
+        drawEnergyTentacles(medusaRadius, ctx, time, planet, visualTimeScale, explosionIntensity);
+    }
+    if (isExplosionActive && jetsVisible) {
+        drawExplosionJets(medusaRadius, ctx, planet, explosionProgress);
+    }
+    if (isExplosionActive) {
+        drawRadiationRings(medusaRadius, ctx, explosionProgress, time);
+    }
+    if (isExplosionActive && explosionProgress > 0.2) {
+        drawPetrificationField(medusaRadius, ctx, explosionProgress);
+    }
+    if (graphicsQuality === 'high') {
+        drawFloatingParticles(medusaRadius, ctx, time, explosionIntensity);
+    }
+    drawVortexCore(medusaRadius, ctx, time, explosionIntensity);
+    if (isExplosionActive) {
+        drawEnergyPulses(medusaRadius, ctx, explosionProgress, time);
+    }
+    drawFinalOutline(medusaRadius, ctx, explosionIntensity);
+    ctx.restore();
+}
+function drawExpandingShockwave(medusaRadius, ctx, explosionProgress, time, planet) {
+    if (!planet.shockwaveRadius) planet.shockwaveRadius = medusaRadius * 1.5;
+    if (!planet.shockwaveMaxRadius) planet.shockwaveMaxRadius = medusaRadius * 25;
+    const shockwaveProgress = Math.min(1, explosionProgress * 3);
+    const currentRadius = planet.shockwaveRadius + (planet.shockwaveMaxRadius - planet.shockwaveRadius) * shockwaveProgress;
+    let shockwaveAlpha = 1.0;
+    if (shockwaveProgress < 1) {
+        shockwaveAlpha = 1.0;
+    } else {
+        const fadeStart = 1/3;
+        const fadeDuration = 2/3;
+        const fadeProgress = (explosionProgress - fadeStart) / fadeDuration;
+        shockwaveAlpha = Math.max(0, 1 - fadeProgress * 1.5);
+    }
+    if (shockwaveAlpha > 0.01) {
+        const shockwaveGradient = ctx.createRadialGradient(0, 0, currentRadius - 10, 0, 0, currentRadius + 10);
+        shockwaveGradient.addColorStop(0, `rgba(0, 255, 0, ${0.8 * shockwaveAlpha})`);
+        shockwaveGradient.addColorStop(0.5, `rgba(0, 255, 0, ${0.4 * shockwaveAlpha})`);
+        shockwaveGradient.addColorStop(1, `rgba(0, 255, 0, 0)`);
+        ctx.beginPath();
+        ctx.arc(0, 0, currentRadius, 0, Math.PI * 2);
+        ctx.strokeStyle = shockwaveGradient;
+        ctx.lineWidth = 20 * shockwaveAlpha;
+        ctx.stroke();
+        const innerShockRadius = currentRadius * 0.8;
+        ctx.beginPath();
+        ctx.arc(0, 0, innerShockRadius, 0, Math.PI * 2);
+        ctx.strokeStyle = `rgba(255, 255, 255, ${0.6 * shockwaveAlpha})`;
+        ctx.lineWidth = 5 * shockwaveAlpha;
+        ctx.stroke();
+        if (shockwaveProgress > 0.2 && shockwaveProgress < 0.8 && shockwaveAlpha > 0.5) {
+            ctx.globalAlpha = 0.3 * (1 - Math.abs(shockwaveProgress - 0.5) * 2) * shockwaveAlpha;
+            for (let i = 0; i < 8; i++) {
+                const angle = (i / 8) * Math.PI * 2 + time;
+                const distortionRadius = currentRadius * 1.1;
+                const distortionSize = currentRadius * 0.1;
+                ctx.save();
+                ctx.rotate(angle);
+                ctx.translate(distortionRadius, 0);
+                ctx.beginPath();
+                ctx.arc(0, 0, distortionSize, 0, Math.PI * 2);
+                ctx.fillStyle = `rgba(0, 255, 0, ${0.5 * shockwaveAlpha})`;
+                ctx.fill();
+                ctx.restore();
+            }
+            ctx.globalAlpha = 1;
+        }
+    }
+    if (explosionProgress >= 1) {
+        planet.shockwaveRadius = medusaRadius * 1.5;
+    }
+}
+function drawAttackGrid(medusaRadius, ctx, explosionProgress, time, planet) {
+    const gridProgress = Math.max(0, (explosionProgress - 0.3) / 0.7);
+    if (!planet.shockwaveRadius) return;
+    const gridRadius = planet.shockwaveRadius * 1.1;
+    const gridAlpha = 0.6 * (1 - gridProgress);
+    if (gridAlpha > 0) {
+        ctx.save();
+        ctx.rotate(time * 0.5);
+        const hexSize = gridRadius / 8;
+        const hexCount = Math.floor(gridRadius / hexSize);
+        ctx.strokeStyle = `rgba(0, 255, 0, ${gridAlpha})`;
+        ctx.lineWidth = 1.5;
+        ctx.setLineDash([5, 3]);
+        for (let i = 0; i < 12; i++) {
+            const angle = (i / 12) * Math.PI * 2;
+            ctx.beginPath();
+            ctx.moveTo(0, 0);
+            ctx.lineTo(Math.cos(angle) * gridRadius, Math.sin(angle) * gridRadius);
+            ctx.stroke();
+        }
+        for (let ring = 1; ring <= hexCount; ring++) {
+            const currentRadius = ring * hexSize;
+            ctx.beginPath();
+            for (let i = 0; i < 6; i++) {
+                const angle = (i / 6) * Math.PI * 2;
+                const x = Math.cos(angle) * currentRadius;
+                const y = Math.sin(angle) * currentRadius;
+                if (i === 0) ctx.moveTo(x, y);
+                else ctx.lineTo(x, y);
+            }
+            ctx.closePath();
+            ctx.stroke();
+        }
+        ctx.fillStyle = `rgba(0, 255, 0, ${gridAlpha * 0.8})`;
+        for (let ring = 1; ring <= hexCount; ring++) {
+            const currentRadius = ring * hexSize;
+            for (let i = 0; i < 6; i++) {
+                const angle = (i / 6) * Math.PI * 2;
+                const x = Math.cos(angle) * currentRadius;
+                const y = Math.sin(angle) * currentRadius;
+                ctx.beginPath();
+                ctx.arc(x, y, 2, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
+        const pulse = Math.sin(time * 8) * 0.5 + 0.5;
+        ctx.strokeStyle = `rgba(255, 255, 255, ${gridAlpha * pulse * 0.3})`;
+        ctx.lineWidth = 2;
+        ctx.setLineDash([]);
+        ctx.beginPath();
+        ctx.arc(0, 0, gridRadius, 0, Math.PI * 2);
+        ctx.stroke();
+        ctx.setLineDash([]);
+        ctx.restore();
+        if (gridProgress < 0.7) {
+            drawGridParticles(gridRadius, ctx, time, gridAlpha);
+        }
+    }
+}
+function drawGridParticles(gridRadius, ctx, time, alpha) {
+    const particles = 16;
+    ctx.globalAlpha = alpha;
+    for (let i = 0; i < particles; i++) {
+        const particleProgress = (time * 2 + i / particles) % 1;
+        const particleRadius = gridRadius * particleProgress;
+        const particleAngle = (i / particles) * Math.PI * 2;
+        const particleSize = 3;
+        const x = Math.cos(particleAngle) * particleRadius;
+        const y = Math.sin(particleAngle) * particleRadius;
+        ctx.beginPath();
+        ctx.arc(x, y, particleSize, 0, Math.PI * 2);
+        ctx.fillStyle = '#00FF00';
+        ctx.fill();
+        const tailLength = 10;
+        ctx.save();
+        ctx.translate(x, y);
+        ctx.rotate(particleAngle + Math.PI/2);
+        const tailGradient = ctx.createLinearGradient(0, -tailLength, 0, 0);
+        tailGradient.addColorStop(0, 'rgba(0, 255, 0, 0)');
+        tailGradient.addColorStop(1, 'rgba(0, 255, 0, 0.8)');
+        ctx.beginPath();
+        ctx.moveTo(-particleSize/2, -tailLength);
+        ctx.lineTo(particleSize/2, -tailLength);
+        ctx.lineTo(0, 0);
+        ctx.closePath();
+        ctx.fillStyle = tailGradient;
+        ctx.fill();
+        ctx.restore();
+    }
+    ctx.globalAlpha = 1;
+}
+function drawVortexCore(medusaRadius, ctx, time, explosionIntensity) {
+    const coreRadius = medusaRadius * 0.3;
+    const vortexIntensity = 1 + explosionIntensity * 2;
+    ctx.save();
+    ctx.rotate(time * vortexIntensity);
+    for (let i = 0; i < 3; i++) {
+        const vortexRadius = coreRadius * (0.3 + i * 0.2);
+        const vortexGradient = ctx.createRadialGradient(0, 0, 0, 0, 0, vortexRadius);
+        if (i === 0) {
+            vortexGradient.addColorStop(0, '#FFFFFF');
+            vortexGradient.addColorStop(0.7, '#90EE90');
+            vortexGradient.addColorStop(1, 'rgba(144, 238, 144, 0)');
+        } else if (i === 1) {
+            vortexGradient.addColorStop(0, 'rgba(0, 255, 0, 0.8)');
+            vortexGradient.addColorStop(1, 'rgba(0, 255, 0, 0)');
+        } else {
+            vortexGradient.addColorStop(0, 'rgba(0, 150, 0, 0.6)');
+            vortexGradient.addColorStop(1, 'rgba(0, 150, 0, 0)');
+        }
+        ctx.beginPath();
+        ctx.arc(0, 0, vortexRadius, 0, Math.PI * 2);
+        ctx.fillStyle = vortexGradient;
+        ctx.fill();
+    }
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.8)';
+    ctx.lineWidth = 2;
+    for (let i = 0; i < 2; i++) {
+        ctx.beginPath();
+        for (let t = 0; t <= 100; t++) {
+            const progress = t / 100;
+            const angle = progress * Math.PI * 4 + i * Math.PI;
+            const spiralRadius = progress * coreRadius;
+            const x = Math.cos(angle) * spiralRadius;
+            const y = Math.sin(angle) * spiralRadius;
+            if (t === 0) ctx.moveTo(x, y);
+            else ctx.lineTo(x, y);
+        }
+        ctx.stroke();
+    }
+    ctx.restore();
+}
+function drawEnergyPulses(medusaRadius, ctx, explosionProgress, time) {
+    const pulseCount = 4;
+    const basePulseSpeed = 3;
+    for (let i = 0; i < pulseCount; i++) {
+        const pulsePhase = (time * basePulseSpeed + i / pulseCount) % 1;
+        const pulseRadius = medusaRadius * (1 + pulsePhase * 2);
+        const pulseAlpha = (1 - pulsePhase) * 0.5;
+        if (pulseAlpha > 0) {
+            ctx.beginPath();
+            ctx.arc(0, 0, pulseRadius, 0, Math.PI * 2);
+            ctx.strokeStyle = `rgba(57, 255, 20, ${pulseAlpha})`;
+            ctx.lineWidth = 3;
+            ctx.stroke();
+            ctx.beginPath();
+            ctx.arc(0, 0, pulseRadius * 0.9, 0, Math.PI * 2);
+            ctx.strokeStyle = `rgba(255, 255, 255, ${pulseAlpha * 0.6})`;
+            ctx.lineWidth = 1;
+            ctx.stroke();
+        }
+    }
+}
+function drawEnhancedAccretionDisk(medusaRadius, planet, ctx, time, visualTimeScale, explosionIntensity) {
+    const diskInnerRadius = medusaRadius * 1.2;
+    const diskOuterRadius = medusaRadius * (4.0 + explosionIntensity * 2);
+    ctx.save();
+    ctx.rotate((planet.rotation || 0) * visualTimeScale * (3 + explosionIntensity * 2));
+    const diskGradient = ctx.createRadialGradient(0, 0, diskInnerRadius, 0, 0, diskOuterRadius);
+    diskGradient.addColorStop(0, `rgba(0, 255, 0, ${0.9 + explosionIntensity * 0.1})`);
+    diskGradient.addColorStop(0.3, `rgba(0, 200, 0, ${0.7 + explosionIntensity * 0.1})`);
+    diskGradient.addColorStop(0.6, `rgba(0, 150, 0, ${0.5 + explosionIntensity * 0.1})`);
+    diskGradient.addColorStop(0.8, `rgba(0, 100, 0, ${0.3 + explosionIntensity * 0.1})`);
+    diskGradient.addColorStop(1, 'rgba(0, 50, 0, 0.1)');
+    ctx.beginPath();
+    ctx.arc(0, 0, diskOuterRadius, 0, Math.PI * 2);
+    ctx.fillStyle = diskGradient;
+    ctx.fill();
+    ctx.strokeStyle = `rgba(0, 255, 0, ${0.4 + explosionIntensity * 0.3})`;
+    ctx.lineWidth = 2 + explosionIntensity * 2;
+    for (let i = 0; i < 3; i++) {
+        ctx.beginPath();
+        for (let t = 0; t <= 100; t++) {
+            const progress = t / 100;
+            const angle = progress * Math.PI * 6 + time * (2 + explosionIntensity * 3) + i * Math.PI * 2/3;
+            const spiralRadius = diskInnerRadius + progress * (diskOuterRadius - diskInnerRadius);
+            const x = Math.cos(angle) * spiralRadius;
+            const y = Math.sin(angle) * spiralRadius;
+            if (t === 0) ctx.moveTo(x, y);
+            else ctx.lineTo(x, y);
+        }
+        ctx.stroke();
+    }
+    ctx.restore();
+}
+function drawFinalOutline(medusaRadius, ctx, explosionIntensity) {
+    const outlinePulse = 1 + Math.sin(Date.now() * 0.01) * explosionIntensity * 0.2;
+    ctx.strokeStyle = '#000000';
+    ctx.lineWidth = 2 + explosionIntensity * 2;
+    ctx.beginPath();
+    ctx.arc(0, 0, medusaRadius * outlinePulse, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.strokeStyle = `rgba(255, 255, 255, ${0.6 + explosionIntensity * 0.4})`;
+    ctx.lineWidth = 1 + explosionIntensity;
+    ctx.beginPath();
+    ctx.arc(0, 0, medusaRadius * 0.95 * outlinePulse, 0, Math.PI * 2);
+    ctx.stroke();
+    if (explosionIntensity > 0) {
+        ctx.strokeStyle = `rgba(0, 255, 0, ${explosionIntensity * 0.5})`;
+        ctx.lineWidth = 3 * explosionIntensity;
+        ctx.beginPath();
+        ctx.arc(0, 0, medusaRadius * 1.05, 0, Math.PI * 2);
+        ctx.stroke();
+    }
+}
+function triggerMedusaExplosion(medusaStar) {
+    if (!medusaStar || medusaStar.markedForRemoval) return;
+    medusaStar.explosionActive = true;
+    medusaStar.explosionStartTime = Date.now();
+    medusaStar.explosionProgress = 0;
+    medusaStar.jetsVisible = true;
+    medusaStar.shockwaveRadius = medusaStar.radius * 1.5;
+    medusaStar.shockwaveMaxRadius = medusaStar.radius * 25;
+    medusaStar.jetAngle = (medusaStar.rotation || 0) + (Math.random() * Math.PI / 4 - Math.PI / 8);
+    applyMedusaExplosionPetrification(medusaStar);
+    playRandomCollisionSound();
+    createMedusaExplosionEffect(medusaStar);
+}
+function applyMedusaExplosionPetrification(medusaStar) {
+    const explosionRadius = medusaStar.radius * 10;
+    planets.forEach(other => {
+        if (other === medusaStar || other.markedForRemoval) return;
+        const dx = other.x - medusaStar.x;
+        const dy = other.y - medusaStar.y;
+        const distance = Math.sqrt(dx * dx + dy * dy);
+        if (distance < explosionRadius && isSpaceshipType(other.type)) {
+            transformToMeteoroid(other);
+        }
+    });
+}
+function transformToMeteoroid(obj) {
+    if (obj.petrified && obj.type === 'meteoroid') return;
+    if (!obj.originalType) obj.originalType = obj.type;
+    if (!obj.originalColor) obj.originalColor = obj.color;
+    if (!obj.originalRadius) obj.originalRadius = obj.radius;
+    obj.petrified = true;
+    obj.petrificationTime = Date.now();
+    obj.type = 'meteoroid';
+    obj.color = '#666666';
+    obj.radius = Math.max(obj.radius * 0.8, 5);
+    obj.rocketBehavior = null;
+    obj.spaceshipBehavior = null;
+    obj.satelliteBehavior = null;
+    obj.superShipBehavior = null;
+    createPetrificationEffect(obj);
+    showNotification(`🚀 ${getTypeName(obj.originalType)} transformado em meteorito pela Medusa Star!`, 3000);
+}
+function drawRadiationAura(medusaRadius, ctx, explosionIntensity, time) {
+    const baseAuraSize = medusaRadius * 2.5;
+    const pulse = 1 + Math.sin(time * 2) * 0.1;
+    const auraSize = baseAuraSize * pulse * (1 + explosionIntensity * 0.5);
+    const auraGradient = ctx.createRadialGradient(0, 0, medusaRadius, 0, 0, auraSize);
+    auraGradient.addColorStop(0, `rgba(0, 255, 0, ${0.4 + explosionIntensity * 0.3})`);
+    auraGradient.addColorStop(0.7, `rgba(0, 150, 0, ${0.2 + explosionIntensity * 0.2})`);
+    auraGradient.addColorStop(1, 'rgba(0, 50, 0, 0)');
+    ctx.beginPath();
+    ctx.arc(0, 0, auraSize, 0, Math.PI * 2);
+    ctx.fillStyle = auraGradient;
+    ctx.fill();
+    if (explosionIntensity > 0) {
+        ctx.globalAlpha = 0.3 * explosionIntensity;
+        for (let i = 0; i < 4; i++) {
+            const ringSize = auraSize * (0.8 + i * 0.4);
+            const ringPulse = Math.sin(time * 3 + i) * 0.2 + 0.8;
+            ctx.beginPath();
+            ctx.arc(0, 0, ringSize * ringPulse, 0, Math.PI * 2);
+            ctx.strokeStyle = `rgba(0, 255, 0, ${0.6 - i * 0.15})`;
+            ctx.lineWidth = 3;
+            ctx.stroke();
+        }
+        ctx.globalAlpha = 1;
+    }
+}
+function drawPulsatingCore(medusaRadius, ctx, time, explosionIntensity) {
+    const corePulse = 1 + Math.sin(time * 4) * 0.15;
+    const explosionPulse = 1 + explosionIntensity * 0.3;
+    const finalRadius = medusaRadius * corePulse * explosionPulse;
+    const starGradient = ctx.createRadialGradient(0, 0, 0, 0, 0, finalRadius);
+    starGradient.addColorStop(0, '#FFFFFF');
+    starGradient.addColorStop(0.1, '#90EE90');
+    starGradient.addColorStop(0.3, '#00FF00');
+    starGradient.addColorStop(0.6, '#006400');
+    starGradient.addColorStop(1, '#003300');
+    ctx.beginPath();
+    ctx.arc(0, 0, finalRadius, 0, Math.PI * 2);
+    ctx.fillStyle = starGradient;
+    ctx.fill();
+    ctx.save();
+    ctx.rotate(time * 0.5);
+    for (let i = 0; i < 12; i++) {
+        const angle = (i / 12) * Math.PI * 2;
+        const surfaceDistortion = Math.sin(angle * 3 + time * 2) * 0.1;
+        const surfaceRadius = finalRadius * (0.9 + surfaceDistortion);
+        ctx.beginPath();
+        ctx.arc(0, 0, surfaceRadius, angle - 0.1, angle + 0.1);
+        ctx.strokeStyle = `rgba(255, 255, 255, ${0.3 + explosionIntensity * 0.2})`;
+        ctx.lineWidth = 2;
+        ctx.stroke();
+    }
+    ctx.restore();
+}
+function drawEnergyTentacles(medusaRadius, ctx, time, planet, visualTimeScale) {
+    ctx.save();
+    ctx.rotate((planet.rotation || 0) * visualTimeScale);
+    const tentacles = 8;
+    for (let i = 0; i < tentacles; i++) {
+        const baseAngle = (i / tentacles) * Math.PI * 2;
+        const tentacleLength = medusaRadius * 0.6;
+        const tentacleWidth = medusaRadius * 0.08;
+        const waveOffset = Math.sin(time * 2 + i) * 0.3;
+        const currentAngle = baseAngle + waveOffset;
+        ctx.save();
+        ctx.rotate(currentAngle);
+        const tentacleGradient = ctx.createLinearGradient(0, 0, tentacleLength, 0);
+        tentacleGradient.addColorStop(0, '#00FF00');
+        tentacleGradient.addColorStop(0.5, '#39FF14');
+        tentacleGradient.addColorStop(1, 'transparent');
+        ctx.beginPath();
+        ctx.moveTo(0, -tentacleWidth/2);
+        ctx.quadraticCurveTo(
+            tentacleLength * 0.3, -tentacleWidth/2 * (1 + waveOffset),
+            tentacleLength, -tentacleWidth/4
+        );
+        ctx.lineTo(tentacleLength, tentacleWidth/4);
+        ctx.quadraticCurveTo(
+            tentacleLength * 0.3, tentacleWidth/2 * (1 + waveOffset),
+            0, tentacleWidth/2
+        );
+        ctx.closePath();
+        ctx.fillStyle = tentacleGradient;
+        ctx.fill();
+        ctx.beginPath();
+        ctx.moveTo(0, -tentacleWidth/4);
+        ctx.quadraticCurveTo(
+            tentacleLength * 0.3, -tentacleWidth/4 * (1 + waveOffset),
+            tentacleLength * 0.8, -tentacleWidth/8
+        );
+        ctx.lineTo(tentacleLength * 0.8, tentacleWidth/8);
+        ctx.quadraticCurveTo(
+            tentacleLength * 0.3, tentacleWidth/4 * (1 + waveOffset),
+            0, tentacleWidth/4
+        );
+        ctx.closePath();
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.6)';
+        ctx.fill();
+        ctx.restore();
+    }
+    ctx.restore();
+}
+function drawExplosionJets(medusaRadius, ctx, planet, explosionProgress) {
+    const jetIntensity = explosionProgress / 0.4;
+    const jetLength = medusaRadius * 20 * jetIntensity;
+    const jetWidthStart = medusaRadius * 0.4 * jetIntensity;
+    const jetWidthEnd = medusaRadius * 3 * jetIntensity;
+    ctx.save();
+    ctx.rotate(planet.jetAngle || 0);
+    const jetGradient = ctx.createLinearGradient(0, 0, 0, -jetLength);
+    jetGradient.addColorStop(0, 'rgba(255, 255, 255, 1)');
+    jetGradient.addColorStop(0.1, 'rgba(0, 255, 0, 0.9)');
+    jetGradient.addColorStop(0.3, 'rgba(0, 200, 0, 0.8)');
+    jetGradient.addColorStop(0.6, 'rgba(0, 150, 0, 0.6)');
+    jetGradient.addColorStop(1, 'rgba(0, 100, 0, 0)');
+    ctx.globalAlpha = 0.9 * jetIntensity;
+    ctx.beginPath();
+    ctx.moveTo(-jetWidthStart/2, 0);
+    ctx.lineTo(jetWidthStart/2, 0);
+    ctx.lineTo(jetWidthEnd/2, -jetLength);
+    ctx.lineTo(-jetWidthEnd/2, -jetLength);
+    ctx.closePath();
+    ctx.fillStyle = jetGradient;
+    ctx.fill();
+    ctx.rotate(Math.PI);
+    ctx.beginPath();
+    ctx.moveTo(-jetWidthStart/2, 0);
+    ctx.lineTo(jetWidthStart/2, 0);
+    ctx.lineTo(jetWidthEnd/2, -jetLength);
+    ctx.lineTo(-jetWidthEnd/2, -jetLength);
+    ctx.closePath();
+    ctx.fillStyle = jetGradient;
+    ctx.fill();
+    ctx.globalAlpha = 1;
+    ctx.restore();
+}
+function drawRadiationRings(medusaRadius, ctx, explosionProgress, time) {
+    const radiationIntensity = explosionProgress;
+    for (let i = 0; i < 6; i++) {
+        const ringSize = medusaRadius * (1.5 + i * 0.8);
+        const ringPulse = Math.sin(time * 4 + i) * 0.3 + 0.7;
+        const alpha = (0.5 - i * 0.08) * radiationIntensity;
+        ctx.beginPath();
+        ctx.arc(0, 0, ringSize * ringPulse, 0, Math.PI * 2);
+        ctx.strokeStyle = `rgba(124, 252, 0, ${alpha})`;
+        ctx.lineWidth = 2 + i * 0.5;
+        ctx.stroke();
+    }
+    ctx.globalAlpha = 0.4 * radiationIntensity;
+    const rays = 16;
+    for (let i = 0; i < rays; i++) {
+        const angle = (i / rays) * Math.PI * 2 + time;
+        const rayLength = medusaRadius * (6 + radiationIntensity * 4);
+        const rayWidth = medusaRadius * 0.15;
+        ctx.save();
+        ctx.rotate(angle);
+        const rayGradient = ctx.createLinearGradient(0, 0, rayLength, 0);
+        rayGradient.addColorStop(0, '#7CFC00');
+        rayGradient.addColorStop(0.7, 'rgba(124, 252, 0, 0.5)');
+        rayGradient.addColorStop(1, 'transparent');
+        ctx.beginPath();
+        ctx.moveTo(0, -rayWidth/2);
+        ctx.lineTo(rayLength, -rayWidth/4);
+        ctx.lineTo(rayLength, rayWidth/4);
+        ctx.lineTo(0, rayWidth/2);
+        ctx.closePath();
+        ctx.fillStyle = rayGradient;
+        ctx.fill();
+        ctx.restore();
+    }
+    ctx.globalAlpha = 1;
+}
+function drawPetrificationField(medusaRadius, ctx, explosionProgress) {
+    const fieldRadius = medusaRadius * 8;
+    const fieldIntensity = Math.max(0, (explosionProgress - 0.2) / 0.6);
+    if (fieldIntensity > 0) {
+        ctx.globalAlpha = 0.2 * fieldIntensity;
+        const fieldGradient = ctx.createRadialGradient(0, 0, medusaRadius * 2, 0, 0, fieldRadius);
+        fieldGradient.addColorStop(0, 'rgba(0, 255, 0, 0.3)');
+        fieldGradient.addColorStop(0.5, 'rgba(0, 150, 0, 0.2)');
+        fieldGradient.addColorStop(1, 'rgba(0, 100, 0, 0)');
+        ctx.beginPath();
+        ctx.arc(0, 0, fieldRadius, 0, Math.PI * 2);
+        ctx.fillStyle = fieldGradient;
+        ctx.fill();
+        ctx.strokeStyle = `rgba(0, 255, 0, ${0.4 * fieldIntensity})`;
+        ctx.lineWidth = 1;
+        const gridSize = fieldRadius / 4;
+        for (let i = -4; i <= 4; i++) {
+            ctx.beginPath();
+            ctx.arc(0, 0, fieldRadius, 0, Math.PI * 2);
+            ctx.stroke();
+            ctx.beginPath();
+            ctx.moveTo(i * gridSize, -fieldRadius);
+            ctx.lineTo(i * gridSize, fieldRadius);
+            ctx.stroke();
+            ctx.beginPath();
+            ctx.moveTo(-fieldRadius, i * gridSize);
+            ctx.lineTo(fieldRadius, i * gridSize);
+            ctx.stroke();
+        }
+        ctx.globalAlpha = 1;
+    }
+}
+function drawFloatingParticles(medusaRadius, ctx, time) {
+    ctx.globalAlpha = 0.7;
+    const particles = 12;
+    for (let i = 0; i < particles; i++) {
+        const angle = (i / particles) * Math.PI * 2 + time;
+        const orbitRadius = medusaRadius * (1.3 + Math.sin(time * 1.5 + i) * 0.2);
+        const particleSize = medusaRadius * 0.04 * (0.8 + Math.sin(time * 3 + i) * 0.4);
+        const pulse = Math.sin(time * 4 + i) * 0.5 + 0.5;
+        const x = Math.cos(angle) * orbitRadius;
+        const y = Math.sin(angle) * orbitRadius;
+        ctx.beginPath();
+        ctx.arc(x, y, particleSize, 0, Math.PI * 2);
+        const particleGradient = ctx.createRadialGradient(x, y, 0, x, y, particleSize);
+        particleGradient.addColorStop(0, '#FFFFFF');
+        particleGradient.addColorStop(0.7, '#90EE90');
+        particleGradient.addColorStop(1, '#00FF00');
+        ctx.fillStyle = particleGradient;
+        ctx.fill();
+        const tailLength = particleSize * 3;
+        const tailAngle = angle + Math.PI;
+        ctx.save();
+        ctx.translate(x, y);
+        ctx.rotate(tailAngle);
+        const tailGradient = ctx.createLinearGradient(0, 0, tailLength, 0);
+        tailGradient.addColorStop(0, 'rgba(144, 238, 144, 0.8)');
+        tailGradient.addColorStop(1, 'transparent');
+        ctx.beginPath();
+        ctx.moveTo(0, -particleSize/2);
+        ctx.lineTo(tailLength, -particleSize/4);
+        ctx.lineTo(tailLength, particleSize/4);
+        ctx.lineTo(0, particleSize/2);
+        ctx.closePath();
+        ctx.fillStyle = tailGradient;
+        ctx.fill();
+        ctx.restore();
+    }
+    ctx.globalAlpha = 1;
+}
+function drawNuclearCore(medusaRadius, ctx) {
+    const coreRadius = medusaRadius * 0.4;
+    const coreGradient = ctx.createRadialGradient(0, 0, 0, 0, 0, coreRadius);
+    coreGradient.addColorStop(0, '#FFFFFF');
+    coreGradient.addColorStop(0.3, '#90EE90');
+    coreGradient.addColorStop(0.7, '#00FF00');
+    coreGradient.addColorStop(1, '#006400');
+    ctx.beginPath();
+    ctx.arc(0, 0, coreRadius, 0, Math.PI * 2);
+    ctx.fillStyle = coreGradient;
+    ctx.fill();
+    const brightSpot = ctx.createRadialGradient(0, 0, 0, 0, 0, coreRadius * 0.3);
+    brightSpot.addColorStop(0, '#FFFFFF');
+    brightSpot.addColorStop(1, 'rgba(144, 238, 144, 0.5)');
+    ctx.beginPath();
+    ctx.arc(0, 0, coreRadius * 0.3, 0, Math.PI * 2);
+    ctx.fillStyle = brightSpot;
+    ctx.fill();
 }
 function drawAccretionDisk(innerRadius, outerRadius, colors, rotation = 0, planet = null) {
     ctx.save();
@@ -2661,6 +3277,16 @@ function drawEchoStar(planet, ctx, radius, camera, graphicsQuality, visualTimeSc
         ctx.globalAlpha = 1;
     }
 }
+function onMedusaStarCreated(medusaStar) {
+    medusaStar.explosionActive = false;
+    medusaStar.explosionProgress = 0;
+    medusaStar.jetsVisible = false;
+    medusaStar.jetAngle = Math.random() * Math.PI * 2;
+    const medusaStars = planets.filter(p => p.type === 'medusaStar');
+    if (medusaStars.length === 1) {
+        initMedusaStarBehavior();
+    }
+}
 function generateTtauriDebris(ttauriStar) {
     const debrisTypes = ['nebula', 'radiation', 'spaceDust', 'meteoroid', 'asteroid', 'comet'];
     const debrisType = debrisTypes[Math.floor(Math.random() * debrisTypes.length)];
@@ -2985,6 +3611,291 @@ function drawShipName(planet, ctx, x, y, radius) {
     ctx.font = '10px Arial';
     ctx.textAlign = 'center';
     ctx.fillText(planet.name, x, y - radius - 12);
+}
+function initMedusaStarBehavior() {
+    if (medusaExplosionInterval) {
+        clearInterval(medusaExplosionInterval);
+    }
+    medusaExplosionInterval = setInterval(() => {
+        triggerRandomMedusaExplosion();
+    }, 5000 + Math.random() * 10000);
+}
+function triggerRandomMedusaExplosion() {
+    const medusaStars = planets.filter(p => p.type === 'medusaStar' && !p.explosionActive);
+    if (medusaStars.length > 0) {
+        const randomMedusa = medusaStars[Math.floor(Math.random() * medusaStars.length)];
+        triggerMedusaExplosion(randomMedusa);
+    }
+}
+function applyMedusaPetrification(medusaStar) {
+    const petrificationRadius = medusaStar.radius * 15;
+    planets.forEach(other => {
+        if (other === medusaStar || other.markedForRemoval) return;
+        const dx = other.x - medusaStar.x;
+        const dy = other.y - medusaStar.y;
+        const distance = Math.sqrt(dx * dx + dy * dy);
+        if (distance < petrificationRadius) {
+            applyPermanentPetrification(other);
+            if (isSpaceshipType(other.type)) {
+                transformToMeteoroid(other);
+            }
+        }
+    });
+}
+function fgpMedusaPetrification() {
+    planets.forEach(planet => {
+        if (planet.type === 'medusaStar' && !planet.markedForRemoval) {
+            applyContinuousPetrification(planet);
+        }
+    });
+}
+function applyContinuousPetrification(medusaStar) {
+    const petrificationRadius = medusaStar.radius * 15;
+    planets.forEach(other => {
+        if (other === medusaStar || other.markedForRemoval || other.type === 'medusaStar') return;
+        const dx = other.x - medusaStar.x;
+        const dy = other.y - medusaStar.y;
+        const distance = Math.sqrt(dx * dx + dy * dy);
+        if (distance < petrificationRadius) {
+            if (!other.medusaPetrified) {
+                applyPermanentPetrification(other);
+                other.medusaPetrified = true;
+                other.medusaPetrificationSource = medusaStar.id;
+            }
+        } else {
+            if (other.medusaPetrified && other.medusaPetrificationSource === medusaStar.id) {
+                removePetrification(other);
+                other.medusaPetrified = false;
+                delete other.medusaPetrificationSource;
+            }
+        }
+    });
+}
+function removePetrification(astro) {
+    if (astro.originalColor) {
+        astro.color = astro.originalColor;
+        delete astro.originalColor;
+    }
+    if (astro.originalGlowColor) {
+        astro.glowColor = astro.originalGlowColor;
+        delete astro.originalGlowColor;
+    }
+    if (astro.originalSecondaryColor) {
+        astro.secondaryColor = astro.originalSecondaryColor;
+        delete astro.originalSecondaryColor;
+    }
+    if (astro.originalLandColor) {
+        astro.landColor = astro.originalLandColor;
+        delete astro.originalLandColor;
+    }
+    if (astro.originalOceanColor) {
+        astro.oceanColor = astro.originalOceanColor;
+        delete astro.originalOceanColor;
+    }
+    if (astro.originalType && astro.type === 'meteoroid') {
+        astro.type = astro.originalType;
+        delete astro.originalType;
+    }
+    astro.petrified = false;
+    delete astro.petrificationTime;
+}
+function applyPermanentPetrification(astro) {
+    if (!astro.originalColor) {
+        astro.originalColor = astro.color;
+        astro.originalGlowColor = astro.glowColor;
+        astro.originalSecondaryColor = astro.secondaryColor;
+        astro.originalLandColor = astro.landColor;
+        astro.originalOceanColor = astro.oceanColor;
+        astro.originalRingColor = astro.ringColor;
+    }
+    if (isSpaceshipType(astro.type) && !astro.originalType) {
+        astro.originalType = astro.type;
+    }
+    const grayColors = getGrayColorsByType(astro.type);
+    astro.color = grayColors.main;
+    astro.glowColor = grayColors.glow;
+    switch(astro.type) {
+        case 'rockyPlanet':
+        case 'gasGiant':
+        case 'planetoid':
+            if (astro.secondaryColor) astro.secondaryColor = grayColors.secondary;
+            if (astro.landColor) astro.landColor = grayColors.land;
+            if (astro.oceanColor) astro.oceanColor = grayColors.ocean;
+            if (astro.ringColor) astro.ringColor = grayColors.ring;
+            break;
+        case 'asteroid':
+        case 'meteoroid':
+        case 'comet':
+        case 'meteorite':
+            if (astro.shape) {
+                astro.shape.forEach(point => {
+                });
+            }
+            break;
+        case 'spaceDust':
+            astro.color = '#555555';
+            break;
+        case 'nebula':
+            astro.color = '#999999';
+            break;
+        case 'blackHole':
+        case 'wormhole':
+        case 'whiteHole':
+        case 'quasar':
+            astro.glowColor = '#AAAAAA';
+            if (astro.diskColor) astro.diskColor = '#888888';
+            break;
+        default:
+            if (astro.secondaryColor) astro.secondaryColor = grayColors.secondary;
+            break;
+    }
+    astro.petrified = true;
+    astro.petrificationTime = Date.now();
+    astro.medusaPetrified = true;
+    createPetrificationEffect(astro);
+    console.log(`Petrificado: ${astro.type} - Cor: ${astro.color}`);
+}
+function getGrayColorsByType(type) {
+    const colorSets = {
+        rockyPlanet: { main: '#888888', glow: '#666666', secondary: '#777777', land: '#999999', ocean: '#777777', ring: '#AAAAAA' },
+        gasGiant: { main: '#777777', glow: '#555555', secondary: '#666666', land: null, ocean: null, ring: '#999999' },
+        planetoid: { main: '#8A8A8A', glow: '#6A6A6A', secondary: '#7A7A7A', land: '#9A9A9A', ocean: '#7A7A7A', ring: '#ABABAB' },
+        star: { main: '#AAAAAA', glow: '#888888', secondary: null, land: null, ocean: null, ring: null },
+        redDwarf: { main: '#999999', glow: '#777777', secondary: null, land: null, ocean: null, ring: null },
+        brownDwarf: { main: '#777777', glow: '#555555', secondary: null, land: null, ocean: null, ring: null },
+        whiteDwarf: { main: '#BBBBBB', glow: '#999999', secondary: null, land: null, ocean: null, ring: null },
+        neutronStar: { main: '#CCCCCC', glow: '#AAAAAA', secondary: null, land: null, ocean: null, ring: null },
+        pulsar: { main: '#DDDDDD', glow: '#BBBBBB', secondary: null, land: null, ocean: null, ring: null },
+        blackHole: { main: '#222222', glow: '#444444', secondary: null, land: null, ocean: null, ring: null },
+        asteroid: { main: '#777777', glow: '#555555', secondary: null, land: null, ocean: null, ring: null },
+        comet: { main: '#888888', glow: '#666666', secondary: null, land: null, ocean: null, ring: null },
+        meteoroid: { main: '#666666', glow: '#444444', secondary: null, land: null, ocean: null, ring: null },
+        meteorite: { main: '#6A6A6A', glow: '#484848', secondary: null, land: null, ocean: null, ring: null },
+        rocket: { main: '#666666', glow: '#444444', secondary: null, land: null, ocean: null, ring: null },
+        spaceship: { main: '#676767', glow: '#454545', secondary: null, land: null, ocean: null, ring: null },
+        satellite: { main: '#686868', glow: '#464646', secondary: null, land: null, ocean: null, ring: null },
+        superShip: { main: '#696969', glow: '#474747', secondary: null, land: null, ocean: null, ring: null },
+        spaceDust: { main: '#555555', glow: '#333333', secondary: null, land: null, ocean: null, ring: null },
+        nebula: { main: '#999999', glow: '#777777', secondary: null, land: null, ocean: null, ring: null },
+        radiation: { main: '#777777', glow: '#555555', secondary: null, land: null, ocean: null, ring: null }
+    };
+    return colorSets[type] || { main: '#777777', glow: '#555555', secondary: '#666666', land: null, ocean: null, ring: null };
+}
+function debugPetrificationStatus() {
+    const medusaStars = planets.filter(p => p.type === 'medusaStar');
+    const petrifiedAstros = planets.filter(p => p.petrified && p.type !== 'medusaStar');
+    console.log(`=== STATUS DE PETRIFICAÇÃO ===`);
+    console.log(`Medusa Stars: ${medusaStars.length}`);
+    console.log(`Astros Petrificados: ${petrifiedAstros.length}`);
+    petrifiedAstros.forEach(astro => {
+        console.log(`- ${astro.type}: ${astro.color} (Original: ${astro.originalColor})`);
+    });
+    medusaStars.forEach(medusa => {
+        const nearbyAstros = planets.filter(other => {
+            if (other === medusa || other.type === 'medusaStar') return false;
+            const dx = other.x - medusa.x;
+            const dy = other.y - medusa.y;
+            const distance = Math.sqrt(dx * dx + dy * dy);
+            return distance < medusa.radius * 15 && !other.petrified;
+        });
+        if (nearbyAstros.length > 0) {
+            console.log(`Medusa em (${medusa.x.toFixed(0)}, ${medusa.y.toFixed(0)}) tem ${nearbyAstros.length} astros próximos não petrificados:`);
+            nearbyAstros.forEach(astro => {
+                const dx = astro.x - medusa.x;
+                const dy = astro.y - medusa.y;
+                const distance = Math.sqrt(dx * dx + dy * dy);
+                console.log(`  - ${astro.type} a ${distance.toFixed(0)} unidades`);
+            });
+        }
+    });
+}
+setInterval(() => {
+    if (DEBUG_EVOLUTION) {
+        debugPetrificationStatus();
+    }
+}, 5000);
+function transformToPetrified(obj) {
+    obj.originalType = obj.type;
+    obj.originalColor = obj.color;
+    obj.originalRadius = obj.radius;
+    obj.originalVx = obj.vx;
+    obj.originalVy = obj.vy;
+    if (obj.originalTemperature === undefined) {
+        obj.originalTemperature = obj.temperature;
+    }
+    obj.petrified = true;
+    obj.petrificationTime = Date.now();
+    obj.ignoreColorChanges = true;
+    obj.color = '#666666';
+    obj.radius = obj.radius * 0.9;
+    if (isSpaceshipType(obj.type)) {
+        obj.vx = 0;
+        obj.vy = 0;
+        obj.frozen = true;
+    }
+    createPetrificationEffect(obj);
+    showNotification(`🪨 ${getTypeName(obj.originalType)} petrificado por Medusa Star!`, 3000);
+}
+function applyMedusaPetrification(medusaStar) {
+    const petrificationRadius = medusaStar.radius * 10;
+    planets.forEach(other => {
+        if (other === medusaStar || other.markedForRemoval) return;
+        const dx = other.x - medusaStar.x;
+        const dy = other.y - medusaStar.y;
+        const distance = Math.sqrt(dx * dx + dy * dy);
+    });
+}
+function createPetrificationEffect(obj) {
+    for (let i = 0; i < 8; i++) {
+        const angle = (i / 8) * Math.PI * 2;
+        const distance = obj.radius * 1.5;
+        const particle = {
+            x: obj.x + Math.cos(angle) * distance,
+            y: obj.y + Math.sin(angle) * distance,
+            vx: Math.cos(angle) * 3,
+            vy: Math.sin(angle) * 3,
+            life: 1.5,
+            maxLife: 1.5,
+            color: '#888888',
+            size: obj.radius * 0.15,
+            type: 'petrification'
+        };
+        if (window.particles) {
+            particles.push(particle);
+        }
+    }
+}
+function createMedusaExplosionEffect(medusaStar) {
+    for (let i = 0; i < 3; i++) {
+        const ring = {
+            x: medusaStar.x,
+            y: medusaStar.y,
+            radius: medusaStar.radius * (1 + i * 0.5),
+            maxRadius: medusaStar.radius * (3 + i * 2),
+            life: 0,
+            maxLife: 1.5,
+            color: '#00FF00',
+            type: 'medusaRadiation'
+        };
+        if (window.particles) {
+            particles.push(ring);
+        }
+    }
+}
+function fgpMedusaExplosions(deltaTime) {
+    planets.forEach(planet => {
+        if (planet.type === 'medusaStar' && planet.explosionActive) {
+            const currentTime = Date.now();
+            const explosionDuration = 3000;
+            planet.explosionProgress = (currentTime - planet.explosionStartTime) / explosionDuration;
+            planet.jetsVisible = planet.explosionProgress < 0.4;
+            if (planet.explosionProgress >= 1) {
+                planet.explosionActive = false;
+                planet.explosionProgress = 0;
+                planet.jetsVisible = false;
+            }
+        }
+    });
 }
 function isSpaceshipType(type) {
     return ['rocket', 'spaceship', 'superShip', 'satellite'].includes(type);
@@ -4951,10 +5862,13 @@ function gameLoop(timestamp) {
         handleCollisions();
         cleanupDistantShips();
         fgpAnimations(deltaTime);
-        updateShipMovement(deltaTime);
+        fgpShipMovement(deltaTime);
         cleanupDestroyedShips();
-        updateSpectateCamera();
-        updateFunSpaceColors(deltaTime);
+        fgpMedusaExplosions(deltaTime);
+        fgpSpectateCamera();
+        fgpMedusaPetrification();
+        fgpMedusaStarBehavior(deltaTime);
+        fgpFunSpaceColors(deltaTime);
         planets.forEach(planet => {
             if (planet.type === 'ttauriStar' && planet.debrisGeneration) {
                 const currentTime = Date.now();
@@ -5528,7 +6442,7 @@ function handleRocketCollision(rocket, target) {
         rocket.markedForRemoval = true;
     }
 }
-function updateShipMovement(deltaTime) {
+function fgpShipMovement(deltaTime) {
     if (!controlMode || !controlledShip || controlledShip.markedForRemoval) return;
     const acceleration = 0.5 * (deltaTime / 16); 
     const maxSpeed = 10;
@@ -5963,7 +6877,7 @@ function cleanupDestroyedShips() {
         }
         if (isSpaceshipType(obj.type)) {
             if (!isFinite(obj.x) || !isFinite(obj.y) || 
-                Math.abs(obj.x) > 1e10 || Math.abs(obj.y) > 1e10) {s
+                Math.abs(obj.x) > 1e10 || Math.abs(obj.y) > 1e10) {
                 obj.markedForRemoval = true;
             }
         }
@@ -6546,10 +7460,10 @@ function transformToBigBang(planet) {
 function addTSCoins(amount) {
     tsCoins += amount;
     localStorage.setItem('tsCoins', tsCoins.toString());
-    updateTSCoinsDisplay();
+    fgpTSCoinsDisplay();
     showNotification(`+${amount} TS Coins! Total: ${tsCoins}`);
 }
-function updateTSCoinsDisplay() {
+function fgpTSCoinsDisplay() {
     const tsCoinsDisplay = document.getElementById('tsCoinsDisplay');
     if (tsCoinsDisplay) {
         tsCoinsDisplay.textContent = tsCoins;
@@ -6577,7 +7491,7 @@ function openShop() {
             shopOverlay.classList.add('active');
         }, 10);
         document.body.style.overflow = 'hidden';
-        updateShopDisplay();
+        fgpShopDisplay();
         setTimeout(() => {
             const allIcons = document.querySelectorAll('.shop-item .tsCoinsIcon');
             allIcons.forEach(icon => {
@@ -6602,7 +7516,7 @@ function openManual() {
     const manualOverlay = document.getElementById('manualOverlay');
     if (manualOverlay) {
         currentManualPage = 1;
-        updateManualPage();
+        fgpManualPage();
         manualOverlay.style.display = 'flex';
         setTimeout(() => {
             manualOverlay.classList.add('active');
@@ -6619,7 +7533,7 @@ function purchaseItem(itemId, price) {
         localStorage.setItem('tsCoins', tsCoins.toString());
         purchasedItems[itemId] = true;
         localStorage.setItem('siu2d_purchased_items', JSON.stringify(purchasedItems));
-        updateTSCoinsDisplay();
+        fgpTSCoinsDisplay();
         showNotification(`Purchased ${getItemName(itemId)} for ${price} TS Coins! Reloading...`);
         applyPurchasedItem(itemId);
         setTimeout(() => {
@@ -6667,7 +7581,7 @@ function applyPurchasedItem(itemId) {
             break;
     }
 }
-function updateShopDisplay() {
+function fgpShopDisplay() {
     document.querySelectorAll('.shop-item').forEach(item => {
         const itemId = item.getAttribute('data-item-id');
         if (itemId && purchasedItems[itemId]) {
@@ -6678,7 +7592,7 @@ function updateShopDisplay() {
     });
 }
 function initializeShop() {
-    updateShopDisplay();
+    fgpShopDisplay();
     document.querySelectorAll('.shop-item').forEach(item => {
         const itemId = item.getAttribute('data-item-id');
         const price = parseInt(item.getAttribute('data-price'));
@@ -7995,13 +8909,21 @@ function unlockBizarreStars() {
         }
     });
     localStorage.setItem('siu2d_unlocked_astros', JSON.stringify(unlockedAstroTypes));
-    updateCreationGrid();
+    fgpCreationGrid();
+}
+function unlockMedusaStar() {
+    const medusaStarType = 'medusaStar';
+    if (!unlockedAstroTypes.includes(medusaStarType)) {
+        unlockedAstroTypes.push(medusaStarType);
+        localStorage.setItem('siu2d_unlocked_astros', JSON.stringify(unlockedAstroTypes));
+        fgpCreationGrid();
+    }
 }
 function unlockSingularity() {
     if (!unlockedAstroTypes.includes('singularity')) {
         unlockedAstroTypes.push('singularity');
         localStorage.setItem('siu2d_unlocked_astros', JSON.stringify(unlockedAstroTypes));
-        updateCreationGrid();
+        fgpCreationGrid();
     }
 }
 let unlockedConfigs = JSON.parse(localStorage.getItem('siu2d_unlocked_configs') || '[]');
@@ -8012,7 +8934,7 @@ function unlockFunSpace() {
         showNotification("Go to Options");
     }
 }
-function updateCreationGrid() {
+function fgpCreationGrid() {
     const optionsGrid = document.querySelector('.options-grid');
     if (!optionsGrid) return;
     unlockedAstroTypes.forEach(astroType => {
@@ -8134,7 +9056,7 @@ function getAstroConfig(type) {
             name: 'Singularity',
             description: 'The heaviest object in the universe and the origin of the big bang!',
             massPercent: 100,
-            massRange: '5B - 15B',
+            massRange: ' "∞" ',
             rarity: 'Ultra-Legendario',
             rarityText: 'Ultra-Legendary'
         }
@@ -8162,18 +9084,18 @@ function closeManual() {
 function nextManualPage() {
     if (currentManualPage < totalManualPages) {
         currentManualPage++;
-        updateManualPage();
+        fgpManualPage();
         showNotification(`Página ${currentManualPage} de ${totalManualPages}`);
     }
 }
 function prevManualPage() {
     if (currentManualPage > 1) {
         currentManualPage--;
-        updateManualPage();
+        fgpManualPage();
         showNotification(`Página ${currentManualPage} de ${totalManualPages}`);
     }
 }
-function updateManualPage() {
+function fgpManualPage() {
     const pages = document.querySelectorAll('.manual-page');
     pages.forEach(page => {
         page.classList.remove('active');
@@ -8459,7 +9381,7 @@ function toggleSpectateMode() {
         showNotification("Spectate mode deactivated.");
     }
 }
-function updateSpectateCamera() {
+function fgpSpectateCamera() {
     if (spectateMode && spectatedAstro) {
         const astroExists = planets.find(p => p === spectatedAstro && !p.markedForRemoval);
         if (!astroExists) {
@@ -8583,6 +9505,7 @@ function createAstro(type, x, y, vx = 0, vy = 0, customMass = null, originPlanet
         planetClass = 'Gas Giant';
     }
     const planet = {
+        id: Date.now() + Math.random(),
         x, y, vx, vy,
         rotation: Math.random() * Math.PI * 2,
         rotationSpeed: astroSettings.rotationSpeed || 0.01,
@@ -9620,6 +10543,21 @@ function createAstro(type, x, y, vx = 0, vy = 0, customMass = null, originPlanet
             planet.echoField = true;
             planet.temporalResonance = true;
             break;
+        case 'medusaStar':
+            planet.mass = Math.max(800000000, customMass || astroSettings.mass * 8000000);
+            planet.color = '#00FF00';
+            planet.glowColor = '#006400';
+            planet.radius = calculateRadiusForType('medusaStar', planet.mass);
+            planet.temperature = 18000;
+            planet.explosionCooldown = 5000 + Math.random() * 10000;
+            planet.explosionActive = false;
+            planet.explosionProgress = 0;
+            planet.jetAngle = Math.random() * Math.PI * 2;
+            planet.petrificationField = true;
+            planet.isSecretStar = true;
+            Acount = (Acount || 0) + 1;
+            setTimeout(() => onMedusaStarCreated(planet), 100);
+            break;
         case 'singularityStar':
             planet.mass = Math.max(5000000000000000000000000000000000000000000000000000000000000000000000000000000000, customMass || astroSettings.mass * 50000000);
             planet.color = '#000000';
@@ -9669,6 +10607,55 @@ function createAstro(type, x, y, vx = 0, vy = 0, customMass = null, originPlanet
         }
     }
     return planet;
+}
+function fgpMedusaStarBehavior(planet, deltaTime) {
+    const currentTime = Date.now();
+    if (!planet.explosionActive && 
+        currentTime - planet.lastExplosionTime > planet.explosionCooldown) {
+        triggerMedusaExplosion(planet);
+    }
+    if (planet.explosionActive) {
+        const explosionDuration = 5000;
+        planet.explosionProgress += deltaTime / explosionDuration;
+        if (planet.explosionProgress >= 1) {
+            planet.explosionActive = false;
+            planet.explosionProgress = 0;
+            planet.jetsVisible = false;
+        }
+        planet.jetsVisible = planet.explosionProgress < 0.4;
+    }
+}
+function applyPetrificationEffect(medusaStar) {
+    const petrificationRadius = medusaStar.radius * 8;
+    planets.forEach(other => {
+        if (other === medusaStar) return;
+        const dx = other.x - medusaStar.x;
+        const dy = other.y - medusaStar.y;
+        const distance = Math.sqrt(dx * dx + dy * dy);
+        if (distance < petrificationRadius && 
+            ['rocket', 'spaceship', 'satellite', 'superShip'].includes(other.type)) {
+            other.originalType = other.type;
+            other.type = 'meteoroid';
+            other.color = '#666666';
+            other.petrified = true;
+            other.petrificationTime = Date.now();
+            createTransformationEffect(other);
+        }
+    });
+}
+function createTransformationEffect(astro) {
+    for (let i = 0; i < 10; i++) {
+        const particle = {
+            x: astro.x,
+            y: astro.y,
+            vx: (Math.random() - 0.5) * 2,
+            vy: (Math.random() - 0.5) * 2,
+            life: 1,
+            maxLife: 1,
+            color: '#00FF00',
+            size: astro.radius * 0.3
+        };
+    }
 }
 function initializePlanetLifeProperties(planet) {
     planet.lifeChance = 0;
@@ -9794,7 +10781,18 @@ function getTypeName(type) {
         'rocket':'rocket',
         'spaceship':'spaceship',
         'superShip':'Super Ship',
-        'redHypergiant' : 'Ultranuclestar', 
+        'redHypergiant' : 'Ultranuclestar',
+        'medusaStar': 'Medusa Star',
+        'chronosStar':'Chronos Star',
+        'phantomStar': 'Phantom Star',
+        'vortexStar': 'Vortex Star',
+        'crystalStar':'Crystal Star',
+        'neuralStar':'Neural Star',
+        'hologramStar':'Hologram Star',
+        'quantumFoamStar':'Quantum Foam Star',
+        'prismStar':'Prism Star',
+        'echoStar':'Echo Star',
+        'singularityStar':'Singularity'
     };
     return names[type] || 'Astro';
 }
@@ -10467,7 +11465,7 @@ function applyAstroChanges() {
         }
         selectedPlanet.name = editName.value || selectedPlanet.name;
         selectedPlanet.color = editColor.value || selectedPlanet.color;
-        showNotification(`✅ ${selectedPlanet.name} updated successfully`);
+        showNotification(`✅ ${selectedPlanet.name} successfully`);
         fgpAstroPreview();
     } catch (error) {
         console.error('Error applying astro changes:', error);
@@ -10614,6 +11612,7 @@ function handleTouchStart(e) {
     }
 }
 function handleTouchMove(e) {
+    unlockAchievement(48);
     e.preventDefault();
     const touches = Array.from(e.touches);
     currentTouches = touches;
@@ -11604,7 +12603,7 @@ document.getElementById('crazy').addEventListener('click', function() {
     }
 });
 function resetAchievements() {
-  if (!confirm("Tem certeza que deseja resetar TODAS as suas conquistas?\nIsso não pode ser desfeito!")) return;
+  if (!confirm("Are you sure you want to reset ALL your achievements??\nThis cannot be undone!")) return;
   achievementsState = {};
   localStorage.setItem('siu2d_achievements', JSON.stringify(achievementsState));
   renderAchievementsList();
