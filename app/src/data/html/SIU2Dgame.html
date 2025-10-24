@@ -1377,16 +1377,16 @@ document.getElementById('tsingu').addEventListener('contextmenu', (e) => {
     </div>
     <div class="menu-section" id="astroDetailsSection">
         <h3 class="section-title" data-i18n="ui.inGameMenu.sections.astroSettings"><i class="fas fa-cog"></i></h3>
-        <div class="planet-preview" id="planetPreview"></div>
+        <div class="planet-preview" id="planetPreview" style="display: none;"></div>
         <div class="detail-group">
             <div class="detail-title"><i class="fas fa-palette" data-i18n="ui.inGameMenu.appearance.title"></i></div>
-            <div class="detail-row">
+            <div class="detail-row" style="display: none;">
                 <div class="detail-label" data-i18n="ui.inGameMenu.appearance.primaryColor"></div>
                 <div class="detail-value">
                     <input type="color" id="primaryColor" value="#888888">
                 </div>
             </div>
-            <div class="detail-row">
+            <div class="detail-row" style="display: none;">
                 <div class="detail-label" data-i18n="ui.inGameMenu.appearance.secondaryColor"></div>
                 <div class="detail-value">
                     <input type="color" id="secondaryColor" value="#888888">
@@ -1709,11 +1709,11 @@ document.getElementById('tsingu').addEventListener('contextmenu', (e) => {
 const gravitySliderConfig = document.getElementById('gravityFactor');
 const gravityValueConfig = document.getElementById('gravityValue');
 if (gravitySliderConfig && gravityValueConfig) {
-    function updateGravityValueConfig() {
+    function fgpGravityValueConfig() {
     gravityValueConfig.textContent = (gravitySliderConfig.value * 100).toFixed(0) + '%';
     }
-    gravitySliderConfig.addEventListener('input', updateGravityValueConfig);
-    updateGravityValueConfig();
+    gravitySliderConfig.addEventListener('input', fgpGravityValueConfig);
+    fgpGravityValueConfig();
 }
 document.querySelectorAll('.setting-control input[type="range"]').forEach(function(slider) {
     slider.classList.add('slider');
