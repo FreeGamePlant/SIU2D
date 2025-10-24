@@ -26,12 +26,27 @@ let currentProgress = 0;
 function updateSingularityIcon() {
     const bar = document.getElementById('loadingBar');
     const progressBar = document.getElementById('loadingProgress');
-    const icon = document.getElementById('singularityIcon');
-    if (!bar || !icon || !progressBar) return;
+    const animation = document.getElementById('singularityAnimation');
+    if (!bar || !animation || !progressBar) return;
     const barLeft = bar.offsetLeft;
     const progressWidth = progressBar.offsetWidth;
-    const iconLeft = barLeft + progressWidth - icon.offsetWidth / 2;
-    icon.style.left = iconLeft + 'px';
+    const barWidth = bar.offsetWidth;
+    const iconLeft = barLeft + (progressWidth / barWidth) * barWidth;
+    animation.style.left = iconLeft + 'px';
+    if (!animation.classList.contains('singu-animating')) {
+        animation.classList.add('singu-animating');
+    }
+}
+function preloadSinguImages() {
+    const images = [
+        'app/src/data/assets/img/singuAnimationRun_1.png',
+        'app/src/data/assets/img/singuAnimationRun_2.png',
+        'app/src/data/assets/img/singuAnimationRun_3.png'
+    ];
+    images.forEach(src => {
+        const img = new Image();
+        img.src = src;
+    });
 }
 window.addEventListener('resize', function() {
     updateSingularityIcon();
@@ -74,6 +89,7 @@ function showRandomQuote(loadingQuotesArr) {
 (function mainLoading() {
     setRandomBackground();
     createParticles();
+    preloadSinguImages();
     let lang = localStorage.getItem('siu2d_lang') || (navigator.language || navigator.userLanguage || 'en').split('-')[0];
     const supportedLangs = ['pt', 'en', 'es', 'fr', 'de', 'it', 'ja', 'ko', 'ru', 'zh', 'ar', 'nl', 'tr', 'hi'];
     if (!supportedLangs.includes(lang)) lang = 'en';

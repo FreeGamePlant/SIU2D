@@ -386,3 +386,81 @@ text-shadow: 0 0 20px rgba(255, 255, 255, 0.5),
 0 0 2px rgba(255, 255, 255, 0.3);
 }
 }
+#singularityAnimation {
+position: absolute;
+top: -15px;
+width: 38px;
+height: 38px;
+background-image: url('app/src/data/assets/img/singuAnimationRun_1.png');
+background-size: contain;
+background-repeat: no-repeat;
+z-index: 20;
+pointer-events: none;
+left: 0;
+transform: translateX(-50%);
+}
+#singularityAnimation {
+position: absolute;
+top: -120px; 
+width: 200px; 
+height: 200px; 
+background-image: url('app/src/data/assets/img/singuAnimationRun_1.png');
+background-size: contain;
+background-repeat: no-repeat;
+z-index: 20;
+pointer-events: none;
+left: 0;
+transform: translateX(-50%);
+}
+@keyframes singuRun {
+0% {
+background-image: url('app/src/data/assets/img/singuAnimationRun_1.png');
+}
+33% {
+background-image: url('app/src/data/assets/img/singuAnimationRun_2.png');
+}
+66% {
+background-image: url('app/src/data/assets/img/singuAnimationRun_3.png');
+}
+100% {
+background-image: url('app/src/data/assets/img/singuAnimationRun_1.png');
+}
+}
+.singu-animating {
+animation: singuRun 0.3s infinite;
+}
+@media (max-width: 768px) {
+#singularityAnimation {
+width: 50px;
+height: 50px;
+top: -20px;
+}
+}
+@media (max-width: 480px) {
+#singularityAnimation {
+width: 45px; 
+height: 45px;
+top: -18px;
+}
+}
+@media (max-width: 320px) {
+#singularityAnimation {
+width: 40px;
+height: 40px;
+top: -16px;
+}
+}
+@media (max-height: 500px) and (orientation: landscape) {
+#singularityAnimation {
+width: 40px;
+height: 40px;
+top: -15px;
+}
+}
+@media (min-width: 1920px) {
+#singularityAnimation {
+top: -120px; 
+width: 200px; 
+height: 200px; 
+}
+}
