@@ -3223,6 +3223,7 @@ align-items: center;
 justify-content: center;
 cursor: pointer;
 transition: all 0.2s ease;
+-webkit-backdrop-filter: blur(5px);
 backdrop-filter: blur(5px);
 }
 .video-controls button:hover {
@@ -4432,6 +4433,7 @@ align-items: center;
 justify-content: center;
 cursor: pointer;
 transition: all 0.2s ease;
+-webkit-backdrop-filter: blur(5px);
 backdrop-filter: blur(5px);
 }
 .video-controls button:hover {
@@ -4662,10 +4664,6 @@ cursor: not-allowed;
 .toggle-switch input:disabled + .slider:before {
 background-color: #ccc;
 }
-.pixel-mode canvas {
-image-rendering: pixelated;
-image-rendering: crisp-edges;
-}
 .shop-item.purchased {
 opacity: 0.7;
 background: linear-gradient(45deg, #2d5a2d, #1e3a1e);
@@ -4854,4 +4852,64 @@ padding: 20px;
 border-left: 4px solid #3498db;
 position: relative;
 margin-top: 20px;
+}
+:fullscreen {
+background: #000;
+}
+
+:-webkit-full-screen {
+background: #000;
+}
+
+:-moz-full-screen {
+background: #000;
+}
+
+:-ms-fullscreen {
+background: #000;
+}
+html, body {
+width: 100%;
+height: 100%;
+margin: 0;
+padding: 0;
+overflow: hidden;
+}
+#btnFullscreen {
+background: linear-gradient(45deg, #4a90e2, #357abd);
+border: none;
+border-radius: 8px;
+color: white;
+padding: 10px 15px;
+cursor: pointer;
+font-size: 14px;
+transition: all 0.3s ease;
+}
+#btnFullscreen:hover {
+background: linear-gradient(45deg, #357abd, #2a5f9e);
+transform: scale(1.05);
+}
+@media (max-width: 768px) {
+#gameContainer {
+width: 100vw !important;
+height: 100vh !important;
+}
+
+#gameCanvas {
+width: 100% !important;
+height: 100% !important;
+}
+}
+#notification {
+z-index: 10000;
+position: fixed;
+top: 20px;
+left: 50%;
+transform: translateX(-50%);
+background: rgba(0, 0, 0, 0.8);
+color: white;
+padding: 12px 20px;
+border-radius: 8px;
+font-size: 14px;
+border: 1px solid #4a90e2;
 }

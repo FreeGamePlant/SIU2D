@@ -48,7 +48,8 @@ user-select: text;
   <button class="close-config" id="closeConfigBtn" title="Close">&times;</button>
   <div class="sidebar-content">
     <div class="edit-panel" style="padding: 1.5rem 1rem;">
-      <h2 data-i18n="ui.config.title" style="margin-bottom: 1.2rem; color: #81d4fa;"><div id="crazy">⚙️</div></h2>
+    <div id="crazy">⚙️</div>
+      <h2 data-i18n="ui.config.title" style="margin-bottom: 1.2rem; color: #81d4fa;"></h2>
       <div class="edit-group">
         <div class="edit-label" data-i18n="ui.config.shadows">Sombras</div>
         <div class="edit-input">
@@ -294,14 +295,20 @@ user-select: text;
                     <div class="shop-item" data-item-id="solar_system" data-price="10000">
                         <div class="shop-item-icon"><i class="fas fa-solar-system"></i></div>
                         <h3>Solar System</h3>
-                        <p>The Solar System Package, Planets begin locked down for security reasons</p>
+                        <p>Our Incredible Solar System, SIU2D version</p>
                         <div class="shop-item-price">10.000<img src="../assets/img/tsCoins.png" class="tsCoinsIcon" alt=""> / save</div>
                     </div>
-                    <div class="shop-item" data-item-id="complete_solar_system" data-price="10000">
+                    <div class="shop-item" data-item-id="past_solar_system" data-price="11000">
+                        <div class="shop-item-icon"><i class="fas fa-solar-system"></i></div>
+                        <h3>Past Solar System</h3>
+                        <p>The Solar System in the Past, warning! It has a completely Alternative future!</p>
+                        <div class="shop-item-price">11.000<img src="../assets/img/tsCoins.png" class="tsCoinsIcon" alt=""> / save</div>
+                    </div>
+                    <div class="shop-item" data-item-id="complete_solar_system" data-price="12500">
                         <div class="shop-item-icon"><i class="fas fa-solar-system"></i></div>
                         <h3>Alternative Solar System</h3>
-                        <p>The Solar System Package, Planets begin locked down for security reasons</p>
-                        <div class="shop-item-price">10.000<img src="../assets/img/tsCoins.png" class="tsCoinsIcon" alt=""> / save</div>
+                        <p>What if the solar system had them all? What would it be like? Which theory do you believe most?</p>
+                        <div class="shop-item-price">12.500<img src="../assets/img/tsCoins.png" class="tsCoinsIcon" alt=""> / save</div>
                     </div>
                     <div class="shop-item" data-item-id="habitable_alpha" data-price="1000">
                         <div class="shop-item-icon"><i class="fas fa-globe-americas"></i></div>
@@ -321,17 +328,23 @@ user-select: text;
                         <p>+9 types of fictional stars with + 1 star called 'SINGULARITY1'</p>
                         <div class="shop-item-price">30.500<img src="../assets/img/tsCoins.png" class="tsCoinsIcon" alt=""> / + 10 Astro</div>
                     </div>
-                    <div class="shop-item" data-item-id="fun_space" data-price="65000">
+                    <div class="shop-item" data-item-id="fun_space" data-price="5000">
                         <div class="shop-item-icon"><i class="fas fa-palette"></i></div>
                         <h3>The fun space</h3>
                         <p>You get another mode which is neon space, it changes color all the time, and as a bonus another mode which is a day/night space simulator.</p>
-                        <div class="shop-item-price">65.000<img src="../assets/img/tsCoins.png" class="tsCoinsIcon" alt=""> / Mod</div>
+                        <div class="shop-item-price">5.000<img src="../assets/img/tsCoins.png" class="tsCoinsIcon" alt=""> / Mod</div>
                     </div>
                     <div style="display: none;" class="shop-item" data-item-id="singularity" data-price="100000">
                         <div class="shop-item-icon"><i class="fas fa-black-hole"></i></div>
                         <h3>SINGULARITY</h3>
                         <p>The Heaviest Object in the Universe, the Beginning of the Big Bang.</p>
                         <div class="shop-item-price">100.000<img src="../assets/img/tsCoins.png" class="tsCoinsIcon" alt=""> / + 1 Astro</div>
+                    </div>
+                    <div class="shop-item" data-item-id="create_random_save" data-price="50000">
+                        <div class="shop-item-icon"><i class="fas fa-solar-system"></i></div>
+                        <h3>Random Galaxy Save</h3>
+                        <p>A Save that generates random galaxy</p>
+                        <div class="shop-item-price">50.000<img src="../assets/img/tsCoins.png" class="tsCoinsIcon" alt=""> / save</div>
                     </div>
                     <div class="shop-item">
                         <div class="shop-item-icon"></div>
@@ -1959,5 +1972,150 @@ document.addEventListener('DOMContentLoaded', function() {
     </span>
     <span id="tsCoinsValue">0</span>
 </div>
+<script>
+function enterFullscreen() {
+    const element = document.documentElement;
+    return new Promise((resolve, reject) => {
+        const fullscreenPromise = element.requestFullscreen?.() ||
+                                element.webkitRequestFullscreen?.() ||
+                                element.msRequestFullscreen?.() ||
+                                element.mozRequestFullScreen?.();
+        if (fullscreenPromise) {
+            fullscreenPromise.then(resolve).catch(reject);
+        } else {
+            reject(new Error('Fullscreen not supported'));
+        }
+    });
+}
+function exitFullscreen() {
+    return new Promise((resolve, reject) => {
+        const exitPromise = document.exitFullscreen?.() ||
+                          document.webkitExitFullscreen?.() ||
+                          document.msExitFullscreen?.() ||
+                          document.mozCancelFullScreen?.();
+        if (exitPromise) {
+            exitPromise.then(resolve).catch(reject);
+        } else {
+            reject(new Error('Exit fullscreen not supported'));
+        }
+    });
+}
+function isMobileDevice() {
+    return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+}
+function lockOrientation() {
+    if (isMobileDevice() && screen.orientation && screen.orientation.lock) {
+        screen.orientation.lock('landscape').catch(() => {
+            console.log('Orientation lock not supported');
+        });
+    }
+}
+function isFullscreen() {
+    return !!(document.fullscreenElement || 
+              document.webkitFullscreenElement || 
+              document.msFullscreenElement ||
+              document.mozFullScreenElement);
+}
+function toggleFullscreen() {
+    if (isFullscreen()) {
+        exitFullscreen();
+    } else {
+        enterFullscreen();
+    }
+}
+function initFullscreen() {
+    if (isMobileDevice()) {
+        setTimeout(() => {
+            enterFullscreen().then(() => {
+                console.log('Fullscreen enabled on mobile');
+                lockOrientation();
+            }).catch((error) => {
+                console.log('Fullscreen not available:', error);
+                showFullscreenPrompt();
+            });
+        }, 1000);
+    }
+    addFullscreenButton();
+}
+function showFullscreenPrompt() {
+    const notification = document.getElementById('notification');
+    if (notification) {
+        notification.innerHTML = '📱 <span data-i18n="ui.fullscreen.tapPrompt">Toque para tela cheia</span>';
+        notification.style.display = 'block';
+        notification.style.cursor = 'pointer';
+        notification.addEventListener('click', function fullscreenClick() {
+            enterFullscreen().then(() => {
+                notification.style.display = 'none';
+            }).catch(() => {
+                notification.innerHTML = '❌ <span data-i18n="ui.fullscreen.unsupported">Tela cheia não suportada</span>';
+                setTimeout(() => {
+                    notification.style.display = 'none';
+                }, 3000);
+            });
+            notification.removeEventListener('click', fullscreenClick);
+        });
+        setTimeout(() => {
+            if (notification.style.display === 'block') {
+                notification.style.display = 'none';
+            }
+        }, 5000);
+    }
+}
+function addFullscreenButton() {
+    const menuSection = document.querySelector('.menu-section');
+    if (menuSection) {
+        const fullscreenBtn = document.createElement('button');
+        fullscreenBtn.className = 'action-btn secondary';
+        fullscreenBtn.id = 'btnFullscreen';
+        fullscreenBtn.innerHTML = '<i class="fas fa-expand"></i> <span data-i18n="ui.fullscreen.enter">Tela Cheia</span>';
+        fullscreenBtn.style.margin = '5px 0';
+        fullscreenBtn.addEventListener('click', toggleFullscreen);
+        const resetCameraBtn = document.getElementById('btnResetCamera');
+        if (resetCameraBtn) {
+            resetCameraBtn.parentElement.parentElement.parentElement.insertBefore(fullscreenBtn, resetCameraBtn.parentElement.parentElement);
+        } else {
+            menuSection.appendChild(fullscreenBtn);
+        }
+    }
+}
+function updateFullscreenButton() {
+    const btn = document.getElementById('btnFullscreen');
+    if (btn) {
+        if (isFullscreen()) {
+            btn.innerHTML = '<i class="fas fa-compress"></i> <span data-i18n="ui.fullscreen.exit">Sair Tela Cheia</span>';
+        } else {
+            btn.innerHTML = '<i class="fas fa-expand"></i> <span data-i18n="ui.fullscreen.enter">Tela Cheia</span>';
+        }
+    }
+}
+document.addEventListener('fullscreenchange', updateFullscreenButton);
+document.addEventListener('webkitfullscreenchange', updateFullscreenButton);
+document.addEventListener('mozfullscreenchange', updateFullscreenButton);
+document.addEventListener('MSFullscreenChange', updateFullscreenButton);
+document.addEventListener('DOMContentLoaded', function() {
+    setTimeout(initFullscreen, 500);
+    const btnPlay = document.getElementById('btnPlay');
+    if (btnPlay) {
+        btnPlay.addEventListener('click', function() {
+            setTimeout(() => {
+                if (isMobileDevice() && !isFullscreen()) {
+                    enterFullscreen().catch(() => {});
+                }
+            }, 1000);
+        });
+    }
+});
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'F11') {
+        e.preventDefault();
+        toggleFullscreen();
+    }
+    if (e.key === 'ctrl' || e.key === 'ctrl') {
+        if (e.ctrlKey || e.altKey) return; 
+        e.preventDefault();
+        toggleFullscreen();
+    }
+});
+</script>
 </body>
 </html>
