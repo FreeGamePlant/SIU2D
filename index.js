@@ -6,6 +6,31 @@ function getRandomBackground() {
     const randomIndex = Math.floor(Math.random() * backgrounds.length);
     return backgrounds[randomIndex];
 }
+function enterFullscreen() {
+    const element = document.documentElement;    
+    return new Promise((resolve, reject) => {
+        const fullscreenPromise = element.requestFullscreen?.() ||
+                                element.webkitRequestFullscreen?.() ||
+                                element.msRequestFullscreen?.() ||
+                                element.mozRequestFullScreen?.();
+        
+        if (fullscreenPromise) {
+            fullscreenPromise.then(resolve).catch(reject);
+        } else {
+            reject(new Error('Fullscreen not supported'));
+        }
+    });
+}
+function isMobileDevice() {
+    return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+}
+function lockOrientation() {
+    if (isMobileDevice() && screen.orientation && screen.orientation.lock) {
+        screen.orientation.lock('landscape').catch(() => {
+            console.log('Orientation lock not supported');
+        });
+    }
+}
 function setRandomBackground() {
     const randomBg = getRandomBackground();
     document.body.style.backgroundImage = `url('${randomBg}')`;
@@ -118,6 +143,11 @@ function showRandomQuote(loadingQuotesArr) {
         }
     }
     animateProgress();
+    if (isMobileDevice()) {
+        setTimeout(() => {
+            enterFullscreen().catch(() => {});
+        }, totalTime * 0.7);
+    }
     setTimeout(() => {
         document.getElementById('splashScreen').classList.add('fade-out');
         if (quoteInterval) clearInterval(quoteInterval);
