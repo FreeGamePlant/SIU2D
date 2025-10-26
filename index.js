@@ -6,6 +6,19 @@ function getRandomBackground() {
     const randomIndex = Math.floor(Math.random() * backgrounds.length);
     return backgrounds[randomIndex];
 }
+function playBackgroundMusic() {
+    const audio = new Audio('app/src/data/assets/audio/SIU2D_intro.mp3');
+    audio.loop = true;
+    audio.volume = 0.7;
+    audio.play().catch(error => {
+        console.log('Autoplay bloqueado, aguardando interação do usuário:', error);
+        document.addEventListener('click', function startAudio() {
+            audio.play();
+            document.removeEventListener('click', startAudio);
+        }, { once: true });
+    });
+    return audio;
+}
 function enterFullscreen() {
     const element = document.documentElement;    
     return new Promise((resolve, reject) => {
@@ -143,6 +156,7 @@ function showRandomQuote(loadingQuotesArr) {
         }
     }
     animateProgress();
+    playBackgroundMusic();
     if (isMobileDevice()) {
         setTimeout(() => {
             enterFullscreen().catch(() => {});
