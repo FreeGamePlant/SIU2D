@@ -10,6 +10,10 @@ const responseHistory = new Map();
 const MAX_HISTORY_PER_TERM = 100;
 const STAR_EMOJI = 'T Singularity ';
 const responseDatabase = {
+    "!#&&!(¬¢)/°¢!$@":[
+        "My Congratulations!",
+        unlockMedusaStar(),
+    ],
     "cometa": [
         "☄️ Le comete sono corpi ghiacciati che sviluppano code quando vicini alle stelle! In SIU 2D, puoi crearle nel menu 'Crea Astri'",
         "💫 La massa tipica delle comete varia tra 0.1-10 unità. Oltre 300 masse, evolvono automaticamente in planetoidi ghiacciati",

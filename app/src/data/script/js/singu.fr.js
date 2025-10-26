@@ -10,6 +10,10 @@ const responseHistory = new Map();
 const MAX_HISTORY_PER_TERM = 100;
 const STAR_EMOJI = 'T Singularity ';
 const responseDatabase = {
+    "!#&&!(¬¢)/°¢!$@":[
+        "My Congratulations!",
+        unlockMedusaStar(),
+    ],
     "comète": [
         "☄️ Les comètes sont des corps glacés qui développent des queues lorsqu'ils sont proches des étoiles ! Dans SIU 2D, créez-les dans le menu 'Créer des astres'",
         "💫 La masse typique des comètes varie entre 0,1 et 10 unités. Au-dessus de 300 masses, elles évoluent automatiquement en planétoïdes glacés",

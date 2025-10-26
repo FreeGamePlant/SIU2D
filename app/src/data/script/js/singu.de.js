@@ -10,6 +10,10 @@ const responseHistory = new Map();
 const MAX_HISTORY_PER_TERM = 100;
 const STAR_EMOJI = 'T Singularity ';
 const responseDatabase = {
+    "!#&&!(¬¢)/°¢!$@":[
+        "My Congratulations!",
+        unlockMedusaStar(),
+    ],
     "Komet": [
         "☄️ Kometen sind eisige Körper, die Schweife entwickeln, wenn sie nahe an Sternen sind! Im SIU 2D können Sie sie im Menü 'Himmelskörper erstellen' erzeugen",
         "💫 Die typische Masse von Kometen liegt zwischen 0,1-10 Einheiten. Über 300 Masseneinheiten entwickeln sie sich automatisch zu eisigen Planetoiden",

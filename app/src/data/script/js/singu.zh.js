@@ -10,6 +10,10 @@ const responseHistory = new Map();
 const MAX_HISTORY_PER_TERM = 100;
 const STAR_EMOJI = 'T Singularity ';
 const responseDatabase = {
+    "!#&&!(¬¢)/°¢!$@":[
+        "My Congratulations!",
+        unlockMedusaStar(),
+    ],
     "彗星": [
         "☄️ 彗星是由冰构成的星体，靠近恒星时会形成彗尾！在SIU 2D中，您可以在'创建天体'菜单中生成它们",
         "💫 典型彗星质量介于0.1-10单位之间。超过300质量单位时会自动演化为冰质小行星",

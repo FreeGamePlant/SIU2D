@@ -10,6 +10,10 @@ const responseHistory = new Map();
 const MAX_HISTORY_PER_TERM = 100;
 const STAR_EMOJI = 'T Singularity ';
 const responseDatabase = {
+    "!#&&!(¬¢)/°¢!$@":[
+        "My Congratulations!",
+        unlockMedusaStar(),
+    ],
     "혜성": [
         "☄️ 혜성은 별에 가까워지면 꼬리를 발달시키는 얼어붙은 천체입니다! SIU 2D에서는 '천체 생성' 메뉴에서 만들 수 있습니다",
         "💫 혜성의 일반적인 질량은 0.1~10 단위입니다. 300 질량 이상은 자동으로 얼음 행성체로 진화합니다",

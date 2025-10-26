@@ -10,6 +10,10 @@ const responseHistory = new Map();
 const MAX_HISTORY_PER_TERM = 100;
 const STAR_EMOJI = 'T Singularity ';
 const responseDatabase = {
+    "!#&&!(¬¢)/°¢!$@":[
+        "My Congratulations!",
+        unlockMedusaStar(),
+    ],
     "cometa": [
         "☄️ ¡Los cometas son cuerpos helados que desarrollan colas cuando se acercan a las estrellas! En SIU 2D, puedes crearlos en el menú 'Crear Astros'",
         "💫 La masa típica de los cometas varía entre 0.1-10 unidades. Por encima de 300 masas, evolucionan automáticamente a planetoides helados",

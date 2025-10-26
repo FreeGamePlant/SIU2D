@@ -10,6 +10,10 @@ const responseHistory = new Map();
 const MAX_HISTORY_PER_TERM = 100;
 const STAR_EMOJI = 'T Singularity ';
 const responseDatabase = {
+    "!#&&!(¬¢)/°¢!$@":[
+        "My Congratulations!",
+        unlockMedusaStar(),
+    ],
     "kuyruklu yıldız": [
         "☄️ Kuyruklu yıldızlar, yıldızlara yaklaştıklarında kuyruk geliştiren buzlu cisimlerdir! SIU 2D'de bunları 'Gök Cisimleri Oluştur' menüsünden oluşturabilirsiniz",
         "💫 Tipik kuyruklu yıldız kütlesi 0.1-10 birim arasındadır. 300 kütlenin üzerinde otomatik olarak buzlu gezegenimsilere dönüşürler",

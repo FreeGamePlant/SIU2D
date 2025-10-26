@@ -1,4 +1,4 @@
-// Copied from SIU2Dgame.html for i18n integration in tut.html
+
 class I18n {
   constructor() {
     this.locale = 'pt';

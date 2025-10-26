@@ -69,20 +69,21 @@ const btnDeleteAstro = document.getElementById('btnDeleteAstro');
 const btnApplyChanges = document.getElementById('btnApplyChanges'); 
 const G = 6.67430e-2;
 const musicTracks = [
-    '../assets/audio/SIU2D_soundtrack1.mp3' 
+    '../assets/audio/SIU2D_soundtrack1.mp3',
+    '../assets/audio/SIU2D_soundtrack2.mp3',
 ];
 const musicInterval = 30000; 
 const MAX_ASTROS_RETIRADA = 600;
 const btnLock = document.getElementById('btnLock');
 const DEBUG_EVOLUTION = true;
 const achievementRewards = {
-    1: 100,    
-    2: 150,    
-    3: 200,    
-    4: 250,    
-    5: 300,    
-    6: 100,    
-    7: 400,    
+    1: 100,
+    2: 150,
+    3: 200,
+    4: 250,
+    5: 300,
+    6: 100, 
+    7: 400,
     8: 500,    
     9: 600,    
     10: 700,   
@@ -90,27 +91,27 @@ const achievementRewards = {
     12: 900,   
     13: 1000,  
     14: 350,   
-    15: 1200,  
+    15: 1200,
     16: 1500,  
     17: 1200,  
     18: 800,   
     19: 1100,  
     20: 400,   
-    21: 600,   
+    21: 600, 
     22: 800,   
     23: 1000,  
     24: 1200,  
     25: 300,   
     26: 200,   
     27: 2000,  
-    28: 900,   
+    28: 900, 
     29: 700,   
     30: 1300,  
     31: 400,   
     32: 300,   
     33: 800,   
     34: 1100,  
-    35: 500,   
+    35: 500,
     36: 400,   
     37: 600,   
     38: 1200,  
@@ -118,19 +119,19 @@ const achievementRewards = {
     40: 700,   
     41: 2000,  
     42: 400,   
-    43: 1800,  
+    43: 1800,
     44: 300,   
     45: 500,   
     46: 800,   
     47: 2500,  
-    48: 200,   
-    49: 300,   
+    48: 200,
+    49: 300,
     50: 5000,  
-    51: 400,   
-    52: 450,   
-    53: 500,   
-    54: 600,   
-    55: 700,   
+    51: 400,
+    52: 450,
+    53: 500,
+    54: 600,
+    55: 700,
     0: 0       
 };
 function debugLog(...args) {
@@ -303,19 +304,19 @@ function initBackgroundMusic() {
         musicVolumeValue.textContent = volume;
         backgroundMusic.volume = volume / 100;
     });
+    backgroundMusic.addEventListener('ended', () => {
+        console.log('Música finalizada. Tocando próxima faixa.');
+        playNextTrack();
+    });
     backgroundMusic.addEventListener('loadedmetadata', () => {
         console.log(`Duração da faixa: ${backgroundMusic.duration} segundos`);
-    });
-    backgroundMusic.addEventListener('ended', () => {
-        console.log('Música finalizada. Reiniciando após intervalo.');
-        musicTimeout = setTimeout(playNextTrack, musicInterval);
     });
     backgroundMusic.addEventListener('error', (e) => {
         console.error('Erro no áudio:', e);
         console.error('Detalhes:', backgroundMusic.error);
-        musicTimeout = setTimeout(playNextTrack, 5000);
+        setTimeout(playNextTrack, 5000);
     });
-    playNextTrack();
+    currentTrackIndex = -1;
     playNextTrack();
 }
 function toggleLock() {
@@ -547,28 +548,36 @@ function playNextTrack() {
     backgroundMusic.pause();
     backgroundMusic.src = '';
     backgroundMusic.load();
-    backgroundMusic = new Audio(musicTracks[currentTrackIndex]);
+    currentTrackIndex = (currentTrackIndex + 1) % musicTracks.length;
+    backgroundMusic.src = musicTracks[currentTrackIndex];
     backgroundMusic.volume = document.getElementById('musicVolumeSlider').value / 100;
-    const MIN_PLAY_TIME = 120; 
-    backgroundMusic.play().catch(error => {
-        console.log("Reprodução bloqueada:", error);
-        document.addEventListener('click', () => {
-            backgroundMusic.play().catch(e => console.log("Erro ao reproduzir:", e));
-        }, { once: true });
+    console.log(`Tocando faixa ${currentTrackIndex + 1}/${musicTracks.length}: ${musicTracks[currentTrackIndex]}`);
+    const playPromise = backgroundMusic.play();
+    if (playPromise !== undefined) {
+        playPromise.catch(error => {
+            console.log("Reprodução bloqueada:", error);
+            document.addEventListener('click', () => {
+                backgroundMusic.play().catch(e => console.log("Erro ao reproduzir:", e));
+            }, { once: true });
+        });
+    }
+    if (musicTimeout) {
+        clearTimeout(musicTimeout);
+    }
+    backgroundMusic.addEventListener('loadeddata', function onLoaded() {
+        backgroundMusic.removeEventListener('loadeddata', onLoaded);
+        musicTimeout = setTimeout(() => {
+            playNextTrack();
+        }, backgroundMusic.duration * 1000 + 1000);
+    }, { once: true });
+    backgroundMusic.addEventListener('error', (e) => {
+        console.error('Erro no áudio:', e);
+        console.error('Detalhes:', backgroundMusic.error);
+        if (musicTimeout) {
+            clearTimeout(musicTimeout);
+        }
+        musicTimeout = setTimeout(playNextTrack, 30000);
     });
-    const checkInterval = setInterval(() => {
-        if (backgroundMusic.currentTime > 0 && 
-            backgroundMusic.currentTime < MIN_PLAY_TIME && 
-            backgroundMusic.paused
-        ) {
-            console.warn('Reprodução interrompida prematuramente!');
-            clearInterval(checkInterval);
-            backgroundMusic.play().catch(e => console.log("Tentativa de retomada falhou:", e));
-        }
-        if (backgroundMusic.ended) {
-            clearInterval(checkInterval);
-        }
-    }, 1000);
 }
 function generateRandomName() {
     const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789ÀÁáàéèÈÉóòÒÓùúÚÙçñÑãÃõÕüÜÍÌíìÂâÊêÎîÔôÛû*-$%¨#@!&_,.?´` °ºª²³£¢¬¹²³£¢¬!@#$%¨&*()[]{}/                            :3';
@@ -1122,58 +1131,73 @@ case 'meteoroid':
       ctx.stroke();
       break;
 case 'planetoid':
-if (!planet.craters) {
-    planet.craters = [];
-    const numCraters = 3 + Math.floor(Math.random() * 6); 
-    for (let i = 0; i < numCraters; i++) {
-        let x, y, distance;
-        do {
-            x = (Math.random() - 0.5) * 1.8; 
-            y = (Math.random() - 0.5) * 1.8;
-            distance = Math.sqrt(x*x + y*y);
-        } while (distance > 0.8); 
-        planet.craters.push({
-            x: x,
-            y: y,
-            radius: Math.random() * 0.15 + 0.05 
-        });
+    if (!planet.craters) {
+        planet.craters = [];
+        const numCraters = 3 + Math.floor(Math.random() * 6); 
+        for (let i = 0; i < numCraters; i++) {
+            let x, y, distance;
+            do {
+                x = (Math.random() - 0.5) * 1.8; 
+                y = (Math.random() - 0.5) * 1.8;
+                distance = Math.sqrt(x*x + y*y);
+            } while (distance > 0.8); 
+            planet.craters.push({
+                x: x,
+                y: y,
+                radius: Math.random() * 0.15 + 0.05 
+            });
+        }
     }
-}
-ctx.rotate((planet.rotation || 0) * visualTimeScale);
-ctx.beginPath();
-const safeRx = Math.max(1, (planet.rx || planet.radius) * camera.zoom);
-const safeRy = Math.max(1, (planet.ry || planet.radius) * camera.zoom);
-ctx.ellipse(0, 0, safeRx, safeRy, 0, 0, Math.PI * 2);
-const safeColor = (color) => {
-    return /^#([A-Fa-f0-9]{3}){1,2}$/.test(color) ? color : '#555555';
-};
-const ellipseGradient = ctx.createRadialGradient(0, 0, 0, 0, 0, Math.max(safeRx, safeRy));
-ellipseGradient.addColorStop(0, safeColor(planet.highlight || lightenColor(planet.color || '#555555', 30)));
-ctx.fillStyle = ellipseGradient;
-ctx.fill();
-ctx.strokeStyle = '#000000';
-ctx.lineWidth = 2 / radius;
-ctx.stroke();
-planet.craters.forEach(crater => {
-    const craterX = crater.x * safeRx;
-    const craterY = crater.y * safeRy;
-    const craterRadius = crater.radius * Math.min(safeRx, safeRy);
-    const maxDistance = Math.min(safeRx, safeRy) - craterRadius;
-    const currentDistance = Math.sqrt(craterX*craterX + craterY*craterY);
-    if (currentDistance + craterRadius <= Math.min(safeRx, safeRy)) {
-        ctx.beginPath();
-        ctx.arc(craterX, craterY, craterRadius, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.strokeStyle = '#000000';
-        ctx.lineWidth = 2 / radius;
-        ctx.stroke();
-        ctx.beginPath();
-        ctx.arc(craterX, craterY, craterRadius * 0.7, 0, Math.PI * 2);
-        ctx.lineWidth = 2 / radius;
+    ctx.rotate((planet.rotation || 0) * visualTimeScale);
+    ctx.beginPath();
+    const safeRx = Math.max(1, (planet.rx || planet.radius) * camera.zoom);
+    const safeRy = Math.max(1, (planet.ry || planet.radius) * camera.zoom);
+    ctx.ellipse(0, 0, safeRx, safeRy, 0, 0, Math.PI * 2);
+    const safeColor = (color) => {
+        return /^#([A-Fa-f0-9]{3}){1,2}$/.test(color) ? color : '#555555';
+    };
+    const ellipseGradient = ctx.createRadialGradient(0, 0, 0, 0, 0, Math.max(safeRx, safeRy));
+    ellipseGradient.addColorStop(0, safeColor(planet.highlight || lightenColor(planet.color || '#555555', 30)));
+    ctx.fillStyle = ellipseGradient;
+    ctx.fill();
+    const ZOOM_THRESHOLD = 0.5;
+    const ZOOM_RECOVERY = 1.0;
+    if (camera.zoom > ZOOM_THRESHOLD) {
+        let strokeWidth;
+        if (camera.zoom >= ZOOM_RECOVERY) {
+            strokeWidth = Math.max(0.5, 1 / camera.zoom);
+        } else {
+            const progress = (camera.zoom - ZOOM_THRESHOLD) / (ZOOM_RECOVERY - ZOOM_THRESHOLD);
+            strokeWidth = Math.max(0.1, (1 / camera.zoom) * progress);
+        }
+        ctx.lineWidth = strokeWidth;
         ctx.stroke();
     }
-});
-break;
+    planet.craters.forEach(crater => {
+        const craterX = crater.x * safeRx;
+        const craterY = crater.y * safeRy;
+        const craterRadius = crater.radius * Math.min(safeRx, safeRy);
+        const maxDistance = Math.min(safeRx, safeRy) - craterRadius;
+        const currentDistance = Math.sqrt(craterX*craterX + craterY*craterY);
+        if (currentDistance + craterRadius <= Math.min(safeRx, safeRy)) {
+            ctx.beginPath();
+            ctx.arc(craterX, craterY, craterRadius, 0, Math.PI * 2);
+            ctx.fill();
+            if (camera.zoom > ZOOM_THRESHOLD) {
+                ctx.strokeStyle = 'rgba(0, 0, 0, 0.3)';
+                let craterStrokeWidth;
+                if (camera.zoom >= ZOOM_RECOVERY) {
+                    craterStrokeWidth = Math.max(0.3, 0.5 / camera.zoom);
+                } else {
+                    const progress = (camera.zoom - ZOOM_THRESHOLD) / (ZOOM_RECOVERY - ZOOM_THRESHOLD);
+                    craterStrokeWidth = Math.max(0.05, (0.5 / camera.zoom) * progress);
+                }
+                ctx.lineWidth = craterStrokeWidth;
+                ctx.stroke();
+            }
+        }
+    });
+    break;
 case 'rockyPlanet':
     ctx.beginPath();
     ctx.arc(0, 0, radius, 0, Math.PI * 2);
@@ -3288,11 +3312,11 @@ function onMedusaStarCreated(medusaStar) {
     }
 }
 function generateTtauriDebris(ttauriStar) {
-    const debrisTypes = ['nebula', 'radiation', 'spaceDust', 'meteoroid', 'asteroid', 'comet'];
+    const debrisTypes = ['nebula', 'radiation', 'spaceDust', 'meteoroid', 'asteroid', 'comet','planetoid','rockyPlanet','gasPlanet'];
     const debrisType = debrisTypes[Math.floor(Math.random() * debrisTypes.length)];
     const angle = (ttauriStar.jetAngle || 0) + (Math.random() - 0.5) * Math.PI;
     const minDistance = ttauriStar.radius * 3;
-    const maxDistance = ttauriStar.radius * 8;
+    const maxDistance = ttauriStar.radius * 30;
     const distance = minDistance + Math.random() * (maxDistance - minDistance);
     const x = ttauriStar.x + Math.cos(angle) * distance;
     const y = ttauriStar.y + Math.sin(angle) * distance;
@@ -7549,6 +7573,8 @@ function getItemName(itemId) {
     const itemNames = {
         'solar_system': 'Solar System',
         'complete_solar_system': 'Alternative Solar System',
+        'past_solar_system': 'Past Solar System',
+        'create_random_save': 'Random galaxy',
         'habitable_alpha': 'HABITABLE - ALPHA',
         'trappist_1': 'TRAPPIST-1',
         'bizarre_stars': 'Bizarre Stars',
@@ -7561,8 +7587,14 @@ function applyPurchasedItem(itemId) {
         case 'solar_system':
             createSolarSystemSave();
             break;
+        case 'past_solar_system':
+            createPastSolarSystem();
+            break;
         case 'complete_solar_system':
             createCompleteSolarSystemSave();
+            break;
+        case 'create_random_save':
+            createRandomSpaceSave();
             break;
         case 'habitable_alpha':
             createHabitableAlphaSave();
@@ -7628,6 +7660,18 @@ function initializeShop() {
     }
     if (purchasedItems.complete_solar_system) {
         const altSolarSystemItem = document.querySelector('[data-item-id="complete_solar_system"]');
+        if (altSolarSystemItem) {
+            altSolarSystemItem.classList.add('purchased');
+        }
+    }
+    if (purchasedItems.past_solar_system) {
+        const altSolarSystemItem = document.querySelector('[data-item-id="past_solar_system"]');
+        if (altSolarSystemItem) {
+            altSolarSystemItem.classList.add('purchased');
+        }
+    }
+    if (purchasedItems.create_random_save) {
+        const altSolarSystemItem = document.querySelector('[data-item-id="create_random_save"]');
         if (altSolarSystemItem) {
             altSolarSystemItem.classList.add('purchased');
         }
@@ -7706,651 +7750,232 @@ function getSaveThumbnail(saveName) {
     return null;
 }
 function createSolarSystemSave() {
+    const G = 6.67430e-2;
+    const solarMass = 500000;
+    function calculateOrbitalVelocity(centralMass, distance) {
+        return Math.sqrt(G * centralMass / distance);
+    }
+    function calculateMoonVelocity(planetMass, moonDistance) {
+        return Math.sqrt(G * planetMass / moonDistance);
+    }
+    function generateRealisticContinents(numContinents) {
+        const continents = [];
+        for (let i = 0; i < numContinents; i++) {
+            const continent = [];
+            const points = 8 + Math.floor(Math.random() * 8);
+            const centerX = (Math.random() - 0.5) * 0.6;
+            const centerY = (Math.random() - 0.5) * 0.6;
+            for (let j = 0; j < points; j++) {
+                const angle = (j / points) * Math.PI * 2;
+                const distance = 0.1 + Math.random() * 0.2;
+                const x = centerX + Math.cos(angle) * distance * (0.8 + Math.random() * 0.4);
+                const y = centerY + Math.sin(angle) * distance * (0.8 + Math.random() * 0.4);
+                continent.push({x, y});
+            }
+            continent.push(continent[0]);
+            continents.push(continent);
+        }
+        return continents;
+    }
+    function generateAsteroidBelt(numAsteroids, minDistance, maxDistance) {
+        const asteroids = [];
+        for (let i = 0; i < numAsteroids; i++) {
+            const distance = minDistance + Math.random() * (maxDistance - minDistance);
+            const angle = Math.random() * Math.PI * 2;
+            const x = Math.cos(angle) * distance;
+            const y = Math.sin(angle) * distance;
+            asteroids.push({
+                type: 'asteroid',
+                x: x,
+                y: y,
+                vx: 0,
+                vy: calculateOrbitalVelocity(solarMass, distance),
+                mass: 0.1 + Math.random() * 0.4,
+                radius: 0.5 + Math.random() * 1.5,
+                name: `Ast-${i+1}`,
+                color: '#888888',
+                locked: false
+            });
+        }
+        return asteroids;
+    }
+    function generateKuiperBelt(numObjects, minDistance, maxDistance) {
+        const kuiperObjects = [];
+        for (let i = 0; i < numObjects; i++) {
+            const distance = minDistance + Math.random() * (maxDistance - minDistance);
+            const angle = Math.random() * Math.PI * 2;
+            const x = Math.cos(angle) * distance;
+            const y = Math.sin(angle) * distance;
+            kuiperObjects.push({
+                type: Math.random() > 0.7 ? 'planetoid' : 'asteroid',
+                x: x,
+                y: y,
+                vx: 0,
+                vy: calculateOrbitalVelocity(solarMass, distance),
+                mass: 0.3 + Math.random() * 2,
+                radius: 1 + Math.random() * 3,
+                name: `KBO-${i+1}`,
+                color: '#666666',
+                locked: false
+            });
+        }
+        return kuiperObjects;
+    }
     const solarSystemData = {
         planets: [
             { 
                 type: 'star', 
                 x: 0, y: 0, 
                 vx: 0, vy: 0, 
-                mass: 500000,
+                mass: solarMass,
                 radius: 30,
-                name: "Sun",
+                name: "Sol",
                 color: "#FFD700",
                 temperature: 10000,
                 locked: true,
-            },
-            { 
-                type: 'meteoroid', 
-                x: 0, y: 0, 
-                vx: 0, vy: 0, 
-                mass: 1, 
-                radius: 1,
-                name: "a:code",
-                locked: true
+                ignoreColorChanges: true
             },
             { 
                 type: 'rockyPlanet', 
                 x: 1800, y: 0, 
-                vx: 0, vy: 8.5, 
+                vx: 0, vy: calculateOrbitalVelocity(solarMass, 1800), 
                 mass: 3.3,
                 radius: 3,
                 name: "Mercúrio",
                 color: "#8C7853",
                 temperature: 167,
                 gasValue: 2,
-                waterValue: 10,
-                cloudsValue: 1,
-                locked: true
+                waterValue: 1,
+                cloudsValue: 0,
+                locked: false,
+                ignoreColorChanges: true
             },
             { 
                 type: 'rockyPlanet', 
                 x: 3500, y: 0, 
-                vx: 0, vy: 7.3, 
+                vx: 0, vy: calculateOrbitalVelocity(solarMass, 3500), 
                 mass: 48.7,
                 radius: 6,
                 name: "Vênus",
                 color: "#E6E6FA",
                 temperature: 462,
                 gasValue: 100,
-                waterValue: 30,
+                waterValue: 0,
                 cloudsValue: 100,
-                locked: true,
+                locked: false,
+                ignoreColorChanges: true
             },
             { 
                 type: 'rockyPlanet', 
                 x: 6000, y: 0, 
-                vx: 0, vy: 6.2, 
+                vx: 0, vy: calculateOrbitalVelocity(solarMass, 6000), 
                 mass: 50,
                 radius: 6.5,
                 name: "Terra",
                 color: "#1E90FF",
                 landColor: "#228B22",
-                waterValue: 50,
-                cloudsValue: 50,
-                gasValue: 50,
-                temperature: 20,
+                waterValue: 70,
+                cloudsValue: 40,
+                gasValue: 75,
+                temperature: 15,
                 lifeChance: 100,
                 biomass: 5000,
                 population: 8000000000,
-                intelligentSpecies: ["Homo Sapiens Sapiens"],
+                intelligentSpecies: ["Homo Sapiens"],
                 knowledgePoints: 1500,
-                locked: true,
-                continents: [
-                    [
-                        {x: 0.2, y: 0.3}, {x: 0.4, y: 0.2}, {x: 0.6, y: 0.4}, 
-                        {x: 0.5, y: 0.6}, {x: 0.3, y: 0.5}
-                    ],
-                    [
-                        {x: -0.3, y: -0.4}, {x: -0.1, y: -0.2}, {x: 0.1, y: -0.4},
-                        {x: 0.0, y: -0.6}
-                    ]
-                ]
+                locked: false,
+                continents: generateRealisticContinents(6),
+                ignoreColorChanges: true
             },
             { 
                 type: 'planetoid', 
-                x: 6005, y: 15, 
-                vx: 1.2, vy: 6.0, 
+                x: 6100, y: 0, 
+                vx: 0, vy: calculateOrbitalVelocity(solarMass, 6000) + calculateMoonVelocity(50, 100), 
                 mass: 0.6,
                 radius: 1.8,
                 name: "Lua",
                 color: "#C0C0C0",
-                locked: true
+                locked: false,
+                ignoreColorChanges: true
             },
             { 
                 type: 'rockyPlanet', 
-                x: 7000, y: 0, 
-                vx: 0, vy: 5.0, 
+                x: 9000, y: 0, 
+                vx: 0, vy: calculateOrbitalVelocity(solarMass, 9000), 
                 mass: 5.3,
                 radius: 4,
                 name: "Marte",
                 color: "#FF4500",
                 temperature: -63,
-                waterValue: 40,
-                cloudsValue: 10,
-                locked: true,
+                waterValue: 15,
+                cloudsValue: 5,
+                gasValue: 20,
+                locked: false,
+                continents: generateRealisticContinents(3),
+                ignoreColorChanges: true
             },
             { 
                 type: 'asteroid', 
-                x: 7005, y: 40, 
-                vx: 0, vy: 4.8, 
+                x: 9100, y: 50, 
+                vx: 0, vy: calculateOrbitalVelocity(solarMass, 9000) + calculateMoonVelocity(5.3, 100), 
                 mass: 0.2,
-                radius: 2,
-                name: "Phobos",
-                locked: true
+                radius: 1,
+                name: "Fobos",
+                locked: false
             },
             { 
                 type: 'asteroid', 
-                x: 7010, y: 40, 
-                vx: 0, vy: 4.8, 
-                mass: 0.5,
-                radius: 2,
+                x: 9200, y: -30, 
+                vx: 0, vy: calculateOrbitalVelocity(solarMass, 9000) + calculateMoonVelocity(5.3, 200), 
+                mass: 0.1,
+                radius: 0.8,
                 name: "Deimos",
-                locked: true
-            },
-            { 
-                type: 'asteroid', 
-                x: 7503, y: 10, 
-                vx: 0, vy: 4.8, 
-                mass: 0.2,
-                radius: 2,
-                name: "Asteroid",
-                locked: true
-            },
-            { 
-                type: 'asteroid', 
-                x: 7513, y: 20, 
-                vx: 0, vy: 4.8, 
-                mass: 0.2,
-                radius: 2,
-                name: "Asteroid",
-                locked: true
-            },
-            { 
-                type: 'asteroid', 
-                x: 7503, y: 1, 
-                vx: 0, vy: 4.8, 
-                mass: 0.2,
-                radius: 2,
-                name: "Asteroid",
-                locked: true
-            },
-            { 
-                type: 'asteroid', 
-                x: 7517, y: 50, 
-                vx: 0, vy: 4.8, 
-                mass: 0.2,
-                radius: 2,
-                name: "Asteroid",
-                locked: true
+                locked: false
             },
             { 
                 type: 'planetoid', 
-                x: 7500, y: 40, 
-                vx: 0, vy: 4.8, 
+                x: 12000, y: 0, 
+                vx: 0, vy: calculateOrbitalVelocity(solarMass, 12000), 
                 mass: 1,
                 radius: 2,
                 name: "Ceres",
-                locked: true
-            },
-            { 
-                type: 'gasGiant', 
-                x: 17000, y: 0, 
-                vx: 0, vy: 4.2, 
-                mass: 15890,
-                radius: 18,
-                name: "Júpiter",
-                color: "#DAA520",
-                temperature: -108,
-                gasValue: 95,
-                locked: true
-            },
-            { 
-                type: 'planetoid', 
-                x: 17010, y: 50, 
-                vx: 0.5, vy: 4.2, 
-                mass: 0.8,
-                radius: 2.5,
-                name: "Io",
-                color: "#FFA500",
-                locked: true
-            },
-            { 
-                type: 'planetoid', 
-                x: 17020, y: 80, 
-                vx: 0.4, vy: 4.2, 
-                mass: 0.9,
-                radius: 2.7,
-                name: "Europa",
-                color: "#FFD700",
-                locked: true
-            },
-            { 
-                type: 'planetoid', 
-                x: 17030, y: 110, 
-                vx: 0.3, vy: 4.2, 
-                mass: 1.2,
-                radius: 3.0,
-                name: "Ganymede",
-                color: "#DAA520",
-                locked: true
-            },
-            { 
-                type: 'planetoid', 
-                x: 17040, y: 140, 
-                vx: 0.2, vy: 4.2, 
-                mass: 1.1,
-                radius: 2.9,
-                name: "Callisto",
                 color: "#A9A9A9",
-                locked: true
-            },
-            { 
-                type: 'gasGiant', 
-                x: 20000, y: 0, 
-                vx: 0, vy: 3.4, 
-                mass: 4760,
-                radius: 15,
-                name: "Saturno",
-                color: "#F0E68C",
-                temperature: -139,
-                gasValue: 90,
-                rings: true,
-                ringMass: 40,
-                locked: true
+                locked: false
             },
             { 
                 type: 'planetoid', 
-                x: 20010, y: 40, 
-                vx: 0.4, vy: 3.4, 
-                mass: 0.6,
-                radius: 2.2,
-                name: "Mimas",
-                color: "#C0C0C0",
-                locked: true
-            },
-            { 
-                type: 'planetoid', 
-                x: 20020, y: 70, 
-                vx: 0.3, vy: 3.4, 
-                mass: 0.7,
-                radius: 2.5,
-                name: "Enceladus",
-                color: "#F5F5F5",
-                locked: true
-            },
-            { 
-                type: 'planetoid', 
-                x: 20030, y: 100, 
-                vx: 0.2, vy: 3.4, 
-                mass: 1.0,
-                radius: 3.0,
-                name: "Titan",
-                color: "#FFA500",
-                locked: true
-            },
-            { 
-                type: 'gasGiant', 
-                x: 25000, y: 0, 
-                vx: 0, vy: 2.9, 
-                mass: 725,
-                radius: 12,
-                name: "Urano",
-                color: "#AFEEEE",
-                temperature: -197,
-                gasValue: 85,
-                locked: true
-            },
-            { 
-                type: 'planetoid', 
-                x: 25010, y: 30, 
-                vx: 0.3, vy: 2.9, 
-                mass: 0.5,
-                radius: 2.0,
-                name: "Miranda",
-                color: "#D3D3D3",
-                locked: true
-            },
-            { 
-                type: 'planetoid', 
-                x: 25020, y: 60, 
-                vx: 0.2, vy: 2.9, 
-                mass: 0.6,
-                radius: 2.3,
-                name: "Ariel",
-                color: "#F0F8FF",
-                locked: true
-            },
-            { 
-                type: 'planetoid', 
-                x: 25030, y: 90, 
-                vx: 0.1, vy: 2.9, 
-                mass: 0.7,
-                radius: 2.5,
-                name: "Umbriel",
-                color: "#A9A9A9",
-                locked: true
-            },
-            { 
-                type: 'planetoid', 
-                x: 25040, y: 120, 
-                vx: 0.1, vy: 2.9, 
+                x: 12500, y: 1500, 
+                vx: 0, vy: calculateOrbitalVelocity(solarMass, 12500), 
                 mass: 0.8,
-                radius: 2.7,
-                name: "Titania",
-                color: "#F5F5F5",
-                locked: true
-            },
-            { 
-                type: 'planetoid', 
-                x: 25050, y: 150, 
-                vx: 0.1, vy: 2.9, 
-                mass: 0.8,
-                radius: 2.7,
-                name: "Oberon",
-                color: "#D3D3D3",
-                locked: true
-            },
-            { 
-                type: 'gasGiant', 
-                x: 28000, y: 0, 
-                vx: 0, vy: 2.6, 
-                mass: 855,
-                radius: 11,
-                name: "Netuno",
-                color: "#1E90FF",
-                temperature: -201,
-                gasValue: 85,
-                locked: true
-            },
-            { 
-                type: 'planetoid', 
-                x: 28010, y: 40, 
-                vx: 0.3, vy: 2.6, 
-                mass: 0.7,
-                radius: 2.5,
-                name: "Triton",
-                color: "#ADD8E6",
-                locked: true
-            },
-            { 
-                type: 'planetoid', 
-                x: 45000, y: -35, 
-                vx: 0, vy: 4.9, 
-                mass: 1.1,
-                radius: 1.5,
-                name: "Plutão",
-                locked: true
-            },
-            { 
-                type: 'planetoid', 
-                x: 45005, y: -30, 
-                vx: 0.1, vy: 4.9, 
-                mass: 0.3,
-                radius: 1.0,
-                name: "Caronte",
-                locked: true
-            }
-        ],
-        universeAge: 4.6e9,
-        universeTime: 0,
-        camera: { x: 0, y: 0, zoom: 0.8 }
-    };
-    createSpecialSave("Solar System", solarSystemData);
-}
-function createCompleteSolarSystemSave() {
-    const completeSolarSystemData = {
-        planets: [
-            { 
-                type: 'star', 
-                x: 0, y: 0, 
-                vx: 0, vy: 0, 
-                mass: 500000,
-                radius: 30,
-                name: "Sun",
-                color: "#FFD700",
-                temperature: 10000,
-                locked: true
-            },
-            { 
-                type: 'redDwarf', 
-                x: 500, y: 0, 
-                vx: 0, vy: 0, 
-                mass: 500000,
-                radius: 30,
-                name: "Nêmisis",
-                color: "#f00050",
-                temperature: 10000,
-                locked: true
-            },
-            { 
-                type: 'meteoroid', 
-                x: 0, y: 0, 
-                vx: 0, vy: 0, 
-                mass: 1, 
-                radius: 1,
-                name: "a:code",
-                locked: true
-            },
-            { 
-                type: 'meteoroid', 
-                x: 500, y: 0, 
-                vx: 0, vy: 0, 
-                mass: 1, 
-                radius: 1,
-                name: "b:code",
-                locked: true
-            },
-            { 
-                type: 'rockyPlanet', 
-                x: 1800, y: 0, 
-                vx: 0, vy: 8.5, 
-                mass: 3.3,
-                radius: 3,
-                name: "Mercúrio",
-                color: "#8C7853",
-                temperature: 167,
-                gasValue: 2,
-                waterValue: 10,
-                cloudsValue: 1,
-                locked: true
-            },
-            { 
-                type: 'rockyPlanet', 
-                x: 3500, y: 0, 
-                vx: 0, vy: 7.3, 
-                mass: 48.7,
-                radius: 6,
-                name: "Vênus",
-                color: "#E6E6FA",
-                temperature: 462,
-                gasValue: 100,
-                waterValue: 30,
-                cloudsValue: 100,
-                locked: true,
-            },
-            { 
-                type: 'rockyPlanet', 
-                x: 6000, y: 0, 
-                vx: 0, vy: 6.2, 
-                mass: 50,
-                radius: 6.5,
-                name: "Terra",
-                color: "#1E90FF",
-                landColor: "#228B22",
-                waterValue: 50,
-                cloudsValue: 50,
-                gasValue: 50,
-                temperature: 20,
-                lifeChance: 100,
-                biomass: 5000,
-                population: 8000000000,
-                intelligentSpecies: ["Homo Sapiens Sapiens"],
-                knowledgePoints: 1500,
-                locked: true,
-                continents: [
-                    [
-                        {x: 0.2, y: 0.3}, {x: 0.4, y: 0.2}, {x: 0.6, y: 0.4}, 
-                        {x: 0.5, y: 0.6}, {x: 0.3, y: 0.5}
-                    ],
-                    [
-                        {x: -0.3, y: -0.4}, {x: -0.1, y: -0.2}, {x: 0.1, y: -0.4},
-                        {x: 0.0, y: -0.6}
-                    ]
-                ]
-            },
-            { 
-                type: 'planetoid', 
-                x: 6005, y: 15, 
-                vx: 1.2, vy: 6.0, 
-                mass: 0.6,
                 radius: 1.8,
-                name: "Lua",
-                color: "#C0C0C0",
-                locked: true
-            },
-            { 
-                type: 'rockyPlanet', 
-                x: 6500, y: 0, 
-                vx: 0, vy: 5.0, 
-                mass: 5.3,
-                radius: 4,
-                name: "Theia",
-                color: "#a0f880",
-                temperature: -63,
-                waterValue: 40,
-                cloudsValue: 10,
-                locked: true,
-                rings: true,
-                ringMass: 40,
-                continents: [
-                    [
-                        {x: 0.2, y: 0.3}, {x: 0.4, y: 0.2}, {x: 0.6, y: 0.4}, 
-                        {x: 0.5, y: 0.6}, {x: 0.3, y: 0.5}
-                    ],
-                    [
-                        {x: -0.3, y: -0.4}, {x: -0.1, y: -0.2}, {x: 0.1, y: -0.4},
-                        {x: 0.0, y: -0.6}
-                    ]
-                ]
-            },
-            { 
-                type: 'rockyPlanet', 
-                x: 6650, y: 0, 
-                vx: 0, vy: 5.0, 
-                mass: 5.3,
-                radius: 4,
-                name: "Planet - V",
-                color: "#a0f880",
-                temperature: -63,
-                waterValue: 40,
-                cloudsValue: 10,
-                locked: true,
-                rings: true,
-                ringMass: 40,
-                continents: [
-                    [
-                        {x: 0.2, y: 0.3}, {x: 0.4, y: 0.2}, {x: 0.6, y: 0.4}, 
-                        {x: 0.5, y: 0.6}, {x: 0.3, y: 0.5}
-                    ],
-                    [
-                        {x: -0.3, y: -0.4}, {x: -0.1, y: -0.2}, {x: 0.1, y: -0.4},
-                        {x: 0.0, y: -0.6}
-                    ]
-                ]
-            },
-            { 
-                type: 'rockyPlanet', 
-                x: 7000, y: 0, 
-                vx: 0, vy: 5.0, 
-                mass: 5.3,
-                radius: 4,
-                name: "Marte",
-                color: "#FF4500",
-                temperature: -63,
-                waterValue: 40,
-                cloudsValue: 10,
-                locked: true,
-                continents: [
-                    [
-                        {x: 0.2, y: 0.3}, {x: 0.4, y: 0.2}, {x: 0.6, y: 0.4}, 
-                        {x: 0.5, y: 0.6}, {x: 0.3, y: 0.5}
-                    ],
-                    [
-                        {x: -0.3, y: -0.4}, {x: -0.1, y: -0.2}, {x: 0.1, y: -0.4},
-                        {x: 0.0, y: -0.6}
-                    ]
-                ]
-            },
-            { 
-                type: 'asteroid', 
-                x: 7005, y: 40, 
-                vx: 0, vy: 4.8, 
-                mass: 0.2,
-                radius: 2,
-                name: "Phobos",
-                locked: true
-            },
-            { 
-                type: 'asteroid', 
-                x: 7010, y: 40, 
-                vx: 0, vy: 4.8, 
-                mass: 0.5,
-                radius: 2,
-                name: "Deimos",
-                locked: true
-            },
-            { 
-                type: 'asteroid', 
-                x: 7503, y: 10, 
-                vx: 0, vy: 4.8, 
-                mass: 0.2,
-                radius: 2,
-                name: "Asteroid",
-                locked: true
-            },
-            { 
-                type: 'asteroid', 
-                x: 7513, y: 20, 
-                vx: 0, vy: 4.8, 
-                mass: 0.2,
-                radius: 2,
-                name: "Asteroid",
-                locked: true
-            },
-            { 
-                type: 'asteroid', 
-                x: 7503, y: 1, 
-                vx: 0, vy: 4.8, 
-                mass: 0.2,
-                radius: 2,
-                name: "Asteroid",
-                locked: true
-            },
-            { 
-                type: 'asteroid', 
-                x: 7517, y: 50, 
-                vx: 0, vy: 4.8, 
-                mass: 0.2,
-                radius: 2,
-                name: "Asteroid",
-                locked: true
+                name: "Vesta",
+                color: "#888888",
+                locked: false
             },
             { 
                 type: 'planetoid', 
-                x: 7500, y: 40, 
-                vx: 0, vy: 4.8, 
-                mass: 1,
-                radius: 2,
-                name: "Ceres",
-                locked: true
+                x: 12800, y: -1200, 
+                vx: 0, vy: calculateOrbitalVelocity(solarMass, 12800), 
+                mass: 0.7,
+                radius: 1.6,
+                name: "Palas",
+                color: "#777777",
+                locked: false
             },
             { 
-                type: 'rockyPlanet', 
-                x: 6900, y: 0, 
-                vx: 0, vy: 5.0, 
-                mass: 5.3,
-                radius: 4,
-                name: "Faetonte",
-                color: "#a0a880",
-                temperature: -63,
-                waterValue: 40,
-                cloudsValue: 10,
-                locked: true,
-                continents: [
-                    [
-                        {x: 0.2, y: 0.3}, {x: 0.4, y: 0.2}, {x: 0.6, y: 0.4}, 
-                        {x: 0.5, y: 0.6}, {x: 0.3, y: 0.5}
-                    ],
-                    [
-                        {x: -0.3, y: -0.4}, {x: -0.1, y: -0.2}, {x: 0.1, y: -0.4},
-                        {x: 0.0, y: -0.6}
-                    ]
-                ]
+                type: 'planetoid', 
+                x: 12200, y: 1800, 
+                vx: 0, vy: calculateOrbitalVelocity(solarMass, 12200), 
+                mass: 0.6,
+                radius: 1.4,
+                name: "Hígia",
+                color: "#666666",
+                locked: false
             },
             { 
                 type: 'gasGiant', 
-                x: 17000, y: 0, 
-                vx: 0, vy: 4.2, 
+                x: 15000, y: 0, 
+                vx: 0, vy: calculateOrbitalVelocity(solarMass, 15000), 
                 mass: 15890,
                 radius: 18,
                 name: "Júpiter",
@@ -8359,52 +7984,52 @@ function createCompleteSolarSystemSave() {
                 gasValue: 95,
                 rings: true,
                 ringMass: 2,
-                locked: true
+                locked: false
             },
             { 
                 type: 'planetoid', 
-                x: 17010, y: 50, 
-                vx: 0.5, vy: 4.2, 
+                x: 15200, y: 100, 
+                vx: 0, vy: calculateOrbitalVelocity(solarMass, 15000) + calculateMoonVelocity(15890, 200), 
                 mass: 0.8,
                 radius: 2.5,
                 name: "Io",
                 color: "#FFA500",
-                locked: true
+                locked: false
             },
             { 
                 type: 'planetoid', 
-                x: 17020, y: 80, 
-                vx: 0.4, vy: 4.2, 
+                x: 15400, y: -80, 
+                vx: 0, vy: calculateOrbitalVelocity(solarMass, 15000) + calculateMoonVelocity(15890, 400), 
                 mass: 0.9,
                 radius: 2.7,
                 name: "Europa",
                 color: "#FFD700",
-                locked: true
+                locked: false
             },
             { 
                 type: 'planetoid', 
-                x: 17030, y: 110, 
-                vx: 0.3, vy: 4.2, 
+                x: 15600, y: 120, 
+                vx: 0, vy: calculateOrbitalVelocity(solarMass, 15000) + calculateMoonVelocity(15890, 600), 
                 mass: 1.2,
                 radius: 3.0,
-                name: "Ganymede",
+                name: "Ganimedes",
                 color: "#DAA520",
-                locked: true
+                locked: false
             },
             { 
                 type: 'planetoid', 
-                x: 17040, y: 140, 
-                vx: 0.2, vy: 4.2, 
+                x: 15800, y: -140, 
+                vx: 0, vy: calculateOrbitalVelocity(solarMass, 15000) + calculateMoonVelocity(15890, 800), 
                 mass: 1.1,
                 radius: 2.9,
-                name: "Callisto",
+                name: "Calisto",
                 color: "#A9A9A9",
-                locked: true
+                locked: false
             },
             { 
                 type: 'gasGiant', 
-                x: 20000, y: 0, 
-                vx: 0, vy: 3.4, 
+                x: 22000, y: 0, 
+                vx: 0, vy: calculateOrbitalVelocity(solarMass, 22000), 
                 mass: 4760,
                 radius: 15,
                 name: "Saturno",
@@ -8413,42 +8038,52 @@ function createCompleteSolarSystemSave() {
                 gasValue: 90,
                 rings: true,
                 ringMass: 40,
-                locked: true
+                locked: false
             },
             { 
                 type: 'planetoid', 
-                x: 20010, y: 40, 
-                vx: 0.4, vy: 3.4, 
+                x: 22200, y: 50, 
+                vx: 0, vy: calculateOrbitalVelocity(solarMass, 22000) + calculateMoonVelocity(4760, 200), 
                 mass: 0.6,
                 radius: 2.2,
                 name: "Mimas",
                 color: "#C0C0C0",
-                locked: true
+                locked: false
             },
             { 
                 type: 'planetoid', 
-                x: 20020, y: 70, 
-                vx: 0.3, vy: 3.4, 
+                x: 22400, y: -70, 
+                vx: 0, vy: calculateOrbitalVelocity(solarMass, 22000) + calculateMoonVelocity(4760, 400), 
                 mass: 0.7,
                 radius: 2.5,
-                name: "Enceladus",
+                name: "Encélado",
                 color: "#F5F5F5",
-                locked: true
+                locked: false
             },
             { 
                 type: 'planetoid', 
-                x: 20030, y: 100, 
-                vx: 0.2, vy: 3.4, 
+                x: 22600, y: 100, 
+                vx: 0, vy: calculateOrbitalVelocity(solarMass, 22000) + calculateMoonVelocity(4760, 600), 
                 mass: 1.0,
                 radius: 3.0,
-                name: "Titan",
+                name: "Titã",
                 color: "#FFA500",
-                locked: true
+                locked: false
+            },
+            { 
+                type: 'planetoid', 
+                x: 22800, y: -120, 
+                vx: 0, vy: calculateOrbitalVelocity(solarMass, 22000) + calculateMoonVelocity(4760, 800), 
+                mass: 0.9,
+                radius: 2.8,
+                name: "Reia",
+                color: "#D3D3D3",
+                locked: false
             },
             { 
                 type: 'gasGiant', 
-                x: 25000, y: 0, 
-                vx: 0, vy: 2.9, 
+                x: 32000, y: 0, 
+                vx: 0, vy: calculateOrbitalVelocity(solarMass, 32000), 
                 mass: 725,
                 radius: 12,
                 name: "Urano",
@@ -8457,119 +8092,731 @@ function createCompleteSolarSystemSave() {
                 gasValue: 85,
                 rings: true,
                 ringMass: 10,
-                locked: true
+                locked: false
             },
             { 
                 type: 'planetoid', 
-                x: 25010, y: 30, 
-                vx: 0.3, vy: 2.9, 
+                x: 32200, y: 30, 
+                vx: 0, vy: calculateOrbitalVelocity(solarMass, 32000) + calculateMoonVelocity(725, 200), 
                 mass: 0.5,
                 radius: 2.0,
                 name: "Miranda",
                 color: "#D3D3D3",
-                locked: true
+                locked: false
             },
             { 
                 type: 'planetoid', 
-                x: 25020, y: 60, 
-                vx: 0.2, vy: 2.9, 
+                x: 32400, y: -60, 
+                vx: 0, vy: calculateOrbitalVelocity(solarMass, 32000) + calculateMoonVelocity(725, 400), 
                 mass: 0.6,
                 radius: 2.3,
                 name: "Ariel",
                 color: "#F0F8FF",
-                locked: true
+                locked: false
             },
             { 
                 type: 'planetoid', 
-                x: 25030, y: 90, 
-                vx: 0.1, vy: 2.9, 
+                x: 32600, y: 90, 
+                vx: 0, vy: calculateOrbitalVelocity(solarMass, 32000) + calculateMoonVelocity(725, 600), 
                 mass: 0.7,
                 radius: 2.5,
                 name: "Umbriel",
                 color: "#A9A9A9",
-                locked: true
+                locked: false
             },
             { 
                 type: 'planetoid', 
-                x: 25040, y: 120, 
-                vx: 0.1, vy: 2.9, 
+                x: 32800, y: -120, 
+                vx: 0, vy: calculateOrbitalVelocity(solarMass, 32000) + calculateMoonVelocity(725, 800), 
                 mass: 0.8,
                 radius: 2.7,
-                name: "Titania",
+                name: "Titânia",
                 color: "#F5F5F5",
-                locked: true
+                locked: false
             },
             { 
                 type: 'planetoid', 
-                x: 25050, y: 150, 
-                vx: 0.1, vy: 2.9, 
+                x: 33000, y: 150, 
+                vx: 0, vy: calculateOrbitalVelocity(solarMass, 32000) + calculateMoonVelocity(725, 1000), 
                 mass: 0.8,
                 radius: 2.7,
                 name: "Oberon",
                 color: "#D3D3D3",
-                locked: true
+                locked: false
             },
             { 
                 type: 'gasGiant', 
-                x: 28000, y: 0, 
-                vx: 0, vy: 2.6, 
+                x: 38000, y: 0, 
+                vx: 0, vy: calculateOrbitalVelocity(solarMass, 38000), 
                 mass: 855,
                 radius: 11,
                 name: "Netuno",
                 color: "#1E90FF",
                 temperature: -201,
                 gasValue: 85,
-                ring: true,
+                rings: true,
                 ringMass: 5,
-                locked: true
+                locked: false
             },
             { 
                 type: 'planetoid', 
-                x: 28010, y: 40, 
-                vx: 0.3, vy: 2.6, 
+                x: 38200, y: 40, 
+                vx: 0, vy: calculateOrbitalVelocity(solarMass, 38000) + calculateMoonVelocity(855, 200), 
                 mass: 0.7,
                 radius: 2.5,
-                name: "Triton",
+                name: "Tritão",
                 color: "#ADD8E6",
-                locked: true
-            },{ 
-                type: 'gasGiant', 
-                x: 28000, y: 0, 
-                vx: 0, vy: 2.6, 
-                mass: 855,
-                radius: 11,
-                name: "Planet - X",
-                color: "#1020FF",
-                temperature: -201,
-                gasValue: 85,
-                ring: true,
-                ringMass: 5,
-                locked: true
+                locked: false
             },
             { 
                 type: 'planetoid', 
-                x: 45000, y: -35, 
-                vx: 0, vy: 4.9, 
+                x: 38400, y: -80, 
+                vx: 0, vy: calculateOrbitalVelocity(solarMass, 38000) + calculateMoonVelocity(855, 400), 
+                mass: 0.3,
+                radius: 1.5,
+                name: "Nereida",
+                color: "#87CEEB",
+                locked: false
+            },
+            { 
+                type: 'planetoid', 
+                x: 45000, y: 0, 
+                vx: 0, vy: calculateOrbitalVelocity(solarMass, 45000), 
                 mass: 1.1,
                 radius: 1.5,
                 name: "Plutão",
-                locked: true
+                color: "#A9A9A9",
+                locked: false
             },
             { 
                 type: 'planetoid', 
-                x: 45005, y: -30, 
-                vx: 0.1, vy: 4.9, 
+                x: 45050, y: 0, 
+                vx: 0, vy: calculateOrbitalVelocity(solarMass, 45000) + calculateMoonVelocity(1.1, 50), 
                 mass: 0.3,
                 radius: 1.0,
                 name: "Caronte",
-                locked: true
+                color: "#C0C0C0",
+                locked: false
+            },
+            { 
+                type: 'planetoid', 
+                x: 48000, y: 2000, 
+                vx: 0, vy: calculateOrbitalVelocity(solarMass, 48000), 
+                mass: 1.4,
+                radius: 1.8,
+                name: "Haumea",
+                color: "#98FB98",
+                locked: false
+            },
+            { 
+                type: 'planetoid', 
+                x: 52000, y: -1500, 
+                vx: 0, vy: calculateOrbitalVelocity(solarMass, 52000), 
+                mass: 1.2,
+                radius: 1.6,
+                name: "Makemake",
+                color: "#DEB887",
+                locked: false
+            },
+            { 
+                type: 'planetoid', 
+                x: 60000, y: 3000, 
+                vx: 0, vy: calculateOrbitalVelocity(solarMass, 60000), 
+                mass: 2.2,
+                radius: 2.0,
+                name: "Éris",
+                color: "#F0E68C",
+                locked: false
+            },
+            { 
+                type: 'planetoid', 
+                x: 80000, y: 0, 
+                vx: 0, vy: calculateOrbitalVelocity(solarMass, 80000), 
+                mass: 0.8,
+                radius: 1.2,
+                name: "Sedna",
+                color: "#CD5C5C",
+                locked: false
             }
         ],
         universeAge: 4.6e9,
         universeTime: 0,
-        camera: { x: 0, y: 0, zoom: 0.8 }
+        camera: { x: 0, y: 0, zoom: 0.3 }
     };
-    createSpecialSave("Alternative Solar System", completeSolarSystemData);
+    const asteroidBelt = generateAsteroidBelt(50, 10000, 14000);
+    solarSystemData.planets.push(...asteroidBelt);
+    const kuiperBelt = generateKuiperBelt(30, 40000, 70000);
+    solarSystemData.planets.push(...kuiperBelt);
+    createSpecialSave("Sistema Solar Completo", solarSystemData);
+}
+function createCompleteSolarSystemSave() {
+    const G = 6.67430e-2;
+    const solarMass = 500000;
+    const nemisisMass = 10000;
+    function calculateOrbitalVelocity(centralMass, distance) {
+        return Math.sqrt(G * centralMass / distance);
+    }
+    function calculateMoonVelocity(planetMass, moonDistance) {
+        return Math.sqrt(G * planetMass / moonDistance);
+    }
+    function generateRealisticContinents(numContinents) {
+        const continents = [];
+        for (let i = 0; i < numContinents; i++) {
+            const continent = [];
+            const points = 8 + Math.floor(Math.random() * 8);
+            const centerX = (Math.random() - 0.5) * 0.6;
+            const centerY = (Math.random() - 0.5) * 0.6;
+            for (let j = 0; j < points; j++) {
+                const angle = (j / points) * Math.PI * 2;
+                const distance = 0.1 + Math.random() * 0.2;
+                const x = centerX + Math.cos(angle) * distance * (0.8 + Math.random() * 0.4);
+                const y = centerY + Math.sin(angle) * distance * (0.8 + Math.random() * 0.4);
+                continent.push({x, y});
+            }
+            continent.push(continent[0]);
+            continents.push(continent);
+        }
+        return continents;
+    }
+    function generateAsteroidBelt(numAsteroids, minDistance, maxDistance) {
+        const asteroids = [];
+        for (let i = 0; i < numAsteroids; i++) {
+            const distance = minDistance + Math.random() * (maxDistance - minDistance);
+            const angle = Math.random() * Math.PI * 2;
+            const x = Math.cos(angle) * distance;
+            const y = Math.sin(angle) * distance;
+            asteroids.push({
+                type: 'asteroid',
+                x: x,
+                y: y,
+                vx: 0,
+                vy: calculateOrbitalVelocity(solarMass, distance),
+                mass: 0.1 + Math.random() * 0.4,
+                radius: 0.5 + Math.random() * 1.5,
+                name: `Ast-${i+1}`,
+                color: '#888888',
+                locked: false
+            });
+        }
+        return asteroids;
+    }
+    function generateKuiperBelt(numObjects, minDistance, maxDistance) {
+        const kuiperObjects = [];
+        for (let i = 0; i < numObjects; i++) {
+            const distance = minDistance + Math.random() * (maxDistance - minDistance);
+            const angle = Math.random() * Math.PI * 2;
+            const x = Math.cos(angle) * distance;
+            const y = Math.sin(angle) * distance;
+            kuiperObjects.push({
+                type: Math.random() > 0.7 ? 'planetoid' : 'asteroid',
+                x: x,
+                y: y,
+                vx: 0,
+                vy: calculateOrbitalVelocity(solarMass, distance),
+                mass: 0.3 + Math.random() * 2,
+                radius: 1 + Math.random() * 3,
+                name: `KBO-${i+1}`,
+                color: '#666666',
+                locked: false
+            });
+        }
+        return kuiperObjects;
+    }
+    const completeSolarSystemData = {
+        planets: [
+            { 
+                type: 'star', 
+                x: 0, y: 0, 
+                vx: 0, vy: 0, 
+                mass: solarMass,
+                radius: 30,
+                name: "Sol",
+                color: "#FFD700",
+                temperature: 10000,
+                locked: true
+            },
+            { 
+                type: 'redDwarf', 
+                x: 500, y: 0, 
+                vx: 0, vy: calculateOrbitalVelocity(solarMass, 500), 
+                mass: nemisisMass,
+                radius: 15,
+                name: "Nêmisis",
+                color: "#f00050",
+                temperature: 3500,
+                locked: true
+            },
+            { 
+                type: 'rockyPlanet', 
+                x: 1800, y: 0, 
+                vx: 0, vy: calculateOrbitalVelocity(solarMass, 1800), 
+                mass: 3.3,
+                radius: 3,
+                name: "Mercúrio",
+                color: "#8C7853",
+                temperature: 167,
+                gasValue: 2,
+                waterValue: 1,
+                cloudsValue: 0,
+                locked: false
+            },
+            { 
+                type: 'rockyPlanet', 
+                x: 3500, y: 0, 
+                vx: 0, vy: calculateOrbitalVelocity(solarMass, 3500), 
+                mass: 48.7,
+                radius: 6,
+                name: "Vênus",
+                color: "#E6E6FA",
+                temperature: 462,
+                gasValue: 100,
+                waterValue: 0,
+                cloudsValue: 100,
+                locked: false,
+            },
+            { 
+                type: 'rockyPlanet', 
+                x: 6000, y: 0, 
+                vx: 0, vy: calculateOrbitalVelocity(solarMass, 6000), 
+                mass: 50,
+                radius: 6.5,
+                name: "Terra",
+                color: "#1E90FF",
+                landColor: "#228B22",
+                waterValue: 70,
+                cloudsValue: 40,
+                gasValue: 75,
+                temperature: 15,
+                lifeChance: 100,
+                biomass: 5000,
+                population: 8000000000,
+                intelligentSpecies: ["Homo Sapiens"],
+                knowledgePoints: 1500,
+                locked: false,
+                continents: generateRealisticContinents(6)
+            },
+            { 
+                type: 'planetoid', 
+                x: 6100, y: 0, 
+                vx: 0, vy: calculateOrbitalVelocity(solarMass, 6000) + calculateMoonVelocity(50, 100), 
+                mass: 0.6,
+                radius: 1.8,
+                name: "Lua",
+                color: "#C0C0C0",
+                locked: false
+            },
+            { 
+                type: 'rockyPlanet', 
+                x: 6500, y: 0, 
+                vx: 0, vy: calculateOrbitalVelocity(solarMass, 6500), 
+                mass: 15,
+                radius: 5,
+                name: "Theia",
+                color: "#a0f880",
+                temperature: -23,
+                waterValue: 60,
+                cloudsValue: 30,
+                gasValue: 60,
+                locked: false,
+                rings: true,
+                ringMass: 20,
+                continents: generateRealisticContinents(4)
+            },
+            { 
+                type: 'rockyPlanet', 
+                x: 6800, y: 0, 
+                vx: 0, vy: calculateOrbitalVelocity(solarMass, 6800), 
+                mass: 12,
+                radius: 4.5,
+                name: "Planet V",
+                color: "#a0f880",
+                temperature: -33,
+                waterValue: 50,
+                cloudsValue: 25,
+                gasValue: 55,
+                locked: false,
+                rings: true,
+                ringMass: 15,
+                continents: generateRealisticContinents(3)
+            },
+            { 
+                type: 'rockyPlanet', 
+                x: 7200, y: 0, 
+                vx: 0, vy: calculateOrbitalVelocity(solarMass, 7200), 
+                mass: 8,
+                radius: 4,
+                name: "Faetonte",
+                color: "#a0a880",
+                temperature: -43,
+                waterValue: 30,
+                cloudsValue: 15,
+                gasValue: 40,
+                locked: false,
+                continents: generateRealisticContinents(3)
+            },
+            { 
+                type: 'rockyPlanet', 
+                x: 9000, y: 0, 
+                vx: 0, vy: calculateOrbitalVelocity(solarMass, 9000), 
+                mass: 5.3,
+                radius: 3.5,
+                name: "Marte",
+                color: "#FF4500",
+                temperature: -63,
+                waterValue: 15,
+                cloudsValue: 5,
+                gasValue: 20,
+                locked: false,
+                continents: generateRealisticContinents(3)
+            },
+            { 
+                type: 'asteroid', 
+                x: 9100, y: 50, 
+                vx: 0, vy: calculateOrbitalVelocity(solarMass, 9000) + calculateMoonVelocity(5.3, 100), 
+                mass: 0.2,
+                radius: 1,
+                name: "Fobos",
+                locked: false
+            },
+            { 
+                type: 'asteroid', 
+                x: 9200, y: -30, 
+                vx: 0, vy: calculateOrbitalVelocity(solarMass, 9000) + calculateMoonVelocity(5.3, 200), 
+                mass: 0.1,
+                radius: 0.8,
+                name: "Deimos",
+                locked: false
+            },
+            { 
+                type: 'planetoid', 
+                x: 12000, y: 0, 
+                vx: 0, vy: calculateOrbitalVelocity(solarMass, 12000), 
+                mass: 1,
+                radius: 2,
+                name: "Ceres",
+                color: "#A9A9A9",
+                locked: false
+            },
+            { 
+                type: 'planetoid', 
+                x: 12500, y: 1500, 
+                vx: 0, vy: calculateOrbitalVelocity(solarMass, 12500), 
+                mass: 0.8,
+                radius: 1.8,
+                name: "Vesta",
+                color: "#888888",
+                locked: false
+            },
+            { 
+                type: 'planetoid', 
+                x: 12800, y: -1200, 
+                vx: 0, vy: calculateOrbitalVelocity(solarMass, 12800), 
+                mass: 0.7,
+                radius: 1.6,
+                name: "Palas",
+                color: "#777777",
+                locked: false
+            },
+            { 
+                type: 'planetoid', 
+                x: 12200, y: 1800, 
+                vx: 0, vy: calculateOrbitalVelocity(solarMass, 12200), 
+                mass: 0.6,
+                radius: 1.4,
+                name: "Hígia",
+                color: "#666666",
+                locked: false
+            },
+            { 
+                type: 'gasGiant', 
+                x: 15000, y: 0, 
+                vx: 0, vy: calculateOrbitalVelocity(solarMass, 15000), 
+                mass: 15890,
+                radius: 18,
+                name: "Júpiter",
+                color: "#DAA520",
+                temperature: -108,
+                gasValue: 95,
+                rings: true,
+                ringMass: 2,
+                locked: false
+            },
+            { 
+                type: 'planetoid', 
+                x: 15200, y: 100, 
+                vx: 0, vy: calculateOrbitalVelocity(solarMass, 15000) + calculateMoonVelocity(15890, 200), 
+                mass: 0.8,
+                radius: 2.5,
+                name: "Io",
+                color: "#FFA500",
+                locked: false
+            },
+            { 
+                type: 'planetoid', 
+                x: 15400, y: -80, 
+                vx: 0, vy: calculateOrbitalVelocity(solarMass, 15000) + calculateMoonVelocity(15890, 400), 
+                mass: 0.9,
+                radius: 2.7,
+                name: "Europa",
+                color: "#FFD700",
+                locked: false
+            },
+            { 
+                type: 'planetoid', 
+                x: 15600, y: 120, 
+                vx: 0, vy: calculateOrbitalVelocity(solarMass, 15000) + calculateMoonVelocity(15890, 600), 
+                mass: 1.2,
+                radius: 3.0,
+                name: "Ganimedes",
+                color: "#DAA520",
+                locked: false
+            },
+            { 
+                type: 'planetoid', 
+                x: 15800, y: -140, 
+                vx: 0, vy: calculateOrbitalVelocity(solarMass, 15000) + calculateMoonVelocity(15890, 800), 
+                mass: 1.1,
+                radius: 2.9,
+                name: "Calisto",
+                color: "#A9A9A9",
+                locked: false
+            },
+            { 
+                type: 'gasGiant', 
+                x: 22000, y: 0, 
+                vx: 0, vy: calculateOrbitalVelocity(solarMass, 22000), 
+                mass: 4760,
+                radius: 15,
+                name: "Saturno",
+                color: "#F0E68C",
+                temperature: -139,
+                gasValue: 90,
+                rings: true,
+                ringMass: 40,
+                locked: false
+            },
+            { 
+                type: 'planetoid', 
+                x: 22200, y: 50, 
+                vx: 0, vy: calculateOrbitalVelocity(solarMass, 22000) + calculateMoonVelocity(4760, 200), 
+                mass: 0.6,
+                radius: 2.2,
+                name: "Mimas",
+                color: "#C0C0C0",
+                locked: false
+            },
+            { 
+                type: 'planetoid', 
+                x: 22400, y: -70, 
+                vx: 0, vy: calculateOrbitalVelocity(solarMass, 22000) + calculateMoonVelocity(4760, 400), 
+                mass: 0.7,
+                radius: 2.5,
+                name: "Encélado",
+                color: "#F5F5F5",
+                locked: false
+            },
+            { 
+                type: 'planetoid', 
+                x: 22600, y: 100, 
+                vx: 0, vy: calculateOrbitalVelocity(solarMass, 22000) + calculateMoonVelocity(4760, 600), 
+                mass: 1.0,
+                radius: 3.0,
+                name: "Titã",
+                color: "#FFA500",
+                locked: false
+            },
+            { 
+                type: 'planetoid', 
+                x: 22800, y: -120, 
+                vx: 0, vy: calculateOrbitalVelocity(solarMass, 22000) + calculateMoonVelocity(4760, 800), 
+                mass: 0.9,
+                radius: 2.8,
+                name: "Reia",
+                color: "#D3D3D3",
+                locked: false
+            },
+            { 
+                type: 'gasGiant', 
+                x: 32000, y: 0, 
+                vx: 0, vy: calculateOrbitalVelocity(solarMass, 32000), 
+                mass: 725,
+                radius: 12,
+                name: "Urano",
+                color: "#AFEEEE",
+                temperature: -197,
+                gasValue: 85,
+                rings: true,
+                ringMass: 10,
+                locked: false
+            },
+            { 
+                type: 'planetoid', 
+                x: 32200, y: 30, 
+                vx: 0, vy: calculateOrbitalVelocity(solarMass, 32000) + calculateMoonVelocity(725, 200), 
+                mass: 0.5,
+                radius: 2.0,
+                name: "Miranda",
+                color: "#D3D3D3",
+                locked: false
+            },
+            { 
+                type: 'planetoid', 
+                x: 32400, y: -60, 
+                vx: 0, vy: calculateOrbitalVelocity(solarMass, 32000) + calculateMoonVelocity(725, 400), 
+                mass: 0.6,
+                radius: 2.3,
+                name: "Ariel",
+                color: "#F0F8FF",
+                locked: false
+            },
+            { 
+                type: 'planetoid', 
+                x: 32600, y: 90, 
+                vx: 0, vy: calculateOrbitalVelocity(solarMass, 32000) + calculateMoonVelocity(725, 600), 
+                mass: 0.7,
+                radius: 2.5,
+                name: "Umbriel",
+                color: "#A9A9A9",
+                locked: false
+            },
+            { 
+                type: 'planetoid', 
+                x: 32800, y: -120, 
+                vx: 0, vy: calculateOrbitalVelocity(solarMass, 32000) + calculateMoonVelocity(725, 800), 
+                mass: 0.8,
+                radius: 2.7,
+                name: "Titânia",
+                color: "#F5F5F5",
+                locked: false
+            },
+            { 
+                type: 'planetoid', 
+                x: 33000, y: 150, 
+                vx: 0, vy: calculateOrbitalVelocity(solarMass, 32000) + calculateMoonVelocity(725, 1000), 
+                mass: 0.8,
+                radius: 2.7,
+                name: "Oberon",
+                color: "#D3D3D3",
+                locked: false
+            },
+            { 
+                type: 'gasGiant', 
+                x: 38000, y: 0, 
+                vx: 0, vy: calculateOrbitalVelocity(solarMass, 38000), 
+                mass: 855,
+                radius: 11,
+                name: "Netuno",
+                color: "#1E90FF",
+                temperature: -201,
+                gasValue: 85,
+                rings: true,
+                ringMass: 5,
+                locked: false
+            },
+            { 
+                type: 'planetoid', 
+                x: 38200, y: 40, 
+                vx: 0, vy: calculateOrbitalVelocity(solarMass, 38000) + calculateMoonVelocity(855, 200), 
+                mass: 0.7,
+                radius: 2.5,
+                name: "Tritão",
+                color: "#ADD8E6",
+                locked: false
+            },
+            { 
+                type: 'planetoid', 
+                x: 38400, y: -80, 
+                vx: 0, vy: calculateOrbitalVelocity(solarMass, 38000) + calculateMoonVelocity(855, 400), 
+                mass: 0.3,
+                radius: 1.5,
+                name: "Nereida",
+                color: "#87CEEB",
+                locked: false
+            },
+            { 
+                type: 'gasGiant', 
+                x: 45000, y: 0, 
+                vx: 0, vy: calculateOrbitalVelocity(solarMass, 45000), 
+                mass: 1000,
+                radius: 12,
+                name: "Planet X",
+                color: "#1020FF",
+                temperature: -230,
+                gasValue: 80,
+                rings: true,
+                ringMass: 8,
+                locked: false
+            },
+            { 
+                type: 'planetoid', 
+                x: 50000, y: 0, 
+                vx: 0, vy: calculateOrbitalVelocity(solarMass, 50000), 
+                mass: 1.1,
+                radius: 1.5,
+                name: "Plutão",
+                color: "#A9A9A9",
+                locked: false
+            },
+            { 
+                type: 'planetoid', 
+                x: 50050, y: 0, 
+                vx: 0, vy: calculateOrbitalVelocity(solarMass, 50000) + calculateMoonVelocity(1.1, 50), 
+                mass: 0.3,
+                radius: 1.0,
+                name: "Caronte",
+                color: "#C0C0C0",
+                locked: false
+            },
+            { 
+                type: 'planetoid', 
+                x: 48000, y: 2000, 
+                vx: 0, vy: calculateOrbitalVelocity(solarMass, 48000), 
+                mass: 1.4,
+                radius: 1.8,
+                name: "Haumea",
+                color: "#98FB98",
+                locked: false
+            },
+            { 
+                type: 'planetoid', 
+                x: 52000, y: -1500, 
+                vx: 0, vy: calculateOrbitalVelocity(solarMass, 52000), 
+                mass: 1.2,
+                radius: 1.6,
+                name: "Makemake",
+                color: "#DEB887",
+                locked: false
+            },
+            { 
+                type: 'planetoid', 
+                x: 60000, y: 3000, 
+                vx: 0, vy: calculateOrbitalVelocity(solarMass, 60000), 
+                mass: 2.2,
+                radius: 2.0,
+                name: "Éris",
+                color: "#F0E68C",
+                locked: false
+            },
+            { 
+                type: 'planetoid', 
+                x: 80000, y: 0, 
+                vx: 0, vy: calculateOrbitalVelocity(solarMass, 80000), 
+                mass: 0.8,
+                radius: 1.2,
+                name: "Sedna",
+                color: "#CD5C5C",
+                locked: false
+            }
+        ],
+        universeAge: 4.6e9,
+        universeTime: 0,
+        camera: { x: 0, y: 0, zoom: 0.25 }
+    };
+    const asteroidBelt = generateAsteroidBelt(50, 10000, 14000);
+    completeSolarSystemData.planets.push(...asteroidBelt);
+    const kuiperBelt = generateKuiperBelt(30, 40000, 70000);
+    completeSolarSystemData.planets.push(...kuiperBelt);
+    createSpecialSave("Sistema Solar Alternativo Completo", completeSolarSystemData);
 }
 function createHabitableAlphaSave() {
     const habitableSystem = {
@@ -8888,6 +9135,512 @@ function createTrappist1Save() {
         camera: { x: 0, y: 0, zoom: 1.2 }
     };
     createSpecialSave("TRAPPIST-1", trappistSystem);
+}
+function createPastSolarSystem() {
+    const G = 6.67430e-2;
+    const ttauriMass = 450000;
+    function calculateOrbitalVelocity(centralMass, distance) {
+        return Math.sqrt(G * centralMass / distance);
+    }
+    function calculateMoonVelocity(planetMass, moonDistance) {
+        return Math.sqrt(G * planetMass / moonDistance);
+    }
+    function generateProtoplanetContinents() {
+        const continents = [];
+        const numContinents = 2 + Math.floor(Math.random() * 3);
+        for (let i = 0; i < numContinents; i++) {
+            const continent = [];
+            const points = 5 + Math.floor(Math.random() * 5);
+            const centerX = (Math.random() - 0.5) * 0.8;
+            const centerY = (Math.random() - 0.5) * 0.8;
+            for (let j = 0; j < points; j++) {
+                const angle = (j / points) * Math.PI * 2;
+                const distance = 0.05 + Math.random() * 0.15;
+                const x = centerX + Math.cos(angle) * distance * (0.6 + Math.random() * 0.6);
+                const y = centerY + Math.sin(angle) * distance * (0.6 + Math.random() * 0.6);
+                continent.push({x, y});
+            }
+            continent.push(continent[0]);
+            continents.push(continent);
+        }
+        return continents;
+    }
+    function generateEarlyAsteroidBelt(numAsteroids, minDistance, maxDistance) {
+        const asteroids = [];
+        for (let i = 0; i < numAsteroids; i++) {
+            const distance = minDistance + Math.random() * (maxDistance - minDistance);
+            const angle = Math.random() * Math.PI * 2;
+            const x = Math.cos(angle) * distance;
+            const y = Math.sin(angle) * distance;
+            asteroids.push({
+                type: Math.random() > 0.3 ? 'asteroid' : 'planetoid',
+                x: x,
+                y: y,
+                vx: 0,
+                vy: calculateOrbitalVelocity(ttauriMass, distance),
+                mass: 0.2 + Math.random() * 1,
+                radius: 0.8 + Math.random() * 2,
+                name: `Planetesimal-${i+1}`,
+                color: '#664422',
+                locked: false
+            });
+        }
+        return asteroids;
+    }
+    const pastSolarSystemData = {
+        planets: [
+            { 
+                type: 'ttauriStar', 
+                x: 0, y: 0, 
+                vx: 0, vy: 0, 
+                mass: ttauriMass,
+                radius: 35,
+                name: "Sol Jovem (T Tauri)",
+                color: "#FF4500",
+                temperature: 4500,
+                rotationSpeed: 0.05,
+                jetAngle: Math.random() * Math.PI * 2,
+                jetRotationSpeed: 2.0,
+                locked: true
+            },
+            { 
+                type: 'asteroid', 
+                x: 0, y: 0, 
+                vx: 0, vy: calculateOrbitalVelocity(ttauriMass, 1500), 
+                mass: 1.5,
+                radius: 2.5,
+                name: "FGPWORK - dsd",
+                color: "#5A4A42",
+                temperature: 400,
+                waterValue: 0,
+                cloudsValue: 0,
+                gasValue: 5,
+                locked: false,
+                continents: generateProtoplanetContinents()
+            },
+            ...generateEarlyAsteroidBelt(80, 800, 5000),
+            { 
+                type: 'planetoid', 
+                x: 1500, y: 0, 
+                vx: 0, vy: calculateOrbitalVelocity(ttauriMass, 1500), 
+                mass: 1.5,
+                radius: 2.5,
+                name: "Protomercúrio",
+                color: "#5A4A42",
+                temperature: 400,
+                waterValue: 0,
+                cloudsValue: 0,
+                gasValue: 5,
+                locked: false,
+                continents: generateProtoplanetContinents()
+            },
+            { 
+                type: 'rockyPlanet', 
+                x: 2800, y: 0, 
+                vx: 0, vy: calculateOrbitalVelocity(ttauriMass, 2800), 
+                mass: 35,
+                radius: 5,
+                name: "Protovênus",
+                color: "#B22222",
+                temperature: 800,
+                waterValue: 5,
+                cloudsValue: 20,
+                gasValue: 60,
+                locked: false,
+                continents: generateProtoplanetContinents()
+            },
+            { 
+                type: 'rockyPlanet', 
+                x: 4500, y: 0, 
+                vx: 0, vy: calculateOrbitalVelocity(ttauriMass, 4500), 
+                mass: 35,
+                radius: 5.5,
+                name: "Proto-Terra",
+                color: "#8B4513",
+                landColor: "#A0522D",
+                waterValue: 15,
+                cloudsValue: 10,
+                gasValue: 30,
+                temperature: 200,
+                lifeChance: 0,
+                biomass: 0,
+                population: 0,
+                intelligentSpecies: ["None"],
+                knowledgePoints: 0,
+                locked: false,
+                continents: generateProtoplanetContinents()
+            },
+            { 
+                type: 'planetoid', 
+                x: 4700, y: 800, 
+                vx: 0, vy: calculateOrbitalVelocity(ttauriMass, 4700), 
+                mass: 12,
+                radius: 3.5,
+                name: "Theia",
+                color: "#CD853F",
+                temperature: 150,
+                waterValue: 8,
+                cloudsValue: 5,
+                gasValue: 15,
+                locked: false,
+                continents: generateProtoplanetContinents()
+            },
+            { 
+                type: 'planetoid', 
+                x: 6500, y: 0, 
+                vx: 0, vy: calculateOrbitalVelocity(ttauriMass, 6500), 
+                mass: 3,
+                radius: 3,
+                name: "Protomarte",
+                color: "#8B0000",
+                temperature: -50,
+                waterValue: 25,
+                cloudsValue: 8,
+                gasValue: 25,
+                locked: false,
+                continents: generateProtoplanetContinents()
+            },
+            ...generateEarlyAsteroidBelt(60, 7000, 12000),
+            { 
+                type: 'planetoid', 
+                x: 9000, y: 0, 
+                vx: 0, vy: calculateOrbitalVelocity(ttauriMass, 9000), 
+                mass: 0.8,
+                radius: 1.8,
+                name: "Protoceres",
+                color: "#696969",
+                locked: false
+            },
+            { 
+                type: 'gasGiant', 
+                x: 18000, y: 0, 
+                vx: 0, vy: calculateOrbitalVelocity(ttauriMass, 18000), 
+                mass: 8000,
+                radius: 12,
+                name: "Protojúpiter",
+                color: "#D2691E",
+                temperature: -80,
+                gasValue: 70,
+                locked: false
+            },
+            { 
+                type: 'gasGiant', 
+                x: 28000, y: 0, 
+                vx: 0, vy: calculateOrbitalVelocity(ttauriMass, 28000), 
+                mass: 3000,
+                radius: 10,
+                name: "Protosaturno",
+                color: "#F4A460",
+                temperature: -120,
+                gasValue: 65,
+                rings: false,
+                locked: false
+            },
+            { 
+                type: 'gasGiant', 
+                x: 38000, y: 0, 
+                vx: 0, vy: calculateOrbitalVelocity(ttauriMass, 38000), 
+                mass: 400,
+                radius: 8,
+                name: "Protourano",
+                color: "#87CEEB",
+                temperature: -170,
+                gasValue: 60,
+                locked: false
+            },
+            { 
+                type: 'gasGiant', 
+                x: 48000, y: 0, 
+                vx: 0, vy: calculateOrbitalVelocity(ttauriMass, 48000), 
+                mass: 450,
+                radius: 7,
+                name: "Protonetuno",
+                color: "#1E90FF",
+                temperature: -190,
+                gasValue: 60,
+                locked: false
+            },
+            ...generateEarlyAsteroidBelt(40, 50000, 80000),
+            { 
+                type: 'planetoid', 
+                x: 35000, y: 10000, 
+                vx: 0, vy: calculateOrbitalVelocity(ttauriMass, 35000), 
+                mass: 8,
+                radius: 3,
+                name: "Impactador Alpha",
+                color: "#8B4513",
+                locked: false
+            },
+            { 
+                type: 'planetoid', 
+                x: -20000, y: 25000, 
+                vx: 0, vy: calculateOrbitalVelocity(ttauriMass, 32000), 
+                mass: 6,
+                radius: 2.5,
+                name: "Impactador Beta",
+                color: "#A0522D",
+                locked: false
+            },
+            { 
+                type: 'comet', 
+                x: -60000, y: 40000, 
+                vx: 2, vy: calculateOrbitalVelocity(ttauriMass, 72000), 
+                mass: 0.3,
+                radius: 1.2,
+                name: "Cometa Primordial",
+                color: "#F5F5DC",
+                temperature: -220,
+                locked: false
+            },
+            { 
+                type: 'comet', 
+                x: 70000, y: -35000, 
+                vx: -1.5, vy: calculateOrbitalVelocity(ttauriMass, 78000), 
+                mass: 0.4,
+                radius: 1.5,
+                name: "Cometa Arcaico",
+                color: "#FFF8DC",
+                temperature: -230,
+                locked: false
+            }
+        ],
+        universeAge: 1e8,
+        universeTime: 0,
+        camera: { x: 0, y: 0, zoom: 0.15 }
+    };
+    createSpecialSave("Sistema Solar Primitivo", pastSolarSystemData);
+}
+function createRandomSpaceSave() {
+    const G = 6.67430e-2;
+    const galaxyCenterMass = 1e12;
+    function calculateOrbitalVelocity(centralMass, distance) {
+        return Math.sqrt(G * centralMass / distance);
+    }
+    function calculateMoonVelocity(planetMass, moonDistance) {
+        return Math.sqrt(G * planetMass / moonDistance);
+    }
+    function getRandomStarType() {
+        const commonTypes = ['star', 'redDwarf', 'brownDwarf'];
+        const rareTypes = ['carbonStar', 'giantStar', 'redGiant', 'whiteDwarf'];
+        const veryRareTypes = ['hypergiant', 'massiveStar', 'redSupergiant', 'pulsar', 'magnetar', 'blackHole'];
+        const ultraRareTypes = ['quarkStar', 'strangeStar'];
+        const rand = Math.random();
+        if (rand < 0.6) return commonTypes[Math.floor(Math.random() * commonTypes.length)];
+        if (rand < 0.9) return rareTypes[Math.floor(Math.random() * rareTypes.length)];
+        if (rand < 0.98) return veryRareTypes[Math.floor(Math.random() * veryRareTypes.length)];
+        return ultraRareTypes[Math.floor(Math.random() * ultraRareTypes.length)];
+    }
+    function generateStarColor(starType) {
+        const colors = {
+            'star': '#FFD700', 'redDwarf': '#FF4500', 'brownDwarf': '#8B4513',
+            'carbonStar': '#8B0000', 'giantStar': '#FFA500', 'redGiant': '#DC143C',
+            'redSupergiant': '#FF0000', 'hypergiant': '#00BFFF', 'massiveStar': '#87CEEB',
+            'pulsar': '#E0FFFF', 'magnetar': '#8A2BE2', 'blackHole': '#000000',
+            'whiteDwarf': '#F0F8FF', 'quarkStar': '#4B0082', 'strangeStar': '#8A00FF'
+        };
+        return colors[starType] || '#FFFFFF';
+    }
+    function generateSimpleContinents() {
+        const continents = [];
+        const numContinents = 1 + Math.floor(Math.random() * 3);
+        for (let i = 0; i < numContinents; i++) {
+            const continent = [];
+            const points = 4 + Math.floor(Math.random() * 4);
+            const centerX = (Math.random() - 0.5) * 0.4;
+            const centerY = (Math.random() - 0.5) * 0.4;
+            for (let j = 0; j < points; j++) {
+                const angle = (j / points) * Math.PI * 2;
+                const distance = 0.08 + Math.random() * 0.12;
+                const x = centerX + Math.cos(angle) * distance;
+                const y = centerY + Math.sin(angle) * distance;
+                continent.push({x, y});
+            }
+            continent.push(continent[0]);
+            continents.push(continent);
+        }
+        return continents;
+    }
+    function generateStarSystem(distanceFromCenter, angle) {
+        const system = [];
+        const starType = getRandomStarType();
+        const starMass = 100000 + Math.random() * 900000;
+        const star = {
+            type: starType,
+            x: Math.cos(angle) * distanceFromCenter,
+            y: Math.sin(angle) * distanceFromCenter,
+            vx: 0,
+            vy: calculateOrbitalVelocity(galaxyCenterMass, distanceFromCenter),
+            mass: starMass,
+            radius: 15 + Math.random() * 15,
+            name: `S-${Math.floor(Math.random() * 1000)}`,
+            color: generateStarColor(starType),
+            temperature: 3000 + Math.random() * 12000,
+            locked: false
+        };
+        system.push(star);
+        const numPlanets = Math.floor(Math.random() * 6);
+        for (let i = 0; i < numPlanets; i++) {
+            const orbitDistance = 800 + (i + 1) * (600 + Math.random() * 800);
+            const planetAngle = Math.random() * Math.PI * 2;
+            const planetTypes = ['rockyPlanet', 'gasGiant', 'planetoid'];
+            const planetType = planetTypes[Math.floor(Math.random() * planetTypes.length)];
+            let mass, radius;
+            switch(planetType) {
+                case 'rockyPlanet':
+                    mass = 10 + Math.random() * 40;
+                    radius = 2 + Math.random() * 4;
+                    break;
+                case 'gasGiant':
+                    mass = 200 + Math.random() * 800;
+                    radius = 6 + Math.random() * 8;
+                    break;
+                default:
+                    mass = 0.5 + Math.random() * 3;
+                    radius = 1 + Math.random() * 2;
+            }
+            const planet = {
+                type: planetType,
+                x: star.x + Math.cos(planetAngle) * orbitDistance,
+                y: star.y + Math.sin(planetAngle) * orbitDistance,
+                vx: 0,
+                vy: star.vy + calculateOrbitalVelocity(starMass, orbitDistance),
+                mass: mass,
+                radius: radius,
+                name: `P-${Math.floor(Math.random() * 1000)}`,
+                color: `#${Math.floor(Math.random()*8388607 + 8388608).toString(16)}`,
+                temperature: -200 + Math.random() * 400,
+                waterValue: Math.floor(Math.random() * 100),
+                gasValue: Math.floor(Math.random() * 100),
+                cloudsValue: Math.floor(Math.random() * 100),
+                locked: false
+            };
+            if (planetType === 'rockyPlanet' && Math.random() < 0.3) {
+                planet.continents = generateSimpleContinents();
+            }
+            if (Math.random() < 0.1) {
+                planet.rings = true;
+                planet.ringMass = Math.floor(Math.random() * 30);
+            }
+            system.push(planet);
+            if (Math.random() < 0.2 && mass > 8) {
+                const numMoons = 1 + Math.floor(Math.random() * 2);
+                for (let m = 0; m < numMoons; m++) {
+                    const moonDistance = (m + 1) * (radius * 2 + 30);
+                    const moonAngle = Math.random() * Math.PI * 2;
+                    system.push({
+                        type: 'planetoid',
+                        x: planet.x + Math.cos(moonAngle) * moonDistance,
+                        y: planet.y + Math.sin(moonAngle) * moonDistance,
+                        vx: 0,
+                        vy: planet.vy + calculateMoonVelocity(planet.mass, moonDistance),
+                        mass: 0.1 + Math.random() * 1,
+                        radius: 0.3 + Math.random() * 1,
+                        name: `M-${Math.floor(Math.random() * 1000)}`,
+                        color: '#888888',
+                        locked: false
+                    });
+                }
+            }
+        }
+        const numAsteroids = Math.floor(Math.random() * 3);
+        for (let i = 0; i < numAsteroids; i++) {
+            const asteroidDistance = 500 + Math.random() * 2000;
+            const asteroidAngle = Math.random() * Math.PI * 2;
+            system.push({
+                type: 'asteroid',
+                x: star.x + Math.cos(asteroidAngle) * asteroidDistance,
+                y: star.y + Math.sin(asteroidAngle) * asteroidDistance,
+                vx: 0,
+                vy: star.vy + calculateOrbitalVelocity(starMass, asteroidDistance),
+                mass: 0.1 + Math.random() * 0.5,
+                radius: 0.5 + Math.random() * 1.5,
+                name: `A-${Math.floor(Math.random() * 1000)}`,
+                color: '#666666',
+                locked: false
+            });
+        }
+        return system;
+    }
+    function generateRoguePlanet() {
+        const types = ['rockyPlanet', 'gasGiant', 'planetoid'];
+        const type = types[Math.floor(Math.random() * types.length)];
+        let mass, radius;
+        switch(type) {
+            case 'rockyPlanet':
+                mass = 5 + Math.random() * 25;
+                radius = 1.5 + Math.random() * 2.5;
+                break;
+            case 'gasGiant':
+                mass = 100 + Math.random() * 400;
+                radius = 4 + Math.random() * 6;
+                break;
+            default:
+                mass = 0.3 + Math.random() * 2;
+                radius = 0.8 + Math.random() * 1.5;
+        }
+        const distance = 5000 + Math.random() * 100000;
+        const angle = Math.random() * Math.PI * 2;
+        return {
+            type: type,
+            x: Math.cos(angle) * distance,
+            y: Math.sin(angle) * distance,
+            vx: (Math.random() - 0.5) * 1,
+            vy: (Math.random() - 0.5) * 1,
+            mass: mass,
+            radius: radius,
+            name: `R-${Math.floor(Math.random() * 1000)}`,
+            color: '#555555',
+            temperature: -250 + Math.random() * 100,
+            locked: false
+        };
+    }
+    const randomSpaceData = {
+        planets: [
+            {
+                type: 'quasar',
+                x: 0, y: 0,
+                vx: 0, vy: 0,
+                mass: galaxyCenterMass,
+                radius: 40,
+                name: "Quasar Central",
+                color: "#000000",
+                temperature: 1e6,
+                jetAngle: Math.random() * Math.PI * 2,
+                locked: true
+            }
+        ],
+        universeAge: 1e10,
+        universeTime: 0,
+        camera: { x: 0, y: 0, zoom: 0.02 }
+    };
+    const numStarSystems = 15 + Math.floor(Math.random() * 25);
+    for (let i = 0; i < numStarSystems; i++) {
+        const distance = 8000 + Math.random() * 80000;
+        const angle = Math.random() * Math.PI * 2;
+        const starSystem = generateStarSystem(distance, angle);
+        randomSpaceData.planets.push(...starSystem);
+    }
+    const numRoguePlanets = 3 + Math.floor(Math.random() * 7);
+    for (let i = 0; i < numRoguePlanets; i++) {
+        randomSpaceData.planets.push(generateRoguePlanet());
+    }
+    if (Math.random() < 0.3) {
+        const dwarfDistance = 120000 + Math.random() * 80000;
+        const dwarfAngle = Math.random() * Math.PI * 2;
+        const numDwarfSystems = 3 + Math.floor(Math.random() * 5);
+        for (let i = 0; i < numDwarfSystems; i++) {
+            const systemDistance = 1000 + Math.random() * 3000;
+            const systemAngle = Math.random() * Math.PI * 2;
+            const system = generateStarSystem(systemDistance, systemAngle);
+            system.forEach(obj => {
+                obj.x += Math.cos(dwarfAngle) * dwarfDistance;
+                obj.y += Math.sin(dwarfAngle) * dwarfDistance;
+                obj.vy += calculateOrbitalVelocity(galaxyCenterMass, dwarfDistance);
+            });
+            randomSpaceData.planets.push(...system);
+        }
+    }
+    createSpecialSave("Universo Aleatório Compacto", randomSpaceData);
 }
 let unlockedAstroTypes = JSON.parse(localStorage.getItem('siu2d_unlocked_astros') || '[]');
 function unlockBizarreStars() {

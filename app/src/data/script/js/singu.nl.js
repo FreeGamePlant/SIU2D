@@ -10,6 +10,10 @@ const responseHistory = new Map();
 const MAX_HISTORY_PER_TERM = 100;
 const STAR_EMOJI = 'T Singularity ';
 const responseDatabase = {
+    "!#&&!(¬¢)/°¢!$@":[
+        "My Congratulations!",
+        unlockMedusaStar(),
+    ],
     "komeet": [
         "☄️ Kometen zijn ijzige lichamen die staarten ontwikkelen in de buurt van sterren! In SIU 2D kun je ze maken in het menu 'Astron maken'",
         "💫 Typische massa van kometen: 0.1-10 eenheden. Boven 300 massa's evolueren ze automatisch naar ijzige planetoïden",

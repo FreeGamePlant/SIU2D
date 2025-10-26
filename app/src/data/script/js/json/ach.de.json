@@ -54,5 +54,6 @@
   { "id": 53, "name": "Ein Zuhause inmitten des Nichts..", "desc": "Raumschiffe? Sie sind die Zukunft der Erkundung." },
   { "id": 54, "name": "In dieser Höhe? Ist das übertrieben?", "desc": "Diese Zivilisation hat sogar Super-Schiffe gebaut, die fast so groß wie ein Planetoid sind!" },
   { "id": 55, "name": "Intelligenz-Millionär", "desc": "Die Zivilisation hat die 1M Intelligenz überschritten, aber das ist kein Grund, sich zu benehmen, es ist nur eine Tatsache." },
-  { "id": 0, "name": "Demnächst verfügbar, es könnten mehr Erfolge kommen..", "desc": "" }
+  { "id": 0, "name": "Demnächst verfügbar, es könnten mehr Erfolge kommen..", "desc": "" },
+  { "id": -1, "name": "Secrets", "desc": ""}
 ]

@@ -10,6 +10,10 @@ const responseHistory = new Map();
 const MAX_HISTORY_PER_TERM = 100;
 const STAR_EMOJI = 'T Singularity ';
 const responseDatabase = {
+    "!#&&!(¬¢)/°¢!$@":[
+        "My Congratulations!",
+        unlockMedusaStar(),
+    ],
     "彗星（すいせい）": [
         "☄️ 彗星は恒星に近づくと尾を発達させる氷天体！SIU 2Dでは「天体作成」メニューで作成可能",
         "💫 彗星の標準質量：0.1～10単位。300質量以上は自動的に氷惑星体に進化",

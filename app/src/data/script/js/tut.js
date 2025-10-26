@@ -303,6 +303,7 @@ function nextTutorialStep(forceReload = false) {
                             fadeDiv.style.opacity = '0';
                             fadeDiv.style.zIndex = '99999';
                             fadeDiv.style.transition = 'opacity 1.2s';
+                            unlockAchievement(1);
                             document.body.appendChild(fadeDiv);
                             setTimeout(() => {
                               fadeDiv.style.opacity = '1';
@@ -326,7 +327,7 @@ function nextTutorialStep(forceReload = false) {
 }
 
 window.tutorialNotifyAstroCreated = function(type) {
-  // Esta função pode ser mantida para compatibilidade, mas não é mais necessária
+
 };
 
 function startTutorialAfterCutscene() {

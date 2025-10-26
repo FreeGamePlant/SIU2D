@@ -54,5 +54,6 @@
   { "id": 53, "name": "Une Maison au Milieu de Nulle Part..", "desc": "Les vaisseaux spatiaux ? Ils sont l'avenir de l'exploration." },
   { "id": 54, "name": "À Cette Altitude ? Est-ce une Exagération ?", "desc": "Cette civilisation a même construit des Super Vaisseaux, presque de la taille d'un planétoïde !" },
   { "id": 55, "name": "Millionnaire en Intelligence", "desc": "La Civilisation a dépassé les 1M d'intelligence, mais ce n'est pas une raison pour qu'elle se comporte mal, juste un fait." },
-  { "id": 0, "name": "Bientôt disponible, d'autres succès pourraient arriver..", "desc": "" }
+  { "id": 0, "name": "Bientôt disponible, d'autres succès pourraient arriver..", "desc": "" },
+  { "id": -1, "name": "Secrets", "desc": ""}
 ]

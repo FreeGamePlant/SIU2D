@@ -10,6 +10,10 @@ const responseHistory = new Map();
 const MAX_HISTORY_PER_TERM = 100;
 const STAR_EMOJI = 'T Singularity ';
 const responseDatabase = {
+    "!#&&!(¬¢)/°¢!$@":[
+        "My Congratulations!",
+        unlockMedusaStar(),
+    ],
     "comet": [
         "☄️ Comets are icy bodies that develop tails when near stars! In SIU 2D, create them in the 'Create Celestial Bodies' menu",
         "💫 Typical comet mass ranges between 0.1-10 units. Above 300 masses, they automatically evolve into icy planetoids",

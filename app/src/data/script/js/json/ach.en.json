@@ -54,5 +54,6 @@
   { "id": 53, "name": "A Home in the Middle of Nowhere..", "desc": "Spaceships? They are the future of exploration." },
   { "id": 54, "name": "At This Height? Is That Exaggeration?", "desc": "This civilization built even Super Ships, almost the size of a planetoid!" },
   { "id": 55, "name": "Intelligence Millionaire", "desc": "The Civilization has exceeded 1M intelligence, but that's no reason for them to act up, just a fact." },
-  { "id": 0, "name": "Coming soon, more achievements may come..", "desc": "" }
+  { "id": 0, "name": "Coming soon, more achievements may come..", "desc": "" },
+  { "id": -1, "name": "Secrets", "desc": ""}
 ]
