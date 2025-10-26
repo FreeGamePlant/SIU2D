@@ -286,6 +286,7 @@ let funSpaceMode = false;
 let funSpaceHue = 0;
 let funSpaceSpeed = 0.5;
 let currentManualPage = 1;
+let sfxVolume = 1;
 const totalManualPages = 5;
 let medusaExplosionInterval;
 //#endregion
@@ -634,6 +635,20 @@ function init() {
     const btnResetEverythingDev = document.getElementById('btnResetEverythingDev');
     if (btnResetEverythingDev) {
         btnResetEverythingDev.addEventListener('click', resetEverythingDev);
+    }
+    const sfxVolumeSlider = document.getElementById('sfxVolumeSlider');
+    const sfxVolumeValue = document.getElementById('sfxVolumeValue');
+    if (sfxVolumeSlider && sfxVolumeValue) {
+        sfxVolume = sfxVolumeSlider.value / 100;
+        sfxVolumeValue.textContent = sfxVolumeSlider.value;
+        sfxVolumeSlider.addEventListener('input', fgpSfxVolume);
+    }
+    function fgpSfxVolume() {
+        sfxVolume = sfxVolumeSlider.value / 100;
+        sfxVolumeValue.textContent = sfxVolumeSlider.value;
+        collisionSounds.forEach(sound => {
+            sound.volume = sfxVolume;
+        });
     }
     canvas.addEventListener('touchstart', handleTouchStart, { passive: false });
     canvas.addEventListener('touchmove', handleTouchMove, { passive: false });
@@ -6666,14 +6681,21 @@ function fgpSuperShipBehavior(ship, deltaTime) {
 }
 function playRandomCollisionSound() {
     if (collisionSounds.length === 0) return;
-    const randomIndex = Math.floor(Math.random() * collisionSounds.length);
-    const sound = collisionSounds[randomIndex];
-    try {
-        sound.currentTime = 0;
-        sound.play().catch(e => console.log("Autoplay bloqueado:", e));
-    } catch (e) {
-        console.error("Erro ao reproduzir som:", e);
+    const sound = collisionSounds[Math.floor(Math.random() * collisionSounds.length)];
+    sound.volume = sfxVolume;
+    sound.currentTime = 0;
+    const playPromise = sound.play();
+    if (playPromise !== undefined) {
+        playPromise.catch(error => {
+            console.log("Reprodução de efeito sonoro bloqueada:", error);
+        });
     }
+}
+function createCollisionSound(src) {
+    const sound = new Audio(src);
+    sound.volume = sfxVolume;
+    collisionSounds.push(sound);
+    return sound;
 }
 function preloadCollisionSounds() {
     for (let i = 1; i <= 15; i++) {
