@@ -8565,6 +8565,21 @@ function createSolarSystemSave() {
             },
             { 
                 type: 'rockyPlanet', 
+                x: 0, y: 0, 
+                vx: 0, vy: calculateOrbitalVelocity(solarMass, 1800), 
+                mass: 3.3,
+                radius: 3,
+                name: "..",
+                color: "#8C7853",
+                temperature: 167,
+                gasValue: 2,
+                waterValue: 1,
+                cloudsValue: 0,
+                locked: false,
+                ignoreColorChanges: true
+            },
+            { 
+                type: 'rockyPlanet', 
                 x: 1800, y: 0, 
                 vx: 0, vy: calculateOrbitalVelocity(solarMass, 1800), 
                 mass: 3.3,
@@ -9064,6 +9079,21 @@ function createCompleteSolarSystemSave() {
                 locked: true
             },
             { 
+                type: 'rockyPlanet', 
+                x: 0, y: 0, 
+                vx: 0, vy: calculateOrbitalVelocity(solarMass, 1800), 
+                mass: 3.3,
+                radius: 3,
+                name: "..",
+                color: "#8C7853",
+                temperature: 167,
+                gasValue: 2,
+                waterValue: 1,
+                cloudsValue: 0,
+                locked: false,
+                ignoreColorChanges: true
+            },
+            { 
                 type: 'redDwarf', 
                 x: 500, y: 0, 
                 vx: 0, vy: calculateOrbitalVelocity(solarMass, 500), 
@@ -9561,6 +9591,21 @@ function createHabitableAlphaSave() {
                 locked: true
             },
             { 
+                type: 'rockyPlanet', 
+                x: 0, y: 0, 
+                vx: 0, vy: 0,
+                mass: 3.3,
+                radius: 3,
+                name: "..",
+                color: "#8C7853",
+                temperature: 167,
+                gasValue: 2,
+                waterValue: 1,
+                cloudsValue: 0,
+                locked: false,
+                ignoreColorChanges: true
+            },
+            { 
                 type: 'meteoroid', 
                 x: 0, y: 0, 
                 vx: 0, vy: 0, 
@@ -9695,12 +9740,27 @@ function createTrappist1Save() {
                 type: 'redDwarf',
                 x: 0, y: 0,
                 vx: 0, vy: 0,
-                mass: 80000,
-                radius: 8,
+                mass: 20000,
+                radius: 2,
                 name: "TRAPPIST-1",
                 color: "#FF4500",
                 temperature: 300,
                 lock: true
+            },
+            { 
+                type: 'rockyPlanet', 
+                x: 0, y: 0, 
+                vx: 0, vy: 0,
+                mass: 3.3,
+                radius: 3,
+                name: "..",
+                color: "#8C7853",
+                temperature: 167,
+                gasValue: 2,
+                waterValue: 1,
+                cloudsValue: 0,
+                locked: false,
+                ignoreColorChanges: true
             },
             {
                 type: 'rockyPlanet',
@@ -9934,6 +9994,21 @@ function createPastSolarSystem() {
                 jetAngle: Math.random() * Math.PI * 2,
                 jetRotationSpeed: 2.0,
                 locked: true
+            },
+            { 
+                type: 'rockyPlanet', 
+                x: 0, y: 0, 
+                vx: 0, vy: 0, 
+                mass: 3.3,
+                radius: 3,
+                name: "..",
+                color: "#8C7853",
+                temperature: 167,
+                gasValue: 2,
+                waterValue: 1,
+                cloudsValue: 0,
+                locked: false,
+                ignoreColorChanges: true
             },
             { 
                 type: 'asteroid', 
@@ -10334,11 +10409,26 @@ function createRandomSpaceSave() {
                 vx: 0, vy: 0,
                 mass: galaxyCenterMass,
                 radius: 40,
-                name: "Quasar Central",
+                name: "Quasar",
                 color: "#000000",
                 temperature: 1e6,
                 jetAngle: Math.random() * Math.PI * 2,
                 locked: true
+            },
+            { 
+                type: 'rockyPlanet', 
+                x: 0, y: 0, 
+                vx: 0, vy: 0, 
+                mass: 3.3,
+                radius: 3,
+                name: "..",
+                color: "#8C7853",
+                temperature: 167,
+                gasValue: 2,
+                waterValue: 1,
+                cloudsValue: 0,
+                locked: false,
+                ignoreColorChanges: true
             }
         ],
         universeAge: 1e10,
