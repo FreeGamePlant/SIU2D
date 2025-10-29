@@ -74,14 +74,6 @@ user-select: text;
           <input type="color" id="spaceColor" value="#000000">
         </div>
       </div>
-    <div class="edit-group" style="margin-top: 2rem; border-top: 1px solid #333; padding-top: 1rem;">
-        <button class="btn danger" id="btnResetEverythingDev">
-            <i class="fas fa-bomb"></i> RESETAR TUDO (DEV)
-        </button>
-        <p style="color: #ff6b6b; font-size: 0.8rem; margin-top: 0.5rem;">
-            ⚠️ Botão de desenvolvimento - reseta tudo sem confirmação!
-        </p>
-    </div>
       <div class="edit-group">
         <div class="edit-label" data-i18n="ui.config.musicVolume">Volume da Música</div>
         <div class="edit-input">
@@ -107,6 +99,9 @@ user-select: text;
       </div>
       <div class="edit-group" style="margin-top: 2rem;">
         <button class="btn" id="resetBtn" data-i18n="ui.config.resetPhysics">🔄 Restaurar Física</button>
+      </div>
+      <div class="edit-group" style="margin-top: 2rem;">
+        <button class="btn" id="secretResetBtn">Restaurar Jogo</button>
       </div>
     </div>
   </div>
@@ -340,6 +335,18 @@ user-select: text;
                         <p>The Heaviest Object in the Universe, the Beginning of the Big Bang.</p>
                         <div class="shop-item-price">100.000<img src="../assets/img/tsCoins.png" class="tsCoinsIcon" alt=""> / + 1 Astro</div>
                     </div>
+                    <div class="shop-item medusa-star-item hidden" data-item-id="medusaStar" data-price="0">
+                        <div class="shop-item-icon"><i class="fas fa-medusa"></i></div>
+                        <h3>Medusa Star</h3>
+                        <p>It's time to petrify the other stars!</p>
+                        <div class="shop-item-price">Get<img src="../assets/img/tsCoins.png" class="tsCoinsIcon" alt=""> / + 1 Astro</div>
+                    </div>
+                    <div class="shop-item nitric-star-item hidden" data-item-id="nitricStar" data-price="20000">
+                        <div class="shop-item-icon"><i class="fas fa-water"></i></div>
+                        <h3>Nitric Acid Star</h3>
+                        <p>It's time to depetrify the other stars! The opposite of Medusa Star. Explodes every 5-15 seconds, destroying nearby objects.</p>
+                        <div class="shop-item-price">20.000<img src="../assets/img/tsCoins.png" class="tsCoinsIcon" alt=""> / + 1 Astro</div>
+                    </div>
                     <div class="shop-item" data-item-id="create_random_save" data-price="50000">
                         <div class="shop-item-icon"><i class="fas fa-solar-system"></i></div>
                         <h3>Random Galaxy Save</h3>
@@ -355,79 +362,79 @@ user-select: text;
                 </div>
             </div>
         </div>
-<div id="manualOverlay" class="overlay">
-    <div class="overlay-content manual-content">
-        <button class="close-overlay" onclick="closeManual()">&times;</button>
-        <h2>📖 TS Manual</h2>
-        <div class="manual-pages-container">
-            <div class="manual-page active" data-page="1">
-                <div class="manual-animation">
-                    <div class="animation-placeholder">
-                        <video src="../assets/video/tsmanual_1.mp4" loop autoplay muted class="animation"></video>
+        <div id="manualOverlay" class="overlay">
+            <div class="overlay-content manual-content">
+                <button class="close-overlay" onclick="closeManual()">&times;</button>
+                <h2>📖 TS Manual</h2>
+                <div class="manual-pages-container">
+                    <div class="manual-page active" data-page="1">
+                        <div class="manual-animation">
+                            <div class="animation-placeholder">
+                                <video src="../assets/video/tsmanual_1.mp4" loop autoplay muted class="animation"></video>
+                            </div>
+                        </div>
+                        <div class="manual-text">
+                            <div class="ts-speech-bubble">
+                                <p data-i18n="manual.oneStep"></p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="manual-page" data-page="2">
+                        <div class="manual-animation">
+                            <div class="animation-placeholder">
+                                <video src="../assets/video/tsmanual_2.mp4" loop autoplay muted class="animation"></video>
+                            </div>
+                        </div>
+                        <div class="manual-text">
+                            <div class="ts-speech-bubble">
+                                <p data-i18n="manual.twoStep"></p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="manual-page" data-page="3">
+                        <div class="manual-animation">
+                            <div class="animation-placeholder">
+                                <video src="../assets/video/tsmanual_3.mp4" loop autoplay muted class="animation"></video>
+                            </div>
+                        </div>
+                        <div class="manual-text">
+                            <div class="ts-speech-bubble">
+                                <p data-i18n="manual.treeStep"></p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="manual-page" data-page="4">
+                        <div class="manual-animation">
+                            <div class="animation-placeholder">
+                                <video src="../assets/video/tsmanual_4.mp4" loop autoplay muted class="animation"></video>
+                            </div>
+                        </div>
+                        <div class="manual-text">
+                            <div class="ts-speech-bubble">
+                                <p data-i18n="manual.fourStep"></p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="manual-page" data-page="5">
+                        <div class="manual-animation">
+                            <div class="animation-placeholder">
+                                <video src="../assets/video/tsmanual_5.mp4" loop autoplay muted class="animation"></video>
+                            </div>
+                        </div>
+                        <div class="manual-text">
+                            <div class="ts-speech-bubble">
+                                <p data-i18n="manual.fiveStep"></p>
+                            </div>
+                        </div>
                     </div>
                 </div>
-                <div class="manual-text">
-                    <div class="ts-speech-bubble">
-                        <p data-i18n="manual.oneStep"></p>
-                    </div>
-                </div>
-            </div>
-            <div class="manual-page" data-page="2">
-                <div class="manual-animation">
-                    <div class="animation-placeholder">
-                         <video src="../assets/video/tsmanual_2.mp4" loop autoplay muted class="animation"></video>
-                    </div>
-                </div>
-                <div class="manual-text">
-                    <div class="ts-speech-bubble">
-                        <p data-i18n="manual.twoStep"></p>
-                    </div>
-                </div>
-            </div>
-            <div class="manual-page" data-page="3">
-                <div class="manual-animation">
-                    <div class="animation-placeholder">
-                         <video src="../assets/video/tsmanual_3.mp4" loop autoplay muted class="animation"></video>
-                    </div>
-                </div>
-                <div class="manual-text">
-                    <div class="ts-speech-bubble">
-                        <p data-i18n="manual.treeStep"></p>
-                    </div>
-                </div>
-            </div>
-            <div class="manual-page" data-page="4">
-                <div class="manual-animation">
-                    <div class="animation-placeholder">
-                        <video src="../assets/video/tsmanual_4.mp4" loop autoplay muted class="animation"></video>
-                    </div>
-                </div>
-                <div class="manual-text">
-                    <div class="ts-speech-bubble">
-                        <p data-i18n="manual.fourStep"></p>
-                    </div>
-                </div>
-            </div>
-            <div class="manual-page" data-page="5">
-                <div class="manual-animation">
-                    <div class="animation-placeholder">
-                        <video src="../assets/video/tsmanual_5.mp4" loop autoplay muted class="animation"></video>
-                    </div>
-                </div>
-                <div class="manual-text">
-                    <div class="ts-speech-bubble">
-                        <p data-i18n="manual.fiveStep"></p>
-                    </div>
+                <div class="manual-controls">
+                    <button class="manual-btn" onclick="prevManualPage()">&lt;-- Anterior</button>
+                    <span class="manual-page-indicator">Página 1 de 5</span>
+                    <button class="manual-btn" onclick="nextManualPage()">Próxima --&gt;</button>
                 </div>
             </div>
         </div>
-        <div class="manual-controls">
-            <button class="manual-btn" onclick="prevManualPage()">&lt;-- Anterior</button>
-            <span class="manual-page-indicator">Página 1 de 5</span>
-            <button class="manual-btn" onclick="nextManualPage()">Próxima --&gt;</button>
-        </div>
-    </div>
-</div>
         <button class="hex-btn" id="btnOptions"><i class="fas fa-cog"></i><span data-i18n="ui.buttons.options">Opções</span></button>
         <button class="hex-btn" id="btnInstruction"><i class="fas fa-question-circle"></i><span data-i18n="ui.buttons.tutorial">Tutorial</span></button>
         <button class="hex-btn" id="btnWarnings"><i class="fas fa-exclamation-triangle"></i><span data-i18n="ui.buttons.warnings">Avisos</span></button>
