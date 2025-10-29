@@ -4856,15 +4856,12 @@ margin-top: 20px;
 :fullscreen {
 background: #000;
 }
-
 :-webkit-full-screen {
 background: #000;
 }
-
 :-moz-full-screen {
 background: #000;
 }
-
 :-ms-fullscreen {
 background: #000;
 }
@@ -4894,7 +4891,6 @@ transform: scale(1.05);
 width: 100vw !important;
 height: 100vh !important;
 }
-
 #gameCanvas {
 width: 100% !important;
 height: 100% !important;
@@ -4912,4 +4908,142 @@ padding: 12px 20px;
 border-radius: 8px;
 font-size: 14px;
 border: 1px solid #4a90e2;
+}
+.hidden {
+display: none !important;
+}
+.visible {
+display: block !important;
+}
+.manual-animation {
+position: relative;
+width: 100%;
+border-radius: 8px; 
+overflow: hidden;
+box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2); 
+background: linear-gradient(135deg, #0a1a2a 0%, #1a2b3a 100%);
+margin-bottom: 12px; 
+flex-shrink: 0;
+min-height: 180px; 
+padding: 8px; 
+border: 1px solid rgba(74, 144, 226, 0.3); 
+}
+.manual-animation video.animation {
+width: 100%;
+height: auto;
+display: block;
+border-radius: 6px; 
+object-fit: contain;
+background: #000;
+max-height: 40vh; 
+min-height: 160px; 
+}
+.animation-placeholder {
+width: 100%;
+display: flex;
+align-items: center;
+justify-content: center;
+padding: 10px; 
+color: #81d4fa;
+font-weight: bold;
+background: transparent;
+font-size: 0.9rem; 
+}
+@media screen and (max-width: 768px) {
+.manual-animation {
+border-radius: 6px;
+margin-bottom: 10px;
+min-height: 150px; 
+padding: 6px;
+}
+.manual-animation video.animation {
+max-height: 28vh; 
+min-height: 140px; 
+border-radius: 4px;
+}
+.animation-placeholder {
+padding: 8px;
+font-size: 0.8rem;
+}
+}
+@media screen and (max-width: 480px) {
+.manual-animation {
+border-radius: 5px;
+margin-bottom: 8px;
+min-height: 120px; 
+padding: 5px;
+}
+.manual-animation video.animation {
+max-height: 24vh; 
+min-height: 110px; 
+border-radius: 3px;
+}
+.animation-placeholder {
+padding: 6px;
+font-size: 0.75rem;
+}
+}
+@media screen and (max-width: 360px) {
+.manual-animation {
+min-height: 100px; 
+padding: 4px;
+}
+.manual-animation video.animation {
+max-height: 20vh; 
+min-height: 90px; 
+}
+}
+@media screen and (max-height: 500px) and (orientation: landscape) {
+.manual-animation {
+min-height: auto;
+padding: 6px;
+margin-bottom: 0;
+}
+.manual-animation video.animation {
+max-height: 42vh; 
+}
+}
+.manual-pages-container {
+position: relative;
+flex: 1;
+display: flex;
+flex-direction: column;
+min-height: 320px; 
+}
+.overlay-content {
+background: linear-gradient(135deg, #1a1a2e, #16213e);
+border-radius: 15px; 
+padding: 18px; 
+width: 100%;
+max-width: 800px; 
+max-height: 85vh; 
+overflow-y: auto;
+border: 2px solid #3498db;
+box-shadow: 0 6px 20px rgba(0, 0, 0, 0.35); 
+position: relative;
+display: flex;
+flex-direction: column;
+min-height: 450px; 
+}
+.manual-text {
+flex: 1;
+display: flex;
+flex-direction: column;
+justify-content: center;
+margin-top: 8px; 
+}
+.manual-content h2 {
+font-size: 1.7rem; 
+color: #4fc3f7;
+text-align: center;
+margin-bottom: 12px; 
+text-shadow: 0 0 6px rgba(79, 195, 247, 0.7); 
+}
+.manual-controls {
+display: flex;
+justify-content: space-between;
+align-items: center;
+margin-top: 12px; 
+padding: 10px 0 3px; 
+border-top: 1px solid rgba(255, 255, 255, 0.15); 
 }
