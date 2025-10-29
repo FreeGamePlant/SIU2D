@@ -10,9 +10,8 @@ const responseHistory = new Map();
 const MAX_HISTORY_PER_TERM = 100;
 const STAR_EMOJI = 'T Singularity ';
 const responseDatabase = {
-    "!#&&!(¬¢)/°¢!$@":[
-        "My Congratulations!",
-        unlockMedusaStar(),
+    "!#&&!(¬¢)/°¢!$@": [
+        "My Congratulations! The Medusa Star is now available in the shop! Go to the shop and click 'Get' to unlock it."
     ],
     "مذنب": [
             "☄️ المذنبات هي أجسام جليدية تنمو لها ذيول عند اقترابها من النجوم! في لعبة SIU 2D، يمكنك إنشاؤها من قائمة 'إنشاء الأجرام السماوية'",
@@ -2398,11 +2397,62 @@ function humanTypeWriter(element, text, speed = 30) {
 function isOnline() {
     return navigator.onLine;
 }
+function checkForSecretCode(input) {
+    const cleanInput = input.trim();
+    if (cleanInput === "!#&&!(¬¢)/°¢!$@") {
+        console.log("Secret code detected! Unlocking Medusa Star...");
+        unlockMedusaStarInShop();
+        return true;
+    }   
+    return false;
+}
+function unlockMedusaStarInShop() {
+    console.log('=== MEDUSA STAR UNLOCK DEBUG ===');
+    console.log('1. Function unlockMedusaStarInShop called');
+    const medusaStarItem = document.querySelector('[data-item-id="medusaStar"]');
+    console.log('2. Medusa Star item found:', medusaStarItem);
+    if (medusaStarItem) {
+        console.log('3. Before - display:', medusaStarItem.style.display);
+        console.log('3. Before - classes:', medusaStarItem.className);
+        medusaStarItem.classList.remove('hidden');
+        medusaStarItem.style.display = 'block';
+        console.log('4. After - display:', medusaStarItem.style.display);
+        console.log('4. After - classes:', medusaStarItem.className);
+        localStorage.setItem('medusaStarUnlocked', 'true');
+        console.log('5. localStorage set: medusaStarUnlocked = true');
+        if (window.updateShopDisplay) {
+            console.log('6. Calling updateShopDisplay');
+            window.updateShopDisplay();
+        } else {
+            console.log('6. updateShopDisplay not available');
+        }    
+        console.log('7. Medusa Star unlocked in shop successfully');
+    } else {
+        console.error('ERROR: Medusa Star item not found in shop!');
+        console.log('Available shop items:');
+        document.querySelectorAll('.shop-item').forEach(item => {
+            console.log('- ', item.getAttribute('data-item-id'));
+        });
+    }   
+    console.log('=== END DEBUG ===');
+}
 async function handleUserInput() {
     const inputEl = document.getElementById('user-input');
     const chatBox = document.getElementById('chat-box');
     const text = inputEl.value.trim();
     if (!text || !chatBox) return;
+    if (checkForSecretCode(text)) {
+        const userMsg = createMessage(`Você: ${text}`, 'user-message');
+        chatBox.appendChild(userMsg);
+        inputEl.value = '';
+        chatBox.scrollTop = chatBox.scrollHeight;
+        const botMsg = createMessage('', 'bot-message');
+        chatBox.appendChild(botMsg);
+        const textElement = botMsg.querySelector('span:last-child');
+        await humanTypeWriter(textElement, ": My Congratulations! The Medusa Star is now available in the shop! Go to the shop and click 'Get' to unlock it.");
+        chatBox.scrollTop = chatBox.scrollHeight;
+        return;
+    }
     const userMsg = createMessage(`Você: ${text}`, 'user-message');
     chatBox.appendChild(userMsg);
     inputEl.value = '';

@@ -76,6 +76,7 @@ const musicInterval = 30000;
 const MAX_ASTROS_RETIRADA = 600;
 const btnLock = document.getElementById('btnLock');
 const DEBUG_EVOLUTION = true;
+const NITRIC_STAR_PRICE = 20000;
 const achievementRewards = {
     1: 100,
     2: 150,
@@ -289,6 +290,9 @@ let currentManualPage = 1;
 let sfxVolume = 1;
 const totalManualPages = 5;
 let medusaExplosionInterval;
+let nitricStarUnlocked = false;
+let nitricStarsCreated = 0;
+let nitricStarPurchased = false;
 //#endregion
 if (btnLock) {
     btnLock.addEventListener('click', toggleLock);
@@ -650,6 +654,13 @@ function init() {
             sound.volume = sfxVolume;
         });
     }
+    window.updateShopDisplay = function() {
+        console.log('updateShopDisplay called');
+        initializeMedusaStar();
+        fgpShopDisplay();
+    };
+    initializeMedusaStar();
+    initializeNitricStar();
     canvas.addEventListener('touchstart', handleTouchStart, { passive: false });
     canvas.addEventListener('touchmove', handleTouchMove, { passive: false });
     canvas.addEventListener('touchend', handleTouchEnd, { passive: false });
@@ -1048,6 +1059,12 @@ const drawAccretionDisk = (innerRadius, outerRadius, colors) => {
     ctx.fill();
     ctx.filter = 'none';
   };
+    let drawColor = planet.color;
+    let drawGlowColor = planet.glowColor;
+    if (planet.petrified) {
+        drawColor = '#666666';
+        drawGlowColor = '#444444';
+    }
   switch(planet.type) {
 case 'rocket':
     ctx.save();
@@ -1380,35 +1397,35 @@ case 'ttauriStar':
     ctx.lineWidth = 2;
     ctx.stroke();
     break;
-    case 'star':
-    case 'redDwarf':
-    case 'brownDwarf':
-    case 'whiteDwarf':
-    case 'carbonStar':
-    case 'giantStar':
-    case 'hypergiant':
-    case 'massiveStar':
-    case 'redGiant':
-    case 'redSupergiant':
-    case 'redHypergiant':
-      const starConfigs = {
-        star: { colors: ['#FFD700', '#FF8C00'], scale: 1 },
-        redDwarf: { colors: ['#FF6347', '#8B0000'], scale: 1.2 },
-        brownDwarf: { colors: ['#ff0019ff', '#6d0000ff'], scale: 1 },
-        whiteDwarf: { colors: ['#E0FFFF', '#000080'], scale: 0.5 },
-        carbonStar: { colors: ['#8B2007', '#8B0000'], scale: 1 },
-        giantStar: { colors: ['#FF8C00', '#FF4500'], scale: 1 },
-        hypergiant: { colors: ['#FF8000', '#0F6347'], scale: 1 },
-        massiveStar: { colors: ['#00BFFF', '#00008B'], scale: 1 },
-        strangeStar: { colors: ['#8A2BE2', '#4B0082'], scale: 1 },
-        redGiant: { colors: ['#DC143C', '#8B0000'], scale: 2 },
-        redSupergiant: { colors: ['#FF0000', '#8B0000'], scale: 3 },
-        redHypergiant: { colors: ['#DC143C', '#8B0000'], scale: 4 },
-        pulsar: { colors: ['#00FFFF', '#E0F0FF'], scale: 0.3 },
-        quarkStar: { colors: ['#3A2BE2', '#000080'], scale: 0.3 },
-        magnetar: { colors: ['#FFFFFF', '#E0F082'], scale: 0.3 }
-      };
-      const config = starConfigs[planet.type] || starConfigs.star;
+        case 'star':
+        case 'redDwarf':
+        case 'brownDwarf':
+        case 'whiteDwarf':
+        case 'carbonStar':
+        case 'giantStar':
+        case 'hypergiant':
+        case 'massiveStar':
+        case 'redGiant':
+        case 'redSupergiant':
+        case 'redHypergiant':
+          const starConfigs = {
+            star: { colors: [drawColor, drawGlowColor], scale: 1 },
+            redDwarf: { colors: [drawColor, drawGlowColor], scale: 1.2 },
+            brownDwarf: { colors: [drawColor, drawGlowColor], scale: 1 },
+            whiteDwarf: { colors: [drawColor, drawGlowColor], scale: 0.5 },
+            carbonStar: { colors: [drawColor, drawGlowColor], scale: 1 },
+            giantStar: { colors: [drawColor, drawGlowColor], scale: 1 },
+            hypergiant: { colors: [drawColor, drawGlowColor], scale: 1 },
+            massiveStar: { colors: [drawColor, drawGlowColor], scale: 1 },
+            strangeStar: { colors: [drawColor, drawGlowColor], scale: 1 },
+            redGiant: { colors: [drawColor, drawGlowColor], scale: 2 },
+            redSupergiant: { colors: [drawColor, drawGlowColor], scale: 3 },
+            redHypergiant: { colors: [drawColor, drawGlowColor], scale: 4 },
+            pulsar: { colors: [drawColor, drawGlowColor], scale: 0.3 },
+            quarkStar: { colors: [drawColor, drawGlowColor], scale: 0.3 },
+            magnetar: { colors: [drawColor, drawGlowColor], scale: 0.3 }
+          };
+          const config = starConfigs[planet.type] || starConfigs.star;
       const scaledRadius = Math.max(1, radius * config.scale);
       ctx.beginPath();
       ctx.arc(0, 0, scaledRadius, 0, Math.PI * 2);
@@ -1964,6 +1981,9 @@ case 'echoStar':
 case 'medusaStar':
     drawMedusaStar(planet, ctx, radius, camera, graphicsQuality, visualTimeScale);
     break;
+case 'nitricStar':
+    drawNitricStar(planet, ctx, radius, camera, graphicsQuality, visualTimeScale);
+    break;
 case 'singularityStar':
     drawSingularityStar(planet, ctx, radius, camera, graphicsQuality, visualTimeScale);
     break;
@@ -2451,19 +2471,534 @@ function triggerMedusaExplosion(medusaStar) {
     createMedusaExplosionEffect(medusaStar);
 }
 function applyMedusaExplosionPetrification(medusaStar) {
-    const explosionRadius = medusaStar.radius * 10;
+    const explosionRadius = medusaStar.radius * 15;
     planets.forEach(other => {
         if (other === medusaStar || other.markedForRemoval) return;
         const dx = other.x - medusaStar.x;
         const dy = other.y - medusaStar.y;
         const distance = Math.sqrt(dx * dx + dy * dy);
-        if (distance < explosionRadius && isSpaceshipType(other.type)) {
-            transformToMeteoroid(other);
+        if (distance < explosionRadius && canBePetrifiedByMedusa(other)) {
+            transformToStone(other);
+            createMedusaExplosionPetrificationEffect(other);
         }
     });
 }
+function createStoneEffect(obj) {
+    for (let i = 0; i < 8; i++) {
+        const angle = (i / 8) * Math.PI * 2;
+        const distance = obj.radius * 1.2;
+        const particle = {
+            x: obj.x + Math.cos(angle) * distance,
+            y: obj.y + Math.sin(angle) * distance,
+            vx: Math.cos(angle) * 1.5,
+            vy: Math.sin(angle) * 1.5,
+            life: 1,
+            maxLife: 2,
+            color: '#666666',
+            size: obj.radius * 0.2,
+            type: 'stone_effect'
+        };
+    }
+}
+function transformToStone(obj) {
+    if (!obj || obj.markedForRemoval) return;
+    if (obj.petrified) return;
+    console.log(`🔮 Medusa petrifying: ${obj.type} (changing color to gray)`);
+    if (!obj.originalType) obj.originalType = obj.type;
+    if (!obj.originalColor) obj.originalColor = obj.color;
+    if (!obj.originalGlowColor) obj.originalGlowColor = obj.glowColor;
+    obj.petrified = true;
+    obj.petrificationTime = Date.now();
+    obj.originalVisualColor = obj.color;
+    obj.color = '#666666';
+    obj.glowColor = '#444444';
+    createStoneEffect(obj);
+    showNotification(`🗿 ${getTypeName(obj.originalType)} petrificado pela Medusa Star! (Agora cinza)`, 3000);
+}
+function createMedusaPetrificationEffect(obj) {
+    for (let i = 0; i < 8; i++) {
+        const angle = (i / 8) * Math.PI * 2;
+        const distance = obj.radius * 1.2;
+        const particle = {
+            x: obj.x + Math.cos(angle) * distance,
+            y: obj.y + Math.sin(angle) * distance,
+            vx: Math.cos(angle) * 1.5,
+            vy: Math.sin(angle) * 1.5,
+            life: 1,
+            maxLife: 2,
+            color: '#00FF00',
+            size: obj.radius * 0.2,
+            type: 'medusa_petrification'
+        };
+    }
+}
+function createMedusaExplosionPetrificationEffect(obj) {
+    for (let i = 0; i < 15; i++) {
+        const angle = (i / 15) * Math.PI * 2;
+        const speed = 2 + Math.random() * 2;
+        const particle = {
+            x: obj.x,
+            y: obj.y,
+            vx: Math.cos(angle) * speed,
+            vy: Math.sin(angle) * speed,
+            life: 1,
+            maxLife: 3,
+            color: '#00FF00',
+            size: obj.radius * 0.3,
+            type: 'medusa_explosion_petrification'
+        };
+    }
+}
+function drawNitricStar(planet, ctx, radius, camera, graphicsQuality, visualTimeScale) {
+    const nitricRadius = planet.radius * camera.zoom;
+    const time = Date.now() * 0.001;
+    const isExplosionActive = planet.explosionActive || false;
+    const explosionProgress = planet.explosionProgress || 0;
+    const explosionIntensity = isExplosionActive ? Math.min(1, explosionProgress * 3) : 0;
+    ctx.save();
+    drawNitricSuperCore(nitricRadius, ctx, time, explosionIntensity);
+    drawAcidVortex(nitricRadius, ctx, time, planet, visualTimeScale);
+    drawCorrosionAura(nitricRadius, ctx, time, explosionIntensity);
+    drawToxicEnergyRings(nitricRadius, ctx, time, planet, visualTimeScale, explosionIntensity);
+    drawHyperAcidJets(nitricRadius, ctx, time, planet, visualTimeScale, explosionIntensity);
+    if (graphicsQuality !== 'low') {
+        drawCorrosiveVaporParticles(nitricRadius, ctx, time, explosionIntensity);
+    }
+    drawAcidForceField(nitricRadius, ctx, time, explosionIntensity);
+    if (isExplosionActive) {
+        drawNitricExplosion(nitricRadius, ctx, explosionProgress, time, planet);
+    }
+    drawNitricUltimateOutline(nitricRadius, ctx, explosionIntensity);
+    ctx.restore();
+}
+function drawNitricSuperCore(radius, ctx, time, intensity) {
+    const corePulse = 1 + Math.sin(time * 8) * 0.3;
+    const explosionPulse = 1 + intensity * 0.6;
+    const finalRadius = radius * corePulse * explosionPulse;
+    const coreGradient = ctx.createRadialGradient(0, 0, 0, 0, 0, finalRadius);
+    coreGradient.addColorStop(0, '#FFFFFF');
+    coreGradient.addColorStop(0.05, '#FFFF00');
+    coreGradient.addColorStop(0.1, '#FFFF00');
+    coreGradient.addColorStop(0.2, '#FFA500');
+    coreGradient.addColorStop(0.4, '#FF4500');
+    coreGradient.addColorStop(0.7, '#FF0000');
+    coreGradient.addColorStop(1, '#8B0000');
+    ctx.beginPath();
+    ctx.arc(0, 0, finalRadius, 0, Math.PI * 2);
+    ctx.fillStyle = coreGradient;
+    ctx.fill();
+    const innerCoreGradient = ctx.createRadialGradient(0, 0, 0, 0, 0, finalRadius * 0.4);
+    innerCoreGradient.addColorStop(0, '#FFFFFF');
+    innerCoreGradient.addColorStop(0.3, '#FFFF99');
+    innerCoreGradient.addColorStop(0.6, '#FFFF00');
+    innerCoreGradient.addColorStop(1, '#FFA500');
+    ctx.beginPath();
+    ctx.arc(0, 0, finalRadius * 0.4, 0, Math.PI * 2);
+    ctx.fillStyle = innerCoreGradient;
+    ctx.fill();
+    const nuclearPulse = Math.sin(time * 10) * 0.5 + 0.5;
+    ctx.beginPath();
+    ctx.arc(0, 0, finalRadius * 0.2 * nuclearPulse, 0, Math.PI * 2);
+    ctx.fillStyle = `rgba(255, 255, 255, ${0.8 * nuclearPulse})`;
+    ctx.fill();
+}
+function drawAcidVortex(radius, ctx, time, planet, visualTimeScale) {
+    ctx.save();
+    ctx.rotate((planet.rotation || 0) * visualTimeScale * 4);
+    const vortexLayers = 5;
+    for (let layer = 0; layer < vortexLayers; layer++) {
+        const layerProgress = (layer / vortexLayers);
+        const vortexRadius = radius * (0.8 + layer * 0.3);
+        const vortexThickness = radius * 0.1;
+        const spinSpeed = 2 + layer * 0.5;
+        ctx.save();
+        ctx.rotate(time * spinSpeed + layer * Math.PI/4);
+        const spiralPoints = 50;
+        ctx.beginPath();
+        for (let i = 0; i <= spiralPoints; i++) {
+            const progress = i / spiralPoints;
+            const angle = progress * Math.PI * 4;
+            const spiralRadius = vortexRadius * progress;
+            const x = Math.cos(angle) * spiralRadius;
+            const y = Math.sin(angle) * spiralRadius;
+            if (i === 0) ctx.moveTo(x, y);
+            else ctx.lineTo(x, y);
+        }
+        const vortexGradient = ctx.createLinearGradient(0, -vortexRadius, 0, vortexRadius);
+        vortexGradient.addColorStop(0, `rgba(255, 255, 0, ${0.8 - layer * 0.15})`);
+        vortexGradient.addColorStop(0.5, `rgba(255, 165, 0, ${0.6 - layer * 0.12})`);
+        vortexGradient.addColorStop(1, `rgba(255, 69, 0, ${0.4 - layer * 0.08})`);
+        ctx.strokeStyle = vortexGradient;
+        ctx.lineWidth = vortexThickness;
+        ctx.stroke();
+        ctx.restore();
+    }
+    ctx.restore();
+}
+function drawCorrosionAura(radius, ctx, time, intensity) {
+    const baseAuraSize = radius * 4;
+    const pulse = 1 + Math.sin(time * 3) * 0.2;
+    const auraSize = baseAuraSize * pulse * (1 + intensity);
+    const auraGradient = ctx.createRadialGradient(0, 0, radius, 0, 0, auraSize);
+    auraGradient.addColorStop(0, `rgba(255, 255, 0, ${0.6 + intensity * 0.3})`);
+    auraGradient.addColorStop(0.3, `rgba(255, 200, 0, ${0.4 + intensity * 0.2})`);
+    auraGradient.addColorStop(0.6, `rgba(255, 100, 0, ${0.3 + intensity * 0.1})`);
+    auraGradient.addColorStop(1, `rgba(255, 50, 0, 0)`);
+    ctx.beginPath();
+    ctx.arc(0, 0, auraSize, 0, Math.PI * 2);
+    ctx.fillStyle = auraGradient;
+    ctx.fill();
+    for (let i = 0; i < 8; i++) {
+        const ringSize = auraSize * (0.3 + i * 0.1);
+        const ringPulse = Math.sin(time * 5 + i) * 0.3 + 0.7;
+        const alpha = (0.5 - i * 0.06) * (1 + intensity);
+        ctx.beginPath();
+        ctx.arc(0, 0, ringSize * ringPulse, 0, Math.PI * 2);
+        ctx.strokeStyle = `rgba(255, 255, 0, ${alpha})`;
+        ctx.lineWidth = 3 + i * 0.5;
+        ctx.stroke();
+    }
+}
+function drawToxicEnergyRings(radius, ctx, time, planet, visualTimeScale, intensity) {
+    ctx.save();
+    ctx.rotate((planet.rotation || 0) * visualTimeScale * -2);
+    const ringCount = 6;
+    for (let i = 0; i < ringCount; i++) {
+        const ringSize = radius * (1.5 + i * 0.7);
+        const ringPulse = Math.sin(time * 4 + i) * 0.4 + 0.8;
+        const alpha = (0.7 - i * 0.12) * (1 + intensity * 2);
+        const ringWidth = 4 + i * 1.5;
+        ctx.beginPath();
+        ctx.arc(0, 0, ringSize * ringPulse, 0, Math.PI * 2);
+        ctx.strokeStyle = `rgba(255, 255, 0, ${alpha})`;
+        ctx.lineWidth = ringWidth;
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.arc(0, 0, ringSize * ringPulse * 0.9, 0, Math.PI * 2);
+        ctx.strokeStyle = `rgba(255, 165, 0, ${alpha * 0.8})`;
+        ctx.lineWidth = ringWidth * 0.6;
+        ctx.stroke();
+        const energyPoints = 12;
+        ctx.fillStyle = `rgba(255, 255, 255, ${alpha})`;
+        for (let j = 0; j < energyPoints; j++) {
+            const angle = (j / energyPoints) * Math.PI * 2 + time * 3;
+            const pointSize = ringWidth * 0.8;
+            const x = Math.cos(angle) * ringSize * ringPulse;
+            const y = Math.sin(angle) * ringSize * ringPulse;
+            ctx.beginPath();
+            ctx.arc(x, y, pointSize, 0, Math.PI * 2);
+            ctx.fill();
+        }
+    }
+    ctx.restore();
+}
+function drawHyperAcidJets(radius, ctx, time, planet, visualTimeScale, intensity) {
+    const jetCount = 6;
+    const baseJetLength = radius * 12;
+    const jetLength = baseJetLength * (1 + intensity * 2);
+    const jetWidthStart = radius * 0.3;
+    const jetWidthEnd = radius * 2.5;
+    ctx.save();
+    ctx.rotate((planet.rotation || 0) * visualTimeScale * 5);
+    for (let i = 0; i < jetCount; i++) {
+        const angle = (i / jetCount) * Math.PI * 2;
+        const jetIntensity = (Math.sin(time * 6 + angle * 2) + 1) * 0.5;
+        const currentJetLength = jetLength * jetIntensity;
+        ctx.save();
+        ctx.rotate(angle);
+        const jetGradient = ctx.createLinearGradient(0, 0, 0, -currentJetLength);
+        jetGradient.addColorStop(0, `rgba(255, 255, 255, ${0.9 * jetIntensity})`);
+        jetGradient.addColorStop(0.1, `rgba(255, 255, 0, ${0.8 * jetIntensity})`);
+        jetGradient.addColorStop(0.3, `rgba(255, 165, 0, ${0.7 * jetIntensity})`);
+        jetGradient.addColorStop(0.6, `rgba(255, 69, 0, ${0.6 * jetIntensity})`);
+        jetGradient.addColorStop(0.8, `rgba(200, 0, 0, ${0.4 * jetIntensity})`);
+        jetGradient.addColorStop(1, `rgba(150, 0, 0, 0)`);
+        ctx.beginPath();
+        ctx.moveTo(-jetWidthStart/2, 0);
+        ctx.lineTo(jetWidthStart/2, 0);
+        ctx.lineTo(jetWidthEnd/2, -currentJetLength);
+        ctx.lineTo(-jetWidthEnd/2, -currentJetLength);
+        ctx.closePath();
+        ctx.fillStyle = jetGradient;
+        ctx.fill();
+        ctx.strokeStyle = `rgba(255, 255, 255, ${0.5 * jetIntensity})`;
+        ctx.lineWidth = 2;
+        for (let j = 0; j < 3; j++) {
+            const turbulenceProgress = j / 3;
+            const turbulenceLength = currentJetLength * turbulenceProgress;
+            const turbulenceWidth = jetWidthStart + (jetWidthEnd - jetWidthStart) * turbulenceProgress;
+            ctx.beginPath();
+            ctx.moveTo(-turbulenceWidth/3, -turbulenceLength);
+            ctx.lineTo(turbulenceWidth/3, -turbulenceLength);
+            ctx.stroke();
+        }
+        ctx.restore();
+    }
+    ctx.restore();
+}
+function drawCorrosiveVaporParticles(radius, ctx, time, intensity) {
+    const particleCount = 50 * (1 + intensity * 3);
+    for (let i = 0; i < particleCount; i++) {
+        const angle = (i / particleCount) * Math.PI * 2 + time * 2;
+        const orbitRadius = radius * (1.2 + Math.sin(time * 3 + i) * 0.5);
+        const particleSize = radius * 0.08 * (0.5 + Math.sin(time * 4 + i) * 0.5);
+        const pulse = Math.sin(time * 5 + i) * 0.5 + 0.5;
+        const x = Math.cos(angle) * orbitRadius;
+        const y = Math.sin(angle) * orbitRadius;
+        ctx.beginPath();
+        ctx.arc(x, y, particleSize, 0, Math.PI * 2);
+        const particleGradient = ctx.createRadialGradient(x, y, 0, x, y, particleSize);
+        particleGradient.addColorStop(0, '#FFFFFF');
+        particleGradient.addColorStop(0.3, '#FFFF00');
+        particleGradient.addColorStop(0.7, '#FFA500');
+        particleGradient.addColorStop(1, '#FF4500');
+        ctx.fillStyle = particleGradient;
+        ctx.fill();
+        const tailLength = particleSize * 6 * pulse;
+        const tailAngle = angle + Math.PI;
+        ctx.save();
+        ctx.translate(x, y);
+        ctx.rotate(tailAngle);
+        const tailGradient = ctx.createLinearGradient(0, 0, tailLength, 0);
+        tailGradient.addColorStop(0, 'rgba(255, 255, 0, 0.8)');
+        tailGradient.addColorStop(0.5, 'rgba(255, 165, 0, 0.5)');
+        tailGradient.addColorStop(1, 'rgba(255, 69, 0, 0)');
+        ctx.beginPath();
+        ctx.moveTo(-particleSize/2, -particleSize/3);
+        ctx.lineTo(tailLength, -particleSize/6);
+        ctx.lineTo(tailLength, particleSize/6);
+        ctx.lineTo(-particleSize/2, particleSize/3);
+        ctx.closePath();
+        ctx.fillStyle = tailGradient;
+        ctx.fill();
+        ctx.restore();
+    }
+}
+function drawAcidForceField(radius, ctx, time, intensity) {
+    const fieldRadius = radius * 3.5;
+    const fieldPulse = 1 + Math.sin(time * 2) * 0.1;
+    const fieldGradient = ctx.createRadialGradient(0, 0, radius * 1.5, 0, 0, fieldRadius);
+    fieldGradient.addColorStop(0, `rgba(255, 255, 0, ${0.3 + intensity * 0.2})`);
+    fieldGradient.addColorStop(0.5, `rgba(255, 200, 0, ${0.2 + intensity * 0.15})`);
+    fieldGradient.addColorStop(0.8, `rgba(255, 100, 0, ${0.1 + intensity * 0.1})`);
+    fieldGradient.addColorStop(1, `rgba(255, 50, 0, 0)`);
+    ctx.globalAlpha = 0.4 + intensity * 0.3;
+    ctx.beginPath();
+    ctx.arc(0, 0, fieldRadius * fieldPulse, 0, Math.PI * 2);
+    ctx.fillStyle = fieldGradient;
+    ctx.fill();
+    if (intensity > 0) {
+        ctx.strokeStyle = `rgba(255, 255, 0, ${0.6 * intensity})`;
+        ctx.lineWidth = 1;
+        const hexSize = fieldRadius / 4;
+        for (let ring = 1; ring <= 3; ring++) {
+            const currentRadius = ring * hexSize;
+            ctx.beginPath();
+            for (let i = 0; i < 6; i++) {
+                const angle = (i / 6) * Math.PI * 2;
+                const x = Math.cos(angle) * currentRadius;
+                const y = Math.sin(angle) * currentRadius;
+                if (i === 0) ctx.moveTo(x, y);
+                else ctx.lineTo(x, y);
+            }
+            ctx.closePath();
+            ctx.stroke();
+        }
+    }
+    ctx.globalAlpha = 1;
+}
+function drawNitricExplosion(radius, ctx, progress, time, planet) {
+    const baseExplosionRadius = radius * (1 + progress * 15);
+    const shockwaveRadius = baseExplosionRadius * 1.5;
+    const corrosiveRadius = baseExplosionRadius * 2;
+    const explosionIntensity = Math.min(1, progress * 3);
+    const alpha = 0.9 * (1 - progress);
+    if (alpha > 0.01) {
+        const coreGradient = ctx.createRadialGradient(0, 0, 0, 0, 0, baseExplosionRadius * 0.3);
+        coreGradient.addColorStop(0, `rgba(255, 255, 0, ${alpha * 0.9})`);
+        coreGradient.addColorStop(0.7, `rgba(255, 200, 0, ${alpha * 0.7})`);
+        coreGradient.addColorStop(1, `rgba(255, 100, 0, 0)`);
+        ctx.beginPath();
+        ctx.arc(0, 0, baseExplosionRadius * 0.3, 0, Math.PI * 2);
+        ctx.fillStyle = coreGradient;
+        ctx.fill();
+        const mainExplosionGradient = ctx.createRadialGradient(0, 0, baseExplosionRadius * 0.2, 0, 0, baseExplosionRadius);
+        mainExplosionGradient.addColorStop(0, `rgba(255, 255, 0, ${alpha * 0.8})`);
+        mainExplosionGradient.addColorStop(0.3, `rgba(255, 165, 0, ${alpha * 0.7})`);
+        mainExplosionGradient.addColorStop(0.6, `rgba(255, 69, 0, ${alpha * 0.6})`);
+        mainExplosionGradient.addColorStop(0.8, `rgba(200, 0, 0, ${alpha * 0.4})`);
+        mainExplosionGradient.addColorStop(1, `rgba(150, 0, 0, 0)`);
+        ctx.beginPath();
+        ctx.arc(0, 0, baseExplosionRadius, 0, Math.PI * 2);
+        ctx.fillStyle = mainExplosionGradient;
+        ctx.fill();
+        for (let i = 0; i < 3; i++) {
+            const shockwaveProgress = progress + (i * 0.1);
+            if (shockwaveProgress <= 1) {
+                const shockSize = shockwaveRadius * (0.8 + i * 0.3) * shockwaveProgress;
+                const shockAlpha = alpha * (0.6 - i * 0.2) * (1 - shockwaveProgress);
+                ctx.beginPath();
+                ctx.arc(0, 0, shockSize, 0, Math.PI * 2);
+                ctx.strokeStyle = `rgba(255, 255, 255, ${shockAlpha})`;
+                ctx.lineWidth = 15 * (1 - shockwaveProgress);
+                ctx.stroke();
+            }
+        }
+        ctx.globalAlpha = alpha * 0.8;
+        const particleCount = 200 * explosionIntensity;
+        for (let i = 0; i < particleCount; i++) {
+            const angle = Math.random() * Math.PI * 2;
+            const distance = baseExplosionRadius * (0.1 + Math.random() * 0.9);
+            const x = Math.cos(angle) * distance;
+            const y = Math.sin(angle) * distance;
+            const size = radius * 0.15 * (0.5 + Math.random());
+            const colorVariation = Math.random();
+            let particleColor;
+            if (colorVariation < 0.33) {
+                particleColor = `rgba(255, 255, 0, ${0.7 + Math.random() * 0.3})`;
+            } else if (colorVariation < 0.66) {
+                particleColor = `rgba(255, 165, 0, ${0.7 + Math.random() * 0.3})`;
+            } else {
+                particleColor = `rgba(255, 69, 0, ${0.7 + Math.random() * 0.3})`;
+            }
+            ctx.beginPath();
+            ctx.arc(x, y, size, 0, Math.PI * 2);
+            ctx.fillStyle = particleColor;
+            ctx.fill();
+            const tailLength = size * 3;
+            const tailAngle = angle + Math.PI;
+            ctx.save();
+            ctx.translate(x, y);
+            ctx.rotate(tailAngle);
+            const tailGradient = ctx.createLinearGradient(0, 0, tailLength, 0);
+            tailGradient.addColorStop(0, particleColor);
+            tailGradient.addColorStop(1, 'rgba(255, 100, 0, 0)');
+            ctx.beginPath();
+            ctx.moveTo(-size/2, 0);
+            ctx.lineTo(tailLength, -size/4);
+            ctx.lineTo(tailLength, size/4);
+            ctx.lineTo(-size/2, 0);
+            ctx.fillStyle = tailGradient;
+            ctx.fill();
+            ctx.restore();
+        }
+        ctx.globalAlpha = 1;
+        ctx.globalAlpha = alpha * 0.6;
+        const rayCount = 36 * explosionIntensity;
+        for (let i = 0; i < rayCount; i++) {
+            const angle = (i / rayCount) * Math.PI * 2 + time * 2;
+            const rayLength = baseExplosionRadius * (1.2 + Math.random() * 0.8);
+            const rayWidth = baseExplosionRadius * 0.05;
+            ctx.save();
+            ctx.rotate(angle);
+            const rayGradient = ctx.createLinearGradient(0, 0, rayLength, 0);
+            rayGradient.addColorStop(0, 'rgba(255, 255, 0, 0.9)');
+            rayGradient.addColorStop(0.5, 'rgba(255, 165, 0, 0.7)');
+            rayGradient.addColorStop(1, 'rgba(255, 69, 0, 0)');
+            ctx.beginPath();
+            ctx.moveTo(0, -rayWidth/2);
+            ctx.lineTo(rayLength, -rayWidth/4);
+            ctx.lineTo(rayLength, rayWidth/4);
+            ctx.lineTo(0, rayWidth/2);
+            ctx.closePath();
+            ctx.fillStyle = rayGradient;
+            ctx.fill();
+            ctx.restore();
+        }
+        ctx.globalAlpha = 1;
+        for (let i = 0; i < 5; i++) {
+            const ringProgress = progress + (i * 0.15);
+            if (ringProgress <= 1) {
+                const ringSize = baseExplosionRadius * (0.5 + i * 0.3) * ringProgress;
+                const ringAlpha = alpha * (0.5 - i * 0.1) * (1 - ringProgress);
+                const pulse = Math.sin(time * 10 + i) * 0.3 + 0.7;
+                ctx.beginPath();
+                ctx.arc(0, 0, ringSize * pulse, 0, Math.PI * 2);
+                ctx.strokeStyle = `rgba(255, 255, 0, ${ringAlpha})`;
+                ctx.lineWidth = 8 * (1 - ringProgress);
+                ctx.stroke();
+                ctx.beginPath();
+                ctx.arc(0, 0, ringSize * pulse * 0.8, 0, Math.PI * 2);
+                ctx.strokeStyle = `rgba(255, 165, 0, ${ringAlpha * 0.8})`;
+                ctx.lineWidth = 4 * (1 - ringProgress);
+                ctx.stroke();
+            }
+        }
+        if (graphicsQuality === 'high') {
+            ctx.globalAlpha = alpha * 0.3;
+            const distortionPoints = 24;
+            for (let i = 0; i < distortionPoints; i++) {
+                const angle = (i / distortionPoints) * Math.PI * 2;
+                const distortionDistance = baseExplosionRadius * (0.8 + Math.random() * 0.4);
+                const distortionSize = baseExplosionRadius * 0.1;
+                ctx.save();
+                ctx.rotate(angle);
+                ctx.translate(distortionDistance, 0);
+                const distortionGradient = ctx.createRadialGradient(0, 0, 0, 0, 0, distortionSize);
+                distortionGradient.addColorStop(0, 'rgba(255, 255, 255, 0.8)');
+                distortionGradient.addColorStop(1, 'rgba(255, 255, 255, 0)');
+                ctx.beginPath();
+                ctx.arc(0, 0, distortionSize, 0, Math.PI * 2);
+                ctx.fillStyle = distortionGradient;
+                ctx.fill();
+                ctx.restore();
+            }
+            ctx.globalAlpha = 1;
+        }
+        ctx.save();
+        ctx.rotate(time * 5);
+        for (let i = 0; i < 8; i++) {
+            const bandAngle = (i / 8) * Math.PI * 2;
+            const bandLength = baseExplosionRadius * 1.5;
+            const bandWidth = baseExplosionRadius * 0.08;
+            ctx.save();
+            ctx.rotate(bandAngle);
+            const bandGradient = ctx.createLinearGradient(0, 0, bandLength, 0);
+            bandGradient.addColorStop(0, 'rgba(255, 255, 0, 0)');
+            bandGradient.addColorStop(0.3, 'rgba(255, 255, 0, 0.8)');
+            bandGradient.addColorStop(0.7, 'rgba(255, 165, 0, 0.6)');
+            bandGradient.addColorStop(1, 'rgba(255, 69, 0, 0)');
+            ctx.beginPath();
+            ctx.moveTo(0, -bandWidth/2);
+            ctx.lineTo(bandLength, -bandWidth/4);
+            ctx.lineTo(bandLength, bandWidth/4);
+            ctx.lineTo(0, bandWidth/2);
+            ctx.closePath();
+            ctx.fillStyle = bandGradient;
+            ctx.fill();
+            ctx.restore();
+        }
+        ctx.restore();
+    }
+}
+function drawNitricUltimateOutline(radius, ctx, intensity) {
+    const outlinePulse = 1 + Math.sin(Date.now() * 0.008) * intensity * 0.4;
+    ctx.strokeStyle = '#000000';
+    ctx.lineWidth = 4 + intensity * 3;
+    ctx.beginPath();
+    ctx.arc(0, 0, radius * outlinePulse, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.strokeStyle = `rgba(255, 255, 255, ${0.8 + intensity * 0.2})`;
+    ctx.lineWidth = 2 + intensity;
+    ctx.beginPath();
+    ctx.arc(0, 0, radius * 0.95 * outlinePulse, 0, Math.PI * 2);
+    ctx.stroke();
+    if (intensity > 0) {
+        ctx.strokeStyle = `rgba(255, 255, 0, ${intensity * 0.7})`;
+        ctx.lineWidth = 6 * intensity;
+        ctx.beginPath();
+        ctx.arc(0, 0, radius * 1.1, 0, Math.PI * 2);
+        ctx.stroke();
+        ctx.strokeStyle = `rgba(255, 165, 0, ${intensity * 0.5})`;
+        ctx.lineWidth = 3 * intensity;
+        ctx.beginPath();
+        ctx.arc(0, 0, radius * 1.15, 0, Math.PI * 2);
+        ctx.stroke();
+    }
+}
 function transformToMeteoroid(obj) {
     if (obj.petrified && obj.type === 'meteoroid') return;
+    console.log(`Petrifying ${obj.type} into meteoroid`);
     if (!obj.originalType) obj.originalType = obj.type;
     if (!obj.originalColor) obj.originalColor = obj.color;
     if (!obj.originalRadius) obj.originalRadius = obj.radius;
@@ -2477,7 +3012,7 @@ function transformToMeteoroid(obj) {
     obj.satelliteBehavior = null;
     obj.superShipBehavior = null;
     createPetrificationEffect(obj);
-    showNotification(`🚀 ${getTypeName(obj.originalType)} transformado em meteorito pela Medusa Star!`, 3000);
+    showNotification(`🗿 ${getTypeName(obj.originalType)} petrificado pela Medusa Star!`, 3000);
 }
 function drawRadiationAura(medusaRadius, ctx, explosionIntensity, time) {
     const baseAuraSize = medusaRadius * 2.5;
@@ -3681,13 +4216,6 @@ function applyMedusaPetrification(medusaStar) {
         }
     });
 }
-function fgpMedusaPetrification() {
-    planets.forEach(planet => {
-        if (planet.type === 'medusaStar' && !planet.markedForRemoval) {
-            applyContinuousPetrification(planet);
-        }
-    });
-}
 function applyContinuousPetrification(medusaStar) {
     const petrificationRadius = medusaStar.radius * 15;
     planets.forEach(other => {
@@ -3738,61 +4266,15 @@ function removePetrification(astro) {
     astro.petrified = false;
     delete astro.petrificationTime;
 }
-function applyPermanentPetrification(astro) {
-    if (!astro.originalColor) {
-        astro.originalColor = astro.color;
-        astro.originalGlowColor = astro.glowColor;
-        astro.originalSecondaryColor = astro.secondaryColor;
-        astro.originalLandColor = astro.landColor;
-        astro.originalOceanColor = astro.oceanColor;
-        astro.originalRingColor = astro.ringColor;
+function applyPermanentPetrification() {
+    for (let i = 0; i < planets.length; i++) {
+        const obj = planets[i];
+        if (!obj || obj.markedForRemoval) continue;
+        if (obj.petrified) {
+            obj.color = '#666666';
+            obj.glowColor = '#444444';
+        }
     }
-    if (isSpaceshipType(astro.type) && !astro.originalType) {
-        astro.originalType = astro.type;
-    }
-    const grayColors = getGrayColorsByType(astro.type);
-    astro.color = grayColors.main;
-    astro.glowColor = grayColors.glow;
-    switch(astro.type) {
-        case 'rockyPlanet':
-        case 'gasGiant':
-        case 'planetoid':
-            if (astro.secondaryColor) astro.secondaryColor = grayColors.secondary;
-            if (astro.landColor) astro.landColor = grayColors.land;
-            if (astro.oceanColor) astro.oceanColor = grayColors.ocean;
-            if (astro.ringColor) astro.ringColor = grayColors.ring;
-            break;
-        case 'asteroid':
-        case 'meteoroid':
-        case 'comet':
-        case 'meteorite':
-            if (astro.shape) {
-                astro.shape.forEach(point => {
-                });
-            }
-            break;
-        case 'spaceDust':
-            astro.color = '#555555';
-            break;
-        case 'nebula':
-            astro.color = '#999999';
-            break;
-        case 'blackHole':
-        case 'wormhole':
-        case 'whiteHole':
-        case 'quasar':
-            astro.glowColor = '#AAAAAA';
-            if (astro.diskColor) astro.diskColor = '#888888';
-            break;
-        default:
-            if (astro.secondaryColor) astro.secondaryColor = grayColors.secondary;
-            break;
-    }
-    astro.petrified = true;
-    astro.petrificationTime = Date.now();
-    astro.medusaPetrified = true;
-    createPetrificationEffect(astro);
-    console.log(`Petrificado: ${astro.type} - Cor: ${astro.color}`);
 }
 function getGrayColorsByType(type) {
     const colorSets = {
@@ -5887,7 +6369,23 @@ function getOriginalClass(type) {
 function generateExoticName(prefixes, cores, suffixes) {
     return `${prefixes[Math.floor(Math.random()*prefixes.length)]} ${cores[Math.floor(Math.random()*cores.length)]}${suffixes[Math.floor(Math.random()*suffixes.length)]}`;
 }
+let frameCount = 0;
 function gameLoop(timestamp) {
+    frameCount++;
+    if (frameCount % 60 === 0) {
+        const nitricStars = planets.filter(p => p.type === 'nitricStar');
+        const medusaStars = planets.filter(p => p.type === 'medusaStar');
+        console.log(`Frame ${frameCount}:`);
+        console.log(`- Nitric Stars: ${nitricStars.length}`);
+        console.log(`- Medusa Stars: ${medusaStars.length}`);
+        nitricStars.forEach((star, index) => {
+            console.log(`  Nitric Star ${index}:`, {
+                explosionActive: star.explosionActive,
+                explosionProgress: star.explosionProgress,
+                timeToNextExplosion: star.lastExplosionTime + star.explosionCooldown - Date.now()
+            });
+        });
+    }
     if (!lastTime) lastTime = timestamp;
     const deltaTime = timestamp - lastTime;
     fps = Math.floor(1000 / deltaTime);
@@ -5905,9 +6403,19 @@ function gameLoop(timestamp) {
         cleanupDestroyedShips();
         fgpMedusaExplosions(deltaTime);
         fgpSpectateCamera();
-        fgpMedusaPetrification();
-        fgpMedusaStarBehavior(deltaTime);
+        try {
+            applyPermanentPetrification();
+        } catch (error) {
+            console.error('Error in applyPermanentPetrification:', error);
+        }
+        if (timestamp % 10000 < deltaTime) {
+            if (planets.some(p => p.type === 'medusaStar')) {
+                debugMedusaPetrification();
+            }
+        }
         fgpFunSpaceColors(deltaTime);
+        fgpMedusaStarBehavior(deltaTime);
+        fgpNitricStarBehavior(deltaTime);
         planets.forEach(planet => {
             if (planet.type === 'ttauriStar' && planet.debrisGeneration) {
                 const currentTime = Date.now();
@@ -6056,6 +6564,92 @@ function gameLoop(timestamp) {
     });
     lastTime = timestamp;
     requestAnimationFrame(gameLoop);
+}
+function initializeExistingMedusas() {
+    planets.forEach(planet => {
+        if (planet.type === 'medusaStar') {
+            if (!planet.lastExplosionTime) {
+                planet.lastExplosionTime = Date.now();
+                planet.explosionCooldown = 8000 + Math.random() * 7000;
+            }
+        }
+    });
+}
+setTimeout(initializeExistingMedusas, 1000);
+function debugMedusaPetrification() {
+    const medusaStars = planets.filter(p => p.type === 'medusaStar' && !p.markedForRemoval);
+    const nitricStars = planets.filter(p => p.type === 'nitricStar' && !p.markedForRemoval);
+    const petrifiedObjects = planets.filter(p => p.petrified && !p.markedForRemoval);
+    console.log('=== MEDUSA SYSTEM DEBUG (STONE VERSION) ===');
+    console.log(`Medusa Stars: ${medusaStars.length}`);
+    console.log(`Nitric Stars: ${nitricStars.length}`);
+    console.log(`Petrified Objects: ${petrifiedObjects.length}`);
+    petrifiedObjects.forEach((obj, index) => {
+        console.log(`Petrified ${index}:`, {
+            type: obj.type,
+            originalType: obj.originalType,
+            color: obj.color,
+            originalColor: obj.originalColor,
+            position: { x: obj.x.toFixed(2), y: obj.y.toFixed(2) }
+        });
+    });
+}
+function fgpNitricStarBehavior(deltaTime) {
+    const currentTime = Date.now();
+    planets.forEach(planet => {
+        if (planet.type === 'nitricStar' && !planet.markedForRemoval) {
+            if (!planet.lastExplosionTime) {
+                planet.lastExplosionTime = currentTime;
+                planet.explosionCooldown = planet.explosionCooldown || (5000 + Math.random() * 10000);
+            }
+            if (!planet.explosionActive && 
+                currentTime - planet.lastExplosionTime > planet.explosionCooldown) {
+                triggerNitricExplosion(planet);
+            }
+            if (planet.explosionActive) {
+                const explosionDuration = 2000;
+                planet.explosionProgress += deltaTime / explosionDuration;
+                if (planet.explosionProgress >= 1) {
+                    planet.explosionActive = false;
+                    planet.explosionProgress = 0;
+                    planet.lastExplosionTime = currentTime;
+                    planet.explosionCooldown = 5000 + Math.random() * 10000;
+                }
+            }
+            applyNitricDepetrification(planet);
+        }
+    });
+}
+function initializePetrificationSystem() {
+    console.log('=== STONE PETRIFICATION SYSTEM INITIALIZED ===');
+    console.log('Medusa Star: Turns objects gray without changing type');
+    console.log('Nitric Star: Restores original colors');
+    planets.forEach(obj => {
+        if (obj.petrified && obj.type === 'meteoroid' && obj.originalType) {
+            console.log(`Converting old petrified object: ${obj.originalType}`);
+            obj.type = obj.originalType;
+            obj.color = '#666666';
+            obj.glowColor = '#444444';
+        }
+    });
+}
+setTimeout(initializePetrificationSystem, 1000);
+function cleanupInvalidPlanets() {
+    const initialLength = planets.length;
+    planets = planets.filter(planet => {
+        return planet && 
+               typeof planet === 'object' && 
+               !planet.markedForRemoval &&
+               isFinite(planet.x) && 
+               isFinite(planet.y) &&
+               isFinite(planet.mass) &&
+               planet.mass > 0 &&
+               isFinite(planet.radius) &&
+               planet.radius > 0;
+    });
+    if (planets.length !== initialLength) {
+        console.log(`Cleaned up ${initialLength - planets.length} invalid planets`);
+    }
 }
 function renderPlanets(ctx, planets) {
     planets.forEach((planet) => {
@@ -6723,7 +7317,9 @@ function handleCollisions() {
         'quasar': 5,
         'whiteHole': 5,
         'pulsar': 4,
-        'neutronStar': 4
+        'neutronStar': 4,
+        'medusaStar': 6, 
+        'nitricStar': 6 
     };
     for (let i = 0; i < planets.length; i++) {
         const a = planets[i];
@@ -6737,6 +7333,19 @@ function handleCollisions() {
             const minDistance = (a.radius + b.radius) * 0.8;
             if (distance < minDistance) {
                 playRandomCollisionSound();
+                if (a.type === 'nitricStar') {
+                    if (handleNitricStarCollisions(a, b))
+                    continue;
+                }
+                if (b.type === 'nitricStar') {
+                    if (handleNitricStarCollisions(b, a)) continue;
+                }
+                if (a.type === 'medusaStar') {
+                    if (handleMedusaStarCollisions(a, b)) continue;
+                }
+                if (b.type === 'medusaStar') {
+                    if (handleMedusaStarCollisions(b, a)) continue;
+                }
                 for (const [ship, power] of Object.entries(shipPower)) {
                         if (a.type === ship && astroPower[b.type] !== undefined) {
                             if (a.originPlanet && a.originPlanet === b) {
@@ -6857,6 +7466,47 @@ function handleCollisions() {
         }
     }
     planets = planets.filter(p => !p.markedForRemoval);
+}
+function handleMedusaCollision(medusa, other) {
+    if (other.markedForRemoval) return true;
+    if (canBePetrifiedByMedusa(other)) {
+        console.log(`🔮 Medusa collision petrifying: ${other.type} (color to gray)`);
+        transformToStone(other);
+        createMedusaCollisionEffect(other);
+        return true;
+    }
+    console.log(`🔮 Medusa collision with non-petrifiable: ${other.type}`);
+    return true;
+}
+function handleNitricStarCollisions(nitricStar, other) {
+    if (nitricStar.explosionActive && other.mass < nitricStar.mass * 0.1) {
+        if (!['medusaStar', 'nitricStar', 'blackHole', 'quasar', 'singularityStar', 'star'].includes(other.type)) {
+            other.markedForRemoval = true;
+            createDestructionEffect(other);
+            console.log(`Nitric Star explosion destroyed: ${other.type}`);
+        }
+        return true;
+    }
+    if (other.petrified) {
+        depetrifyAstro(other);
+        return true;
+    }
+    return false;
+}
+function handleMedusaStarCollisions(medusaStar, other) {
+    if (isSpaceshipType(other.type)) {
+        transformToMeteoroid(other);
+        return true;
+    }   
+    return false;
+}
+function onNitricStarCreated(planet) {
+    console.log('Nitric Star created with properties:', {
+        mass: planet.mass,
+        radius: planet.radius,
+        explosionCooldown: planet.explosionCooldown,
+        position: { x: planet.x, y: planet.y }
+    });
 }
 function removeFromOriginLists(obj) {
     if (!obj.originPlanet) return;
@@ -7571,6 +8221,12 @@ function openManual() {
     }
 }
 function isItemPurchased(itemId) {
+    if (itemId === 'medusaStar') {
+        return localStorage.getItem('medusaStarPurchased') === 'true';
+    }
+    if (itemId === 'nitricStar') {
+        return localStorage.getItem('nitricStarPurchased') === 'true';
+    }
     return purchasedItems[itemId] === true;
 }
 function purchaseItem(itemId, price) {
@@ -7600,7 +8256,9 @@ function getItemName(itemId) {
         'habitable_alpha': 'HABITABLE - ALPHA',
         'trappist_1': 'TRAPPIST-1',
         'bizarre_stars': 'Bizarre Stars',
-        'fun_space': 'The Fun Space'
+        'fun_space': 'The Fun Space',
+        'medusaStar': 'Medusa Star',
+        'nitricStar': 'Nitric Acid Star'
     };
     return itemNames[itemId] || itemId;
 }
@@ -7633,6 +8291,16 @@ function applyPurchasedItem(itemId) {
         case 'singularity':
             unlockSingularity();
             break;
+                case 'medusaStar':
+            unlockMedusaStar();
+            break;
+        case 'nitricStar':
+            if (!unlockedAstroTypes.includes('nitricStar')) {
+                unlockedAstroTypes.push('nitricStar');
+                localStorage.setItem('siu2d_unlocked_astros', JSON.stringify(unlockedAstroTypes));
+            }
+            fgpCreationGrid();
+            break;
     }
 }
 function fgpShopDisplay() {
@@ -7647,16 +8315,31 @@ function fgpShopDisplay() {
 }
 function initializeShop() {
     fgpShopDisplay();
+    fgpShopDisplay();
+    initializeMedusaStar();
+    initializeNitricStar();
     document.querySelectorAll('.shop-item').forEach(item => {
         const itemId = item.getAttribute('data-item-id');
         const price = parseInt(item.getAttribute('data-price'));
         if (itemId && price) {
             item.addEventListener('click', function() {
-                if (!isItemPurchased(itemId)) {
-                    purchaseItem(itemId, price);
+                if (itemId === 'medusaStar') {
+                    if (!isItemPurchased(itemId)) {
+                        purchaseMedusaStar();
+                    }
+                } else if (itemId === 'nitricStar') {
+                    if (!isItemPurchased(itemId)) {
+                        purchaseNitricStar();
+                    } else {
+                        showNotification("Estrela Nítrica já comprada! Você pode criá-la no modo criação.");
+                    }
                 } else {
-                    applyPurchasedItem(itemId);
-                    showNotification(`${getItemName(itemId)} já está ativo!`);
+                    if (!isItemPurchased(itemId)) {
+                        purchaseItem(itemId, price);
+                    } else {
+                        applyPurchasedItem(itemId);
+                        showNotification(`${getItemName(itemId)} já está ativo!`);
+                    }
                 }
             });
         }
@@ -7716,6 +8399,29 @@ function initializeShop() {
             bizarreStarsItem.classList.add('purchased');
         }
     }
+    document.querySelectorAll('.shop-item').forEach(item => {
+        const itemId = item.getAttribute('data-item-id');
+        const price = parseInt(item.getAttribute('data-price'));
+        if (itemId && price !== null) {
+            item.addEventListener('click', function() {
+                if (itemId === 'medusaStar') {
+                    if (!isItemPurchased(itemId)) {
+                        purchaseMedusaStar();
+                        item.classList.add('purchased');
+                        item.style.pointerEvents = 'none';
+                        item.style.opacity = '0.7';
+                    }
+                } else {
+                    if (!isItemPurchased(itemId)) {
+                        purchaseItem(itemId, price);
+                    } else {
+                        applyPurchasedItem(itemId);
+                        showNotification(`${getItemName(itemId)} já está ativo!`);
+                    }
+                }
+            });
+        }
+    });
     document.querySelectorAll('.shop-item').forEach(item => {
         const itemId = item.getAttribute('data-item-id');
         if (itemId && purchasedItems[itemId]) {
@@ -8962,6 +9668,10 @@ function resetEverythingDev() {
         'gameStartCount',
         'hasAgreedToWarnings',
         'crazyClicks',
+        'medusaStarUnlocked',
+        'medusaStarPurchased',
+        'nitricStarUnlocked',
+        'nitricStarPurchased',
     ];
     keysToRemove.forEach(key => {
         localStorage.removeItem(key);
@@ -9664,6 +10374,110 @@ function createRandomSpaceSave() {
     }
     createSpecialSave("Universo Aleatório Compacto", randomSpaceData);
 }
+function initializeMedusaStar() {
+    console.log('Initializing Medusa Star state...');
+    const medusaUnlocked = localStorage.getItem('medusaStarUnlocked') === 'true';
+    const medusaPurchased = localStorage.getItem('medusaStarPurchased') === 'true';
+    console.log('Medusa unlocked:', medusaUnlocked, 'Medusa purchased:', medusaPurchased);
+    const medusaStarItem = document.querySelector('[data-item-id="medusaStar"]');
+    if (medusaStarItem) {
+        if (medusaUnlocked && !medusaPurchased) {
+            medusaStarItem.classList.remove('hidden');
+            medusaStarItem.classList.add('visible');
+            medusaStarItem.style.display = 'block';
+            console.log('Medusa Star card shown in shop');
+        } else if (medusaPurchased) {
+            medusaStarItem.classList.add('purchased');
+            medusaStarItem.classList.remove('hidden');
+            medusaStarItem.style.display = 'block';
+            console.log('Medusa Star card hidden (already purchased)');
+        } else {
+            medusaStarItem.classList.add('hidden');
+            medusaStarItem.classList.remove('visible');
+            medusaStarItem.style.display = 'none';
+            console.log('Medusa Star card hidden (not unlocked)');
+        }
+    } else {
+        console.error('Medusa Star item not found!');
+    }
+    if (medusaPurchased && !unlockedAstroTypes.includes('medusaStar')) {
+        unlockedAstroTypes.push('medusaStar');
+        localStorage.setItem('siu2d_unlocked_astros', JSON.stringify(unlockedAstroTypes));
+        console.log('Medusa Star added to unlocked astros');
+    }
+}
+function initializeNitricStar() {
+    console.log('Initializing Nitric Star state...');
+    nitricStarUnlocked = localStorage.getItem('nitricStarUnlocked') === 'true';
+    nitricStarPurchased = localStorage.getItem('nitricStarPurchased') === 'true';
+    const nitricStarItem = document.querySelector('[data-item-id="nitricStar"]');
+    if (nitricStarItem) {
+        if (nitricStarUnlocked && !nitricStarPurchased) {
+            nitricStarItem.classList.remove('hidden');
+            nitricStarItem.classList.add('visible');
+            nitricStarItem.style.display = 'block';
+            console.log('Nitric Star card shown in shop');
+        } else if (nitricStarPurchased) {
+            nitricStarItem.classList.add('purchased');
+            nitricStarItem.classList.remove('hidden');
+            nitricStarItem.style.display = 'block';
+            console.log('Nitric Star purchased and available');
+        } else {
+            nitricStarItem.classList.add('hidden');
+            nitricStarItem.classList.remove('visible');
+            nitricStarItem.style.display = 'none';
+            console.log('Nitric Star card hidden (not unlocked)');
+        }
+    }
+    checkNitricStarUnlock();
+}
+function checkNitricStarUnlock() {
+    const medusaPurchased = localStorage.getItem('medusaStarPurchased') === 'true';
+    const medusaCount = parseInt(localStorage.getItem('medusaStarsCreated') || '0');
+    if (medusaPurchased && medusaCount >= 20 && !nitricStarUnlocked) {
+        nitricStarUnlocked = true;
+        localStorage.setItem('nitricStarUnlocked', 'true');
+        initializeNitricStar();
+        showNotification('⭐ Estrela Nítrica desbloqueada! Disponível na loja por 20.000 TS Coins!', 5000);
+    }
+}
+function purchaseMedusaStar() {
+    console.log('Purchasing Medusa Star...');
+    if (!unlockedAstroTypes.includes('medusaStar')) {
+        unlockedAstroTypes.push('medusaStar');
+        localStorage.setItem('siu2d_unlocked_astros', JSON.stringify(unlockedAstroTypes));
+    }
+    localStorage.setItem('medusaStarPurchased', 'true');
+    const medusaStarItem = document.querySelector('[data-item-id="medusaStar"]');
+    if (medusaStarItem) {
+        medusaStarItem.classList.add('hidden');
+        medusaStarItem.classList.remove('visible');
+        medusaStarItem.style.display = 'none';
+    }
+    fgpCreationGrid();
+    showNotification("Medusa Star unlocked! You can now create it in creation mode.");
+    console.log('Medusa Star purchased successfully');
+}
+function purchaseNitricStar() {
+    if (tsCoins >= NITRIC_STAR_PRICE) {
+        tsCoins -= NITRIC_STAR_PRICE;
+        localStorage.setItem('tsCoins', tsCoins.toString());
+        nitricStarPurchased = true;
+        localStorage.setItem('nitricStarPurchased', 'true');
+        if (!unlockedAstroTypes.includes('nitricStar')) {
+            unlockedAstroTypes.push('nitricStar');
+            localStorage.setItem('siu2d_unlocked_astros', JSON.stringify(unlockedAstroTypes));
+        }
+        fgpTSCoinsDisplay();
+        fgpCreationGrid();
+        initializeNitricStar();
+        showNotification(`🎉 Estrela Nítrica comprada por ${NITRIC_STAR_PRICE} TS Coins! Agora você pode criá-la no modo criação.`);
+        return true;
+    } else {
+        showNotification("TS Coins insuficientes para comprar a Estrela Nítrica!");
+        return false;
+    }
+}
 let unlockedAstroTypes = JSON.parse(localStorage.getItem('siu2d_unlocked_astros') || '[]');
 function unlockBizarreStars() {
     const newStarTypes = [
@@ -9750,7 +10564,7 @@ function getAstroConfig(type) {
             name: 'Chronosstar',
             description: '???',
             massPercent: 92,
-            massRange: '600M - 1.8B',
+            massRange: '600M - ∞',
             rarity: 'ultra-raro',
             rarityText: 'Unknown...'
         },
@@ -9759,7 +10573,7 @@ function getAstroConfig(type) {
             name: 'Phantomstar',
             description: '???',
             massPercent: 85,
-            massRange: '300M - 900M',
+            massRange: '300M - ∞',
             rarity: 'ultra-raro',
             rarityText: 'Unknown...'
         },
@@ -9768,7 +10582,7 @@ function getAstroConfig(type) {
             name: 'Vortexstar',
             description: '???',
             massPercent: 94,
-            massRange: '800M - 2.2B',
+            massRange: '800M - ∞',
             rarity: 'ultra-raro',
             rarityText: 'Unknown...'
         },
@@ -9777,7 +10591,7 @@ function getAstroConfig(type) {
             name: 'Crystalstar',
             description: '???',
             massPercent: 88,
-            massRange: '500M - 1.5B',
+            massRange: '500M - ∞',
             rarity: 'ultra-raro',
             rarityText: 'Unknown...'
         },
@@ -9786,7 +10600,7 @@ function getAstroConfig(type) {
             name: 'Neuralstar',
             description: '???',
             massPercent: 90,
-            massRange: '700M - 1.9B',
+            massRange: '700M - ∞',
             rarity: 'ultra-raro',
             rarityText: 'Unknown...'
         },
@@ -9795,7 +10609,7 @@ function getAstroConfig(type) {
             name: 'Hologramstar',
             description: '???',
             massPercent: 87,
-            massRange: '400M - 1.2B',
+            massRange: '400M - ∞',
             rarity: 'ultra-raro',
             rarityText: 'Unknown...'
         },
@@ -9804,7 +10618,7 @@ function getAstroConfig(type) {
             name: 'Quantum Foam Star',
             description: '???',
             massPercent: 96,
-            massRange: '1B - 3B',
+            massRange: '1B - ∞',
             rarity: 'ultra-raro',
             rarityText: 'Unknown...'
         },
@@ -9813,7 +10627,7 @@ function getAstroConfig(type) {
             name: 'Prismstar',
             description: '???',
             massPercent: 89,
-            massRange: '600M - 1.6B',
+            massRange: '600M - ∞',
             rarity: 'ultra-raro',
             rarityText: 'Unknown...'
         },
@@ -9822,7 +10636,7 @@ function getAstroConfig(type) {
             name: 'Echostar',
             description: '???',
             massPercent: 91,
-            massRange: '750M - 2B',
+            massRange: '750M - ∞',
             rarity: 'ultra-raro',
             rarityText: 'Unknown...'
         },
@@ -9834,16 +10648,34 @@ function getAstroConfig(type) {
             massRange: ' "∞" ',
             rarity: 'Ultra-Legendario',
             rarityText: 'Ultra-Legendary'
+        },
+        "medusaStar":{
+            icon: 'fas fa-worm',
+            name: 'Medusa Star',
+            description: 'A star that petrifies other stars',
+            massPercent: 90,
+            massRange: '800M - ∞',
+            rarity: 'ultra-raro',
+            rarityText: 'Unknown...'
+        },
+        "nitricStar":{
+            icon: 'fas fa-water',
+            name: 'Nitric acid star',
+            description: 'A star that depetrifies other stars',
+            massPercent: 90,
+            massRange: '800M - ∞',
+            rarity: 'ultra-raro',
+            rarityText: 'Unknown...'
         }
     };
     return configs[type] || {
         icon: 'fas fa-star',
         name: type,
-        description: 'Novo tipo de astro',
-        massPercent: 50,
-        massRange: '1 - 100',
-        rarity: 'comum',
-        rarityText: 'Comum'
+        description: 'Unknown Astro...',
+        massPercent: '?',
+        massRange: 'Unknown Range...',
+        rarity: 'ultra-raro',
+        rarityText: 'Unknown...'
     };
 }
 function closeManual() {
@@ -11332,6 +12164,9 @@ function createAstro(type, x, y, vx = 0, vy = 0, customMass = null, originPlanet
             planet.isSecretStar = true;
             Acount = (Acount || 0) + 1;
             setTimeout(() => onMedusaStarCreated(planet), 100);
+            const currentMedusaCount = parseInt(localStorage.getItem('medusaStarsCreated') || '0');
+            localStorage.setItem('medusaStarsCreated', (currentMedusaCount + 1).toString());
+            checkNitricStarUnlock();
             break;
         case 'singularityStar':
             planet.mass = Math.max(5000000000000000000000000000000000000000000000000000000000000000000000000000000000, customMass || astroSettings.mass * 50000000);
@@ -11341,6 +12176,27 @@ function createAstro(type, x, y, vx = 0, vy = 0, customMass = null, originPlanet
             planet.temperature = 50000;
             planet.multipleSingularities = true;
             planet.realityDistortion = true;
+            break;
+        case 'nitricStar':
+            planet.mass = Math.max(800000000, customMass || astroSettings.mass * 8000000);
+            planet.color = '#FFA500';
+            planet.glowColor = '#FFFF00';
+            planet.radius = calculateRadiusForType('nitricStar', planet.mass);
+            planet.temperature = 20000;
+            planet.explosionCooldown = 5000 + Math.random() * 10000;
+            planet.explosionActive = false;
+            planet.explosionProgress = 0;
+            planet.jetAngle = Math.random() * Math.PI * 2;
+            planet.depetrificationField = true;
+            planet.lastExplosionTime = Date.now();
+            planet.isSecretStar = true;
+            if (planet.mass < 800000000) {
+                planet.mass = 800000000;
+            }
+            nitricStarsCreated++;
+            localStorage.setItem('nitricStarsCreated', nitricStarsCreated.toString());
+            Acount = (Acount || 0) + 1;
+            setTimeout(() => onNitricStarCreated(planet), 100);
             break;
         default:
             planet.mass = customMass || 1000;
@@ -11383,22 +12239,83 @@ function createAstro(type, x, y, vx = 0, vy = 0, customMass = null, originPlanet
     }
     return planet;
 }
-function fgpMedusaStarBehavior(planet, deltaTime) {
+function fgpMedusaStarBehavior(deltaTime) {
     const currentTime = Date.now();
-    if (!planet.explosionActive && 
-        currentTime - planet.lastExplosionTime > planet.explosionCooldown) {
-        triggerMedusaExplosion(planet);
-    }
-    if (planet.explosionActive) {
-        const explosionDuration = 5000;
-        planet.explosionProgress += deltaTime / explosionDuration;
-        if (planet.explosionProgress >= 1) {
-            planet.explosionActive = false;
-            planet.explosionProgress = 0;
-            planet.jetsVisible = false;
+    planets.forEach(planet => {
+        if (planet.type === 'medusaStar' && !planet.markedForRemoval) {
+            if (!planet.lastExplosionTime) {
+                planet.lastExplosionTime = currentTime;
+                planet.explosionCooldown = planet.explosionCooldown || (8000 + Math.random() * 7000);
+            }
+            if (!planet.explosionActive && 
+                currentTime - planet.lastExplosionTime > planet.explosionCooldown) {
+                triggerMedusaExplosion(planet);
+            }
+            if (planet.explosionActive) {
+                const explosionDuration = 5000;
+                planet.explosionProgress += deltaTime / explosionDuration;
+                if (planet.explosionProgress >= 1) {
+                    planet.explosionActive = false;
+                    planet.explosionProgress = 0;
+                    planet.lastExplosionTime = currentTime;
+                    planet.explosionCooldown = 8000 + Math.random() * 7000;
+                }
+            }
+            applyEnhancedMedusaPetrification(planet, deltaTime);
         }
-        planet.jetsVisible = planet.explosionProgress < 0.4;
-    }
+    });
+}
+function applyEnhancedMedusaPetrification(medusaStar, deltaTime) {
+    const petrificationRadius = medusaStar.radius * 8;
+    const basePetrificationRate = 0.02;
+    planets.forEach(other => {
+        if (other === medusaStar || other.markedForRemoval || other.petrified) return;
+        if (!canBePetrifiedByMedusa(other)) return;
+        const dx = other.x - medusaStar.x;
+        const dy = other.y - medusaStar.y;
+        const distance = Math.sqrt(dx * dx + dy * dy);
+        if (distance < petrificationRadius) {
+            const proximityFactor = 1 - (distance / petrificationRadius);
+            const petrificationChance = basePetrificationRate * proximityFactor * (deltaTime / 1000);
+            if (Math.random() < petrificationChance) {
+                transformToStone(other);
+                createMedusaPetrificationEffect(other);
+            }
+        }
+    });
+}
+function canBePetrifiedByMedusa(obj) {
+    if (!obj || obj.markedForRemoval || obj.petrified) return false;
+    const petrifiableTypes = [
+        'rocket', 'spaceship', 'satellite', 'superShip',
+        'asteroid', 'meteoroid', 'meteorite', 'comet',
+        'planetoid', 'rockyPlanet', 'gasGiant',
+        'star', 'redDwarf', 'brownDwarf', 'whiteDwarf',
+        'carbonStar', 'giantStar', 'hypergiant', 'massiveStar',
+        'redGiant', 'redSupergiant', 'ttauriStar',
+        'pulsar', 'neutronStar', 'quarkStar', 'magnetar'
+    ];
+    const protectedTypes = ['medusaStar', 'nitricStar', 'blackHole', 'quasar', 'whiteHole', 'wormhole'];
+    return petrifiableTypes.includes(obj.type) && !protectedTypes.includes(obj.type);
+}
+function applyContinuousMedusaPetrification(medusaStar) {
+    const petrificationRadius = medusaStar.radius * 6;
+    planets.forEach(other => {
+        if (other === medusaStar || other.markedForRemoval || other.petrified) return;
+        if (!isSpaceshipType(other.type) && 
+            !['rocket', 'spaceship', 'satellite', 'superShip'].includes(other.type)) {
+            return;
+        }
+        const dx = other.x - medusaStar.x;
+        const dy = other.y - medusaStar.y;
+        const distance = Math.sqrt(dx * dx + dy * dy);
+        if (distance < petrificationRadius) {
+            const petrificationChance = 1 - (distance / petrificationRadius);
+            if (Math.random() < petrificationChance * 0.05) {
+                transformToMeteoroid(other);
+            }
+        }
+    });
 }
 function applyPetrificationEffect(medusaStar) {
     const petrificationRadius = medusaStar.radius * 8;
@@ -11429,6 +12346,191 @@ function createTransformationEffect(astro) {
             maxLife: 1,
             color: '#00FF00',
             size: astro.radius * 0.3
+        };
+    }
+}
+function playNitricExplosionSound() {
+    try {
+        playRandomCollisionSound();
+    }   catch (error){
+        console.log('Audio context not supported, playing fallback sound');
+        playRandomCollisionSound();
+    }
+}
+function triggerNitricExplosion(nitricStar) {
+    if (!nitricStar || nitricStar.markedForRemoval) return;
+    nitricStar.explosionActive = true;
+    nitricStar.explosionProgress = 0;
+    nitricStar.jetsVisible = true;
+    applyNitricExplosionEffects(nitricStar);
+    playNitricExplosionSound();
+    console.log(`💥 Nitric Star mega explosion at (${nitricStar.x.toFixed(2)}, ${nitricStar.y.toFixed(2)})`);
+}
+function applyNitricExplosionEffects(nitricStar) {
+    const explosionRadius = nitricStar.radius * 12;
+    let destroyedCount = 0;
+    let depetrifiedCount = 0;
+    planets.forEach(other => {
+        if (other === nitricStar || other.markedForRemoval) return;
+        const dx = other.x - nitricStar.x;
+        const dy = other.y - nitricStar.y;
+        const distance = Math.sqrt(dx * dx + dy * dy);
+        if (distance < explosionRadius) {
+            if (other.petrified && distance < explosionRadius * 0.7) {
+                depetrifyAstro(other);
+                depetrifiedCount++;
+            }
+            if (canBeDestroyedByNitricExplosion(other, nitricStar)) {
+                const destructionChance = 1 - (distance / explosionRadius);
+                if (Math.random() < destructionChance * 0.8) {
+                    other.markedForRemoval = true;
+                    destroyedCount++;
+                    createMegaDestructionEffect(other);
+                }
+            }
+            const force = (1 - (distance / explosionRadius)) * 50;
+            const angle = Math.atan2(dy, dx);
+            other.vx += Math.cos(angle) * force;
+            other.vy += Math.sin(angle) * force;
+        }
+    });
+    if (destroyedCount > 0 || depetrifiedCount > 0) {
+        console.log(`💥 Nitric Star MEGA explosion: ${destroyedCount} vaporized, ${depetrifiedCount} depetrified`);
+    }
+}
+function createMegaDestructionEffect(obj) {
+    const particleCount = 25;
+    for (let i = 0; i < particleCount; i++) {
+        const angle = (i / particleCount) * Math.PI * 2;
+        const speed = 5 + Math.random() * 3;
+        const life = 2 + Math.random() * 2;
+        const size = obj.radius * 0.3 * (0.5 + Math.random());
+        const colorVariation = Math.random();
+        let particleColor;
+        if (colorVariation < 0.33) {
+            particleColor = `rgba(255, 255, 0, 0.9)`;
+        } else if (colorVariation < 0.66) {
+            particleColor = `rgba(255, 165, 0, 0.8)`;
+        } else {
+            particleColor = `rgba(255, 69, 0, 0.7)`;
+        }
+        const particle = {
+            x: obj.x,
+            y: obj.y,
+            vx: Math.cos(angle) * speed,
+            vy: Math.sin(angle) * speed,
+            life: life,
+            maxLife: life,
+            color: particleColor,
+            size: size,
+            type: 'nitric_destruction'
+        };
+    }
+    createShockwaveEffect(obj.x, obj.y, obj.radius * 2);
+}
+function createShockwaveEffect(x, y, radius) {
+    console.log(`Shockwave at (${x}, ${y}) with radius ${radius}`);
+    for (let i = 0; i < 8; i++) {
+        const angle = (i / 8) * Math.PI * 2;
+        const shockParticle = {
+            x: x,
+            y: y,
+            vx: Math.cos(angle) * 8,
+            vy: Math.sin(angle) * 8,
+            life: 1,
+            maxLife: 1.5,
+            color: 'rgba(255, 255, 0, 0.7)',
+            size: radius * 0.1,
+            type: 'shockwave'
+        };
+    }
+}
+function canBeDestroyedByNitricStar(obj) {
+    const protectedTypes = [
+        'medusaStar', 'nitricStar', 'blackHole', 'quasar', 
+        'singularityStar', 'star', 'redGiant', 'redSupergiant',
+        'hypergiant', 'massiveStar', 'supermassiveStar'
+    ];
+    return !protectedTypes.includes(obj.type) && !obj.locked;
+}
+function canBeDestroyedByNitricExplosion(obj, nitricStar) {
+    if (!obj || obj.markedForRemoval) return false;
+    if (obj === nitricStar) return false;
+    if (obj.locked) return false;
+    const protectedTypes = [
+        'medusaStar', 'nitricStar', 'blackHole', 'quasar', 
+        'singularityStar', 'star', 'redGiant', 'redSupergiant',
+        'hypergiant', 'massiveStar', 'supermassiveStar',
+        'whiteHole', 'wormhole', 'pulsar', 'neutronStar',
+        'quarkStar', 'magnetar', 'brownDwarf', 'redDwarf'
+    ];
+    if (protectedTypes.includes(obj.type)) return false;
+    const massRatio = obj.mass / nitricStar.mass;
+    const canDestroyByMass = massRatio < 0.1;
+    const isSpecialObject = obj.isSecretStar || obj.ignoreDestruction;
+    return canDestroyByMass && !isSpecialObject;
+}
+function createMegaDestructionEffect(obj) {
+    for (let i = 0; i < 25; i++) {
+        const angle = (i / 25) * Math.PI * 2;
+        const speed = 5 + Math.random() * 3;
+        const particle = {
+            x: obj.x,
+            y: obj.y,
+            vx: Math.cos(angle) * speed,
+            vy: Math.sin(angle) * speed,
+            life: 1,
+            maxLife: 3,
+            color: `rgba(255, ${Math.floor(100 + Math.random() * 155)}, 0, 0.8)`,
+            size: obj.radius * 0.3,
+            type: 'mega_destruction'
+        };
+    }
+}
+function applyNitricDepetrification(nitricStar) {
+    const depetrificationRadius = nitricStar.radius * 6;
+    planets.forEach(other => {
+        if (other === nitricStar || other.markedForRemoval || !other.petrified) return;
+        const dx = other.x - nitricStar.x;
+        const dy = other.y - nitricStar.y;
+        const distance = Math.sqrt(dx * dx + dy * dy);
+        if (distance < depetrificationRadius) {
+            const depetrificationChance = 1 - (distance / depetrificationRadius);
+            if (Math.random() < depetrificationChance * 0.1) {
+                depetrifyAstro(other);
+            }
+        }
+    });
+}
+function checkCollision(obj1, obj2) {
+    const dx = obj1.x - obj2.x;
+    const dy = obj1.y - obj2.y;
+    const distance = Math.sqrt(dx * dx + dy * dy);
+    return distance < (obj1.radius + obj2.radius) * 0.8;
+}
+function depetrifyAstro(obj) {
+    if (!obj || !obj.petrified) return;
+    console.log(`🧪 Nitric depetrifying: ${obj.originalType} (restoring original colors)`);
+    obj.petrified = false;
+    obj.color = obj.originalColor || obj.originalVisualColor || obj.color;
+    obj.glowColor = obj.originalGlowColor || obj.glowColor;
+    createDepetrificationEffect(obj);
+    showNotification(`✨ ${getTypeName(obj.originalType)} desempetrificado pela Estrela Nítrica! (Cores restauradas)`, 2000);
+}
+function createDepetrificationEffect(obj) {
+    for (let i = 0; i < 8; i++) {
+        const angle = (i / 8) * Math.PI * 2;
+        const distance = obj.radius * 1.5;
+        const particle = {
+            x: obj.x + Math.cos(angle) * distance,
+            y: obj.y + Math.sin(angle) * distance,
+            vx: Math.cos(angle) * 2,
+            vy: Math.sin(angle) * 2,
+            life: 1,
+            maxLife: 1.5,
+            color: '#FFFF00',
+            size: obj.radius * 0.3,
+            type: 'depetrification'
         };
     }
 }
@@ -11558,6 +12660,7 @@ function getTypeName(type) {
         'superShip':'Super Ship',
         'redHypergiant' : 'Ultranuclestar',
         'medusaStar': 'Medusa Star',
+        'nitricStar': 'Nitric Acid Star',
         'chronosStar':'Chronos Star',
         'phantomStar': 'Phantom Star',
         'vortexStar': 'Vortex Star',
