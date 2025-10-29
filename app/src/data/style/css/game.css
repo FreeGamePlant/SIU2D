@@ -5370,6 +5370,7 @@ position: relative;
 z-index: 10;
 background: linear-gradient(135deg, #1a1a2e, #16213e);
 border-radius: 0 0 8px 8px;
+position: relative;
 }
 @keyframes fadeInUp {
 from {
@@ -5408,4 +5409,212 @@ box-shadow: 0 2px 8px rgba(0, 100, 255, 0.4);
 .manual-title{
 position: relative;
 bottom: -50px
+}
+.manual-pages-container {
+position: relative;
+flex: 1;
+display: flex;
+flex-direction: column;
+min-height: 250px;
+padding-bottom: 10px;
+overflow: visible;
+}
+.manual-page {
+display: none;
+flex-direction: column;
+position: relative;
+z-index: 1; 
+width: 100%;
+height: auto;
+opacity: 0;
+transition: opacity 0.3s ease;
+}
+.manual-page.active {
+display: flex;
+opacity: 1;
+height: auto;
+visibility: visible;
+}
+.manual-animation {
+order: 2;
+position: relative;
+width: 100%;
+border-radius: 6px;
+overflow: hidden;
+box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+background: transparent;
+margin-bottom: 8px;
+flex-shrink: 0;
+min-height: 0;
+padding: 0;
+border: none;
+z-index: 1; 
+display: none;
+}
+.manual-animation video.animation {
+width: 100%;
+height: auto;
+display: block;
+border-radius: 4px;
+object-fit: contain;
+background: #000;
+max-height: 60vh;
+min-height: 0;
+position: relative;
+z-index: 1; 
+}
+.manual-controls {
+display: flex;
+justify-content: space-between;
+align-items: center;
+margin-top: 15px; 
+padding: 10px 0 5px;
+border-top: 1px solid rgba(255, 255, 255, 0.1);
+position: relative;
+z-index: 100; 
+background: linear-gradient(135deg, #1a1a2e, #16213e);
+border-radius: 0 0 8px 8px;
+}
+.overlay-content {
+background: linear-gradient(135deg, #1a1a2e, #16213e);
+border-radius: 12px;
+padding: 15px;
+width: 100%;
+max-width: 750px;
+max-height: 80vh;
+overflow-y: auto;
+border: 1px solid #3498db;
+box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+position: relative;
+display: flex;
+flex-direction: column;
+min-height: 400px;
+padding-bottom: 20px; 
+}
+.manual-btn {
+background: linear-gradient(45deg, #0288d1, #0277bd);
+border: none;
+padding: 8px 12px;
+border-radius: 4px;
+color: white;
+cursor: pointer;
+transition: all 0.3s ease;
+font-weight: bold;
+flex: 1;
+margin: 0 3px;
+max-width: 120px;
+font-size: 0.8rem;
+position: relative;
+z-index: 150; 
+}
+.manual-btn:hover {
+background: linear-gradient(45deg, #039be5, #0288d1);
+transform: translateY(-1px);
+box-shadow: 0 2px 8px rgba(0, 100, 255, 0.4);
+}
+@media screen and (max-width: 768px) {
+.manual-animation video.animation {
+max-height: 44vh;
+}
+.manual-controls {
+margin-top: 12px;
+padding: 8px 0 4px;
+}
+.overlay-content {
+padding-bottom: 18px;
+}
+}
+@media screen and (max-width: 480px) {
+.manual-animation video.animation {
+max-height: 36vh;
+}
+.manual-controls {
+margin-top: 10px;
+padding: 6px 0 3px;
+}
+.overlay-content {
+padding-bottom: 15px;
+}
+}
+@media screen and (max-width: 360px) {
+.manual-animation video.animation {
+max-height: 32vh;
+}
+.manual-controls {
+margin-top: 8px;
+padding: 5px 0 2px;
+}
+.overlay-content {
+padding-bottom: 12px;
+}
+}
+@media screen and (max-height: 500px) and (orientation: landscape) {
+.manual-animation video.animation {
+max-height: 56vh;
+}
+.manual-controls {
+margin-top: 130px;
+padding: 8px 0 4px;
+}
+.overlay-content {
+padding-bottom: 15px;
+}
+}
+.manual-page.active .manual-animation,
+.manual-page.active .manual-text,
+.manual-page.active .ts-speech-bubble,
+.manual-page.active .animation-placeholder,
+.manual-page.active video.animation {
+display: block !important;
+visibility: visible !important;
+opacity: 1 !important;
+}
+.manual-text {
+order: 1;
+margin-bottom: 12px;
+display: none;
+}
+.manual-page.active .manual-text {
+display: block;
+}
+.ts-speech-bubble {
+background: rgba(52, 152, 219, 0.15);
+border-radius: 8px;
+padding: 8px 10px;
+border-left: 2px solid #3498db;
+position: relative;
+font-size: 0.7rem;
+line-height: 1.2;
+display: none;
+}
+.manual-page.active .ts-speech-bubble {
+display: block;
+}
+.animation-placeholder {
+width: 100%;
+display: flex;
+align-items: center;
+justify-content: center;
+padding: 8px;
+color: #81d4fa;
+font-weight: bold;
+background: transparent;
+font-size: 0.8rem;
+display: none;
+}
+.manual-page.active .animation-placeholder {
+display: flex;
+}
+@keyframes fadeInUp {
+from {
+opacity: 0;
+transform: translateY(15px);
+}
+to {
+opacity: 1;
+transform: translateY(0);
+}
+}
+.manual-page.active {
+animation: fadeInUp 0.4s ease-out;
 }
