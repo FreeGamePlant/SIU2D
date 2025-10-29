@@ -1431,7 +1431,7 @@ case 'ttauriStar':
       ctx.arc(0, 0, scaledRadius, 0, Math.PI * 2);
       const starGradient = ctx.createRadialGradient(0, 0, 0, 0, 0, scaledRadius);
       starGradient.addColorStop(0, config.colors[0]);
-      starGradient.addColorStop(1, config.colors[1]);
+      //starGradient.addColorStop(1, config.colors[1]);
       ctx.fillStyle = starGradient;
       ctx.fill();
       ctx.strokeStyle = '#000000';
