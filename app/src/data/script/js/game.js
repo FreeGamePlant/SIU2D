@@ -6,6 +6,37 @@ console.log('Todos Os direitos reservados da FGP.')
 const canvas = document.getElementById('gameCanvas');
 const versionGame = ('0.0.0=ALPHA');
 const ctx = canvas.getContext('2d');
+let _fgp_pixelBuffer = null;
+let _fgp_pixelBufferCtx = null;
+let _fgp_pixelScale = parseInt(localStorage.getItem('siu2d_pixel_mode_scale') || '4', 10) || 4;
+function _fgp_ensurePixelBuffer() {
+    if (!_fgp_pixelBuffer) {
+        _fgp_pixelBuffer = document.createElement('canvas');
+        _fgp_pixelBufferCtx = _fgp_pixelBuffer.getContext('2d');
+    }
+    const w = Math.max(1, Math.floor(canvas.width / _fgp_pixelScale));
+    const h = Math.max(1, Math.floor(canvas.height / _fgp_pixelScale));
+    if (_fgp_pixelBuffer.width !== w || _fgp_pixelBuffer.height !== h) {
+        _fgp_pixelBuffer.width = w;
+        _fgp_pixelBuffer.height = h;
+    }
+    try { _fgp_pixelBufferCtx.imageSmoothingEnabled = false; } catch (e) {  }
+}
+function _fgp_applyPixelPostprocess() {
+    try {
+        if (!document.body.classList.contains('pixel-mode')) return;
+        _fgp_ensurePixelBuffer();
+        _fgp_pixelBufferCtx.clearRect(0, 0, _fgp_pixelBuffer.width, _fgp_pixelBuffer.height);
+        _fgp_pixelBufferCtx.drawImage(canvas, 0, 0, _fgp_pixelBuffer.width, _fgp_pixelBuffer.height);
+        ctx.save();
+        try { ctx.imageSmoothingEnabled = false; } catch (e) {  }
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.drawImage(_fgp_pixelBuffer, 0, 0, canvas.width, canvas.height);
+        ctx.restore();
+    } catch (err) {
+        console.warn('Pixel postprocess failed:', err);
+    }
+}
 const startScreen = document.getElementById('startScreen');
 const gameMenuBtn = document.getElementById('gameMenuBtn');
 const inGameMenu = document.getElementById('inGameMenu');
@@ -359,8 +390,28 @@ function toggleFunSpace() {
 function fgpSpaceColor() {
     if (!funSpaceMode) {
         spaceColor = document.getElementById('spaceColor').value;
+        localStorage.setItem('siu2d_spaceColor', spaceColor);
     }
 }
+musicVolumeSlider.addEventListener('input', () => {
+    const volume = musicVolumeSlider.value;
+    musicVolumeValue.textContent = volume;
+    backgroundMusic.volume = volume / 100;
+    localStorage.setItem('siu2d_musicVolume', volume);
+});
+function fgpSfxVolume() {
+    sfxVolume = sfxVolumeSlider.value / 100;
+    sfxVolumeValue.textContent = sfxVolumeSlider.value;
+    collisionSounds.forEach(sound => {
+        sound.volume = sfxVolume;
+    });
+    localStorage.setItem('siu2d_sfxVolume', sfxVolumeSlider.value);
+}
+document.getElementById('modeRetirada').addEventListener('change', function() {
+    modoRetirada = this.checked;
+    localStorage.setItem('siu2d_modoRetirada', this.checked);
+    showNotification(`Withdrawal mode ${modoRetirada ? 'activated' : 'deactivated'}`);
+});
 function fgpFunSpaceColors(deltaTime) {
     if (!funSpaceMode) return;
     funSpaceHue = (funSpaceHue + funSpaceSpeed * (deltaTime / 1000)) % 360;
@@ -600,6 +651,18 @@ document.addEventListener('keydown', function(e) {
 });
 function init() {
     resizeCanvas();
+    try {
+        const pixelEnabled = localStorage.getItem('siu2d_pixel_mode_enabled') === 'true';
+        if (pixelEnabled) {
+            document.body.classList.add('pixel-mode');
+            try { canvas.style.imageRendering = 'pixelated'; } catch (e) {  }
+        } else {
+            document.body.classList.remove('pixel-mode');
+            try { canvas.style.imageRendering = 'auto'; } catch (e) {  }
+        }
+    } catch (e) {
+        console.warn('Could not apply pixel-mode preference:', e);
+    }
     initBackgroundMusic();
     document.getElementById('modeRetirada').addEventListener('change', function() {
     modoRetirada = this.checked;
@@ -658,7 +721,40 @@ function init() {
         console.log('updateShopDisplay called');
         initializeMedusaStar();
         fgpShopDisplay();
+        try {
+            const lastTab = sessionStorage.getItem('siu2d_shop_tab') || 'astros';
+            if (typeof switchShopTab === 'function') {
+                switchShopTab(lastTab);
+            }
+        } catch (e) {
+            console.warn('Could not restore shop tab', e);
+        }
     };
+        const savedSpaceColor = localStorage.getItem('siu2d_spaceColor');
+    if (savedSpaceColor) {
+        spaceColor = savedSpaceColor;
+        document.getElementById('spaceColor').value = savedSpaceColor;
+    }
+    const savedMusicVolume = localStorage.getItem('siu2d_musicVolume');
+    if (savedMusicVolume && musicVolumeSlider) {
+        musicVolumeSlider.value = savedMusicVolume;
+        musicVolumeValue.textContent = savedMusicVolume;
+    }
+    const savedSfxVolume = localStorage.getItem('siu2d_sfxVolume');
+    if (savedSfxVolume && sfxVolumeSlider) {
+        sfxVolumeSlider.value = savedSfxVolume;
+        sfxVolumeValue.textContent = savedSfxVolume;
+        sfxVolume = savedSfxVolume / 100;
+    }
+    const savedModoRetirada = localStorage.getItem('siu2d_modoRetirada');
+    if (savedModoRetirada !== null) {
+        modoRetirada = savedModoRetirada === 'true';
+        document.getElementById('modeRetirada').checked = modoRetirada;
+    }
+    waterSlider.addEventListener('input', fgpWater);
+    cloudsSlider.addEventListener('input', fgpClouds);
+    gasSlider.addEventListener('input', fgpGas);
+    rotationSlider.addEventListener('input', fgpRotation);
     initializeMedusaStar();
     initializeNitricStar();
     canvas.addEventListener('touchstart', handleTouchStart, { passive: false });
@@ -714,10 +810,6 @@ document.querySelectorAll('.option-card').forEach(card => {
     ringColor.addEventListener('input', fgpAstroPreview);
     massSlider.addEventListener('input', fgpMass);
     gravitySlider.addEventListener('input', fgpGravity);
-    rotationSlider.addEventListener('input', fgpRotation);
-    waterSlider.addEventListener('input', fgpWater);
-    cloudsSlider.addEventListener('input', fgpClouds);
-    gasSlider.addEventListener('input', fgpGas);
     hasRings.addEventListener('change', fgpAstroPreview);
     ringMassSlider.addEventListener('input', fgpRingMass);
     applySettings.addEventListener('click', applyAstroSettings);
@@ -760,6 +852,74 @@ document.querySelectorAll('.option-card').forEach(card => {
     selectedType = 'asteroid';
     creationModeText.textContent = getTypeName(creationMode);
     creationModeIndicator.style.display = 'block';
+    try {
+        const firstVisitModal = document.getElementById('firstVisitModal');
+        const warningsSidebar = document.getElementById('warningsSidebar');
+        const btnDontShowWarnings = document.getElementById('btnDontShowWarnings');
+        const dontShowWarningsCheckbox = document.getElementById('dontShowWarningsCheckbox');
+        const firstVisitOpenManual = document.getElementById('firstVisitOpenManual');
+        const firstVisitContinue = document.getElementById('firstVisitContinue');
+        const isFirstVisit = localStorage.getItem('siu2d_first_visit_done') !== 'true';
+        const dontShow = localStorage.getItem('siu2d_dont_show_warnings') === 'true';
+        if (isFirstVisit && firstVisitModal) {
+            firstVisitModal.style.display = 'flex';
+            document.body.style.overflow = 'hidden';
+            firstVisitOpenManual?.addEventListener('click', () => {
+                firstVisitModal.style.display = 'none';
+                document.body.style.overflow = '';
+                localStorage.setItem('siu2d_first_visit_done', 'true');
+                if (typeof openManual === 'function') {
+                    try { openManual(); } catch (err) { console.error('openManual() threw:', err); }
+                } else {
+                    const manualOverlay = document.getElementById('manualOverlay');
+                    if (manualOverlay) {
+                        manualOverlay.style.display = 'flex';
+                        setTimeout(() => manualOverlay.classList.add('active'), 10);
+                        document.body.style.overflow = 'hidden';
+                    }
+                }
+            });
+            firstVisitContinue?.addEventListener('click', () => {
+                firstVisitModal.style.display = 'none';
+                document.body.style.overflow = '';
+                localStorage.setItem('siu2d_first_visit_done', 'true');
+                if (!dontShow) {
+                    warningsSidebar?.classList.add('active');
+                    document.body.style.overflow = 'hidden';
+                }
+            });
+        }
+        btnDontShowWarnings?.addEventListener('click', () => {
+            localStorage.setItem('siu2d_dont_show_warnings', 'true');
+            if (dontShowWarningsCheckbox) dontShowWarningsCheckbox.checked = true;
+            if (warningsSidebar) {
+                warningsSidebar.classList.remove('active');
+                document.body.style.overflow = '';
+            }
+        });
+        dontShowWarningsCheckbox?.addEventListener('change', function() {
+            if (this.checked) {
+                localStorage.setItem('siu2d_dont_show_warnings', 'true');
+            } else {
+                localStorage.removeItem('siu2d_dont_show_warnings');
+            }
+        });
+    } catch (e) {
+        console.error('Error initializing first-visit/warnings logic', e);
+    }
+    window.showFirstVisitModal = function() {
+        const m = document.getElementById('firstVisitModal');
+        if (m) {
+            m.style.display = 'flex';
+            document.body.style.overflow = 'hidden';
+            console.log('First visit modal opened (debug)');
+        } else console.warn('firstVisitModal element not found');
+    };
+    window.resetFirstVisitPrefs = function() {
+        localStorage.removeItem('siu2d_first_visit_done');
+        localStorage.removeItem('siu2d_dont_show_warnings');
+        console.log('First-visit preferences cleared from localStorage');
+    };
 }
 function closeGameMenu() {
     if (inGameMenu) {
@@ -953,10 +1113,13 @@ function calculateLightIntensity() {
     planets.forEach(other => {
         if (other === planet) return;
         const isStar = [
-            'star', 'redDwarf', 'brownDwarf', 'ttauriStar', 'carbonStar',
-            'giantStar', 'hypergiant', 'massiveStar', 'redGiant', 
-            'redSupergiant', 'redHypergiant', 'pulsar', 'quarkStar'
-        ].includes(other.type);
+                'star', 'redDwarf', 'brownDwarf', 'ttauriStar', 'carbonStar',
+                'giantStar', 'hypergiant', 'massiveStar', 'redGiant', 
+                'redSupergiant', 'redHypergiant', 'pulsar', 'quarkStar',
+                'chronosStar', 'phantomStar', 'vortexStar', 'crystalStar', 'neuralStar',
+                'hologramStar', 'quantumFoamStar', 'prismStar', 'echoStar', 'asciiStar',
+                'medusaStar', 'nitricStar', 'singularityStar'
+            ].includes(other.type);
         if (isStar) {
             const dx = planet.x - other.x;
             const dy = planet.y - other.y;
@@ -1431,7 +1594,6 @@ case 'ttauriStar':
       ctx.arc(0, 0, scaledRadius, 0, Math.PI * 2);
       const starGradient = ctx.createRadialGradient(0, 0, 0, 0, 0, scaledRadius);
       starGradient.addColorStop(0, config.colors[0]);
-      //starGradient.addColorStop(1, config.colors[1]);
       ctx.fillStyle = starGradient;
       ctx.fill();
       ctx.strokeStyle = '#000000';
@@ -1978,6 +2140,111 @@ case 'prismStar':
 case 'echoStar':
     drawEchoStar(planet, ctx, radius, camera, graphicsQuality, visualTimeScale);
     break;
+case 'asciiStar':
+    {
+        const asciiRadius = planet.radius * camera.zoom;
+        const time = Date.now() * 0.001;
+        ctx.save();
+        const coreGradient = ctx.createRadialGradient(0, 0, 0, 0, 0, asciiRadius);
+        coreGradient.addColorStop(0, '#FFFFFF');
+        coreGradient.addColorStop(0.18, '#CCFFFF');
+        coreGradient.addColorStop(0.5, '#66CCFF');
+        coreGradient.addColorStop(1, 'rgba(50,150,255,0.06)');
+        ctx.beginPath();
+        ctx.arc(0, 0, asciiRadius, 0, Math.PI * 2);
+        ctx.fillStyle = coreGradient;
+        ctx.fill();
+        ctx.beginPath();
+        ctx.arc(0, 0, asciiRadius * 0.22 * (1 + Math.sin(time * 6) * 0.06), 0, Math.PI * 2);
+        ctx.fillStyle = 'rgba(255,255,255,0.95)';
+        ctx.fill();
+        if (graphicsQuality !== 'low') {
+            const chars = ['0','1','<','>','/','\\','[',']','{','}'];
+            const count = Math.max(6, Math.floor(6 + asciiRadius * 0.02));
+            ctx.fillStyle = '#FFFFFF';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.font = `${Math.max(6, Math.round(asciiRadius * 0.12))}px monospace`;
+            for (let i = 0; i < count; i++) {
+                const angle = (i / count) * Math.PI * 2 + time * 0.7;
+                const dist = asciiRadius * (1.05 + 0.12 * Math.sin(time * 1.5 + i));
+                const cx = Math.cos(angle) * dist;
+                const cy = Math.sin(angle) * dist;
+                const ch = chars[(i + Math.floor(time * 3)) % chars.length];
+                ctx.globalAlpha = 0.9 - (i / count) * 0.6;
+                ctx.fillText(ch, cx, cy);
+            }
+            ctx.globalAlpha = 1;
+        }
+        if (graphicsQuality !== 'low') {
+            const glow = ctx.createRadialGradient(0, 0, asciiRadius * 0.25, 0, 0, asciiRadius * 2);
+            glow.addColorStop(0, 'rgba(150,220,255,0.35)');
+            glow.addColorStop(1, 'rgba(150,220,255,0)');
+            ctx.beginPath();
+            ctx.arc(0, 0, asciiRadius * 2, 0, Math.PI * 2);
+            ctx.fillStyle = glow;
+            ctx.fill();
+        }
+        ctx.restore();
+    }
+    break;
+case 'jsStar':
+    drawJsStar(planet, ctx, radius, camera, graphicsQuality, visualTimeScale);
+    break;
+case 'pyStar':
+    drawPyStar(planet, ctx, radius, camera, graphicsQuality, visualTimeScale);
+    break;
+case 'cssStar':
+    drawCssStar(planet, ctx, radius, camera, graphicsQuality, visualTimeScale);
+    break;
+case 'csharpStar':
+    drawCsharpStar(planet, ctx, radius, camera, graphicsQuality, visualTimeScale);
+    break;
+case 'gmlStar':
+    drawGmlStar(planet, ctx, radius, camera, graphicsQuality, visualTimeScale);
+    break;
+case 'javaStar':
+    drawJavaStar(planet, ctx, radius, camera, graphicsQuality, visualTimeScale);
+    break;
+case 'phpStar':
+    drawPhpStar(planet, ctx, radius, camera, graphicsQuality, visualTimeScale);
+    break;
+case 'rustStar':
+    drawRustStar(planet, ctx, radius, camera, graphicsQuality, visualTimeScale);
+    break;
+case 'goStar':
+    drawGoStar(planet, ctx, radius, camera, graphicsQuality, visualTimeScale);
+    break;
+case 'kotlinStar':
+    drawKotlinStar(planet, ctx, radius, camera, graphicsQuality, visualTimeScale);
+    break;
+case 'swiftStar':
+    drawSwiftStar(planet, ctx, radius, camera, graphicsQuality, visualTimeScale);
+    break;
+case 'tsStar':
+    drawTsStar(planet, ctx, radius, camera, graphicsQuality, visualTimeScale);
+    break;
+case 'luaStar':
+    drawLuaStar(planet, ctx, radius, camera, graphicsQuality, visualTimeScale);
+    break;
+case 'rubyStar':
+    drawRubyStar(planet, ctx, radius, camera, graphicsQuality, visualTimeScale);
+    break;
+case 'dartStar':
+    drawDartStar(planet, ctx, radius, camera, graphicsQuality, visualTimeScale);
+    break;
+case 'htmlStar':
+    drawHtmlStar(planet, ctx, radius, camera, graphicsQuality, visualTimeScale);
+    break;
+case 'jsonStar':
+    drawJsonStar(planet, ctx, radius, camera, graphicsQuality, visualTimeScale);
+    break;
+case 'assemblyStar':
+    drawAssemblyStar(planet, ctx, radius, camera, graphicsQuality, visualTimeScale);
+    break;
+case 'sqlStar':
+    drawSqlStar(planet, ctx, radius, camera, graphicsQuality, visualTimeScale);
+    break;
 case 'medusaStar':
     drawMedusaStar(planet, ctx, radius, camera, graphicsQuality, visualTimeScale);
     break;
@@ -2042,9 +2309,10 @@ if ([
     ctx.fill();
 }
   ctx.restore();
-  if (shadowsEnabled && graphicsQuality ==='medium' && ![
-    'star', 'brownDwarf', 'whiteDwarf', 'blackHole', 'quasar',
-    'pulsar', 'quarkStar', 'magnetar'
+    if (shadowsEnabled && graphicsQuality ==='medium' && ![
+        'star', 'brownDwarf', 'whiteDwarf', 'blackHole', 'quasar',
+        'pulsar', 'quarkStar', 'magnetar',
+        'chronosStar', 'phantomStar', 'vortexStar', 'crystalStar', 'neuralStar', 'hologramStar', 'quantumFoamStar', 'prismStar', 'echoStar', 'asciiStar', 'medusaStar', 'nitricStar', 'singularityStar'
 ].includes(planet.type)) {
     if (isFinite(x) && isFinite(y) && isFinite(radius) && radius > 0) {
         const lightIntensity = calculateLightIntensity();
@@ -2069,7 +2337,8 @@ if ([
 }
 if (shadowsEnabled && graphicsQuality ==='high' && ![
     'star', 'brownDwarf', 'whiteDwarf', 'blackHole', 'quasar',
-    'pulsar', 'quarkStar', 'magnetar'
+    'pulsar', 'quarkStar', 'magnetar',
+    'chronosStar', 'phantomStar', 'vortexStar', 'crystalStar', 'neuralStar', 'hologramStar', 'quantumFoamStar', 'prismStar', 'echoStar', 'asciiStar', 'medusaStar', 'nitricStar', 'singularityStar'
 ].includes(planet.type)) {
     if (isFinite(x) && isFinite(y) && isFinite(radius) && radius > 0) {
         const lightIntensity = calculateLightIntensity();
@@ -2092,11 +2361,12 @@ if (shadowsEnabled && graphicsQuality ==='high' && ![
         ctx.fill();
     }
 }
-  if ([
-    'star', 'brownDwarf', 'whiteDwarf', 'redDwarf', 'ttauriStar',
-    'carbonStar', 'giantStar', 'hypergiant', 'massiveStar', 'strangeStar',
-    'redGiant', 'redSupergiant', 'redHypergiant', 'pulsar', 'quarkStar',
-  ].includes(planet.type) && graphicsQuality !== 'low') {
+    if ([
+        'star', 'brownDwarf', 'whiteDwarf', 'redDwarf', 'ttauriStar',
+        'carbonStar', 'giantStar', 'hypergiant', 'massiveStar', 'strangeStar',
+        'redGiant', 'redSupergiant', 'redHypergiant', 'pulsar', 'quarkStar',
+        'chronosStar', 'phantomStar', 'vortexStar', 'crystalStar', 'neuralStar', 'hologramStar', 'quantumFoamStar', 'prismStar', 'echoStar', 'asciiStar', 'medusaStar', 'nitricStar', 'singularityStar'
+    ].includes(planet.type) && graphicsQuality !== 'low') {
     const safeRadius = Math.max(1, radius);
     ctx.beginPath();
     ctx.arc(x, y, safeRadius * 2, 0, Math.PI * 2);
@@ -2150,6 +2420,732 @@ if (shadowsEnabled && graphicsQuality ==='high' && ![
       ctx.fillText(planet.planetClass, x, y - radius - 25);
     }
   }
+}
+function drawJsStar(planet, ctx, radius, camera, graphicsQuality, visualTimeScale) {
+    const r = planet.radius * camera.zoom;
+    const time = Date.now() * 0.001;
+    ctx.save();
+    const core = ctx.createRadialGradient(0, 0, 0, 0, 0, r);
+    core.addColorStop(0, '#FFFF00');
+    core.addColorStop(0.2, '#FFD700');
+    core.addColorStop(0.5, '#FFA500');
+    core.addColorStop(0.8, '#FF8C00');
+    core.addColorStop(1, 'rgba(255,140,0,0.1)');
+    ctx.beginPath();
+    ctx.arc(0, 0, r, 0, Math.PI * 2);
+    ctx.fillStyle = core;
+    ctx.fill();
+    const pulse = 1 + Math.sin(time * 8) * 0.2;
+    ctx.beginPath();
+    ctx.arc(0, 0, r * pulse, 0, Math.PI * 2);
+    ctx.strokeStyle = `rgba(255,255,0,${0.6 + Math.sin(time * 10) * 0.3})`;
+    ctx.lineWidth = 3;
+    ctx.stroke();
+    if (graphicsQuality !== 'low') {
+        const codeSnippets = ['function', 'const', 'let', '=>', '{}', '[]', '()', 'await', 'async'];
+        const ringCount = 3;
+        for (let ring = 0; ring < ringCount; ring++) {
+            ctx.save();
+            ctx.rotate(time * (1 + ring * 0.5));
+            const ringRadius = r * (1.2 + ring * 0.4);
+            const snippetCount = 8 + ring * 4;
+            for (let i = 0; i < snippetCount; i++) {
+                const angle = (i / snippetCount) * Math.PI * 2;
+                const snippetAlpha = (Math.sin(time * 4 + i + ring) + 1) * 0.4;
+                if (snippetAlpha > 0.3) {
+                    const x = Math.cos(angle) * ringRadius;
+                    const y = Math.sin(angle) * ringRadius;
+                    ctx.save();
+                    ctx.translate(x, y);
+                    ctx.rotate(angle + Math.PI/2);
+                    ctx.globalAlpha = snippetAlpha;
+                    const snippet = codeSnippets[(i + ring * 3) % codeSnippets.length];
+                    ctx.fillStyle = '#FFFFFF';
+                    ctx.font = `${Math.max(8, Math.round(r * 0.08))}px 'Courier New', monospace`;
+                    ctx.textAlign = 'center';
+                    ctx.textBaseline = 'middle';
+                    ctx.fillText(snippet, 0, 0);
+                    ctx.restore();
+                }
+            }
+            ctx.restore();
+        }
+    }
+    if (planet._jsSpark) {
+        const sparkCount = 15;
+        ctx.globalAlpha = 0.9;
+        for (let i = 0; i < sparkCount; i++) {
+            const sparkTime = time * 10 + i;
+            const angle = (i / sparkCount) * Math.PI * 2;
+            const sparkRadius = r * (0.8 + Math.sin(sparkTime) * 0.4);
+            const sparkSize = r * 0.05 * (0.5 + Math.sin(sparkTime * 2) * 0.5);
+            ctx.beginPath();
+            ctx.arc(
+                Math.cos(angle) * sparkRadius,
+                Math.sin(angle) * sparkRadius,
+                sparkSize, 0, Math.PI * 2
+            );
+            const sparkGradient = ctx.createRadialGradient(
+                Math.cos(angle) * sparkRadius,
+                Math.sin(angle) * sparkRadius,
+                0,
+                Math.cos(angle) * sparkRadius,
+                Math.sin(angle) * sparkRadius,
+                sparkSize
+            );
+            sparkGradient.addColorStop(0, '#FFFFFF');
+            sparkGradient.addColorStop(0.7, '#FFFF00');
+            sparkGradient.addColorStop(1, '#FFA500');
+            ctx.fillStyle = sparkGradient;
+            ctx.fill();
+        }
+        ctx.globalAlpha = 1;
+    }
+    const glow = ctx.createRadialGradient(0, 0, r * 0.5, 0, 0, r * 3);
+    glow.addColorStop(0, 'rgba(255,255,0,0.6)');
+    glow.addColorStop(0.3, 'rgba(255,215,0,0.3)');
+    glow.addColorStop(1, 'rgba(255,140,0,0)');
+    ctx.beginPath();
+    ctx.arc(0, 0, r * 3, 0, Math.PI * 2);
+    ctx.fillStyle = glow;
+    ctx.fill();
+    ctx.restore();
+}
+function drawPyStar(planet, ctx, radius, camera, graphicsQuality, visualTimeScale) {
+    const r = planet.radius * camera.zoom;
+    const time = Date.now() * 0.001;
+    ctx.save();
+    const core = ctx.createRadialGradient(0, 0, 0, 0, 0, r);
+    core.addColorStop(0, '#FFFFFF');
+    core.addColorStop(0.2, '#87CEEB');
+    core.addColorStop(0.5, '#4169E1');
+    core.addColorStop(0.8, '#0000FF');
+    core.addColorStop(1, 'rgba(0,0,255,0.1)');
+    ctx.beginPath();
+    ctx.arc(0, 0, r, 0, Math.PI * 2);
+    ctx.fillStyle = core;
+    ctx.fill();
+    const waveCount = 4;
+    for (let i = 0; i < waveCount; i++) {
+        const waveSize = r * (1.3 + i * 0.3);
+        const wavePulse = Math.sin(time * 3 + i) * 0.3 + 0.7;
+        const alpha = (0.4 - i * 0.1) * wavePulse;
+        ctx.beginPath();
+        ctx.arc(0, 0, waveSize, 0, Math.PI * 2);
+        ctx.strokeStyle = `rgba(135,206,235,${alpha})`;
+        ctx.lineWidth = 2;
+        ctx.stroke();
+    }
+    if (graphicsQuality !== 'low') {
+        const pySnippets = ['def', 'import', 'class', 'if', 'for', 'while', 'lambda', 'with'];
+        const floatingCount = 12;
+        for (let i = 0; i < floatingCount; i++) {
+            const floatTime = time * 2 + i;
+            const angle = (i / floatingCount) * Math.PI * 2;
+            const distance = r * (1.1 + Math.sin(floatTime) * 0.3);
+            const floatAlpha = (Math.sin(floatTime * 3) + 1) * 0.5;
+            if (floatAlpha > 0.2) {
+                ctx.save();
+                ctx.rotate(angle);
+                ctx.translate(distance, 0);
+                ctx.rotate(Math.PI/2);
+                ctx.globalAlpha = floatAlpha;
+                ctx.fillStyle = '#FFFFFF';
+                ctx.font = `${Math.max(7, Math.round(r * 0.07))}px 'Courier New', monospace`;
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                const snippet = pySnippets[i % pySnippets.length];
+                ctx.fillText(snippet, 0, 0);
+                ctx.restore();
+            }
+        }
+    }
+    if (planet._pyCalm) {
+        ctx.beginPath();
+        ctx.arc(0, 0, r * 2, 0, Math.PI * 2);
+        const calmGradient = ctx.createRadialGradient(0, 0, r, 0, 0, r * 2);
+        calmGradient.addColorStop(0, 'rgba(135,206,235,0.5)');
+        calmGradient.addColorStop(1, 'rgba(135,206,235,0)');
+        ctx.fillStyle = calmGradient;
+        ctx.fill();
+    }
+    ctx.restore();
+}
+function drawCssStar(planet, ctx, radius, camera, graphicsQuality, visualTimeScale) {
+    const r = planet.radius * camera.zoom;
+    const time = Date.now() * 0.001;
+    ctx.save();
+    const core = ctx.createRadialGradient(0, 0, 0, 0, 0, r);
+    core.addColorStop(0, '#FFFFFF');
+    core.addColorStop(0.2, '#E6E6FA');
+    core.addColorStop(0.5, '#9370DB');
+    core.addColorStop(0.8, '#8A2BE2');
+    core.addColorStop(1, 'rgba(138,43,226,0.1)');
+    ctx.beginPath();
+    ctx.arc(0, 0, r, 0, Math.PI * 2);
+    ctx.fillStyle = core;
+    ctx.fill();
+    const propertyRings = 3;
+    for (let ring = 0; ring < propertyRings; ring++) {
+        ctx.save();
+        ctx.rotate(time * (0.8 + ring * 0.4));
+        const ringRadius = r * (1.1 + ring * 0.5);
+        const cssProperties = ['color', 'margin', 'padding', 'border', 'font', 'display', 'position'];
+        const propCount = 6 + ring * 2;
+        for (let i = 0; i < propCount; i++) {
+            const angle = (i / propCount) * Math.PI * 2;
+            const pulse = Math.sin(time * 5 + i + ring) * 0.5 + 0.5;
+            ctx.save();
+            ctx.rotate(angle);
+            ctx.translate(ringRadius, 0);
+            ctx.globalAlpha = pulse * 0.8;
+            ctx.fillStyle = '#FFFFFF';
+            ctx.font = `${Math.max(6, Math.round(r * 0.06))}px 'Courier New', monospace`;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            const property = cssProperties[(i + ring) % cssProperties.length];
+            ctx.fillText(property, 0, 0);
+            ctx.restore();
+        }
+        ctx.restore();
+    }
+    if (graphicsQuality !== 'low') {
+        const selectors = ['.class', '#id', '::before', '::after', '@media', '@keyframes'];
+        for (let i = 0; i < selectors.length; i++) {
+            const selTime = time * 1.5 + i;
+            const distance = r * (0.6 + Math.sin(selTime) * 0.2);
+            const angle = (i / selectors.length) * Math.PI * 2;
+            const alpha = (Math.sin(selTime * 4) + 1) * 0.4;
+            ctx.save();
+            ctx.rotate(angle);
+            ctx.translate(distance, 0);
+            ctx.rotate(-angle);
+            ctx.globalAlpha = alpha;
+            ctx.fillStyle = '#FFD700';
+            ctx.font = `${Math.max(8, Math.round(r * 0.09))}px 'Courier New', monospace`;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(selectors[i], 0, 0);
+            ctx.restore();
+        }
+    }
+    if (planet._cssTint) {
+        ctx.beginPath();
+        ctx.arc(0, 0, r * 1.8, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(255,182,193,${0.3 + Math.sin(time * 6) * 0.2})`;
+        ctx.fill();
+    }
+    ctx.restore();
+}
+function drawCsharpStar(planet, ctx, radius, camera, graphicsQuality, visualTimeScale) {
+    const r = planet.radius * camera.zoom;
+    const time = Date.now() * 0.001;
+    ctx.save();
+    const core = ctx.createRadialGradient(0, 0, 0, 0, 0, r);
+    core.addColorStop(0, '#FFFFFF');
+    core.addColorStop(0.2, '#ADD8E6');
+    core.addColorStop(0.5, '#0000FF');
+    core.addColorStop(0.8, '#000080');
+    core.addColorStop(1, 'rgba(0,0,128,0.1)');
+    ctx.beginPath();
+    ctx.arc(0, 0, r, 0, Math.PI * 2);
+    ctx.fillStyle = core;
+    ctx.fill();
+    const netLayers = 4;
+    for (let layer = 0; layer < netLayers; layer++) {
+        ctx.save();
+        ctx.rotate(time * (0.5 + layer * 0.3));
+        const layerRadius = r * (0.7 + layer * 0.2);
+        const dotCount = 8 + layer * 4;
+        for (let i = 0; i < dotCount; i++) {
+            const angle = (i / dotCount) * Math.PI * 2;
+            const x = Math.cos(angle) * layerRadius;
+            const y = Math.sin(angle) * layerRadius;
+            ctx.beginPath();
+            ctx.arc(x, y, r * 0.03, 0, Math.PI * 2);
+            ctx.fillStyle = '#FFFFFF';
+            ctx.fill();
+        }
+        ctx.strokeStyle = `rgba(173,216,230,${0.3 - layer * 0.08})`;
+        ctx.lineWidth = 1;
+        for (let i = 0; i < dotCount; i++) {
+            for (let j = i + 1; j < dotCount; j++) {
+                if (Math.random() > 0.7) {
+                    const angle1 = (i / dotCount) * Math.PI * 2;
+                    const angle2 = (j / dotCount) * Math.PI * 2;
+                    ctx.beginPath();
+                    ctx.moveTo(
+                        Math.cos(angle1) * layerRadius,
+                        Math.sin(angle1) * layerRadius
+                    );
+                    ctx.lineTo(
+                        Math.cos(angle2) * layerRadius,
+                        Math.sin(angle2) * layerRadius
+                    );
+                    ctx.stroke();
+                }
+            }
+        }
+        ctx.restore();
+    }
+    if (graphicsQuality !== 'low') {
+        const csharpKeywords = ['public', 'private', 'class', 'void', 'using', 'namespace', 'interface'];
+        const keywordCount = 10;
+        for (let i = 0; i < keywordCount; i++) {
+            const keywordTime = time * 1.8 + i;
+            const radiusVar = r * (1.2 + Math.sin(keywordTime) * 0.4);
+            const angle = (i / keywordCount) * Math.PI * 2;
+            const alpha = (Math.sin(keywordTime * 2) + 1) * 0.6;
+            ctx.save();
+            ctx.rotate(angle);
+            ctx.translate(radiusVar, 0);
+            ctx.rotate(Math.PI/2);
+            ctx.globalAlpha = alpha;
+            ctx.fillStyle = '#FFFFFF';
+            ctx.font = `${Math.max(7, Math.round(r * 0.07))}px 'Courier New', monospace`;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            const keyword = csharpKeywords[i % csharpKeywords.length];
+            ctx.fillText(keyword, 0, 0);
+            ctx.restore();
+        }
+    }
+    if (planet._csharpLocked) {
+        ctx.save();
+        ctx.rotate(time * 2);
+        const lockSize = r * 0.4;
+        ctx.fillStyle = 'rgba(0,0,0,0.7)';
+        ctx.fillRect(-lockSize/2, -lockSize/4, lockSize, lockSize * 0.75);
+        ctx.beginPath();
+        ctx.arc(0, -lockSize/4, lockSize * 0.2, Math.PI, 0);
+        ctx.fillStyle = '#333';
+        ctx.fill();
+        ctx.fillStyle = '#FFD700';
+        ctx.font = `${Math.max(8, Math.round(r * 0.1))}px Arial`;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText('🔒', 0, lockSize * 0.1);
+        ctx.restore();
+    }
+    ctx.restore();
+}
+function drawGmlStar(planet, ctx, radius, camera, graphicsQuality, visualTimeScale) {
+    const r = planet.radius * camera.zoom;
+    const time = Date.now() * 0.001;
+    ctx.save();
+    const core = ctx.createRadialGradient(0, 0, 0, 0, 0, r);
+    core.addColorStop(0, '#FFFFFF');
+    core.addColorStop(0.2, '#98FB98');
+    core.addColorStop(0.5, '#00FF00');
+    core.addColorStop(0.8, '#006400');
+    core.addColorStop(1, 'rgba(0,100,0,0.1)');
+    ctx.beginPath();
+    ctx.arc(0, 0, r, 0, Math.PI * 2);
+    ctx.fillStyle = core;
+    ctx.fill();
+    if (graphicsQuality !== 'low') {
+        const gridSize = Math.max(3, Math.floor(r * 0.1));
+        const pixelSize = r * 0.08;
+        for (let x = -gridSize; x <= gridSize; x++) {
+            for (let y = -gridSize; y <= gridSize; y++) {
+                if (Math.random() > 0.7) {
+                    const pulse = Math.sin(time * 3 + x + y) * 0.5 + 0.5;
+                    ctx.globalAlpha = pulse * 0.6;
+                    ctx.fillStyle = '#00FF00';
+                    ctx.fillRect(
+                        x * pixelSize - pixelSize/2,
+                        y * pixelSize - pixelSize/2,
+                        pixelSize, pixelSize
+                    );
+                }
+            }
+        }
+        ctx.globalAlpha = 1;
+    }
+    const gmlFunctions = ['create', 'draw', 'step', 'keypress', 'mouse', 'sprite', 'object'];
+    const funcCount = 14;
+    for (let i = 0; i < funcCount; i++) {
+        const funcTime = time * 2.5 + i;
+        const spiralRadius = r * (0.8 + (i/funcCount) * 1.2);
+        const angle = (i/funcCount) * Math.PI * 6 + funcTime;
+        const alpha = (Math.sin(funcTime * 3) + 1) * 0.5;
+        if (alpha > 0.3) {
+            const x = Math.cos(angle) * spiralRadius;
+            const y = Math.sin(angle) * spiralRadius;
+            ctx.save();
+            ctx.translate(x, y);
+            ctx.rotate(angle + Math.PI/2);
+            ctx.globalAlpha = alpha;
+            ctx.fillStyle = '#FFFFFF';
+            ctx.font = `${Math.max(6, Math.round(r * 0.06))}px 'Courier New', monospace`;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            const func = gmlFunctions[i % gmlFunctions.length];
+            ctx.fillText(func + '()', 0, 0);
+            ctx.restore();
+        }
+    }
+    if (planet._gmlCreating) {
+        const particleCount = 20;
+        for (let i = 0; i < particleCount; i++) {
+            const particleTime = time * 8 + i;
+            const angle = (i / particleCount) * Math.PI * 2;
+            const distance = r * (1 + Math.sin(particleTime) * 0.5);
+            const size = r * 0.02 * (1 + Math.sin(particleTime * 2));
+            ctx.beginPath();
+            ctx.arc(
+                Math.cos(angle) * distance,
+                Math.sin(angle) * distance,
+                size, 0, Math.PI * 2
+            );
+            ctx.fillStyle = `rgba(0,255,0,${0.5 + Math.sin(particleTime) * 0.3})`;
+            ctx.fill();
+        }
+    }
+    ctx.restore();
+}
+function drawJavaStar(planet, ctx, radius, camera, graphicsQuality, visualTimeScale) {
+    const r = planet.radius * camera.zoom;
+    const time = Date.now() * 0.001;
+    ctx.save();
+    const grad = ctx.createRadialGradient(0, 0, 0, 0, 0, r);
+    grad.addColorStop(0, '#FFFFFF');
+    grad.addColorStop(0.2, '#FFE4B5');
+    grad.addColorStop(0.6, '#FFB74D');
+    grad.addColorStop(1, 'rgba(255,160,50,0.08)');
+    ctx.beginPath();
+    ctx.arc(0, 0, r, 0, Math.PI * 2);
+    ctx.fillStyle = grad;
+    ctx.fill();
+    if (graphicsQuality !== 'low') {
+        const classCount = 8;
+        ctx.fillStyle = '#FFF7E6';
+        ctx.font = `${Math.max(6, Math.round(r * 0.06))}px monospace`;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        for (let i = 0; i < classCount; i++) {
+            const ang = (i / classCount) * Math.PI * 2 + time * 0.4;
+            const dist = r * (1.05 + 0.12 * Math.sin(time + i));
+            ctx.globalAlpha = 0.85 - (i / classCount) * 0.5;
+            ctx.fillText('class', Math.cos(ang) * dist, Math.sin(ang) * dist);
+        }
+        ctx.globalAlpha = 1;
+    }
+    if (planet._javaPulse) {
+        ctx.save();
+        ctx.globalAlpha = 0.6;
+        const pulse = 1 + Math.sin(time * 10) * 0.08;
+        ctx.beginPath();
+        ctx.arc(0, 0, r * (1.5 * pulse), 0, Math.PI * 2);
+        ctx.fillStyle = 'rgba(255,230,180,0.14)';
+        ctx.fill();
+        ctx.restore();
+    }
+    ctx.restore();
+}
+function drawPhpStar(planet, ctx, radius, camera, graphicsQuality, visualTimeScale) {
+    const r = planet.radius * camera.zoom;
+    const time = Date.now() * 0.001;
+    ctx.save();
+    const grad = ctx.createRadialGradient(0, 0, 0, 0, 0, r);
+    grad.addColorStop(0, '#FFFFFF');
+    grad.addColorStop(0.25, '#E0E0FF');
+    grad.addColorStop(0.6, '#9FA8DA');
+    grad.addColorStop(1, 'rgba(150,150,255,0.06)');
+    ctx.beginPath();
+    ctx.arc(0, 0, r, 0, Math.PI * 2);
+    ctx.fillStyle = grad;
+    ctx.fill();
+    if (graphicsQuality !== 'low') {
+        const ghosts = 6;
+        ctx.fillStyle = '#FFFFFF';
+        ctx.font = `${Math.max(6, Math.round(r * 0.05))}px monospace`;
+        for (let i = 0; i < ghosts; i++) {
+            const ang = (i / ghosts) * Math.PI * 2 + time * 0.6;
+            const dist = r * (1.1 + 0.08 * Math.cos(time * 2 + i));
+            ctx.globalAlpha = 0.7 - (i / ghosts) * 0.5;
+            ctx.fillText('echo', Math.cos(ang) * dist, Math.sin(ang) * dist);
+        }
+        ctx.globalAlpha = 1;
+    }
+    if (planet._phpFlicker) {
+        ctx.save();
+        ctx.globalAlpha = 0.5;
+        ctx.beginPath();
+        ctx.arc(0, 0, r * 1.6, 0, Math.PI * 2);
+        ctx.fillStyle = 'rgba(200,200,255,0.12)';
+        ctx.fill();
+        ctx.restore();
+    }
+    ctx.restore();
+}
+function drawRustStar(planet, ctx, radius, camera, graphicsQuality, visualTimeScale) {
+    const r = planet.radius * camera.zoom;
+    const time = Date.now() * 0.001;
+    ctx.save();
+    const grad = ctx.createRadialGradient(0, 0, 0, 0, 0, r);
+    grad.addColorStop(0, '#FFFDF6');
+    grad.addColorStop(0.3, '#FFDAB9');
+    grad.addColorStop(0.7, '#D2691E');
+    grad.addColorStop(1, 'rgba(210,120,40,0.08)');
+    ctx.beginPath();
+    ctx.arc(0, 0, r, 0, Math.PI * 2);
+    ctx.fillStyle = grad;
+    ctx.fill();
+    if (graphicsQuality !== 'low') {
+        for (let i = 0; i < 12; i++) {
+            const ang = (i / 12) * Math.PI * 2 + time * 1.2;
+            const dist = r * (0.9 + Math.random() * 0.6);
+            ctx.beginPath();
+            ctx.arc(Math.cos(ang) * dist, Math.sin(ang) * dist, Math.max(0.6, r * 0.03), 0, Math.PI * 2);
+            ctx.fillStyle = `rgba(180,80,30,${0.4 + Math.random() * 0.6})`;
+            ctx.fill();
+        }
+    }
+    if (planet._rustSpark) {
+        ctx.save();
+        ctx.globalAlpha = 0.9;
+        ctx.beginPath();
+        ctx.arc(0, 0, r * 1.2, 0, Math.PI * 2);
+        ctx.strokeStyle = 'rgba(255,200,150,0.5)';
+        ctx.lineWidth = Math.max(1, r * 0.02);
+        ctx.stroke();
+        ctx.restore();
+    }
+    ctx.restore();
+}
+function drawGoStar(planet, ctx, radius, camera, graphicsQuality, visualTimeScale) {
+    const r = planet.radius * camera.zoom;
+    const time = Date.now() * 0.001;
+    ctx.save();
+    const grad = ctx.createRadialGradient(0, 0, 0, 0, 0, r);
+    grad.addColorStop(0, '#FFFFFF');
+    grad.addColorStop(0.25, '#DFFFD6');
+    grad.addColorStop(0.6, '#A6F78F');
+    grad.addColorStop(1, 'rgba(120,220,120,0.06)');
+    ctx.beginPath();
+    ctx.arc(0, 0, r, 0, Math.PI * 2);
+    ctx.fillStyle = grad;
+    ctx.fill();
+    if (graphicsQuality !== 'low') {
+        const spokes = 6;
+        ctx.strokeStyle = 'rgba(255,255,255,0.5)';
+        ctx.lineWidth = Math.max(1, r * 0.01);
+        for (let i = 0; i < spokes; i++) {
+            const ang = (i / spokes) * Math.PI * 2 + time * 2;
+            ctx.beginPath();
+            ctx.moveTo(Math.cos(ang) * r * 0.2, Math.sin(ang) * r * 0.2);
+            ctx.lineTo(Math.cos(ang) * r * 1.1, Math.sin(ang) * r * 1.1);
+            ctx.stroke();
+        }
+    }
+    if (planet._goBurst) {
+        ctx.save();
+        ctx.globalAlpha = 0.5;
+        ctx.beginPath();
+        ctx.arc(0, 0, r * 1.4, 0, Math.PI * 2);
+        ctx.fillStyle = 'rgba(200,255,200,0.08)';
+        ctx.fill();
+        ctx.restore();
+    }
+    ctx.restore();
+}
+function drawKotlinStar(planet, ctx, radius, camera, graphicsQuality, visualTimeScale) {
+    const r = planet.radius * camera.zoom;
+    const time = Date.now() * 0.001;
+    ctx.save();
+    const grad = ctx.createRadialGradient(0, 0, 0, 0, 0, r);
+    grad.addColorStop(0, '#FFFFFF');
+    grad.addColorStop(0.25, '#FFEFD5');
+    grad.addColorStop(0.6, '#FFD080');
+    grad.addColorStop(1, 'rgba(255,190,120,0.06)');
+    ctx.beginPath(); ctx.arc(0,0,r,0,Math.PI*2); ctx.fillStyle = grad; ctx.fill();
+    if (graphicsQuality !== 'low') {
+        ctx.fillStyle = '#FFF8EE';
+        ctx.font = `${Math.max(6, Math.round(r * 0.06))}px monospace`;
+        ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+        const count = 8;
+        for (let i=0;i<count;i++){
+            const ang = (i/count)*Math.PI*2 + time*0.3;
+            const dist = r*(1.05 + 0.1*Math.sin(time + i));
+            ctx.globalAlpha = 0.85 - i*0.08;
+            ctx.fillText('suspend', Math.cos(ang)*dist, Math.sin(ang)*dist);
+        }
+        ctx.globalAlpha = 1;
+    }
+    if (planet._kotlinPulse) {
+        ctx.save(); ctx.globalAlpha = 0.6; ctx.beginPath(); ctx.arc(0,0,r*1.6,0,Math.PI*2);
+        ctx.fillStyle = 'rgba(255,235,200,0.12)'; ctx.fill(); ctx.restore();
+    }
+    ctx.restore();
+}
+function drawSwiftStar(planet, ctx, radius, camera, graphicsQuality, visualTimeScale) {
+    const r = planet.radius * camera.zoom; const time = Date.now() * 0.001;
+    ctx.save();
+    const grad = ctx.createRadialGradient(0,0,0,0,0,r);
+    grad.addColorStop(0,'#FFF'); grad.addColorStop(0.25,'#FFE6F0'); grad.addColorStop(0.6,'#FFB6C1'); grad.addColorStop(1,'rgba(255,180,200,0.06)');
+    ctx.beginPath(); ctx.arc(0,0,r,0,Math.PI*2); ctx.fillStyle = grad; ctx.fill();
+    if (graphicsQuality !== 'low'){
+        const streaks = 10; ctx.strokeStyle = 'rgba(255,255,255,0.6)'; ctx.lineWidth = Math.max(1,r*0.01);
+        for (let i=0;i<streaks;i++){ const ang = (i/streaks)*Math.PI*2 + time*2; ctx.beginPath(); ctx.moveTo(Math.cos(ang)*r*0.2,Math.sin(ang)*r*0.2); ctx.lineTo(Math.cos(ang)*r*1.15,Math.sin(ang)*r*1.15); ctx.stroke(); }
+    }
+    if (planet._swiftFlash){ ctx.save(); ctx.globalAlpha = 0.5; ctx.beginPath(); ctx.arc(0,0,r*1.4,0,Math.PI*2); ctx.fillStyle='rgba(255,230,240,0.12)'; ctx.fill(); ctx.restore(); }
+    ctx.restore();
+}
+function drawTsStar(planet, ctx, radius, camera, graphicsQuality, visualTimeScale) {
+    const r = planet.radius * camera.zoom; const time = Date.now()*0.001;
+    ctx.save();
+    const grad = ctx.createRadialGradient(0,0,0,0,0,r);
+    grad.addColorStop(0,'#FFFFFF'); grad.addColorStop(0.25,'#E8F7FF'); grad.addColorStop(0.6,'#BEE6FF'); grad.addColorStop(1,'rgba(160,220,255,0.06)');
+    ctx.beginPath(); ctx.arc(0,0,r,0,Math.PI*2); ctx.fillStyle = grad; ctx.fill();
+    if (graphicsQuality !== 'low'){
+        ctx.fillStyle = '#FFFFFF'; ctx.font = `${Math.max(6, Math.round(r * 0.06))}px monospace`;
+        const labels = ['type','interface','const','let'];
+        for (let i=0;i<6;i++){ const ang = (i/6)*Math.PI*2 + time*0.4; const dist = r*(1.05 + 0.08*Math.sin(time + i)); ctx.globalAlpha = 0.85 - i*0.1; ctx.fillText(labels[i%labels.length], Math.cos(ang)*dist, Math.sin(ang)*dist); }
+        ctx.globalAlpha = 1;
+    }
+    if (planet._tsPulse){ ctx.save(); ctx.globalAlpha = 0.6; ctx.beginPath(); ctx.arc(0,0,r*1.5,0,Math.PI*2); ctx.fillStyle='rgba(200,235,255,0.12)'; ctx.fill(); ctx.restore(); }
+    ctx.restore();
+}
+function drawLuaStar(planet, ctx, radius, camera, graphicsQuality, visualTimeScale) {
+    const r = planet.radius * camera.zoom; const time = Date.now()*0.001;
+    ctx.save(); const grad = ctx.createRadialGradient(0,0,0,0,0,r);
+    grad.addColorStop(0,'#FFFFFF'); grad.addColorStop(0.25,'#FFF7E6'); grad.addColorStop(0.6,'#FFE4B5'); grad.addColorStop(1,'rgba(255,230,170,0.06)');
+    ctx.beginPath(); ctx.arc(0,0,r,0,Math.PI*2); ctx.fillStyle = grad; ctx.fill();
+    if (graphicsQuality !== 'low'){
+        const loops = 10; ctx.fillStyle='#FFFFFF'; ctx.font = `${Math.max(6, Math.round(r * 0.05))}px monospace`;
+        for (let i=0;i<loops;i++){ const ang = (i/loops)*Math.PI*2 + time*0.5; const dist = r*(1.05 + 0.06*Math.cos(time + i)); ctx.globalAlpha = 0.8 - i*0.06; ctx.fillText('lua', Math.cos(ang)*dist, Math.sin(ang)*dist); }
+        ctx.globalAlpha = 1;
+    }
+    if (planet._luaSwirl){ ctx.save(); ctx.globalAlpha=0.5; ctx.beginPath(); ctx.arc(0,0,r*1.3,0,Math.PI*2); ctx.strokeStyle='rgba(255,210,150,0.12)'; ctx.lineWidth= Math.max(1,r*0.02); ctx.stroke(); ctx.restore(); }
+    ctx.restore();
+}
+function drawRubyStar(planet, ctx, radius, camera, graphicsQuality, visualTimeScale) {
+    const r = planet.radius * camera.zoom; const time = Date.now()*0.001;
+    ctx.save(); const grad = ctx.createRadialGradient(0,0,0,0,0,r);
+    grad.addColorStop(0,'#FFFFFF'); grad.addColorStop(0.25,'#FFECEC'); grad.addColorStop(0.6,'#FFC4C4'); grad.addColorStop(1,'rgba(255,120,120,0.06)');
+    ctx.beginPath(); ctx.arc(0,0,r,0,Math.PI*2); ctx.fillStyle = grad; ctx.fill();
+    if (graphicsQuality !== 'low'){
+        for (let i=0;i<10;i++){ const ang=(i/10)*Math.PI*2 + time*0.7; ctx.beginPath(); ctx.arc(Math.cos(ang)*r*(0.9+Math.random()*0.4), Math.sin(ang)*r*(0.9+Math.random()*0.4), Math.max(0.5,r*0.03), 0, Math.PI*2); ctx.fillStyle = `rgba(255,80,80,${0.3+Math.random()*0.6})`; ctx.fill(); }
+    }
+    if (planet._rubyGlow){ ctx.save(); ctx.globalAlpha=0.7; ctx.beginPath(); ctx.arc(0,0,r*1.5,0,Math.PI*2); ctx.fillStyle='rgba(255,200,200,0.12)'; ctx.fill(); ctx.restore(); }
+    ctx.restore();
+}
+function drawDartStar(planet, ctx, radius, camera, graphicsQuality, visualTimeScale) {
+    const r = planet.radius * camera.zoom; const time = Date.now()*0.001;
+    ctx.save(); const grad = ctx.createRadialGradient(0,0,0,0,0,r);
+    grad.addColorStop(0,'#FFFFFF'); grad.addColorStop(0.25,'#F7FFF0'); grad.addColorStop(0.6,'#E8FFD0'); grad.addColorStop(1,'rgba(200,255,180,0.06)');
+    ctx.beginPath(); ctx.arc(0,0,r,0,Math.PI*2); ctx.fillStyle = grad; ctx.fill();
+    if (graphicsQuality !== 'low'){
+        ctx.strokeStyle = 'rgba(255,255,255,0.6)'; ctx.lineWidth = Math.max(1, r*0.01);
+        for (let i=0;i<6;i++){ const ang=(i/6)*Math.PI*2 + time*2; ctx.beginPath(); ctx.moveTo(Math.cos(ang)*r*0.3, Math.sin(ang)*r*0.3); ctx.lineTo(Math.cos(ang)*r*1.15, Math.sin(ang)*r*1.15); ctx.stroke(); }
+    }
+    if (planet._dartBurst){ ctx.save(); ctx.globalAlpha=0.6; ctx.beginPath(); ctx.arc(0,0,r*1.4,0,Math.PI*2); ctx.fillStyle='rgba(220,255,200,0.08)'; ctx.fill(); ctx.restore(); }
+    ctx.restore();
+}
+function drawHtmlStar(planet, ctx, radius, camera, graphicsQuality, visualTimeScale) {
+    const r = planet.radius * camera.zoom;
+    const time = Date.now() * 0.001;
+    ctx.save();
+    const core = ctx.createRadialGradient(0,0,0,0,0,r);
+    core.addColorStop(0,'#FFFFFF'); core.addColorStop(0.25,'#FFEDD8'); core.addColorStop(0.6,'#FFD1B3'); core.addColorStop(1,'rgba(255,200,150,0.06)');
+    ctx.beginPath(); ctx.arc(0,0,r,0,Math.PI*2); ctx.fillStyle = core; ctx.fill();
+    if (graphicsQuality !== 'low'){
+        const tags = ['<div>','<span>','<h1>','</>','<a>','<p>'];
+        ctx.fillStyle = '#FFFFFF'; ctx.font = `${Math.max(7, Math.round(r * 0.07))}px monospace`;
+        for (let i=0;i<8;i++){
+            const ang = (i/8)*Math.PI*2 + time*0.6;
+            const dist = r*(1.05 + 0.08*Math.sin(time + i));
+            ctx.globalAlpha = 0.85 - i*0.08;
+            ctx.fillText(tags[i%tags.length], Math.cos(ang)*dist, Math.sin(ang)*dist);
+        }
+        ctx.globalAlpha = 1;
+    }
+    if (planet._htmlPulse){ ctx.save(); ctx.globalAlpha=0.6; ctx.beginPath(); ctx.arc(0,0,r*1.5,0,Math.PI*2); ctx.fillStyle='rgba(255,230,200,0.12)'; ctx.fill(); ctx.restore(); }
+    ctx.restore();
+}
+function drawJsonStar(planet, ctx, radius, camera, graphicsQuality, visualTimeScale) {
+    const r = planet.radius * camera.zoom;
+    const time = Date.now() * 0.001;
+    ctx.save();
+    const core = ctx.createRadialGradient(0,0,0,0,0,r);
+    core.addColorStop(0,'#FFFFFF'); core.addColorStop(0.25,'#F0FFF4'); core.addColorStop(0.6,'#DFFFE8'); core.addColorStop(1,'rgba(200,255,230,0.06)');
+    ctx.beginPath(); ctx.arc(0,0,r,0,Math.PI*2); ctx.fillStyle = core; ctx.fill();
+    if (graphicsQuality !== 'low'){
+        const bits = ['{','}','[',']',':',','];
+        ctx.fillStyle = '#004466'; ctx.font = `${Math.max(7, Math.round(r * 0.06))}px monospace`;
+        for (let i=0;i<10;i++){
+            const ang = (i/10)*Math.PI*2 + time*0.4;
+            const dist = r*(1.05 + 0.06*Math.cos(time + i));
+            ctx.globalAlpha = 0.8 - i*0.06;
+            ctx.fillText(bits[i%bits.length], Math.cos(ang)*dist, Math.sin(ang)*dist);
+        }
+        ctx.globalAlpha = 1;
+    }
+    if (planet._jsonPulse){ ctx.save(); ctx.globalAlpha=0.5; ctx.beginPath(); ctx.arc(0,0,r*1.4,0,Math.PI*2); ctx.fillStyle='rgba(200,255,230,0.12)'; ctx.fill(); ctx.restore(); }
+    ctx.restore();
+}
+function drawAssemblyStar(planet, ctx, radius, camera, graphicsQuality, visualTimeScale) {
+    const r = planet.radius * camera.zoom;
+    const time = Date.now() * 0.001;
+    ctx.save();
+    const core = ctx.createRadialGradient(0,0,0,0,0,r);
+    core.addColorStop(0,'#FFFFFF'); core.addColorStop(0.25,'#F5F5F5'); core.addColorStop(0.6,'#E8E8E8'); core.addColorStop(1,'rgba(200,200,200,0.06)');
+    ctx.beginPath(); ctx.arc(0,0,r,0,Math.PI*2); ctx.fillStyle = core; ctx.fill();
+    if (graphicsQuality !== 'low'){
+        ctx.strokeStyle = 'rgba(0,0,0,0.6)'; ctx.lineWidth = Math.max(1, r*0.008);
+        for (let i=0;i<12;i++){
+            const ang = (i/12)*Math.PI*2 + time*2.5;
+            ctx.beginPath(); ctx.moveTo(Math.cos(ang)*r*0.4, Math.sin(ang)*r*0.4); ctx.lineTo(Math.cos(ang)*r*1.05, Math.sin(ang)*r*1.05); ctx.stroke();
+        }
+        ctx.fillStyle = '#000000'; ctx.font = `${Math.max(6, Math.round(r * 0.06))}px monospace`;
+        for (let i=0;i<6;i++){ const ang = (i/6)*Math.PI*2 + time*0.9; const dist = r*(0.8 + Math.sin(time + i)*0.08); ctx.globalAlpha = 0.9 - i*0.1; ctx.fillText((Math.random()*255|0).toString(16).toUpperCase().padStart(2,'0'), Math.cos(ang)*dist, Math.sin(ang)*dist); }
+        ctx.globalAlpha = 1;
+    }
+    if (planet._assemblyBurst){ ctx.save(); ctx.globalAlpha=0.6; ctx.beginPath(); ctx.arc(0,0,r*1.45,0,Math.PI*2); ctx.fillStyle='rgba(220,220,220,0.08)'; ctx.fill(); ctx.restore(); }
+    ctx.restore();
+}
+function drawSqlStar(planet, ctx, radius, camera, graphicsQuality, visualTimeScale) {
+    const r = planet.radius * camera.zoom;
+    const time = Date.now() * 0.001;
+    ctx.save();
+    const core = ctx.createRadialGradient(0,0,0,0,0,r);
+    core.addColorStop(0,'#FFFFFF'); core.addColorStop(0.25,'#F8F9FA'); core.addColorStop(0.6,'#E9F0F7'); core.addColorStop(1,'rgba(200,220,240,0.06)');
+    ctx.beginPath(); ctx.arc(0,0,r,0,Math.PI*2); ctx.fillStyle = core; ctx.fill();
+    if (graphicsQuality !== 'low'){
+        ctx.strokeStyle = 'rgba(10,40,80,0.6)';
+        ctx.lineWidth = Math.max(1, r*0.006);
+        const rows = 4;
+        const cols = 6;
+        for (let i=0;i<rows;i++){
+            const ry = (i/(rows-1) - 0.5) * r * 1.2;
+            ctx.beginPath();
+            ctx.moveTo(-r*0.9, ry);
+            ctx.lineTo(r*0.9, ry);
+            ctx.stroke();
+        }
+        for (let j=0;j<cols;j++){
+            const rx = (j/(cols-1) - 0.5) * r * 1.6;
+            ctx.beginPath();
+            ctx.moveTo(rx, -r*0.9);
+            ctx.lineTo(rx, r*0.9);
+            ctx.stroke();
+        }
+        ctx.fillStyle = 'rgba(255,255,255,0.8)';
+        ctx.font = `${Math.max(6, Math.round(r * 0.05))}px monospace`;
+        for (let i=0;i<rows;i++){
+            for (let j=0;j<cols;j++){
+                if (Math.random() > 0.6) continue;
+                const rx = (j/(cols-1) - 0.5) * r * 1.6;
+                const ry = (i/(rows-1) - 0.5) * r * 1.2;
+                ctx.globalAlpha = 0.6 + 0.4 * Math.sin(time*3 + i + j);
+                ctx.fillText('1', rx - r*0.02, ry + r*0.02);
+            }
+        }
+        ctx.globalAlpha = 1;
+    }
+    if (planet._sqlPulse){ ctx.save(); ctx.globalAlpha=0.6; ctx.beginPath(); ctx.arc(0,0,r*1.4,0,Math.PI*2); ctx.fillStyle='rgba(200,230,255,0.12)'; ctx.fill(); ctx.restore(); }
+    ctx.restore();
 }
 function drawMedusaStar(planet, ctx, radius, camera, graphicsQuality, visualTimeScale) {
     const medusaRadius = planet.radius * camera.zoom;
@@ -2569,6 +3565,7 @@ function drawNitricStar(planet, ctx, radius, camera, graphicsQuality, visualTime
         drawNitricExplosion(nitricRadius, ctx, explosionProgress, time, planet);
     }
     drawNitricUltimateOutline(nitricRadius, ctx, explosionIntensity);
+    if (graphicsQuality === 'high') drawStandardBoost(planet, ctx, nitricRadius, time);
     ctx.restore();
 }
 function drawNitricSuperCore(radius, ctx, time, intensity) {
@@ -3341,6 +4338,15 @@ function drawJet(length, startWidth, endWidth, colorStops) {
         ctx.stroke();
     }
 }
+function hexToRgba(hex, alpha) {
+    if (!hex) return `rgba(255,255,255,${alpha})`;
+    let c = hex.replace('#','');
+    if (c.length === 3) c = c.split('').map(ch => ch+ch).join('');
+    const r = parseInt(c.substring(0,2),16);
+    const g = parseInt(c.substring(2,4),16);
+    const b = parseInt(c.substring(4,6),16);
+    return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+}
 function drawChronosStar(planet, ctx, radius, camera, graphicsQuality, visualTimeScale) {
     const chronosRadius = planet.radius * camera.zoom;
     const time = Date.now() * 0.001;
@@ -3390,57 +4396,139 @@ function drawChronosStar(planet, ctx, radius, camera, graphicsQuality, visualTim
         }
         ctx.globalAlpha = 1;
     }
+    try {
+        const now = Date.now();
+        if (planet._chronosVisualColor && planet._chronosVisualUntil && now <= planet._chronosVisualUntil) {
+            const remaining = planet._chronosVisualUntil - now;
+            const total = Math.max(200, (planet._chronosVisualDuration || 1000));
+            const t = Math.max(0, Math.min(1, remaining / total));
+            ctx.globalCompositeOperation = 'lighter';
+            const overlay = ctx.createRadialGradient(0, 0, 0, 0, 0, chronosRadius * 1.2);
+            overlay.addColorStop(0, hexToRgba(planet._chronosVisualColor, 0.7 * t));
+            overlay.addColorStop(1, hexToRgba(planet._chronosVisualColor, 0));
+            ctx.beginPath();
+            ctx.arc(0, 0, chronosRadius * 1.2, 0, Math.PI * 2);
+            ctx.fillStyle = overlay;
+            ctx.fill();
+            ctx.globalCompositeOperation = 'source-over';
+        }
+    } catch (e) { }
 }
 function drawPhantomStar(planet, ctx, radius, camera, graphicsQuality, visualTimeScale) {
     const phantomRadius = planet.radius * camera.zoom;
-    const time = Date.now() * 0.003;
-    const phase = Math.sin(time) * 0.5 + 0.5;
-    ctx.globalAlpha = 0.2 + phase * 0.8;
-    const phantomGradient = ctx.createRadialGradient(0, 0, 0, 0, 0, phantomRadius);
-    phantomGradient.addColorStop(0, '#DDA0DD');
+    const time = Date.now() * 0.002;
+    const phase = (Math.sin(time * 1.5) + Math.sin(time * 0.7)) * 0.25 + 0.5;
+    const ghostAlpha = 0.15 + phase * 0.7;
+    ctx.save();
+    if (graphicsQuality !== 'low') {
+        const auraGradient = ctx.createRadialGradient(0, 0, phantomRadius * 0.5, 0, 0, phantomRadius * 3);
+        auraGradient.addColorStop(0, 'rgba(148, 0, 211, 0.1)');
+        auraGradient.addColorStop(0.3, 'rgba(75, 0, 130, 0.05)');
+        auraGradient.addColorStop(1, 'transparent');
+        ctx.globalAlpha = 0.3;
+        ctx.beginPath();
+        ctx.arc(0, 0, phantomRadius * 3, 0, Math.PI * 2);
+        ctx.fillStyle = auraGradient;
+        ctx.fill();
+        ctx.globalAlpha = ghostAlpha;
+    }
+    const corePulse = 1 + Math.sin(time * 3) * 0.4;
+    const phantomGradient = ctx.createRadialGradient(0, 0, 0, 0, 0, phantomRadius * corePulse);
+    phantomGradient.addColorStop(0, '#EE82EE');
+    phantomGradient.addColorStop(0.2, '#DA70D6');
     phantomGradient.addColorStop(0.5, '#9400D3');
-    phantomGradient.addColorStop(1, '#4B0082');
+    phantomGradient.addColorStop(0.8, '#4B0082');
+    phantomGradient.addColorStop(1, '#2E004F');
     ctx.beginPath();
-    ctx.arc(0, 0, phantomRadius, 0, Math.PI * 2);
+    ctx.arc(0, 0, phantomRadius * corePulse, 0, Math.PI * 2);
     ctx.fillStyle = phantomGradient;
     ctx.fill();
-    for (let i = 0; i < 12; i++) {
-        const angle = (i / 12) * Math.PI * 2 + time;
-        const spectralLength = phantomRadius * (2 + Math.sin(time * 4 + i) * 1.5);
-        const spectralWidth = phantomRadius * 0.1;
-        ctx.save();
-        ctx.rotate(angle);
-        const spectralGradient = ctx.createLinearGradient(0, 0, 0, -spectralLength);
-        spectralGradient.addColorStop(0, `rgba(221, 160, 221, ${0.8})`);
-        spectralGradient.addColorStop(0.7, `rgba(148, 0, 211, ${0.4})`);
-        spectralGradient.addColorStop(1, 'transparent');
-        ctx.beginPath();
-        ctx.moveTo(-spectralWidth/2, 0);
-        ctx.lineTo(spectralWidth/2, 0);
-        ctx.lineTo(spectralWidth/4, -spectralLength);
-        ctx.lineTo(-spectralWidth/4, -spectralLength);
-        ctx.closePath();
-        ctx.fillStyle = spectralGradient;
-        ctx.fill();
-        ctx.restore();
-    }
     if (graphicsQuality !== 'low') {
-        ctx.globalAlpha = 0.6;
-        for (let i = 0; i < 8; i++) {
-            const fragmentAngle = (i / 8) * Math.PI * 2 + time * 0.5;
-            const fragmentDistance = phantomRadius * (1.2 + Math.sin(time * 3 + i) * 0.3);
-            const fragmentSize = phantomRadius * 0.3;
+        ctx.globalAlpha = 0.8;
+        const fragments = 16;
+        for (let i = 0; i < fragments; i++) {
+            const fragmentTime = time * 2 + i * 0.4;
+            const fragmentAngle = (i / fragments) * Math.PI * 2 + fragmentTime * 0.5;
+            const fragmentDistance = phantomRadius * (1.2 + Math.sin(fragmentTime * 1.3) * 0.6);
+            const fragmentSize = phantomRadius * 0.15 * (0.7 + Math.sin(fragmentTime * 2) * 0.5);
+            const fragmentAlpha = (Math.sin(fragmentTime * 3) + 1) * 0.4;
+            ctx.globalAlpha = fragmentAlpha * 0.8;
             ctx.save();
             ctx.rotate(fragmentAngle);
             ctx.translate(fragmentDistance, 0);
             ctx.beginPath();
-            ctx.arc(0, 0, fragmentSize, 0, Math.PI * 2);
-            ctx.fillStyle = `rgba(148, 0, 211, ${0.5})`;
+            for (let j = 0; j < 8; j++) {
+                const angle = (j / 8) * Math.PI * 2;
+                const irregularity = 0.3 + Math.sin(fragmentTime + j) * 0.2;
+                const dist = fragmentSize * (0.7 + Math.sin(angle * 3 + fragmentTime) * irregularity);
+                const x = Math.cos(angle) * dist;
+                const y = Math.sin(angle) * dist;
+                if (j === 0) ctx.moveTo(x, y);
+                else ctx.lineTo(x, y);
+            }
+            ctx.closePath();
+            const fragmentGradient = ctx.createRadialGradient(0, 0, 0, 0, 0, fragmentSize);
+            fragmentGradient.addColorStop(0, '#FFFFFF');
+            fragmentGradient.addColorStop(0.3, '#DDA0DD');
+            fragmentGradient.addColorStop(1, '#9400D3');
+            ctx.fillStyle = fragmentGradient;
+            ctx.fill();
+            ctx.beginPath();
+            ctx.arc(0, 0, fragmentSize * 0.4, 0, Math.PI * 2);
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.6)';
             ctx.fill();
             ctx.restore();
         }
     }
+    ctx.globalAlpha = ghostAlpha * 0.7;
+    const spectralRays = 24;
+    for (let i = 0; i < spectralRays; i++) {
+        const rayAngle = (i / spectralRays) * Math.PI * 2 + time;
+        const rayPulse = Math.sin(time * 4 + i) * 0.5 + 0.5;
+        const rayLength = phantomRadius * (4 + rayPulse * 3);
+        const rayWidth = phantomRadius * 0.12;
+        ctx.save();
+        ctx.rotate(rayAngle);
+        const rayGradient = ctx.createLinearGradient(0, 0, 0, -rayLength);
+        rayGradient.addColorStop(0, `rgba(238, 130, 238, ${0.9})`);
+        rayGradient.addColorStop(0.3, `rgba(218, 112, 214, ${0.7})`);
+        rayGradient.addColorStop(0.6, `rgba(148, 0, 211, ${0.5})`);
+        rayGradient.addColorStop(1, 'transparent');
+        ctx.beginPath();
+        ctx.moveTo(-rayWidth/2, 0);
+        ctx.lineTo(rayWidth/2, 0);
+        ctx.lineTo(rayWidth/4, -rayLength);
+        ctx.lineTo(-rayWidth/4, -rayLength);
+        ctx.closePath();
+        ctx.fillStyle = rayGradient;
+        ctx.fill();
+        ctx.restore();
+    }
+    ctx.globalAlpha = ghostAlpha * 0.4;
+    for (let i = 0; i < 4; i++) {
+        const ringSize = phantomRadius * (1.8 + i * 0.7);
+        const ringPulse = Math.sin(time * 2 + i) * 0.3 + 0.8;
+        const ringAlpha = 0.6 - i * 0.15;
+        ctx.beginPath();
+        ctx.arc(0, 0, ringSize * ringPulse, 0, Math.PI * 2);
+        ctx.strokeStyle = `rgba(218, 112, 214, ${ringAlpha})`;
+        ctx.lineWidth = 2;
+        ctx.setLineDash([10, 5]);
+        ctx.stroke();
+        const energyPoints = 8;
+        ctx.fillStyle = `rgba(255, 255, 255, ${ringAlpha})`;
+        for (let j = 0; j < energyPoints; j++) {
+            const pointAngle = (j / energyPoints) * Math.PI * 2 + time;
+            const pointX = Math.cos(pointAngle) * ringSize * ringPulse;
+            const pointY = Math.sin(pointAngle) * ringSize * ringPulse;
+            ctx.beginPath();
+            ctx.arc(pointX, pointY, phantomRadius * 0.05, 0, Math.PI * 2);
+            ctx.fill();
+        }
+    }
+    ctx.setLineDash([]);
     ctx.globalAlpha = 1;
+    ctx.restore();
 }
 function drawVortexStar(planet, ctx, radius, camera, graphicsQuality, visualTimeScale) {
     const vortexRadius = planet.radius * camera.zoom;
@@ -3736,31 +4824,68 @@ function drawQuantumFoamStar(planet, ctx, radius, camera, graphicsQuality, visua
     ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
     ctx.lineWidth = 2;
     ctx.stroke();
+    try {
+        const now = Date.now();
+        if (planet._quantumEjectUntil && now <= planet._quantumEjectUntil) {
+            const jetAngles = planet._quantumJetAngles || [ -Math.PI/6, Math.PI/6 ];
+            const jetLen = foamRadius * 1.6;
+            const startW = Math.max(6, foamRadius * 0.25);
+            const endW = Math.max(2, foamRadius * 0.05);
+            jetAngles.forEach(a => {
+                ctx.save();
+                ctx.rotate(a);
+                const stops = [
+                    { position: 0, color: 'rgba(255,255,180,0.9)' },
+                    { position: 0.5, color: 'rgba(255,200,80,0.6)' },
+                    { position: 1, color: 'rgba(255,120,20,0)' }
+                ];
+                drawJet(jetLen, startW, endW, stops);
+                ctx.restore();
+            });
+        }
+    } catch (e) {}
 }
 function drawPrismStar(planet, ctx, radius, camera, graphicsQuality, visualTimeScale) {
     const prismRadius = planet.radius * camera.zoom;
-    const time = Date.now() * 0.002;
-    const prismGradient = ctx.createRadialGradient(0, 0, 0, 0, 0, prismRadius);
-    prismGradient.addColorStop(0, '#FFD700');
-    prismGradient.addColorStop(0.3, '#FF8C00');
-    prismGradient.addColorStop(0.7, '#FF4500');
-    prismGradient.addColorStop(1, '#DC143C');
+    const time = Date.now() * 0.003;
+    ctx.save();
+    const corePulse = 1 + Math.sin(time * 4) * 0.2;
+    const prismGradient = ctx.createRadialGradient(0, 0, 0, 0, 0, prismRadius * corePulse);
+    prismGradient.addColorStop(0, '#FFFFFF');
+    prismGradient.addColorStop(0.1, '#FFFF00');
+    prismGradient.addColorStop(0.3, '#FFA500');
+    prismGradient.addColorStop(0.6, '#FF4500');
+    prismGradient.addColorStop(0.9, '#DC143C');
+    prismGradient.addColorStop(1, '#8B0000');
     ctx.beginPath();
-    ctx.arc(0, 0, prismRadius, 0, Math.PI * 2);
+    ctx.arc(0, 0, prismRadius * corePulse, 0, Math.PI * 2);
     ctx.fillStyle = prismGradient;
     ctx.fill();
-    const spectrum = ['#FF0000', '#FF7F00', '#FFFF00', '#00FF00', '#0000FF', '#4B0082', '#9400D3'];
-    const rays = 14;
+    const spectrum = [
+        '#FF0000', '#FF3300', '#FF6600', '#FF9900', '#FFCC00', 
+        '#FFFF00', '#CCFF00', '#99FF00', '#66FF00', '#33FF00',
+        '#00FF00', '#00FF33', '#00FF66', '#00FF99', '#00FFCC',
+        '#00FFFF', '#00CCFF', '#0099FF', '#0066FF', '#0033FF',
+        '#0000FF', '#3300FF', '#6600FF', '#9900FF', '#CC00FF',
+        '#FF00FF', '#FF00CC', '#FF0099', '#FF0066', '#FF0033'
+    ];
+    const rays = 36;
+    ctx.globalAlpha = 0.9;
     for (let i = 0; i < rays; i++) {
-        const angle = (i / rays) * Math.PI * 2 + time;
-        const colorIndex = i % spectrum.length;
-        const rayLength = prismRadius * 4;
-        const rayWidth = Math.PI / 20;
+        const rayAngle = (i / rays) * Math.PI * 2 + time;
+        const colorIndex = Math.floor((i / rays) * spectrum.length);
+        const nextColorIndex = (colorIndex + 1) % spectrum.length;
+        const blendFactor = ((i / rays) * spectrum.length) % 1;
+        const currentColor = spectrum[colorIndex];
+        const nextColor = spectrum[nextColorIndex];
+        const rayLength = prismRadius * 8;
+        const rayWidth = Math.PI / 9;
         ctx.save();
-        ctx.rotate(angle);
+        ctx.rotate(rayAngle);
         const rayGradient = ctx.createLinearGradient(0, 0, 0, -rayLength);
-        rayGradient.addColorStop(0, spectrum[colorIndex]);
-        rayGradient.addColorStop(0.5, `${spectrum[colorIndex]}80`);
+        rayGradient.addColorStop(0, currentColor);
+        rayGradient.addColorStop(0.3, `rgba(255,255,255,0.8)`);
+        rayGradient.addColorStop(0.7, nextColor);
         rayGradient.addColorStop(1, 'transparent');
         ctx.beginPath();
         ctx.moveTo(0, 0);
@@ -3768,31 +4893,83 @@ function drawPrismStar(planet, ctx, radius, camera, graphicsQuality, visualTimeS
         ctx.closePath();
         ctx.fillStyle = rayGradient;
         ctx.fill();
+        ctx.beginPath();
+        ctx.moveTo(0, 0);
+        ctx.arc(0, 0, rayLength * 0.7, -rayWidth * 0.5, rayWidth * 0.5);
+        ctx.closePath();
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.4)';
+        ctx.fill();
         ctx.restore();
     }
     if (graphicsQuality !== 'low') {
-        ctx.globalAlpha = 0.6;
-        for (let i = 0; i < 8; i++) {
-            const refractionAngle = (i / 8) * Math.PI * 2 + time * 0.5;
-            const refractionDistance = prismRadius * 0.6;
-            const refractionSize = prismRadius * 0.2;
+        ctx.globalAlpha = 0.7;
+        const refractions = 12;
+        for (let i = 0; i < refractions; i++) {
+            const refractionAngle = (i / refractions) * Math.PI * 2 + time * 1.5;
+            const refractionDistance = prismRadius * (0.8 + Math.sin(time * 2 + i) * 0.4);
+            const refractionSize = prismRadius * 0.25;
+            const colorIndex = Math.floor((i / refractions) * spectrum.length);
             ctx.save();
             ctx.rotate(refractionAngle);
             ctx.translate(refractionDistance, 0);
-            ctx.beginPath();
-            ctx.arc(0, 0, refractionSize, 0, Math.PI * 2);
-            ctx.fillStyle = spectrum[i % spectrum.length];
-            ctx.fill();
+            const facets = 6;
+            for (let j = 0; j < facets; j++) {
+                const facetAngle = (j / facets) * Math.PI * 2;
+                ctx.save();
+                ctx.rotate(facetAngle);
+                const facetGradient = ctx.createLinearGradient(0, -refractionSize, 0, refractionSize);
+                facetGradient.addColorStop(0, spectrum[(colorIndex + j) % spectrum.length]);
+                facetGradient.addColorStop(0.5, 'rgba(255,255,255,0.8)');
+                facetGradient.addColorStop(1, 'transparent');
+                ctx.beginPath();
+                ctx.moveTo(0, 0);
+                ctx.lineTo(refractionSize * 0.3, -refractionSize);
+                ctx.lineTo(refractionSize * 0.6, 0);
+                ctx.closePath();
+                ctx.fillStyle = facetGradient;
+                ctx.fill();
+                ctx.restore();
+            }
             ctx.restore();
         }
-        ctx.globalAlpha = 1;
     }
-    const dispersionSize = prismRadius * (1.2 + Math.sin(time * 3) * 0.3);
-    ctx.beginPath();
-    ctx.arc(0, 0, dispersionSize, 0, Math.PI * 2);
-    ctx.strokeStyle = 'rgba(255, 255, 255, 0.4)';
-    ctx.lineWidth = 3;
-    ctx.stroke();
+    ctx.globalAlpha = 0.3;
+    const dispersionLayers = 3;
+    for (let layer = 0; layer < dispersionLayers; layer++) {
+        const dispersionSize = prismRadius * (1.5 + layer * 0.8 + Math.sin(time * 2 + layer) * 0.3);
+        const dispersionGradient = ctx.createRadialGradient(0, 0, prismRadius, 0, 0, dispersionSize);
+        dispersionGradient.addColorStop(0, 'rgba(255, 255, 255, 0.1)');
+        dispersionGradient.addColorStop(0.3, 'rgba(255, 215, 0, 0.05)');
+        dispersionGradient.addColorStop(0.6, 'rgba(255, 140, 0, 0.03)');
+        dispersionGradient.addColorStop(1, 'transparent');
+        ctx.beginPath();
+        ctx.arc(0, 0, dispersionSize, 0, Math.PI * 2);
+        ctx.fillStyle = dispersionGradient;
+        ctx.fill();
+    }
+    ctx.globalAlpha = 0.5;
+    for (let i = 0; i < 5; i++) {
+        const ringSize = prismRadius * (1.3 + i * 0.5);
+        const ringPulse = Math.sin(time * 3 + i) * 0.2 + 0.9;
+        const ringColor = spectrum[Math.floor((i / 5) * spectrum.length)];
+        ctx.beginPath();
+        ctx.arc(0, 0, ringSize * ringPulse, 0, Math.PI * 2);
+        ctx.strokeStyle = `${ringColor}80`;
+        ctx.lineWidth = 2;
+        ctx.stroke();
+        const lightPoints = 16;
+        ctx.fillStyle = ringColor;
+        for (let j = 0; j < lightPoints; j++) {
+            const pointAngle = (j / lightPoints) * Math.PI * 2 + time;
+            const pointX = Math.cos(pointAngle) * ringSize * ringPulse;
+            const pointY = Math.sin(pointAngle) * ringSize * ringPulse;
+            ctx.beginPath();
+            ctx.arc(pointX, pointY, prismRadius * 0.03, 0, Math.PI * 2);
+            ctx.fill();
+        }
+    }
+    ctx.globalAlpha = 1;
+    ctx.restore();
 }
 function drawEchoStar(planet, ctx, radius, camera, graphicsQuality, visualTimeScale) {
     const echoRadius = planet.radius * camera.zoom;
@@ -6416,6 +7593,35 @@ function gameLoop(timestamp) {
         fgpFunSpaceColors(deltaTime);
         fgpMedusaStarBehavior(deltaTime);
         fgpNitricStarBehavior(deltaTime);
+        fgpChronosStarBehavior(deltaTime);
+        fgpPhantomStarBehavior(deltaTime);
+        fgpVortexStarBehavior(deltaTime);
+        fgpCrystalStarBehavior(deltaTime);
+        fgpNeuralStarBehavior(deltaTime);
+        fgpHologramStarBehavior(deltaTime);
+        fgpQuantumFoamStarBehavior(deltaTime);
+        fgpPrismStarBehavior(deltaTime);
+        fgpEchoStarBehavior(deltaTime);
+        fgpAsciiStarBehavior(deltaTime);
+        fgpJsStarBehavior(deltaTime);
+        fgpPyStarBehavior(deltaTime);
+        fgpCssStarBehavior(deltaTime);
+        fgpCsharpStarBehavior(deltaTime);
+        fgpGmlStarBehavior(deltaTime);
+        fgpJavaStarBehavior(deltaTime);
+        fgpPhpStarBehavior(deltaTime);
+        fgpRustStarBehavior(deltaTime);
+        fgpGoStarBehavior(deltaTime);
+        fgpKotlinStarBehavior(deltaTime);
+        fgpSwiftStarBehavior(deltaTime);
+        fgpTsStarBehavior(deltaTime);
+        fgpLuaStarBehavior(deltaTime);
+        fgpRubyStarBehavior(deltaTime);
+        fgpDartStarBehavior(deltaTime);
+    fgpHtmlStarBehavior(deltaTime);
+    fgpJsonStarBehavior(deltaTime);
+    fgpAssemblyStarBehavior(deltaTime);
+    fgpSqlStarBehavior(deltaTime);
         planets.forEach(planet => {
             if (planet.type === 'ttauriStar' && planet.debrisGeneration) {
                 const currentTime = Date.now();
@@ -6436,10 +7642,10 @@ function gameLoop(timestamp) {
         ctx.fillStyle = spaceColor;
         ctx.fillRect(0, 0, canvas.width, canvas.height);
         planets.forEach(planet => {
-    if (planet.markedForRemoval) return;
-    if (planet.type === 'rockyPlanet') {
-        fgpLifeEvolution(planet);
-    }
+            if (planet.markedForRemoval) return;
+            if (planet.type === 'rockyPlanet') {
+                fgpLifeEvolution(planet);
+            }
         });
         planets.forEach(obj => {
             if (obj.markedForRemoval) return;
@@ -6563,6 +7769,9 @@ function gameLoop(timestamp) {
         }
     });
     lastTime = timestamp;
+    if (document.body.classList && document.body.classList.contains('pixel-mode')) {
+        _fgp_applyPixelPostprocess();
+    }
     requestAnimationFrame(gameLoop);
 }
 function initializeExistingMedusas() {
@@ -6923,6 +8132,7 @@ function fgpPhysics(deltaTime) {
         for (let j = i + 1; j < planets.length; j++) {
             const planetB = planets[j];
             if (shipTypes.includes(planetB.type)) continue;
+            if (planetA.phased || planetB.phased) continue;
             const dx = planetB.x - planetA.x;
             const dy = planetB.y - planetA.y;
             const distance = Math.hypot(dx, dy);
@@ -7327,6 +8537,7 @@ function handleCollisions() {
         for (let j = i + 1; j < planets.length; j++) {
             const b = planets[j];
             if (b.markedForRemoval) continue;
+            if (a.phased || b.phased) continue;
             const dx = a.x - b.x;
             const dy = a.y - b.y;
             const distance = Math.hypot(dx, dy);
@@ -8220,6 +9431,74 @@ function openManual() {
         document.body.style.overflow = 'hidden';
     }
 }
+let _fgp_pixelUiCanvas = null;
+let _fgp_pixelUiCtx = null;
+let _fgp_pixelUiState = { shopOpen: false, menuOpen: false };
+function _fgp_ensurePixelUiCanvas() {
+    if (!_fgp_pixelUiCanvas) {
+        _fgp_pixelUiCanvas = document.createElement('canvas');
+        _fgp_pixelUiCanvas.id = 'fgpPixelUiCanvas';
+        _fgp_pixelUiCanvas.style.position = 'fixed';
+        _fgp_pixelUiCanvas.style.left = '0';
+        _fgp_pixelUiCanvas.style.top = '0';
+        _fgp_pixelUiCanvas.style.zIndex = '100000';
+        _fgp_pixelUiCanvas.style.pointerEvents = 'auto';
+        document.body.appendChild(_fgp_pixelUiCanvas);
+        _fgp_pixelUiCtx = _fgp_pixelUiCanvas.getContext('2d');
+        window.addEventListener('resize', _fgp_resizePixelUiCanvas);
+        _fgp_pixelUiCanvas.addEventListener('click', _fgp_onPixelUiClick);
+    }
+    _fgp_resizePixelUiCanvas();
+}
+function _fgp_resizePixelUiCanvas() {
+    if (!_fgp_pixelUiCanvas) return;
+    _fgp_pixelUiCanvas.width = window.innerWidth;
+    _fgp_pixelUiCanvas.height = window.innerHeight;
+}
+function _fgp_clearPixelUi() {
+    if (!_fgp_pixelUiCtx) return;
+    _fgp_pixelUiCtx.clearRect(0, 0, _fgp_pixelUiCanvas.width, _fgp_pixelUiCanvas.height);
+}
+function closePixelShop() {
+    _fgp_pixelUiState.shopOpen = false;
+    if (_fgp_pixelUiCanvas) {
+        _fgp_pixelUiCanvas.style.display = 'none';
+    }
+    document.body.style.overflow = '';
+}
+function _fgp_onPixelUiClick(ev) {
+    const rect = _fgp_pixelUiCanvas.getBoundingClientRect();
+    const mx = ev.clientX - rect.left;
+    const my = ev.clientY - rect.top;
+    if (_fgp_pixelUiState.shopOpen) {
+        const items = Array.from(document.querySelectorAll('#shopOverlay .shop-item'));
+        for (const item of items) {
+            const r = item._fgp_pixelRect;
+            if (!r) continue;
+            if (mx >= r.x && mx <= r.x + r.w && my >= r.y && my <= r.y + r.h) {
+                const itemId = item.getAttribute('data-item-id');
+                const price = parseInt(item.getAttribute('data-price') || '0', 10);
+                return;
+            }
+        }
+    } else if (_fgp_pixelUiState.menuOpen) {
+        const controls = ['funSpaceToggle','pixelModeToggle','shadowsToggle'];
+        for (const id of controls) {
+            const el = document.getElementById(id);
+            if (!el || !el._fgp_pixelRect) continue;
+            const r = el._fgp_pixelRect;
+            if (mx >= r.x && mx <= r.x + r.w && my >= r.y && my <= r.y + r.h) {
+                if (id === 'funSpaceToggle') toggleFunSpace();
+                else if (id === 'pixelModeToggle') {
+                    const elT = document.getElementById('pixelModeToggle'); if (elT) { elT.checked = !elT.checked; elT.dispatchEvent(new Event('change')); }
+                } else if (id === 'shadowsToggle') {
+                    const elS = document.getElementById('shadowsToggle'); if (elS) { elS.checked = !elS.checked; elS.dispatchEvent(new Event('change')); }
+                }
+                return;
+            }
+        }
+    }
+}
 function isItemPurchased(itemId) {
     if (itemId === 'medusaStar') {
         return localStorage.getItem('medusaStarPurchased') === 'true';
@@ -8257,6 +9536,7 @@ function getItemName(itemId) {
         'trappist_1': 'TRAPPIST-1',
         'bizarre_stars': 'Bizarre Stars',
         'fun_space': 'The Fun Space',
+        'codesStar': 'Code Stars Pack',
         'medusaStar': 'Medusa Star',
         'nitricStar': 'Nitric Acid Star'
     };
@@ -8301,6 +9581,16 @@ function applyPurchasedItem(itemId) {
             }
             fgpCreationGrid();
             break;
+        case 'codesStar':
+            if (!localStorage.getItem('siu2d_star_codes_unlocked')) {
+                if (typeof unlockCodeStarPack === 'function') {
+                    unlockCodeStarPack();
+                } else if (window && typeof window.unlockStarCodes === 'function') {
+                    window.unlockStarCodes();
+                }
+            }
+            fgpCreationGrid();
+            break;
     }
 }
 function fgpShopDisplay() {
@@ -8318,6 +9608,7 @@ function initializeShop() {
     fgpShopDisplay();
     initializeMedusaStar();
     initializeNitricStar();
+    initializeCodesStar();
     document.querySelectorAll('.shop-item').forEach(item => {
         const itemId = item.getAttribute('data-item-id');
         const price = parseInt(item.getAttribute('data-price'));
@@ -8331,14 +9622,14 @@ function initializeShop() {
                     if (!isItemPurchased(itemId)) {
                         purchaseNitricStar();
                     } else {
-                        showNotification("Estrela Nítrica já comprada! Você pode criá-la no modo criação.");
+                        showNotification("success");
                     }
                 } else {
                     if (!isItemPurchased(itemId)) {
                         purchaseItem(itemId, price);
                     } else {
                         applyPurchasedItem(itemId);
-                        showNotification(`${getItemName(itemId)} já está ativo!`);
+                        showNotification(`${getItemName(itemId)} success!`);
                     }
                 }
             });
@@ -8355,6 +9646,36 @@ function initializeShop() {
         if (funSpaceToggle) {
             funSpaceToggle.disabled = true;
             funSpaceToggle.parentElement.style.opacity = "0.5";
+        }
+    }
+    if (purchasedItems.pixel_mode) {
+        const pixelToggle = document.getElementById('pixelModeToggle');
+        const pixelGroup = document.getElementById('pixelModeGroup');
+        if (pixelToggle) {
+            pixelToggle.disabled = false;
+            if (pixelGroup) pixelGroup.style.opacity = '1';
+            const enabled = localStorage.getItem('siu2d_pixel_mode_enabled') === 'true';
+            pixelToggle.checked = enabled;
+            if (!pixelToggle.dataset.wired) {
+                pixelToggle.addEventListener('change', function() {
+                    const want = this.checked;
+                    const confirmMsg = want ? 'Enable Pixel By Pixel mode? The game will restart to apply the visual change.' : 'Disable Pixel By Pixel mode? The game will restart to restore the normal visuals.';
+                    if (!confirm(confirmMsg)) {
+                        this.checked = !want;
+                        return;
+                    }
+                    localStorage.setItem('siu2d_pixel_mode_enabled', want ? 'true' : 'false');
+                    setTimeout(() => location.reload(), 300);
+                });
+                pixelToggle.dataset.wired = '1';
+            }
+        }
+    } else {
+        const pixelToggle = document.getElementById('pixelModeToggle');
+        const pixelGroup = document.getElementById('pixelModeGroup');
+        if (pixelToggle) {
+            pixelToggle.disabled = true;
+            if (pixelGroup) pixelGroup.style.opacity = '0.5';
         }
     }
     if (purchasedItems.solar_system) {
@@ -8445,6 +9766,115 @@ function initializeShop() {
             }
         }
     });
+    try { setTimeout(populatePackageSessions, 200); } catch(e) {}
+}
+function populatePackageSessions() {
+    try {
+        const extrasGrid = document.getElementById('astroExtrasGrid');
+        if (!extrasGrid) return;
+        const packages = [
+            { key: 'bizarre_stars', title: 'Bizarre Stars', className: 'pkg-bizarre', shopSelectors: ['[data-item-id="bizarre_stars"]'], itemKeys: ['bizarre_stars'] },
+            { key: 'petrification_war', title: 'Petrification War', className: 'pkg-petrification', shopSelectors: ['[data-item-id="medusaStar"]','[data-item-id="nitricStar"]'], itemKeys: ['medusaStar','nitricStar'] },
+            { key: 'codesStar', title: 'Code Stars', className: 'pkg-codes', shopSelectors: ['[data-item-id="codesStar"]'], itemKeys: ['codesStar'] }
+        ];
+        packages.forEach(pkg => {
+            if (extrasGrid.querySelector(`[data-package-session="${pkg.key}"]`)) return;
+            let isPurchased = false;
+            if (pkg.itemKeys && pkg.itemKeys.length) {
+                isPurchased = pkg.itemKeys.some(k => (typeof isItemPurchased === 'function') ? isItemPurchased(k) : !!purchasedItems[k]);
+            } else {
+                isPurchased = (typeof isItemPurchased === 'function') ? isItemPurchased(pkg.key) : !!purchasedItems[pkg.key];
+            }
+            if (!isPurchased) return;
+            if (pkg.key === 'petrification_war') {
+                ['medusaStar','nitricStar'].forEach(oldKey => {
+                    const old = extrasGrid.querySelector(`[data-package-session="${oldKey}"]`);
+                    if (old) old.remove();
+                });
+            }
+            const pkgSession = document.createElement('div');
+            pkgSession.className = 'astro-session pkg-session';
+            pkgSession.setAttribute('data-package-session', pkg.key);
+            const title = document.createElement('div');
+            title.className = 'astro-session-title';
+            title.textContent = pkg.title;
+            pkgSession.appendChild(title);
+            const grid = document.createElement('div');
+            grid.className = 'astro-session-grid';
+            grid.setAttribute('data-package-grid', pkg.key);
+            const packageTypes = {
+                'bizarre_stars': ['chronosStar','phantomStar','vortexStar','crystalStar','neuralStar','hologramStar','quantumFoamStar','prismStar','echoStar','singularityStar'],
+                'petrification_war': ['medusaStar','nitricStar'],
+                'codesStar': ['asciiStar','jsStar','pyStar','cssStar','csharpStar','gmlStar','javaStar','phpStar','rustStar','goStar','kotlinStar','swiftStar','tsStar','luaStar','rubyStar','dartStar','htmlStar','jsonStar','assemblyStar','sqlStar']
+            };
+            const types = packageTypes[pkg.key] || [];
+            types.forEach(type => {
+                try {
+                    const astroCard = createAstroCard(type);
+                    astroCard.setAttribute('data-package', pkg.key);
+                    astroCard.classList.add('pkg-astro-card');
+                    grid.appendChild(astroCard);
+                } catch (e) {
+                    console.warn('Failed to create astro card for', type, e);
+                }
+            });
+            pkgSession.appendChild(grid);
+            extrasGrid.appendChild(pkgSession);
+        });
+    } catch (e) {
+        console.error('populatePackageSessions error', e);
+    }
+}
+document.addEventListener('DOMContentLoaded', () => setTimeout(populatePackageSessions, 300));
+if (typeof purchaseItem === 'function') {
+    const _origPurchaseItem = purchaseItem;
+    purchaseItem = function(itemId, price) {
+        const res = _origPurchaseItem.apply(this, arguments);
+        setTimeout(populatePackageSessions, 300);
+        return res;
+    };
+}
+if (typeof purchaseMedusaStar === 'function') {
+    const _orig = purchaseMedusaStar;
+    purchaseMedusaStar = function() {
+        const res = _orig.apply(this, arguments);
+        setTimeout(populatePackageSessions, 300);
+        return res;
+    };
+}
+if (typeof purchaseNitricStar === 'function') {
+    const _orig2 = purchaseNitricStar;
+    purchaseNitricStar = function() {
+        const res = _orig2.apply(this, arguments);
+        setTimeout(populatePackageSessions, 300);
+        return res;
+    };
+}
+function switchShopTab(tab) {
+    try {
+        const tabButtons = document.querySelectorAll('.shop-tab-btn');
+        tabButtons.forEach(btn => {
+            const t = btn.getAttribute('data-tab');
+            if (t === tab) {
+                btn.classList.add('active');
+            } else {
+                btn.classList.remove('active');
+            }
+        });
+        const sectionMap = {
+            'saves': 'shopSection_saves',
+            'astros': 'shopSection_astros',
+            'mods': 'shopSection_mods',
+            'givetscoins': 'shopSection_givetscoins'
+        };
+        Object.keys(sectionMap).forEach(key => {
+            const el = document.getElementById(sectionMap[key]);
+            if (el) el.style.display = (key === tab) ? '' : 'none';
+        });
+        sessionStorage.setItem('siu2d_shop_tab', tab);
+    } catch (e) {
+        console.warn('switchShopTab error', e);
+    }
 }
 function createSpecialSave(saveName, saveData) {
     const saves = JSON.parse(localStorage.getItem('siu2d_saves') || '[]');
@@ -10521,6 +11951,32 @@ function initializeNitricStar() {
     }
     checkNitricStarUnlock();
 }
+function initializeCodesStar() {
+    console.log('Initializing Code Stars shop state...');
+    const codesUnlocked = localStorage.getItem('siu2d_star_codes_unlocked') === 'true';
+    const codesPurchased = purchasedItems['codesStar'] === true || localStorage.getItem('siu2d_purchased_items') && JSON.parse(localStorage.getItem('siu2d_purchased_items') || '{}')['codesStar'] === true;
+    const codesItem = document.querySelector('[data-item-id="codesStar"]');
+    if (codesItem) {
+        if (codesUnlocked && !codesPurchased) {
+            codesItem.classList.remove('hidden');
+            codesItem.classList.add('visible');
+            codesItem.style.display = 'block';
+            console.log('Code Stars card shown in shop (unlocked)');
+        } else if (codesPurchased) {
+            codesItem.classList.add('purchased');
+            codesItem.classList.remove('hidden');
+            codesItem.style.display = 'block';
+            console.log('Code Stars purchased and available');
+        } else {
+            codesItem.classList.add('hidden');
+            codesItem.classList.remove('visible');
+            codesItem.style.display = 'none';
+            console.log('Code Stars card hidden (not unlocked)');
+        }
+    } else {
+        console.log('Code Stars shop item not found');
+    }
+}
 function checkNitricStarUnlock() {
     const medusaPurchased = localStorage.getItem('medusaStarPurchased') === 'true';
     const medusaCount = parseInt(localStorage.getItem('medusaStarsCreated') || '0');
@@ -10605,6 +12061,47 @@ function unlockSingularity() {
         fgpCreationGrid();
     }
 }
+function unlockCodeStarPack() {
+    const newStarTypes = [
+        'asciiStar',
+        'jsStar',
+        'pyStar',
+        'cssStar',
+        'csharpStar',
+        'gmlStar',
+        'javaStar',
+        'phpStar',
+        'rustStar',
+        'goStar',
+        'kotlinStar',
+        'swiftStar',
+        'tsStar',
+        'luaStar',
+        'rubyStar',
+        'dartStar',
+        'htmlStar',
+        'jsonStar',
+        'assemblyStar'
+        ,
+        'sqlStar'
+    ];
+    let added = 0;
+    newStarTypes.forEach(starType => {
+        if (!unlockedAstroTypes.includes(starType)) {
+            unlockedAstroTypes.push(starType);
+            added++;
+        }
+    });
+    if (added > 0) {
+        localStorage.setItem('siu2d_unlocked_astros', JSON.stringify(unlockedAstroTypes));
+        localStorage.setItem('siu2d_star_codes_unlocked', 'true');
+        if (typeof fgpCreationGrid === 'function') fgpCreationGrid();
+        if (typeof showNotification === 'function') showNotification('🎉 Code Star Pack unlocked! Check Creation Mode.');
+    } else {
+        if (typeof showNotification === 'function') showNotification('Code Star Pack already unlocked.');
+    }
+}
+window.unlockStarCodes = unlockCodeStarPack;
 let unlockedConfigs = JSON.parse(localStorage.getItem('siu2d_unlocked_configs') || '[]');
 function unlockFunSpace() {
     if (!unlockedConfigs.includes('fun_space')) {
@@ -10757,6 +12254,192 @@ function getAstroConfig(type) {
             rarity: 'ultra-raro',
             rarityText: 'Unknown...'
         }
+        ,
+        'asciiStar': {
+            icon: 'fas fa-terminal',
+            name: 'ASCII Star',
+            description: 'A star woven from characters and binary pulses. Emits light in rhythmic code bursts.',
+            massPercent: 55,
+            massRange: '1K - 500K',
+            rarity: 'raro',
+            rarityText: 'Secret Code Pack'
+        }
+        ,
+        'jsStar': {
+            icon: 'fab fa-js-square',
+            name: 'JS Star',
+            description: 'A star infused with asynchronous sparks and event-loop flares.',
+            massPercent: 58,
+            massRange: '1K - 600K',
+            rarity: 'raro',
+            rarityText: 'Secret Code Pack'
+        },
+        'pyStar': {
+            icon: 'fab fa-python',
+            name: 'Py Star',
+            description: 'A calm, clear star emitting elegant indentation waves.',
+            massPercent: 57,
+            massRange: '1K - 600K',
+            rarity: 'raro',
+            rarityText: 'Secret Code Pack'
+        },
+        'cssStar': {
+            icon: 'fab fa-css3-alt',
+            name: 'CSS Star',
+            description: 'A star that styles the void with gradients and subtle shadows.',
+            massPercent: 50,
+            massRange: '1K - 500K',
+            rarity: 'raro',
+            rarityText: 'Secret Code Pack'
+        },
+        'csharpStar': {
+            icon: 'fas fa-hashtag',
+            name: 'C# Star',
+            description: 'A structured, strongly-typed star with crisp orbits.',
+            massPercent: 60,
+            massRange: '1K - 700K',
+            rarity: 'raro',
+            rarityText: 'Secret Code Pack'
+        },
+        'gmlStar': {
+            icon: 'fas fa-gamepad',
+            name: 'GML Star',
+            description: 'A playful star crafted from rapid prototyping loops.',
+            massPercent: 52,
+            massRange: '1K - 500K',
+            rarity: 'raro',
+            rarityText: 'Secret Code Pack'
+        }
+        ,
+        'javaStar': {
+            icon: 'fab fa-java',
+            name: 'Java Star',
+            description: 'A verbose, steady star that emits class-like orbits.',
+            massPercent: 59,
+            massRange: '1K - 700K',
+            rarity: 'raro',
+            rarityText: 'Secret Code Pack'
+        },
+        'phpStar': {
+            icon: 'fab fa-php',
+            name: 'PHP Star',
+            description: 'A pragmatic star with eclectic echoes and legacy charm.',
+            massPercent: 56,
+            massRange: '1K - 600K',
+            rarity: 'raro',
+            rarityText: 'Secret Code Pack'
+        },
+        'rustStar': {
+            icon: 'fas fa-feather',
+            name: 'Rust Star',
+            description: 'A safe, systems-oriented star that emits precise sparks.',
+            massPercent: 60,
+            massRange: '1K - 700K',
+            rarity: 'raro',
+            rarityText: 'Secret Code Pack'
+        },
+        'goStar': {
+            icon: 'fas fa-code',
+            name: 'Go Star',
+            description: 'A concurrent star with clean, fast pulses.',
+            massPercent: 54,
+            massRange: '1K - 500K',
+            rarity: 'raro',
+            rarityText: 'Secret Code Pack'
+        }
+        ,
+        'kotlinStar': {
+            icon: 'fas fa-feather-alt',
+            name: 'Kotlin Star',
+            description: 'A modern, concise star with smooth coroutines.',
+            massPercent: 58,
+            massRange: '1K - 600K',
+            rarity: 'raro',
+            rarityText: 'Secret Code Pack'
+        },
+        'swiftStar': {
+            icon: 'fas fa-rocket',
+            name: 'Swift Star',
+            description: 'A fast, expressive star that sends sharp pulses.',
+            massPercent: 57,
+            massRange: '1K - 600K',
+            rarity: 'raro',
+            rarityText: 'Secret Code Pack'
+        },
+        'tsStar': {
+            icon: 'fab fa-js-square',
+            name: 'TS Star',
+            description: 'A typed star offering predictable, safe flares.',
+            massPercent: 56,
+            massRange: '1K - 600K',
+            rarity: 'raro',
+            rarityText: 'Secret Code Pack'
+        },
+        'luaStar': {
+            icon: 'fas fa-water',
+            name: 'Lua Star',
+            description: 'A lightweight, embeddable star with nimble sparks.',
+            massPercent: 53,
+            massRange: '1K - 500K',
+            rarity: 'raro',
+            rarityText: 'Secret Code Pack'
+        },
+        'rubyStar': {
+            icon: 'fas fa-gem',
+            name: 'Ruby Star',
+            description: 'A polished, expressive star that emits elegant reflections.',
+            massPercent: 59,
+            massRange: '1K - 700K',
+            rarity: 'raro',
+            rarityText: 'Secret Code Pack'
+        },
+        'dartStar': {
+            icon: 'fas fa-bolt',
+            name: 'Dart Star',
+            description: 'A swift, single-shot star with direct bursts.',
+            massPercent: 54,
+            massRange: '1K - 500K',
+            rarity: 'raro',
+            rarityText: 'Secret Code Pack'
+        }
+        ,
+        'htmlStar': {
+            icon: 'fab fa-html5',
+            name: 'HTML Star',
+            description: 'A structural star built from tags and nested elements. Emits warm markup halos.',
+            massPercent: 55,
+            massRange: '1K - 600K',
+            rarity: 'raro',
+            rarityText: 'Secret Code Pack'
+        },
+        'jsonStar': {
+            icon: 'fas fa-database',
+            name: 'JSON Star',
+            description: 'A data-oriented star that radiates paired keys and values in tidy structures.',
+            massPercent: 53,
+            massRange: '1K - 500K',
+            rarity: 'raro',
+            rarityText: 'Secret Code Pack'
+        },
+        'assemblyStar': {
+            icon: 'fas fa-microchip',
+            name: 'ASSEMBLY Star',
+            description: 'A low-level, terse star sending tight, rhythmic machine pulses and hex dust.',
+            massPercent: 58,
+            massRange: '1K - 700K',
+            rarity: 'raro',
+            rarityText: 'Secret Code Pack'
+        }
+        ,
+        'sqlStar': {
+            icon: 'fas fa-database',
+            name: 'SQL Star',
+            description: 'A relational star that emits table-like rings and indexed queries of particles.',
+            massPercent: 57,
+            massRange: '1K - 600K',
+            rarity: 'raro',
+            rarityText: 'Secret Code Pack'
+        }
     };
     return configs[type] || {
         icon: 'fas fa-star',
@@ -10900,6 +12583,26 @@ function calculateRadiusForType(type, mass) {
             quantumFoamStar: 13,
             prismStar: 9.5,
             echoStar: 8.8,
+            asciiStar: 6,
+            jsStar: 6.5,
+            pyStar: 6.5,
+            cssStar: 5.5,
+            csharpStar: 7,
+            gmlStar: 5.5,
+            javaStar: 6,
+            phpStar: 6.5,
+            rustStar: 6,
+            goStar: 6,
+            kotlinStar: 6,
+            swiftStar: 6,
+            tsStar: 6,
+            luaStar: 5.5,
+            rubyStar: 6,
+            dartStar: 5.5,
+        htmlStar: 6,
+        jsonStar: 5.5,
+        assemblyStar: 6.5,
+        sqlStar: 6,
             singularityStar: 0.000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000001,
     };
     const base = baseRadius[type] || 10;
@@ -10996,6 +12699,11 @@ function toggleGameMenu() {
         inGameMenu.classList.remove('active');
         inGameMenu.style.display = 'none';
     }
+}
+function closePixelMenu() {
+    _fgp_pixelUiState.menuOpen = false;
+    if (_fgp_pixelUiCanvas) _fgp_pixelUiCanvas.style.display = 'none';
+    document.body.style.overflow = '';
 }
 function fgpVolume() {
     const volume = volumeSlider.value;
@@ -11127,19 +12835,24 @@ function fgpMass() {
 function fgpGravity() {
     gravityValue.textContent = gravitySlider.value;
 }
-function fgpRotation() {
-    rotationValue.textContent = rotationSlider.value;
-}
 function fgpWater() {
     waterValue.textContent = waterSlider.value + '%';
+    astroSettings.water = parseInt(waterSlider.value);
     fgpAstroPreview();
 }
 function fgpClouds() {
     cloudsValue.textContent = cloudsSlider.value + '%';
+    astroSettings.clouds = parseInt(cloudsSlider.value);
     fgpAstroPreview();
 }
 function fgpGas() {
     gasValue.textContent = gasSlider.value + '%';
+    astroSettings.gas = parseInt(gasSlider.value);
+    fgpAstroPreview();
+}
+function fgpRotation() {
+    rotationValue.textContent = rotationSlider.value;
+    astroSettings.rotationSpeed = parseFloat(rotationSlider.value);
     fgpAstroPreview();
 }
 function fgpRingMass() {
@@ -11163,30 +12876,61 @@ function fgpAstroPreview() {
     astroSettings.ringMass = parseInt(ringMassSlider.value);
 }
 function applyAstroSettings() {
-    showNotification('success!');
+    if (selectedPlanet) {
+        selectedPlanet.color = astroSettings.primaryColor;
+        selectedPlanet.landColor = astroSettings.secondaryColor;
+        selectedPlanet.ringColor = astroSettings.ringColor;
+        selectedPlanet.mass = astroSettings.mass;
+        selectedPlanet.gravity = astroSettings.gravity;
+        selectedPlanet.temperature = astroSettings.temperature;
+        selectedPlanet.rotationSpeed = astroSettings.rotationSpeed;
+        selectedPlanet.waterValue = astroSettings.water;
+        selectedPlanet.cloudsValue = astroSettings.clouds;
+        selectedPlanet.gasValue = astroSettings.gas;
+        selectedPlanet.hasRings = astroSettings.hasRings;
+        selectedPlanet.ringMass = astroSettings.ringMass;
+        selectedPlanet.radius = Math.sqrt(selectedPlanet.mass) * 5;
+        showNotification("Success!");
+        fgpAstroPreview();
+    } else {
+        showNotification("Place the camera near a celestial body.");
+    }
 }
 function resetAstroSettings() {
-    primaryColor.value = '#3498db';
-    secondaryColor.value = '#2ecc71';
-    ringColor.value = '#cccccc'; 
-    massSlider.value = 50;
-    gravitySlider.value = 9.8;
-    rotationSlider.value = 0.01;
-    waterSlider.value = 70;
-    cloudsSlider.value = 30;
-    gasSlider.value = 80;
-    hasRings.checked = false;
-    ringMassSlider.value = 30;
-    tempSlider.value = 20;
-    fgpMass();
-    fgpGravity();
-    fgpRotation();
-    fgpWater();
-    fgpClouds();
-    fgpGas();
-    fgpRingMass();
-    fgpTemperature();
+    astroSettings.primaryColor = '#b0bec5';
+    astroSettings.secondaryColor = '#90a4ae';
+    astroSettings.ringColor = 'rgba(180,180,180,0.5)';
+    astroSettings.mass = 50;
+    astroSettings.gravity = 9.8;
+    astroSettings.temperature = 20;
+    astroSettings.rotationSpeed = 0.01;
+    astroSettings.water = 0;
+    astroSettings.clouds = 0;
+    astroSettings.gas = 0;
+    astroSettings.hasRings = false;
+    astroSettings.ringMass = 30;
+    primaryColor.value = astroSettings.primaryColor;
+    secondaryColor.value = astroSettings.secondaryColor;
+    ringColor.value = astroSettings.ringColor;
+    massSlider.value = astroSettings.mass;
+    massValue.textContent = astroSettings.mass;
+    gravitySlider.value = astroSettings.gravity;
+    gravityValue.textContent = astroSettings.gravity;
+    tempSlider.value = astroSettings.temperature;
+    tempValue.textContent = astroSettings.temperature + '°C';
+    rotationSlider.value = astroSettings.rotationSpeed;
+    rotationValue.textContent = astroSettings.rotationSpeed;
+    waterSlider.value = astroSettings.water;
+    waterValue.textContent = astroSettings.water + '%';
+    cloudsSlider.value = astroSettings.clouds;
+    cloudsValue.textContent = astroSettings.clouds + '%';
+    gasSlider.value = astroSettings.gas;
+    gasValue.textContent = astroSettings.gas + '%';
+    hasRings.checked = astroSettings.hasRings;
+    ringMassSlider.value = astroSettings.ringMass;
+    ringMassValue.textContent = astroSettings.ringMass;
     fgpAstroPreview();
+    showNotification("Configurações resetadas!");
 }
 function createAstro(type, x, y, vx = 0, vy = 0, customMass = null, originPlanet = null) {
     if (type === 'spaceDust') spaceDustCreated++;
@@ -11554,15 +13298,15 @@ function createAstro(type, x, y, vx = 0, vy = 0, customMass = null, originPlanet
         console.log('Astros no total : ' + Acount + ' quantidades ' )
             break;
         case 'brownDwarf':
-            planet.mass = Math.max(2550000, customMass || astroSettings.mass * 1000);
+            planet.mass = Math.max(2500000, customMass || astroSettings.mass * 1000);
             planet.color = '#d60000ff';
             planet.glowColor = '#570000ff';
-            planet.radius = calculateRadiusForType('brownDwarf', planet.mass);
             planet.rings = astroSettings.hasRings;
             planet.ringColor = astroSettings.ringColor;
             planet.ringHighlight = lightenColor(astroSettings.ringColor, 30);
             planet.ringRotation = Math.random() * Math.PI * 2;
             planet.temperature = 2300;
+            planet.radius = calculateRadiusForType('brownDwarf', planet.mass);
             Acount = (Acount || 0) + 1;
         if (Acount >= 20){
             unlockAchievement(20);
@@ -11593,6 +13337,7 @@ function createAstro(type, x, y, vx = 0, vy = 0, customMass = null, originPlanet
             planet.debrisCooldown = 2000;
             planet.jetAngle = Math.random() * Math.PI * 2;
             Acount = (Acount || 0) + 1;
+            planet.temperature = 50000;
         if (Acount >= 20){
             unlockAchievement(20);
         }
@@ -12240,6 +13985,54 @@ function createAstro(type, x, y, vx = 0, vy = 0, customMass = null, originPlanet
             planet.echoField = true;
             planet.temporalResonance = true;
             break;
+        case 'asciiStar':
+            planet.mass = Math.max(2000, customMass || 1200);
+            planet.color = '#66CCFF';
+            planet.glowColor = '#88EEFF';
+            planet.radius = calculateRadiusForType('asciiStar', planet.mass);
+            planet.temperature = 10000;
+            planet.asciiCore = true;
+            break;
+        case 'jsStar':
+            planet.mass = Math.max(2500, customMass || 1400);
+            planet.color = '#f0db4f';
+            planet.glowColor = '#ffe680';
+            planet.radius = calculateRadiusForType('jsStar', planet.mass);
+            planet.temperature = 9000;
+            planet.isSecretStar = true;
+            break;
+        case 'pyStar':
+            planet.mass = Math.max(2400, customMass || 1300);
+            planet.color = '#3572A5';
+            planet.glowColor = '#9fd3ff';
+            planet.radius = calculateRadiusForType('pyStar', planet.mass);
+            planet.temperature = 9200;
+            planet.isSecretStar = true;
+            break;
+        case 'cssStar':
+            planet.mass = Math.max(1800, customMass || 1100);
+            planet.color = '#2965f1';
+            planet.glowColor = '#74a8ff';
+            planet.radius = calculateRadiusForType('cssStar', planet.mass);
+            planet.temperature = 8000;
+            planet.isSecretStar = true;
+            break;
+        case 'csharpStar':
+            planet.mass = Math.max(3000, customMass || 1600);
+            planet.color = '#178600';
+            planet.glowColor = '#5fe56a';
+            planet.radius = calculateRadiusForType('csharpStar', planet.mass);
+            planet.temperature = 9800;
+            planet.isSecretStar = true;
+            break;
+        case 'gmlStar':
+            planet.mass = Math.max(2000, customMass || 1200);
+            planet.color = '#00bcd4';
+            planet.glowColor = '#80eaf1';
+            planet.radius = calculateRadiusForType('gmlStar', planet.mass);
+            planet.temperature = 8600;
+            planet.isSecretStar = true;
+            break;
         case 'medusaStar':
             planet.mass = Math.max(800000000, customMass || astroSettings.mass * 8000000);
             planet.color = '#00FF00';
@@ -12374,35 +14167,848 @@ function applyEnhancedMedusaPetrification(medusaStar, deltaTime) {
         }
     });
 }
+function fgpChronosStarBehavior(deltaTime) {
+    const now = Date.now();
+    planets.forEach(star => {
+        if (star.type !== 'chronosStar' || star.markedForRemoval) return;
+        if (!star._chronosNext) star._chronosNext = now + 2000 + Math.random() * 4000;
+        if (now >= star._chronosNext) {
+            const choices = [-10, -5, -2, 0, 2, 5, 10];
+            const choice = choices[Math.floor(Math.random() * choices.length)];
+            const factor = choice;
+            const duration = 1000 + Math.random() * 3000;
+            const radius = star.radius * 8 + 400;
+            const colorMap = {
+                '-10': '#800080',
+                '-5':  '#FF00FF',
+                '-2':  '#0000FF',
+                '0':   '#00FF00',
+                '2':   '#FFFF00',
+                '5':   '#FFA500',
+                '10':  '#FF0000'
+            };
+            star._chronosVisualColor = colorMap[String(choice)];
+            star._chronosVisualDuration = duration;
+            star._chronosVisualUntil = now + duration;
+            star._chronosNext = star._chronosVisualUntil + (2000 + Math.random() * 3000);
+            planets.forEach(p => {
+                if (p === star || p.markedForRemoval) return;
+                const dx = p.x - star.x;
+                const dy = p.y - star.y;
+                const dist = Math.hypot(dx, dy);
+                if (dist < radius && !p.locked) {
+                    p._chronosWarp = { factor, until: now + duration, active: true };
+                    if (factor === 0) {
+                        p.vx = 0;
+                        p.vy = 0;
+                    } else {
+                        p.vx *= factor;
+                        p.vy *= factor;
+                    }
+                }
+            });
+        }
+    });
+    planets.forEach(p => {
+        if (p._chronosWarp && p._chronosWarp.active && Date.now() > p._chronosWarp.until) {
+            const f = p._chronosWarp.factor || 1;
+            if (f !== 0 && isFinite(f)) {
+                p.vx /= f;
+                p.vy /= f;
+            }
+            p._chronosWarp = null;
+        }
+    });
+}
+function fgpPhantomStarBehavior(deltaTime) {
+    const now = Date.now();
+    planets.forEach(star => {
+        if (star.type !== 'phantomStar' || star.markedForRemoval) return;
+        if (!star._phaseNext) star._phaseNext = now + 5000 + Math.random() * 10000;
+        if (!star.phased && now >= star._phaseNext) {
+            star.phased = true;
+            star._phaseUntil = now + 10000;
+        }
+        if (star.phased && now >= star._phaseUntil) {
+            star.phased = false;
+            star._phaseNext = now + 5000 + Math.random() * 10000;
+            star._phaseUntil = null;
+        }
+    });
+}
+function fgpVortexStarBehavior(deltaTime) {
+    const dt = Math.max(1, Math.abs(deltaTime)) / 1000;
+    planets.forEach(star => {
+        if (star.type !== 'vortexStar' || star.markedForRemoval) return;
+        const radius = star.radius * 10 + 600;
+        for (let i = 0; i < planets.length; i++) {
+            const p = planets[i];
+            if (p === star || p.markedForRemoval || p.locked) continue;
+            if (p.mass >= star.mass * 0.2) continue;
+            const dx = p.x - star.x;
+            const dy = p.y - star.y;
+            const dist = Math.hypot(dx, dy);
+            if (dist > 0 && dist < radius) {
+                const angle = Math.atan2(dy, dx);
+                const perp = angle + Math.PI / 2;
+                const desiredSpeed = Math.sqrt(Math.max(1, (G * gravityFactor * star.mass) / dist));
+                const desiredVx = Math.cos(perp) * desiredSpeed;
+                const desiredVy = Math.sin(perp) * desiredSpeed;
+                const steer = 0.02 * dt * 60;
+                p.vx += (desiredVx - p.vx) * steer;
+                p.vy += (desiredVy - p.vy) * steer;
+            }
+        }
+    });
+}
+function fgpCrystalStarBehavior(deltaTime) {
+    const now = Date.now();
+    planets.forEach(star => {
+        if (star.type !== 'crystalStar' || star.markedForRemoval) return;
+        if (!star._crystalNext) star._crystalNext = now + 10000 + Math.random() * 10000;
+        if (now >= star._crystalNext) {
+            star._crystalNext = now + 10000 + Math.random() * 15000;
+            const freezeDuration = 5000;
+            const radius = star.radius * 6 + 300;
+            planets.forEach(p => {
+                if (p === star || p.markedForRemoval || p.locked) return;
+                const dx = p.x - star.x;
+                const dy = p.y - star.y;
+                const dist = Math.hypot(dx, dy);
+                if (dist < radius) {
+                    p._crystalFrozenUntil = Date.now() + freezeDuration;
+                    p.vx = 0;
+                    p.vy = 0;
+                }
+            });
+        }
+    });
+}
+function fgpNeuralStarBehavior(deltaTime) {
+    const dt = Math.max(1, Math.abs(deltaTime)) / 1000;
+    const shipTypes = ['rocket', 'spaceship', 'superShip', 'satellite'];
+    planets.forEach(star => {
+        if (star.type !== 'neuralStar' || star.markedForRemoval) return;
+        const radius = star.radius * 10 + 600;
+        planets.forEach(p => {
+            if (!shipTypes.includes(p.type) || p.markedForRemoval) return;
+            const dx = star.x - p.x;
+            const dy = star.y - p.y;
+            const dist = Math.hypot(dx, dy);
+            if (dist > 0 && dist < radius) {
+                const strength = 0.2 * (1 - dist / radius) * dt;
+                p.vx += (dx / dist) * strength;
+                p.vy += (dy / dist) * strength;
+            }
+        });
+    });
+}
+function fgpHologramStarBehavior(deltaTime) {
+    const now = Date.now();
+    planets.forEach(star => {
+        if (star.type !== 'hologramStar' || star.markedForRemoval) return;
+        if (!star._holoNext) star._holoNext = now + 10000 + Math.random() * 10000;
+        if (now >= star._holoNext) {
+            star._holoNext = now + 10000 + Math.random() * 15000;
+            const count = 1 + Math.floor(Math.random() * 4);
+            const holoTypes = ['spaceDust', 'nebula', 'asteroid', 'planetoid'];
+            for (let i = 0; i < count; i++) {
+                const angle = Math.random() * Math.PI * 2;
+                const distance = star.radius * (1.5 + Math.random() * 6);
+                const chosen = holoTypes[Math.floor(Math.random() * holoTypes.length)];
+                const hx = star.x + Math.cos(angle) * distance;
+                const hy = star.y + Math.sin(angle) * distance;
+                const holo = createAstro(chosen, hx, hy, 0, 0, (chosen === 'nebula' ? 0.2 : chosen === 'planetoid' ? 0.3 : 0.01));
+                holo.locked = true;
+                holo.vx = 0; holo.vy = 0;
+                holo.isHologram = true;
+                holo.hologramUntil = Date.now() + 8000 + Math.random() * 8000;
+            }
+        }
+    });
+    for (let i = planets.length - 1; i >= 0; i--) {
+        const p = planets[i];
+        if (p.isHologram && p.hologramUntil && Date.now() > p.hologramUntil) {
+            planets.splice(i, 1);
+        }
+    }
+}
+function fgpQuantumFoamStarBehavior(deltaTime) {
+    const now = Date.now();
+    planets.forEach(star => {
+        if (star.type !== 'quantumFoamStar' || star.markedForRemoval) return;
+        if (!star._foamNext) star._foamNext = now + 3000 + Math.random() * 5000;
+        if (now >= star._foamNext) {
+            star._foamNext = now + 3000 + Math.random() * 8000;
+            const radius = star.radius * 8 + 400;
+            planets.forEach(p => {
+                if (p === star || p.markedForRemoval) return;
+                if (p.mass <= star.mass * 0.05) {
+                    const dx = p.x - star.x;
+                    const dy = p.y - star.y;
+                    const dist = Math.hypot(dx, dy);
+                    if (dist < radius) {
+                        p.vx += (Math.random() - 0.5) * 2;
+                        p.vy += (Math.random() - 0.5) * 2;
+                    }
+                }
+            });
+        }
+        const ingestRadius = star.radius * 0.9;
+        for (let i = planets.length - 1; i >= 0; i--) {
+            const p = planets[i];
+            if (!p || p === star || p.markedForRemoval || p.locked) continue;
+            if (p.mass > star.mass * 0.6) continue;
+            const dx = p.x - star.x;
+            const dy = p.y - star.y;
+            const d = Math.hypot(dx, dy);
+            if (d < ingestRadius) {
+                p.markedForRemoval = true;
+                createMegaDestructionEffect(p);
+                const massRatio = p.mass / Math.max(0.001, star.mass);
+                let count = Math.max(2, Math.min(18, Math.round(massRatio * 20)));
+                if (!isFinite(count) || count < 2) count = 2;
+                for (let k = 0; k < count; k++) {
+                    const angle = Math.atan2(dy, dx) + (Math.random() - 0.5) * Math.PI * 0.8;
+                    const speed = 2 + Math.random() * 4;
+                    const rx = star.x + Math.cos(angle) * (star.radius * 0.6);
+                    const ry = star.y + Math.sin(angle) * (star.radius * 0.6);
+                    const rvx = Math.cos(angle) * speed + (Math.random() - 0.5) * 0.5;
+                    const rvy = Math.sin(angle) * speed + (Math.random() - 0.5) * 0.5;
+                    const r = createAstro('radiation', rx, ry, rvx, rvy, Math.max(0.002, (p.mass / count)));
+                    r.hologramUntil = Date.now() + 2000 + Math.random() * 2000;
+                }
+                star._quantumEjecting = true;
+                star._quantumEjectUntil = Date.now() + 1200 + Math.random() * 800;
+                star._quantumJetAngles = [Math.atan2(dy, dx) + Math.PI/2, Math.atan2(dy, dx) - Math.PI/2];
+            }
+        }
+    });
+}
+function fgpPrismStarBehavior(deltaTime) {
+    const now = Date.now();
+    planets.forEach(star => {
+        if (star.type !== 'prismStar' || star.markedForRemoval) return;
+        if (!star._prismNext) star._prismNext = now + 5000 + Math.random() * 10000;
+        if (now >= star._prismNext) {
+            star._prismNext = now + 5000 + Math.random() * 10000;
+            const count = 6 + Math.floor(Math.random() * 8);
+            for (let i = 0; i < count; i++) {
+                const angle = (i / count) * Math.PI * 2 + Math.random() * 0.3;
+                const distance = star.radius * (1 + Math.random() * 6);
+                const speed = 0;
+                const p = createAstro('nebula', star.x + Math.cos(angle) * distance, star.y + Math.sin(angle) * distance, 0, 0, 0.5);
+                p.color = `hsl(${Math.floor(Math.random() * 360)}, 80%, 55%)`;
+                p.locked = true;
+                p.vx = 0; p.vy = 0;
+                p.hologramUntil = Date.now() + 12000 + Math.random() * 8000;
+                p.isPrismParticle = true;
+            }
+        }
+    });
+    for (let i = planets.length - 1; i >= 0; i--) {
+        const p = planets[i];
+        if ((p.isPrismParticle || p.hologramUntil) && p.hologramUntil && Date.now() > p.hologramUntil) {
+            planets.splice(i, 1);
+        }
+    }
+}
+function fgpEchoStarBehavior(deltaTime) {
+    const now = Date.now();
+    planets.forEach(star => {
+        if (star.type !== 'echoStar' || star.markedForRemoval) return;
+        if (!star._echoNext) star._echoNext = now + 10000 + Math.random() * 20000;
+        if (now >= star._echoNext) {
+            star._echoNext = now + 10000 + Math.random() * 20000;
+            const radius = star.radius * 10;
+            planets.forEach(p => {
+                if (p === star || p.markedForRemoval) return;
+                const dx = p.x - star.x;
+                const dy = p.y - star.y;
+                const dist = Math.hypot(dx, dy);
+                if (dist < radius) {
+                    const protectedTypes = ['medusaStar','nitricStar','blackHole','quasar','singularityStar','star'];
+                    if (!protectedTypes.includes(p.type) && !p.locked) {
+                        if (p.mass < star.mass * 0.15) {
+                            p.markedForRemoval = true;
+                            createMegaDestructionEffect(p);
+                        }
+                    }
+                }
+            });
+        }
+    });
+}
+function fgpAsciiStarBehavior(deltaTime) {
+    const now = Date.now();
+    planets.forEach(star => {
+        if (star.type !== 'asciiStar' || star.markedForRemoval) return;
+        if (!star._asciiNext) star._asciiNext = now + 4000 + Math.random() * 6000;
+        if (now >= star._asciiNext) {
+            star._asciiNext = now + 4000 + Math.random() * 8000;
+            const radius = star.radius * 8 + 200;
+            planets.forEach(p => {
+                if (p === star || p.markedForRemoval || p.locked) return;
+                if (p.mass > star.mass * 0.2) return;
+                const dx = p.x - star.x;
+                const dy = p.y - star.y;
+                const dist = Math.hypot(dx, dy);
+                if (dist < radius) {
+                    const push = 0.5 + Math.random() * 1.2;
+                    const nx = dx / Math.max(0.001, dist);
+                    const ny = dy / Math.max(0.001, dist);
+                    p.vx += nx * push;
+                    p.vy += ny * push;
+                    p._asciiFlicker = Date.now() + 600;
+                }
+            });
+        }
+    });
+}
+function fgpJsStarBehavior(deltaTime) {
+    const now = Date.now();
+    planets.forEach(star => {
+        if (star.type !== 'jsStar' || star.markedForRemoval) return;
+        if (!star._jsNext) star._jsNext = now + 2000 + Math.random() * 3000;
+        if (now >= star._jsNext) {
+            star._jsNext = now + 2000 + Math.random() * 4000;
+            const radius = star.radius * 8 + 200;
+            star._jsSpark = Date.now() + 800;
+            planets.forEach(p => {
+                if (p === star || p.markedForRemoval || p.locked) return;
+                if (p.mass > star.mass * 0.3) return;
+                const dx = p.x - star.x;
+                const dy = p.y - star.y;
+                const dist = Math.hypot(dx, dy);
+                if (dist < radius) {
+                    const jitter = 2 + Math.random() * 3;
+                    p.vx += (Math.random() - 0.5) * jitter;
+                    p.vy += (Math.random() - 0.5) * jitter;
+                    p._jsAffected = Date.now() + 1000;
+                }
+            });
+            if (Math.random() < 0.4) {
+                const matterCount = 2 + Math.floor(Math.random() * 3);
+                for (let i = 0; i < matterCount; i++) {
+                    createExpelledMatter('spaceDust', 
+                        star.x + (Math.random()-0.5)*20, 
+                        star.y + (Math.random()-0.5)*20, 
+                        0.02, 0.3
+                    );
+                }
+            }
+        }
+        if (star._jsSpark && now > star._jsSpark) {
+            star._jsSpark = null;
+        }
+    });
+}
+function fgpPyStarBehavior(deltaTime) {
+    const now = Date.now();
+    planets.forEach(star => {
+        if (star.type !== 'pyStar' || star.markedForRemoval) return;
+        if (!star._pyNext) star._pyNext = now + 3000 + Math.random() * 3000;
+        if (now >= star._pyNext) {
+            star._pyNext = now + 3000 + Math.random() * 5000;
+            const radius = star.radius * 7 + 180;
+            star._pyCalm = Date.now() + 1200;
+            planets.forEach(p => {
+                if (p === star || p.markedForRemoval || p.locked) return;
+                if (p.mass > star.mass * 0.4) return;
+                const dx = p.x - star.x;
+                const dy = p.y - star.y;
+                const dist = Math.hypot(dx, dy);
+                if (dist < radius) {
+                    p.vx *= 0.7;
+                    p.vy *= 0.7;
+                    const pull = 0.3 * (1 - dist / radius);
+                    p.vx -= (dx / Math.max(dist, 0.001)) * pull;
+                    p.vy -= (dy / Math.max(dist, 0.001)) * pull;
+                    p._pyOrganized = Date.now() + 1500;
+                }
+            });
+        }
+        if (star._pyCalm && now > star._pyCalm) {
+            star._pyCalm = null;
+        }
+    });
+}
+function fgpCssStarBehavior(deltaTime) {
+    const now = Date.now();
+    planets.forEach(star => {
+        if (star.type !== 'cssStar' || star.markedForRemoval) return;
+        if (!star._cssNext) star._cssNext = now + 2500 + Math.random() * 3500;
+        if (now >= star._cssNext) {
+            star._cssNext = now + 2500 + Math.random() * 4500;
+            const radius = star.radius * 7 + 200;
+            const styleEffects = [
+                { color: '#FFB6C1', glow: '#FF69B4' },
+                { color: '#87CEFA', glow: '#1E90FF' },
+                { color: '#98FB98', glow: '#32CD32' },
+                { color: '#DDA0DD', glow: '#BA55D3' }
+            ];
+            const randomEffect = styleEffects[Math.floor(Math.random() * styleEffects.length)];
+            planets.forEach(p => {
+                if (p === star || p.markedForRemoval) return;
+                const dx = p.x - star.x;
+                const dy = p.y - star.y;
+                const dist = Math.hypot(dx, dy);
+                if (dist < radius) {
+                    p._cssTint = { 
+                        until: Date.now() + 1200, 
+                        color: randomEffect.color,
+                        glow: randomEffect.glow
+                    };
+                    p._styled = Date.now() + 1000;
+                }
+            });
+        }
+    });
+}
+function fgpCsharpStarBehavior(deltaTime) {
+    const now = Date.now();
+    planets.forEach(star => {
+        if (star.type !== 'csharpStar' || star.markedForRemoval) return;
+        if (!star._csharpNext) star._csharpNext = now + 4000 + Math.random() * 3000;
+        if (now >= star._csharpNext) {
+            star._csharpNext = now + 4000 + Math.random() * 6000;
+            const radius = star.radius * 6 + 150;
+            planets.forEach(p => {
+                if (p === star || p.markedForRemoval) return;
+                if (['medusaStar','nitricStar','blackHole','quasar','singularityStar'].includes(p.type)) return;
+                const dx = p.x - star.x;
+                const dy = p.y - star.y;
+                const dist = Math.hypot(dx, dy);
+                if (dist < radius && !p._csharpLocked) {
+                    p._csharpLocked = true;
+                    p._csharpUnlock = Date.now() + 2000 + Math.random() * 2000;
+                    p.originalVx = p.vx;
+                    p.originalVy = p.vy;
+                    p.vx = 0;
+                    p.vy = 0;
+                    p._lockedEffect = Date.now() + 500;
+                }
+                if (p._csharpLocked && p._csharpUnlock && Date.now() >= p._csharpUnlock) {
+                    p._csharpLocked = false;
+                    p.vx = p.originalVx || 0;
+                    p.vy = p.originalVy || 0;
+                    p._csharpUnlock = null;
+                    p._unlockedEffect = Date.now() + 500;
+                }
+            });
+        }
+    });
+}
+function fgpGmlStarBehavior(deltaTime) {
+    const now = Date.now();
+    planets.forEach(star => {
+        if (star.type !== 'gmlStar' || star.markedForRemoval) return;
+        if (!star._gmlNext) star._gmlNext = now + 3500 + Math.random() * 3000;
+        if (now >= star._gmlNext) {
+            star._gmlNext = now + 3500 + Math.random() * 5000;
+            const radius = star.radius * 7 + 160;
+            star._gmlCreating = Date.now() + 1000;
+            if (Math.random() < 0.8) {
+                const count = 2 + Math.floor(Math.random() * 4);
+                for (let i = 0; i < count; i++) {
+                    createExpelledMatter('meteoroid', 
+                        star.x + (Math.random()-0.5)*star.radius, 
+                        star.y + (Math.random()-0.5)*star.radius, 
+                        0.15, 8
+                    );
+                }
+            }
+            planets.forEach(p => {
+                if (p === star || p.markedForRemoval) return;
+                const dx = p.x - star.x;
+                const dy = p.y - star.y;
+                const dist = Math.hypot(dx, dy);
+                if (dist < radius && p.mass < star.mass * 0.35) {
+                    const kick = 1.5 + Math.random() * 3;
+                    const angle = Math.atan2(dy, dx);
+                    const spread = (Math.random() - 0.5) * Math.PI / 4;
+                    p.vx += Math.cos(angle + spread) * kick;
+                    p.vy += Math.sin(angle + spread) * kick;
+                    p._gmlKicked = Date.now() + 800;
+                }
+            });
+        }
+        if (star._gmlCreating && now > star._gmlCreating) {
+            star._gmlCreating = null;
+        }
+    });
+}
+    function fgpJavaStarBehavior(deltaTime) {
+        const now = Date.now();
+        planets.forEach(star => {
+            if (star.type !== 'javaStar' || star.markedForRemoval) return;
+            if (!star._javaNext) star._javaNext = now + 3000 + Math.random() * 3000;
+            if (now >= star._javaNext) {
+                star._javaNext = now + 3000 + Math.random() * 5000;
+                const radius = star.radius * 7 + 180;
+                star._javaPulse = Date.now() + 1000;
+                planets.forEach(p => {
+                    if (p === star || p.markedForRemoval || p.locked) return;
+                    if (p.mass > star.mass * 0.35) return;
+                    const dx = p.x - star.x;
+                    const dy = p.y - star.y;
+                    const dist = Math.hypot(dx, dy);
+                    if (dist < radius) {
+                        p.vx *= 0.6;
+                        p.vy *= 0.6;
+                        p._javaStabilized = Date.now() + 1200;
+                    }
+                });
+            }
+            if (star._javaPulse && now > star._javaPulse) star._javaPulse = null;
+        });
+    }
+    function fgpPhpStarBehavior(deltaTime) {
+        const now = Date.now();
+        planets.forEach(star => {
+            if (star.type !== 'phpStar' || star.markedForRemoval) return;
+            if (!star._phpNext) star._phpNext = now + 2200 + Math.random() * 3000;
+            if (now >= star._phpNext) {
+                star._phpNext = now + 2200 + Math.random() * 5000;
+                star._phpFlicker = Date.now() + 800;
+                if (Math.random() < 0.6) {
+                    const count = 1 + Math.floor(Math.random() * 3);
+                    for (let i = 0; i < count; i++) {
+                        createExpelledMatter('spaceDust', star.x + (Math.random()-0.5)*star.radius, star.y + (Math.random()-0.5)*star.radius, 0.02, 0.5);
+                    }
+                }
+                planets.forEach(p => {
+                    if (p === star || p.markedForRemoval) return;
+                    const dx = p.x - star.x;
+                    const dy = p.y - star.y;
+                    const dist = Math.hypot(dx, dy);
+                    if (dist < star.radius * 6 && p.mass < star.mass * 0.3) {
+                        p.vx += (Math.random() - 0.5) * 1.5;
+                        p.vy += (Math.random() - 0.5) * 1.5;
+                        p._phpTouched = Date.now() + 600;
+                    }
+                });
+            }
+            if (star._phpFlicker && now > star._phpFlicker) star._phpFlicker = null;
+        });
+    }
+    function fgpRustStarBehavior(deltaTime) {
+        const now = Date.now();
+        planets.forEach(star => {
+            if (star.type !== 'rustStar' || star.markedForRemoval) return;
+            if (!star._rustNext) star._rustNext = now + 2800 + Math.random() * 3200;
+            if (now >= star._rustNext) {
+                star._rustNext = now + 2800 + Math.random() * 6000;
+                star._rustSpark = Date.now() + 700;
+                planets.forEach(p => {
+                    if (p === star || p.markedForRemoval || p.locked) return;
+                    if (p.mass > star.mass * 0.25) return;
+                    const dx = p.x - star.x;
+                    const dy = p.y - star.y;
+                    const dist = Math.hypot(dx, dy);
+                    if (dist < star.radius * 6) {
+                        const angle = Math.atan2(dy, dx);
+                        const push = 1 + Math.random() * 2;
+                        p.vx += Math.cos(angle) * push;
+                        p.vy += Math.sin(angle) * push;
+                        p._rustStamped = Date.now() + 800;
+                    }
+                });
+            }
+            if (star._rustSpark && now > star._rustSpark) star._rustSpark = null;
+        });
+    }
+    function fgpGoStarBehavior(deltaTime) {
+        const now = Date.now();
+        planets.forEach(star => {
+            if (star.type !== 'goStar' || star.markedForRemoval) return;
+            if (!star._goNext) star._goNext = now + 1800 + Math.random() * 2000;
+            if (now >= star._goNext) {
+                star._goNext = now + 1800 + Math.random() * 4000;
+                star._goBurst = Date.now() + 600;
+                planets.forEach(p => {
+                    if (p === star || p.markedForRemoval) return;
+                    if (p.mass > star.mass * 0.3) return;
+                    const dx = p.x - star.x;
+                    const dy = p.y - star.y;
+                    const dist = Math.hypot(dx, dy);
+                    if (dist < star.radius * 6) {
+                        p.vx += (Math.random() - 0.5) * 3;
+                        p.vy += (Math.random() - 0.5) * 3;
+                        p._goShaken = Date.now() + 700;
+                    }
+                });
+            }
+            if (star._goBurst && now > star._goBurst) star._goBurst = null;
+        });
+    }
+    function fgpKotlinStarBehavior(deltaTime) {
+        const now = Date.now();
+        planets.forEach(star => {
+            if (star.type !== 'kotlinStar' || star.markedForRemoval) return;
+            if (!star._kotlinNext) star._kotlinNext = now + 2600 + Math.random() * 3000;
+            if (now >= star._kotlinNext) {
+                star._kotlinNext = now + 2600 + Math.random() * 5000;
+                star._kotlinPulse = Date.now() + 900;
+                planets.forEach(p => {
+                    if (p === star || p.markedForRemoval) return;
+                    if (p.mass > star.mass * 0.35) return;
+                    const dx = p.x - star.x;
+                    const dy = p.y - star.y;
+                    const dist = Math.hypot(dx, dy);
+                    if (dist < star.radius * 6) {
+                        p.vx += (Math.random() - 0.5) * 1.8;
+                        p.vy += (Math.random() - 0.5) * 1.8;
+                        p._kotlinTouched = Date.now() + 700;
+                    }
+                });
+            }
+            if (star._kotlinPulse && now > star._kotlinPulse) star._kotlinPulse = null;
+        });
+    }
+    function fgpSwiftStarBehavior(deltaTime) {
+        const now = Date.now();
+        planets.forEach(star => {
+            if (star.type !== 'swiftStar' || star.markedForRemoval) return;
+            if (!star._swiftNext) star._swiftNext = now + 2000 + Math.random() * 3000;
+            if (now >= star._swiftNext) {
+                star._swiftNext = now + 2000 + Math.random() * 4000;
+                star._swiftFlash = Date.now() + 600;
+                planets.forEach(p => {
+                    if (p === star || p.markedForRemoval) return;
+                    if (p.mass > star.mass * 0.3) return;
+                    const dx = p.x - star.x;
+                    const dy = p.y - star.y;
+                    const dist = Math.hypot(dx, dy);
+                    if (dist < star.radius * 5.5) {
+                        const kick = 2 + Math.random() * 2;
+                        const angle = Math.atan2(dy, dx);
+                        p.vx += Math.cos(angle) * kick;
+                        p.vy += Math.sin(angle) * kick;
+                        p._swiftShaken = Date.now() + 600;
+                    }
+                });
+            }
+            if (star._swiftFlash && now > star._swiftFlash) star._swiftFlash = null;
+        });
+    }
+    function fgpTsStarBehavior(deltaTime) {
+        const now = Date.now();
+        planets.forEach(star => {
+            if (star.type !== 'tsStar' || star.markedForRemoval) return;
+            if (!star._tsNext) star._tsNext = now + 2400 + Math.random() * 3200;
+            if (now >= star._tsNext) {
+                star._tsNext = now + 2400 + Math.random() * 5200;
+                star._tsPulse = Date.now() + 800;
+                planets.forEach(p => {
+                    if (p === star || p.markedForRemoval) return;
+                    if (p.mass > star.mass * 0.35) return;
+                    const dx = p.x - star.x;
+                    const dy = p.y - star.y;
+                    const dist = Math.hypot(dx, dy);
+                    if (dist < star.radius * 6) {
+                        p.vx *= 0.8;
+                        p.vy *= 0.8;
+                        p._tsCalmed = Date.now() + 900;
+                    }
+                });
+            }
+            if (star._tsPulse && now > star._tsPulse) star._tsPulse = null;
+        });
+    }
+    function fgpLuaStarBehavior(deltaTime) {
+        const now = Date.now();
+        planets.forEach(star => {
+            if (star.type !== 'luaStar' || star.markedForRemoval) return;
+            if (!star._luaNext) star._luaNext = now + 3000 + Math.random() * 3000;
+            if (now >= star._luaNext) {
+                star._luaNext = now + 3000 + Math.random() * 5000;
+                star._luaSwirl = Date.now() + 1000;
+                planets.forEach(p => {
+                    if (p === star || p.markedForRemoval) return;
+                    if (p.mass > star.mass * 0.35) return;
+                    const dx = p.x - star.x;
+                    const dy = p.y - star.y;
+                    const dist = Math.hypot(dx, dy);
+                    if (dist < star.radius * 5.5) {
+                        const angle = Math.atan2(dy, dx);
+                        const push = 1 + Math.random() * 1.5;
+                        p.vx += Math.cos(angle + 0.3) * push;
+                        p.vy += Math.sin(angle + 0.3) * push;
+                        p._luaSpun = Date.now() + 700;
+                    }
+                });
+            }
+            if (star._luaSwirl && now > star._luaSwirl) star._luaSwirl = null;
+        });
+    }
+    function fgpRubyStarBehavior(deltaTime) {
+        const now = Date.now();
+        planets.forEach(star => {
+            if (star.type !== 'rubyStar' || star.markedForRemoval) return;
+            if (!star._rubyNext) star._rubyNext = now + 2600 + Math.random() * 3400;
+            if (now >= star._rubyNext) {
+                star._rubyNext = now + 2600 + Math.random() * 5400;
+                star._rubyGlow = Date.now() + 900;
+                planets.forEach(p => {
+                    if (p === star || p.markedForRemoval) return;
+                    if (p.mass > star.mass * 0.35) return;
+                    const dx = p.x - star.x;
+                    const dy = p.y - star.y;
+                    const dist = Math.hypot(dx, dy);
+                    if (dist < star.radius * 6) {
+                        p.vx += (Math.random() - 0.5) * 2.2;
+                        p.vy += (Math.random() - 0.5) * 2.2;
+                        p._rubyTouched = Date.now() + 800;
+                    }
+                });
+            }
+            if (star._rubyGlow && now > star._rubyGlow) star._rubyGlow = null;
+        });
+    }
+    function fgpDartStarBehavior(deltaTime) {
+        const now = Date.now();
+        planets.forEach(star => {
+            if (star.type !== 'dartStar' || star.markedForRemoval) return;
+            if (!star._dartNext) star._dartNext = now + 1800 + Math.random() * 2600;
+            if (now >= star._dartNext) {
+                star._dartNext = now + 1800 + Math.random() * 4600;
+                star._dartBurst = Date.now() + 600;
+                planets.forEach(p => {
+                    if (p === star || p.markedForRemoval) return;
+                    if (p.mass > star.mass * 0.3) return;
+                    const dx = p.x - star.x;
+                    const dy = p.y - star.y;
+                    const dist = Math.hypot(dx, dy);
+                    if (dist < star.radius * 5) {
+                        p.vx += (Math.random() - 0.5) * 3.5;
+                        p.vy += (Math.random() - 0.5) * 3.5;
+                        p._dartShaken = Date.now() + 700;
+                    }
+                });
+            }
+            if (star._dartBurst && now > star._dartBurst) star._dartBurst = null;
+        });
+    }
+    function fgpHtmlStarBehavior(deltaTime) {
+        const now = Date.now();
+        planets.forEach(star => {
+            if (star.type !== 'htmlStar' || star.markedForRemoval) return;
+            if (!star._htmlNext) star._htmlNext = now + 2200 + Math.random() * 3000;
+            if (now >= star._htmlNext) {
+                star._htmlNext = now + 2200 + Math.random() * 5200;
+                star._htmlPulse = Date.now() + 800;
+                planets.forEach(p => {
+                    if (p === star || p.markedForRemoval) return;
+                    if (p.mass > star.mass * 0.35) return;
+                    const dx = p.x - star.x;
+                    const dy = p.y - star.y;
+                    const dist = Math.hypot(dx, dy);
+                    if (dist < star.radius * 6) {
+                        p.vx += (Math.random() - 0.5) * 1.6;
+                        p.vy += (Math.random() - 0.5) * 1.6;
+                        p._htmlTouched = Date.now() + 700;
+                    }
+                });
+            }
+            if (star._htmlPulse && now > star._htmlPulse) star._htmlPulse = null;
+        });
+    }
+    function fgpJsonStarBehavior(deltaTime) {
+        const now = Date.now();
+        planets.forEach(star => {
+            if (star.type !== 'jsonStar' || star.markedForRemoval) return;
+            if (!star._jsonNext) star._jsonNext = now + 2600 + Math.random() * 3000;
+            if (now >= star._jsonNext) {
+                star._jsonNext = now + 2600 + Math.random() * 5000;
+                star._jsonPulse = Date.now() + 900;
+                planets.forEach(p => {
+                    if (p === star || p.markedForRemoval) return;
+                    if (p.mass > star.mass * 0.33) return;
+                    const dx = p.x - star.x;
+                    const dy = p.y - star.y;
+                    const dist = Math.hypot(dx, dy);
+                    if (dist < star.radius * 5.5) {
+                        p.vx *= 0.9;
+                        p.vy *= 0.9;
+                        p._jsonCalmed = Date.now() + 800;
+                    }
+                });
+            }
+            if (star._jsonPulse && now > star._jsonPulse) star._jsonPulse = null;
+        });
+    }
+    function fgpAssemblyStarBehavior(deltaTime) {
+        const now = Date.now();
+        planets.forEach(star => {
+            if (star.type !== 'assemblyStar' || star.markedForRemoval) return;
+            if (!star._assemblyNext) star._assemblyNext = now + 1800 + Math.random() * 2600;
+            if (now >= star._assemblyNext) {
+                star._assemblyNext = now + 1800 + Math.random() * 4600;
+                star._assemblyBurst = Date.now() + 600;
+                planets.forEach(p => {
+                    if (p === star || p.markedForRemoval) return;
+                    if (p.mass > star.mass * 0.3) return;
+                    const dx = p.x - star.x;
+                    const dy = p.y - star.y;
+                    const dist = Math.hypot(dx, dy);
+                    if (dist < star.radius * 5) {
+                        p.vx += (Math.random() - 0.5) * 3.2;
+                        p.vy += (Math.random() - 0.5) * 3.2;
+                        p._assemblyShaken = Date.now() + 700;
+                    }
+                });
+            }
+            if (star._assemblyBurst && now > star._assemblyBurst) star._assemblyBurst = null;
+        });
+    }
+    function fgpSqlStarBehavior(deltaTime) {
+        const now = Date.now();
+        planets.forEach(star => {
+            if (star.type !== 'sqlStar' || star.markedForRemoval) return;
+            if (!star._sqlNext) star._sqlNext = now + 2400 + Math.random() * 3200;
+            if (now >= star._sqlNext) {
+                star._sqlNext = now + 2400 + Math.random() * 5200;
+                star._sqlPulse = Date.now() + 900;
+                planets.forEach(p => {
+                    if (p === star || p.markedForRemoval) return;
+                    if (p.mass > star.mass * 0.35) return;
+                    const dx = p.x - star.x;
+                    const dy = p.y - star.y;
+                    const dist = Math.hypot(dx, dy);
+                    if (dist < star.radius * 6) {
+                        const angle = Math.atan2(dy, dx);
+                        const ringIndex = Math.floor((angle + Math.PI) / (Math.PI / 4));
+                        const targetAngle = ringIndex * (Math.PI / 4) - Math.PI + (Math.random() - 0.5) * 0.2;
+                        const targetRadius = star.radius * (1.2 + (ringIndex % 4) * 0.2);
+                        const tx = Math.cos(targetAngle) * targetRadius + star.x;
+                        const ty = Math.sin(targetAngle) * targetRadius + star.y;
+                        p.vx += (tx - p.x) * 0.001 + (Math.random() - 0.5) * 0.6;
+                        p.vy += (ty - p.y) * 0.001 + (Math.random() - 0.5) * 0.6;
+                        p._sqlTouched = Date.now() + 800;
+                    }
+                });
+            }
+            if (star._sqlPulse && now > star._sqlPulse) star._sqlPulse = null;
+        });
+    }
 function canBePetrifiedByMedusa(obj) {
     if (!obj || obj.markedForRemoval || obj.petrified) return false;
-    const petrifiableTypes = [
-        'rocket', 'spaceship', 'satellite', 'superShip',
-        'asteroid', 'meteoroid', 'meteorite', 'comet',
-        'planetoid', 'rockyPlanet', 'gasGiant',
-        'star', 'redDwarf', 'brownDwarf', 'whiteDwarf',
-        'carbonStar', 'giantStar', 'hypergiant', 'massiveStar',
-        'redGiant', 'redSupergiant', 'ttauriStar',
-        'pulsar', 'neutronStar', 'quarkStar', 'magnetar'
-    ];
-    const protectedTypes = ['medusaStar', 'nitricStar', 'blackHole', 'quasar', 'whiteHole', 'wormhole'];
-    return petrifiableTypes.includes(obj.type) && !protectedTypes.includes(obj.type);
+    const protectedTypes = ['medusaStar', 'blackHole', 'quasar', 'whiteHole', 'wormhole'];
+    if (protectedTypes.includes(obj.type)) return false;
+    return true;
 }
 function applyContinuousMedusaPetrification(medusaStar) {
     const petrificationRadius = medusaStar.radius * 6;
     planets.forEach(other => {
         if (other === medusaStar || other.markedForRemoval || other.petrified) return;
-        if (!isSpaceshipType(other.type) && 
-            !['rocket', 'spaceship', 'satellite', 'superShip'].includes(other.type)) {
-            return;
-        }
         const dx = other.x - medusaStar.x;
         const dy = other.y - medusaStar.y;
         const distance = Math.sqrt(dx * dx + dy * dy);
         if (distance < petrificationRadius) {
             const petrificationChance = 1 - (distance / petrificationRadius);
-            if (Math.random() < petrificationChance * 0.05) {
-                transformToMeteoroid(other);
+            if (Math.random() < petrificationChance * 0.12) {
+                petrifyAstro(other);
             }
         }
     });
@@ -12414,14 +15020,12 @@ function applyPetrificationEffect(medusaStar) {
         const dx = other.x - medusaStar.x;
         const dy = other.y - medusaStar.y;
         const distance = Math.sqrt(dx * dx + dy * dy);
-        if (distance < petrificationRadius && 
-            ['rocket', 'spaceship', 'satellite', 'superShip'].includes(other.type)) {
-            other.originalType = other.type;
-            other.type = 'meteoroid';
-            other.color = '#666666';
-            other.petrified = true;
-            other.petrificationTime = Date.now();
-            createTransformationEffect(other);
+        if (distance < petrificationRadius) {
+            const strongChance = 1 - (distance / petrificationRadius);
+            if (Math.random() < strongChance * 0.9) {
+                petrifyAstro(other);
+                createTransformationEffect(other);
+            }
         }
     });
 }
@@ -12438,6 +15042,23 @@ function createTransformationEffect(astro) {
             size: astro.radius * 0.3
         };
     }
+}
+function petrifyAstro(obj) {
+    if (!obj || obj.markedForRemoval || obj.petrified) return;
+    if (obj.type === 'medusaStar') return;
+    obj.originalType = obj.originalType || obj.type;
+    obj.originalColor = obj.originalColor || obj.color;
+    obj.originalGlowColor = obj.originalGlowColor || obj.glowColor;
+    obj.originalLocked = obj.originalLocked === undefined ? !!obj.locked : obj.originalLocked;
+    obj.originalVx = obj.originalVx === undefined ? obj.vx : obj.originalVx;
+    obj.originalVy = obj.originalVy === undefined ? obj.vy : obj.originalVy;
+    obj.petrified = true;
+    obj.petrificationTime = Date.now();
+    obj.color = '#7f8c8d';
+    obj.glowColor = '#4a4a4a';
+    try {
+        obj.vx = 0; obj.vy = 0; obj.locked = true;
+    } catch (e) { }
 }
 function playNitricExplosionSound() {
     try {
@@ -12602,10 +15223,16 @@ function depetrifyAstro(obj) {
     if (!obj || !obj.petrified) return;
     console.log(`🧪 Nitric depetrifying: ${obj.originalType} (restoring original colors)`);
     obj.petrified = false;
+    if (obj.originalType) {
+        try { obj.type = obj.originalType; } catch (e) {}
+    }
     obj.color = obj.originalColor || obj.originalVisualColor || obj.color;
     obj.glowColor = obj.originalGlowColor || obj.glowColor;
+    if (obj.originalVx !== undefined) obj.vx = obj.originalVx;
+    if (obj.originalVy !== undefined) obj.vy = obj.originalVy;
+    if (obj.originalLocked !== undefined) obj.locked = obj.originalLocked;
     createDepetrificationEffect(obj);
-    showNotification(`✨ ${getTypeName(obj.originalType)} desempetrificado pela Estrela Nítrica! (Cores restauradas)`, 2000);
+    showNotification(`✨ ${getTypeName(obj.originalType || obj.type)} desempetrificado pela Estrela Nítrica! (Cores/restauração)`, 2000);
 }
 function createDepetrificationEffect(obj) {
     for (let i = 0; i < 8; i++) {
@@ -12760,6 +15387,25 @@ function getTypeName(type) {
         'quantumFoamStar':'Quantum Foam Star',
         'prismStar':'Prism Star',
         'echoStar':'Echo Star',
+        'asciiStar':'ASCII Star',
+        'jsStar':'JS Star',
+        'pyStar':'Py Star',
+        'cssStar':'CSS Star',
+        'csharpStar':'C# Star',
+        'gmlStar':'GML Star',
+        'javaStar':'Java Star',
+        'phpStar':'PHP Star',
+        'rustStar':'Rust Star',
+        'goStar':'Go Star',
+        'kotlinStar':'Kotlin Star',
+        'swiftStar':'Swift Star',
+        'tsStar':'TypeScript Star',
+        'luaStar':'Lua Star',
+        'rubyStar':'Ruby Star',
+        'dartStar':'Dart Star',
+        'htmlStar':'HTML Star',
+        'jsonStar':'JSON Star',
+        'assemblyStar':'Assembly Star',
         'singularityStar':'Singularity'
     };
     return names[type] || 'Astro';

@@ -54,6 +54,5 @@
   { "id": 53, "name": "Uma Casa no meio do nada..", "desc": "Naves espaciais? são o futuro da exploração." },
   { "id": 54, "name": "A essa Altura? é exagero?", "desc": "Essa civilização construiu até Super Naves, quase do tamanho de um planetoide!" },
   { "id": 55, "name": "Milionário da Inteligência", "desc": "A Civilização passou dos 1M de inteligência, más isso não é motivo para eles se acharem, apenas um fato." },
-  { "id": 0, "name": "Em breve, podem vir mais conquistas..", "desc": "" },
-  { "id": -1, "name": "Secrets", "desc": ""}
+  { "id": 0, "name": "Em breve, podem vir mais conquistas..", "desc": "" }
 ]

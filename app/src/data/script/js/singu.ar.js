@@ -13,6 +13,11 @@ const responseDatabase = {
     "!#&&!(¬¢)/°¢!$@": [
         "My Congratulations! The Medusa Star is now available in the shop! Go to the shop and click 'Get' to unlock it."
     ],
+    "100100111":[
+        "🎉 Congratulations! You unlocked the star pack codes.",
+        "🌌 This star is unique and has special properties.",
+        "✨ Make sure to explore its potential in the game!"
+    ],
     "مذنب": [
             "☄️ المذنبات هي أجسام جليدية تنمو لها ذيول عند اقترابها من النجوم! في لعبة SIU 2D، يمكنك إنشاؤها من قائمة 'إنشاء الأجرام السماوية'",
             "💫 الكتلة النموذجية للمذنبات تتراوح بين 0.1-10 وحدة. عند تجاوز 300 وحدة كتلة، تتحول تلقائياً إلى كواكب جليدية صغيرة",
@@ -2404,6 +2409,18 @@ function checkForSecretCode(input) {
         unlockMedusaStarInShop();
         return true;
     }   
+    if (cleanInput === "100100111") {
+        console.log("Secret code detected! Unlocking Code Star Pack...");
+        try {
+            if (window && typeof window.unlockStarCodes === 'function') {
+                window.unlockStarCodes();
+            }
+        } catch (e) {
+            console.error('Failed to call unlockStarCodes:', e);
+        }
+        displayMessage("🎉 تم إلغاء حزمة نجوم الشفرة! اذهب إلى قائمة الإنشاء لاستخدامها.", 'bot');
+        return true;
+    }
     return false;
 }
 function unlockMedusaStarInShop() {

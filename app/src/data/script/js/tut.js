@@ -77,6 +77,7 @@ function nextTutorialStep(forceReload = false) {
       showTutorialSingularity('welcome');
       setTimeout(() => {
         tutorialStep = 1;
+        document.getElementById('step1').style.display = 'block';
         showTutorialSingularity(
           'intro',
           `<button id="btnTutContinue1" class="cutscene-btn">${tutT('buttons.ok')}</button>`
@@ -187,6 +188,7 @@ function nextTutorialStep(forceReload = false) {
                             'create_star',
                             `<button id="btnTutCreateStar" class="cutscene-btn">${tutT('buttons.next')}</button>`
                           );
+                          document.getElementById('step3').style.display = 'block';
                           document.getElementById('btnTutCreateStar').onclick = () => {
                             tutorialStarCreated = true;
                             setTimeout(nextTutorialStep, 300);
@@ -208,6 +210,9 @@ function nextTutorialStep(forceReload = false) {
         'open_menu_again',
         `<button id="btnTutOpenMenuAgain" class="cutscene-btn">${tutT('buttons.next')}</button>`
       );
+      document.getElementById('step2').style.display = 'block';
+      document.getElementById('step5').style.display = 'block';
+      document.getElementById('step6').style.display = 'block';
       document.getElementById('btnTutOpenMenuAgain').onclick = () => {
         showTutorialSingularity(
           'choose_rocky',
@@ -242,6 +247,8 @@ function nextTutorialStep(forceReload = false) {
           );
           document.getElementById('btnTutOpenAfterF').onclick = () => {
             tutorialStep = 16;
+            document.getElementById('step3').style.display = 'none';
+            document.getElementById('step4').style.display = 'block';
             showTutorialSingularity(
               'choose_tauri',
               `<button id="btnTutChooseTauri" class="cutscene-btn">${tutT('buttons.next')}</button>`
@@ -258,6 +265,7 @@ function nextTutorialStep(forceReload = false) {
                   'time_control',
                   `<button id="btnTutTimeControl" class="cutscene-btn">${tutT('buttons.next')}</button>`
                 );
+                document.getElementById('step3').style.display = 'block';
                 document.getElementById('btnTutTimeControl').onclick = () => {
                   tutorialStep = 20;
                   showTutorialSingularity(

@@ -13,6 +13,11 @@ const responseDatabase = {
     "!#&&!(¬¢)/°¢!$@": [
         "My Congratulations! The Medusa Star is now available in the shop! Go to the shop and click 'Get' to unlock it."
     ],
+    "100100111":[
+        "🎉 Congratulations! You unlocked the star pack codes.",
+        "🌌 This star is unique and has special properties.",
+        "✨ Make sure to explore its potential in the game!"
+    ],
 "धूमकेतु": [
     "☄️ धूमकेतु बर्फीले पिंड हैं जो तारों के पास आने पर पूँछ विकसित करते हैं! SIU 2D में, आप इन्हें 'Create Astros' मेन्यू में बना सकते हैं",
     "💫 धूमकेतु का सामान्य द्रव्यमान 0.1-10 यूनिट होता है। 300 द्रव्यमान से ऊपर, ये स्वतः हिम ग्रहिकाओं में बदल जाते हैं",
@@ -2406,6 +2411,18 @@ function checkForSecretCode(input) {
         unlockMedusaStarInShop();
         return true;
     }   
+    if (cleanInput === "100100111") {
+        console.log("Secret code detected! Unlocking Code Star Pack...");
+        try {
+            if (window && typeof window.unlockStarCodes === 'function') {
+                window.unlockStarCodes();
+            }
+        } catch (e) {
+            console.error('Failed to call unlockStarCodes:', e);
+        }
+        displayMessage("🎉 बधाई हो! कोड स्टार पैक अनलॉक हो गया है! उन्हें उपयोग करने के लिए निर्माण मेन्यू देखें।", 'bot');
+        return true;
+    }
     return false;
 }
 function unlockMedusaStarInShop() {

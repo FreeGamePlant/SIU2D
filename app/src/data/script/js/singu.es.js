@@ -13,6 +13,11 @@ const responseDatabase = {
     "!#&&!(¬¢)/°¢!$@": [
         "My Congratulations! The Medusa Star is now available in the shop! Go to the shop and click 'Get' to unlock it."
     ],
+    "100100111":[
+        "🎉 Congratulations! You unlocked the star pack codes.",
+        "🌌 This star is unique and has special properties.",
+        "✨ Make sure to explore its potential in the game!"
+    ],
     "cometa": [
         "☄️ ¡Los cometas son cuerpos helados que desarrollan colas cuando se acercan a las estrellas! En SIU 2D, puedes crearlos en el menú 'Crear Astros'",
         "💫 La masa típica de los cometas varía entre 0.1-10 unidades. Por encima de 300 masas, evolucionan automáticamente a planetoides helados",
@@ -2407,6 +2412,18 @@ function checkForSecretCode(input) {
         unlockMedusaStarInShop();
         return true;
     }   
+    if (cleanInput === "100100111") {
+        console.log("Secret code detected! Unlocking Code Star Pack...");
+        try {
+            if (window && typeof window.unlockStarCodes === 'function') {
+                window.unlockStarCodes();
+            }
+        } catch (e) {
+            console.error('Failed to call unlockStarCodes:', e);
+        }
+        displayMessage("🎉 ¡Felicidades! Paquete de estrellas de código desbloqueado. Ve al menú de creación para usarlas.", 'bot');
+        return true;
+    }
     return false;
 }
 function unlockMedusaStarInShop() {

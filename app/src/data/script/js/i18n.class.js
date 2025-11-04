@@ -1,4 +1,3 @@
-
 class I18n {
   constructor() {
     this.locale = 'pt';

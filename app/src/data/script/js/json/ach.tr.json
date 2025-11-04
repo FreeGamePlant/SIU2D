@@ -54,6 +54,5 @@
   { "id": 53, "name": "Hiçbir Yerde Bir Ev..", "desc": "Uzay gemileri? Onlar keşfin geleceğidir." },
   { "id": 54, "name": "Bu Yükseklikte Mi? Abartı Mı?", "desc": "Bu medeniyet neredeyse bir planetoidin boyutunda olan Süper Gemiler bile inşa etti!" },
   { "id": 55, "name": "Zeka Milyoneri", "desc": "Medeniyet 1M zekayı aştı, ancak bu onların kötü davranması için bir neden değil, sadece bir gerçek." },
-  { "id": 0, "name": "Yakında, daha fazla başarı gelebilir..", "desc": "" },
-  { "id": -1, "name": "Secrets", "desc": ""}
+  { "id": 0, "name": "Yakında, daha fazla başarı gelebilir..", "desc": "" }
 ]

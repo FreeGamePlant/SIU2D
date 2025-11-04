@@ -13,6 +13,11 @@ const responseDatabase = {
     "!#&&!(¬¢)/°¢!$@": [
         "My Congratulations! The Medusa Star is now available in the shop! Go to the shop and click 'Get' to unlock it."
     ],
+    "100100111":[
+        "🎉 Congratulations! You unlocked the star pack codes.",
+        "🌌 This star is unique and has special properties.",
+        "✨ Make sure to explore its potential in the game!"
+    ],
     "彗星（すいせい）": [
         "☄️ 彗星は恒星に近づくと尾を発達させる氷天体！SIU 2Dでは「天体作成」メニューで作成可能",
         "💫 彗星の標準質量：0.1～10単位。300質量以上は自動的に氷惑星体に進化",
@@ -2303,6 +2308,18 @@ function checkForSecretCode(input) {
         unlockMedusaStarInShop();
         return true;
     }   
+    if (cleanInput === "100100111") {
+        console.log("Secret code detected! Unlocking Code Star Pack...");
+        try {
+            if (window && typeof window.unlockStarCodes === 'function') {
+                window.unlockStarCodes();
+            }
+        } catch (e) {
+            console.error('Failed to call unlockStarCodes:', e);
+        }
+        displayMessage("🎉 おめでとうございます！コードスターのパックを解除しました。作成メニューで使用できます。", 'bot');
+        return true;
+    }
     return false;
 }
 function unlockMedusaStarInShop() {

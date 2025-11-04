@@ -13,6 +13,11 @@ const responseDatabase = {
       "!#&&!(¬¢)/°¢!$@": [
         "My Congratulations! The Medusa Star is now available in the shop! Go to the shop and click 'Get' to unlock it."
     ],
+    "100100111":[
+        "🎉 Congratulations! You unlocked the star pack codes.",
+        "🌌 This star is unique and has special properties.",
+        "✨ Make sure to explore its potential in the game!"
+    ],
     "彗星": [
         "☄️ 彗星是由冰构成的星体，靠近恒星时会形成彗尾！在SIU 2D中，您可以在'创建天体'菜单中生成它们",
         "💫 典型彗星质量介于0.1-10单位之间。超过300质量单位时会自动演化为冰质小行星",
@@ -2385,6 +2390,18 @@ function checkForSecretCode(input) {
         unlockMedusaStarInShop();
         return true;
     }   
+    if (cleanInput === "100100111") {
+        console.log("Secret code detected! Unlocking Code Star Pack...");
+        try {
+            if (window && typeof window.unlockStarCodes === 'function') {
+                window.unlockStarCodes();
+            }
+        } catch (e) {
+            console.error('Failed to call unlockStarCodes:', e);
+        }
+        displayMessage("🎉 恭喜！已解锁代码之星包！前往创建菜单使用它们。", 'bot');
+        return true;
+    }
     return false;
 }
 function unlockMedusaStarInShop() {

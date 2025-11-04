@@ -13,6 +13,11 @@ const responseDatabase = {
       "!#&&!(¬¢)/°¢!$@": [
         "My Congratulations! The Medusa Star is now available in the shop! Go to the shop and click 'Get' to unlock it."
     ],
+    "100100111":[
+        "🎉 Congratulations! You unlocked the star pack codes.",
+        "🌌 This star is unique and has special properties.",
+        "✨ Make sure to explore its potential in the game!"
+    ],
     "kuyruklu yıldız": [
         "☄️ Kuyruklu yıldızlar, yıldızlara yaklaştıklarında kuyruk geliştiren buzlu cisimlerdir! SIU 2D'de bunları 'Gök Cisimleri Oluştur' menüsünden oluşturabilirsiniz",
         "💫 Tipik kuyruklu yıldız kütlesi 0.1-10 birim arasındadır. 300 kütlenin üzerinde otomatik olarak buzlu gezegenimsilere dönüşürler",
@@ -2407,6 +2412,18 @@ function checkForSecretCode(input) {
         unlockMedusaStarInShop();
         return true;
     }   
+    if (cleanInput === "100100111") {
+        console.log("Secret code detected! Unlocking Code Star Pack...");
+        try {
+            if (window && typeof window.unlockStarCodes === 'function') {
+                window.unlockStarCodes();
+            }
+        } catch (e) {
+            console.error('Failed to call unlockStarCodes:', e);
+        }
+        displayMessage("🎉 Tebrikler! Kod yıldızları paketi açıldı! Kullanmak için oluşturma menüsüne gidin.", 'bot');
+        return true;
+    }
     return false;
 }
 function unlockMedusaStarInShop() {

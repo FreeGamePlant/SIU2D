@@ -54,6 +54,5 @@
   { "id": 53, "name": "Una Casa nel Mezzo del Nulla..", "desc": "Le astronavi? Sono il futuro dell'esplorazione." },
   { "id": 54, "name": "A Questa Altezza? È un'Esaerazione?", "desc": "Questa civiltà ha costruito anche Super Navi, quasi delle dimensioni di un planetesimo!" },
   { "id": 55, "name": "Milionario dell'Intelligenza", "desc": "La Civiltà ha superato 1M di intelligenza, ma non è un motivo per farla franca, è solo un fatto." },
-  { "id": 0, "name": "Prossimamente, potrebbero arrivare altri achievement..", "desc": "" },
-  { "id": -1, "name": "Secrets", "desc": ""}
+  { "id": 0, "name": "Prossimamente, potrebbero arrivare altri achievement..", "desc": "" }
 ]

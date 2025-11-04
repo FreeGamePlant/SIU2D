@@ -13,6 +13,11 @@ const responseDatabase = {
     "!#&&!(¬¢)/°¢!$@": [
         "My Congratulations! The Medusa Star is now available in the shop! Go to the shop and click 'Get' to unlock it."
     ],
+    "100100111":[
+        "🎉 Congratulations! You unlocked the star pack codes.",
+        "🌌 This star is unique and has special properties.",
+        "✨ Make sure to explore its potential in the game!"
+    ],
     "혜성": [
         "☄️ 혜성은 별에 가까워지면 꼬리를 발달시키는 얼어붙은 천체입니다! SIU 2D에서는 '천체 생성' 메뉴에서 만들 수 있습니다",
         "💫 혜성의 일반적인 질량은 0.1~10 단위입니다. 300 질량 이상은 자동으로 얼음 행성체로 진화합니다",
@@ -2413,6 +2418,18 @@ function checkForSecretCode(input) {
         unlockMedusaStarInShop();
         return true;
     }   
+    if (cleanInput === "100100111") {
+        console.log("Secret code detected! Unlocking Code Star Pack...");
+        try {
+            if (window && typeof window.unlockStarCodes === 'function') {
+                window.unlockStarCodes();
+            }
+        } catch (e) {
+            console.error('Failed to call unlockStarCodes:', e);
+        }
+        displayMessage("🎉 축하합니다! 코드 별 팩이 잠금 해제되었습니다! 생성 메뉴로 가서 사용하세요.", 'bot');
+        return true;
+    }
     return false;
 }
 function unlockMedusaStarInShop() {
