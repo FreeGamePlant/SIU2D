@@ -9894,7 +9894,6 @@ function createSpecialSave(saveName, saveData) {
         saves.push(specialSave);
     }
     localStorage.setItem('siu2d_saves', JSON.stringify(saves));
-    showNotification(`Save especial "${saveName}" criado com sucesso!`);
 }
 function getSaveDescription(saveName) {
     const descriptions = {
@@ -11984,7 +11983,7 @@ function checkNitricStarUnlock() {
         nitricStarUnlocked = true;
         localStorage.setItem('nitricStarUnlocked', 'true');
         initializeNitricStar();
-        showNotification('⭐ Estrela Nítrica desbloqueada! Disponível na loja por 20.000 TS Coins!', 5000);
+        showNotification('Nitric Star Unlocked!', 5000);
     }
 }
 function purchaseMedusaStar() {
@@ -12017,7 +12016,7 @@ function purchaseNitricStar() {
         fgpTSCoinsDisplay();
         fgpCreationGrid();
         initializeNitricStar();
-        showNotification(`🎉 Estrela Nítrica comprada por ${NITRIC_STAR_PRICE} TS Coins! Agora você pode criá-la no modo criação.`);
+        showNotification(`Nitric Star: ${NITRIC_STAR_PRICE} TS Coins!`);
         return true;
     } else {
         showNotification("TS Coins insuficientes para comprar a Estrela Nítrica!");
