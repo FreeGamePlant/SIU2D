@@ -163,12 +163,6 @@ user-select: text;
         Developer: Elai Leonel FIgueroa
       </p>
         </div>
-        <div class="warnings-actions" style="margin-top:12px; display:flex; gap:8px; align-items:center;">
-            <label for="dontShowWarningsCheckbox" style="color:#ccc; font-size:0.95rem; display:flex; align-items:center; gap:8px;">
-                <input type="checkbox" id="dontShowWarningsCheckbox"> <span>Don't show</span>
-            </label>
-            <button class="btn" id="btnDontShowWarnings" style="margin-left:auto;">Save preference  </button>
-        </div>
     </div>
 </div>
 <div id="firstVisitModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.85); z-index:12000; justify-content:center; align-items:center;"> 
@@ -341,41 +335,41 @@ user-select: text;
                         </div>
                         <div class="shop-sections">
                             <div id="shopSection_saves" class="shop-section" style="display:none;">
-                                <div class="shop-item" data-item-id="solar_system" data-price="10000">
+                                <div class="shop-item" data-item-id="solar_system" data-price="1000">
                                     <div class="shop-item-icon"><i class="fas fa-solar-system"></i></div>
                                     <h3>Solar System</h3>
                                     <p>Our Incredible Solar System, SIU2D version</p>
-                                    <div class="shop-item-price">10.000<img src="../assets/img/tsCoins.png" class="tsCoinsIcon" alt=""> / save</div>
+                                    <div class="shop-item-price">TSCs: 1.000<img src="../assets/img/tsCoins.png" class="tsCoinsIcon" alt=""> / save</div>
                                 </div>
-                                <div class="shop-item" data-item-id="past_solar_system" data-price="11000">
+                                <div class="shop-item" data-item-id="past_solar_system" data-price="5000">
                                     <div class="shop-item-icon"><i class="fas fa-solar-system"></i></div>
                                     <h3>Past Solar System</h3>
                                     <p>The Solar System in the Past, warning! It has a completely Alternative future!</p>
-                                    <div class="shop-item-price">11.000<img src="../assets/img/tsCoins.png" class="tsCoinsIcon" alt=""> / save</div>
+                                    <div class="shop-item-price">TSCs: 5.000<img src="../assets/img/tsCoins.png" class="tsCoinsIcon" alt=""> / save</div>
                                 </div>
                                 <div class="shop-item" data-item-id="complete_solar_system" data-price="12500">
                                     <div class="shop-item-icon"><i class="fas fa-solar-system"></i></div>
                                     <h3>Alternative Solar System</h3>
                                     <p>What if the solar system had them all? What would it be like? Which theory do you believe most?</p>
-                                    <div class="shop-item-price">12.500<img src="../assets/img/tsCoins.png" class="tsCoinsIcon" alt=""> / save</div>
+                                    <div class="shop-item-price">TSCs: 12.500<img src="../assets/img/tsCoins.png" class="tsCoinsIcon" alt=""> / save</div>
                                 </div>
                                 <div class="shop-item" data-item-id="habitable_alpha" data-price="1000">
                                     <div class="shop-item-icon"><i class="fas fa-globe-americas"></i></div>
                                     <h3>HABITABLE - ALPHA</h3>
                                     <p>a solar system of one star and one planet with one moon ready.</p>
-                                    <div class="shop-item-price">1.000<img src="../assets/img/tsCoins.png" class="tsCoinsIcon" alt=""> / Save</div>
+                                    <div class="shop-item-price">TSCs: 1.000<img src="../assets/img/tsCoins.png" class="tsCoinsIcon" alt=""> / Save</div>
                                 </div>
-                                <div class="shop-item" data-item-id="trappist_1" data-price="25000">
+                                <div class="shop-item" data-item-id="trappist_1" data-price="10000">
                                     <div class="shop-item-icon"><i class="fas fa-planet-moon"></i></div>
                                     <h3>TRAPPIST-1</h3>
                                     <p>The TRAPPIST-1 solar system.</p>
-                                    <div class="shop-item-price">25.000<img src="../assets/img/tsCoins.png" class="tsCoinsIcon" alt=""> / save</div>
+                                    <div class="shop-item-price">TSCs: 10.000<img src="../assets/img/tsCoins.png" class="tsCoinsIcon" alt=""> / save</div>
                                 </div>
                                 <div class="shop-item" data-item-id="create_random_save" data-price="50000">
                                     <div class="shop-item-icon"><i class="fas fa-solar-system"></i></div>
                                     <h3>Random Galaxy Save</h3>
                                     <p>A Save that generates random galaxy</p>
-                                    <div class="shop-item-price">50.000<img src="../assets/img/tsCoins.png" class="tsCoinsIcon" alt=""> / save</div>
+                                    <div class="shop-item-price">TSCs: 50.000<img src="../assets/img/tsCoins.png" class="tsCoinsIcon" alt=""> / save</div>
                                 </div>
                             </div>
                             <div id="shopSection_astros" class="shop-section">
@@ -383,31 +377,25 @@ user-select: text;
                                     <div class="shop-item-icon"><i class="fas fa-stars"></i></div>
                                     <h3>Bizarre Stars</h3>
                                     <p>+9 types of fictional stars with + 1 star called 'SINGULARITY1'</p>
-                                    <div class="shop-item-price">30.500<img src="../assets/img/tsCoins.png" class="tsCoinsIcon" alt=""> / + 20 Astro</div>
+                                    <div class="shop-item-price">TSCs: 30.500<img src="../assets/img/tsCoins.png" class="tsCoinsIcon" alt=""> / + 20 Astro</div>
                                 </div>
                                 <div class="shop-item medusa-star-item hidden" data-item-id="medusaStar" data-price="0">
                                     <div class="shop-item-icon"><i class="fas fa-medusa"></i></div>
-                                    <h3>Medusa Star</h3>
+                                    <h3>Petrification War</h3>
                                     <p>It's time to petrify the other stars!</p>
-                                    <div class="shop-item-price">Get<img src="../assets/img/tsCoins.png" class="tsCoinsIcon" alt=""> / + 1 Astro</div>
+                                    <div class="shop-item-price">GET<img src="../assets/img/tsCoins.png" class="tsCoinsIcon" alt=""> / + 2 Astro</div>
                                 </div>
-                                <div class="shop-item nitric-star-item hidden" data-item-id="nitricStar" data-price="20000">
-                                    <div class="shop-item-icon"><i class="fas fa-water"></i></div>
-                                    <h3>Nitric Acid Star</h3>
-                                    <p>It's time to depetrify the other stars! The opposite of Medusa Star. Explodes every 5-15 seconds, destroying nearby objects.</p>
-                                    <div class="shop-item-price">20.000<img src="../assets/img/tsCoins.png" class="tsCoinsIcon" alt=""> / + 1 Astro</div>
-                                </div>
-                                <div class="shop-item code-star-item hidden" data-item-id="codesStar" data-price="0">
+                                <div class="shop-item code-star-item hidden" data-item-id="codesStar" data-price="100000">
                                     <div class="shop-item-icon"><i class="fas fa-code"></i></div>
                                     <h3>Code Stars</h3>
                                     <p>Stars of various programming languages.</p>
-                                    <div class="shop-item-price">100.000<img src="../assets/img/tsCoins.png" class="tsCoinsIcon" alt=""> / + 20 Astro</div>
+                                    <div class="shop-item-price">TSCs: 100.000<img src="../assets/img/tsCoins.png" class="tsCoinsIcon" alt=""> / + 20 Astro</div>
                                 </div>
                                 <div style="display: none;" class="shop-item" data-item-id="singularity" data-price="100000">
                                     <div class="shop-item-icon"><i class="fas fa-black-hole"></i></div>
                                     <h3>SINGULARITY</h3>
                                     <p>The Heaviest Object in the Universe, the Beginning of the Big Bang.</p>
-                                    <div class="shop-item-price">100.000<img src="../assets/img/tsCoins.png" class="tsCoinsIcon" alt=""> / + 1 Astro</div>
+                                    <div class="shop-item-price">TSCs: 100.000<img src="../assets/img/tsCoins.png" class="tsCoinsIcon" alt=""> / + 1 Astro</div>
                                 </div>
                             </div>
                             <div id="shopSection_mods" class="shop-section" style="display:none;">
@@ -415,21 +403,21 @@ user-select: text;
                                     <div class="shop-item-icon"><i class="fas fa-palette"></i></div>
                                     <h3>The fun space</h3>
                                     <p>You get another mode which is neon space, it changes color all the time, and as a bonus another mode which is a day/night space simulator.</p>
-                                    <div class="shop-item-price">5.000<img src="../assets/img/tsCoins.png" class="tsCoinsIcon" alt=""> / Mod</div>
+                                    <div class="shop-item-price">TSCs: 5.000<img src="../assets/img/tsCoins.png" class="tsCoinsIcon" alt=""> / Mod</div>
                                 </div>
                                 <div class="shop-item" data-item-id="pixel_mode" data-price="1500">
                                     <div class="shop-item-icon"><i class="fas fa-th-large"></i></div>
                                     <h3>Pixel By Pixel Mode</h3>
                                     <p>Completely change the game's visuals to a retro pixel art style. Enable the option in Settings to toggle the mode on/off. Enabling/disabling restarts the game, and this will make the stars and planets pixelated.</p>
-                                    <div class="shop-item-price">1.500<img src="../assets/img/tsCoins.png" class="tsCoinsIcon" alt=""> / Mod</div>
+                                    <div class="shop-item-price">TSCs: 1.500<img src="../assets/img/tsCoins.png" class="tsCoinsIcon" alt=""> / Mod</div>
                                 </div>
                             </div>
                             <div id="shopSection_givetscoins" class="shop-section" style="display:none;">
                                 <div class="shop-item" onclick="watchAdForCoins()">
                                     <div class="shop-item-icon"></div>
                                     <h3>Watch ad</h3>
-                                    <p>Earn 1000 TS Coins by watching an ad.</p>
-                                    <div class="shop-item-price">+1000<img src="../assets/img/tsCoins.png" id="tsCoinsIcon" alt=""></div>
+                                    <p>Earn 1000 TSCs by watching an ad.</p>
+                                    <div class="shop-item-price">+1000 TSCs!<img src="../assets/img/tsCoins.png" id="tsCoinsIcon" alt=""></div>
                                 </div>
                             </div>
                         </div>
