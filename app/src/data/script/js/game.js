@@ -808,7 +808,6 @@ function init() {
     }
     setTimeout(() => {
         initializeAdMob();
-        addDeveloperPanel();
         updateAdStatus();
     }, 2000);
     initTimers();
@@ -9691,33 +9690,6 @@ function handleAdReward() {
         }
     }, 3000);
 }
-function addDeveloperPanel() {
-    const panel = document.createElement('div');
-    panel.style.cssText = `
-        position: fixed;
-        bottom: 10px;
-        right: 10px;
-        background: rgba(0,0,0,0.9);
-        padding: 15px;
-        border-radius: 10px;
-        z-index: 10000;
-        color: white;
-        font-family: Arial, sans-serif;
-        font-size: 12px;
-        border: 2px solid #FF9800;
-    `;
-    panel.innerHTML = `
-        <div style="margin-bottom: 10px; font-weight: bold; color: #FF9800;">🧪 PAINEL DESENVOLVEDOR</div>
-        <div>Conta Nova: <span id="devAccountStatus">${isNewAdAccount ? 'SIM 🆕' : 'NÃO ✅'}</span></div>
-        <div>Anúncios Assistidos: <span id="devAdsWatched">${localStorage.getItem('adsWatched') || 0}</span></div>
-        <div style="margin-top: 10px;">
-            <button onclick="switchAccountMode()" style="margin: 2px; padding: 5px; font-size: 10px;">Alternar Modo</button>
-            <button onclick="debugAdSystem()" style="margin: 2px; padding: 5px; font-size: 10px;">Debug</button>
-            <button onclick="resetAdStats()" style="margin: 2px; padding: 5px; font-size: 10px;">Reset Stats</button>
-        </div>
-    `;
-    document.body.appendChild(panel);
-}
 function switchAccountMode() {
     isNewAdAccount = !isNewAdAccount;
     document.getElementById('devAccountStatus').textContent = isNewAdAccount ? 'SIM 🆕' : 'NÃO ✅';
@@ -9924,10 +9896,8 @@ function simulateAdForNewAccount() {
                     document.body.removeChild(modal);
                 }
                 addTSCoins(1000);
-                showNotification("✅ +1.000 TS Coins! (Modo Desenvolvimento)");
                 const adsWatched = parseInt(localStorage.getItem('adsWatched') || '0') + 1;
                 localStorage.setItem('adsWatched', adsWatched.toString());
-                showNotification("🆕 Conta Google Ads em verificação - Anúncios reais em breve!", 4000);
             }, 500);
         }
     }, 40);
