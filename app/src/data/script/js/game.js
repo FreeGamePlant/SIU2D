@@ -9409,7 +9409,6 @@ function initializeAdMob() {
     console.log('🔄 Inicializando AdMob...');
     if (isNewAdAccount) {
         console.log('🆕 Conta de anúncios nova - usando modo de desenvolvimento');
-        showNotification("🔧 Modo desenvolvimento: Anúncios simulados");
         setupAdFallback();
         return false;
     }
@@ -9453,30 +9452,29 @@ function initializeAdMobReal() {
             console.log('✅ Anúncio carregado com sucesso');
             isAdLoading = false;
             updateAdStatus();
-            showNotification("✅ Anúncio pronto! Clique para assistir.");
         });
         rewardAd.addEventListener('ad-failed-to-load', (error) => {
             console.error('❌ Falha ao carregar anúncio:', error);
             isAdLoading = false;
             updateAdStatus();
             if (isNewAdAccount) {
-                showNotification("🆕 Conta em verificação - Use modo offline");
+                showNotification("...");
             } else {
-                showNotification("❌ Falha ao carregar anúncio");
+                showNotification("❌ Error");
             }
             setupAdFallback();
         });
         rewardAd.addEventListener('ad-rewarded', (reward) => {
-            console.log('🎁 Recompensa concedida:', reward);
+            console.log('🎁:', reward);
             handleAdReward();
         });
         rewardAd.addEventListener('ad-opened', () => {
             console.log('📱 Anúncio aberto');
-            showNotification("🎬 Anúncio em andamento...");
+            showNotification("🎬");
         });
         rewardAd.addEventListener('ad-closed', () => {
             console.log('❎ Anúncio fechado');
-            showNotification("✅ Anúncio finalizado");
+            showNotification("✅");
             setTimeout(loadRewardAd, 2000);
         });
         admobInitialized = true;
@@ -9643,18 +9641,15 @@ async function watchAdForCoins() {
         return;
     }
     if (!navigator.onLine) {
-        showNotification("❌ Sem conexão. Usando modo offline.");
         simulateAdFallback();
         return;
     }
     const hasAdBlock = await checkAdBlock();
     if (hasAdBlock) {
-        showNotification("🚫 Bloqueador detectado. Desative para anúncios reais.");
         simulateAdFallback();
         return;
     }
     if (isAdLoading) {
-        showNotification("⏳ Anúncio ainda carregando...");
         return;
     }
     if (admobInitialized && rewardAd && rewardAd.isLoaded && rewardAd.isLoaded()) {
@@ -9663,12 +9658,10 @@ async function watchAdForCoins() {
             rewardAd.show();
         } catch (error) {
             console.error('Erro ao exibir anúncio:', error);
-            showNotification("❌ Erro ao exibir anúncio. Usando fallback.");
             simulateAdFallback();
         }
     } else {
         console.log('🔄 AdMob não disponível, usando fallback');
-        showNotification("🔄 Usando sistema offline...");
         simulateAdFallback();
         if (!admobInitialized) {
             console.log('🔄 Tentando reinicializar AdMob...');
@@ -9683,7 +9676,6 @@ function handleAdReward() {
     addTSCoins(1000);
     const adsWatched = parseInt(localStorage.getItem('adsWatched') || '0') + 1;
     localStorage.setItem('adsWatched', adsWatched.toString());
-    showNotification("✅ +1.000 TS Coins! Obrigado por assistir!");
     setTimeout(() => {
         if (admobInitialized) {
             loadRewardAd();
@@ -9693,7 +9685,6 @@ function handleAdReward() {
 function switchAccountMode() {
     isNewAdAccount = !isNewAdAccount;
     document.getElementById('devAccountStatus').textContent = isNewAdAccount ? 'SIM 🆕' : 'NÃO ✅';
-    showNotification(`Modo conta nova: ${isNewAdAccount ? 'ATIVADO' : 'DESATIVADO'}`);
     updateAdStatus();
     if (!isNewAdAccount) {
         setTimeout(() => {
@@ -9741,7 +9732,6 @@ function updateAdStatus() {
 function resetAdStats() {
     if (confirm('Resetar todas as estatísticas de anúncios?')) {
         localStorage.removeItem('adsWatched');
-        showNotification("Estatísticas de anúncios resetadas");
     }
 }
 function addAdDebugButtons() {
@@ -9767,20 +9757,13 @@ function addAdDebugButtons() {
 function showAdStats() {
     const adsWatched = parseInt(localStorage.getItem('adsWatched') || '0');
     const totalCoinsFromAds = adsWatched * 1000;
-    showNotification(
-        `📊 Estatísticas de Anúncios:\n` +
-        `Anúncios assistidos: ${adsWatched}\n` +
-        `TSCs ganhos: ${totalCoinsFromAds.toLocaleString()}\n` +
-        `Status: ${admobInitialized ? 'Inicializado' : 'Não inicializado'}\n` +
-        `Anúncio carregado: ${rewardAd && rewardAd.isLoaded() ? 'Sim' : 'Não'}`
-    , 5000);
 }
 function initAdSystem() {
     console.log('🎮 Inicializando sistema de anúncios...');
     updateAdStatus();
     window.addEventListener('online', () => {
         console.log('🌐 Conexão restaurada');
-        showNotification("🌐 Conexão restaurada - Tentando carregar anúncios");
+        showNotification("🌐 Network");
         updateAdStatus();
         if (!admobInitialized) {
             setTimeout(() => {
@@ -9794,7 +9777,7 @@ function initAdSystem() {
     });
     window.addEventListener('offline', () => {
         console.log('❌ Conexão perdida');
-        showNotification("❌ Sem conexão - Anúncios indisponíveis");
+        showNotification("❌ Network");
         updateAdStatus();
         setupAdFallback();
     });
@@ -9945,7 +9928,7 @@ function simulateAdFallback() {
                     document.body.removeChild(progressBar);
                 }
                 addTSCoins(1000);
-                showNotification("✅ +1.000 TS Coins concedidas! (Modo Offline)");
+                showNotification("✅ +1.000 TSCs");
                 const adsWatched = parseInt(localStorage.getItem('adsWatched') || '0') + 1;
                 localStorage.setItem('adsWatched', adsWatched.toString());
             }, 500);
