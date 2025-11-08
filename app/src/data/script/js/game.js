@@ -796,7 +796,6 @@ function init() {
         document.getElementById('modeRetirada').checked = modoRetirada;
     }
     console.log('Google object:', typeof google);
-    console.log('Google.ads:', google?.ads);
     if (typeof google === 'undefined') {
         console.log('Tentando carregar SDK manualmente...');
         const script = document.createElement('script');
