@@ -108,6 +108,9 @@ const MAX_ASTROS_RETIRADA = 600;
 const btnLock = document.getElementById('btnLock');
 const DEBUG_EVOLUTION = true;
 const NITRIC_STAR_PRICE = 20000;
+const ADMOB_APP_ID = 'ca-app-pub-3391757604945167~6359035577';
+const ADMOB_REWARD_AD_ID = 'ca-app-pub-3391757604945167/9927294235';
+const isNewAdAccount = true;
 const achievementRewards = {
     1: 100,
     2: 150,
@@ -324,6 +327,11 @@ let medusaExplosionInterval;
 let nitricStarUnlocked = false;
 let nitricStarsCreated = 0;
 let nitricStarPurchased = false;
+let rewardAd = null;
+let waitForCoinsInterval;
+let dayForCoinsInterval;
+let admobInitialized = false;
+let isAdLoading = false;
 //#endregion
 if (btnLock) {
     btnLock.addEventListener('click', toggleLock);
@@ -550,7 +558,6 @@ function addTSCoins(amount) {
     tsCoins += amount;
     localStorage.setItem('tsCoins', tsCoins.toString());
     animateTSCoinsChange(tsCoins, Math.min(1000, Math.abs(amount) * 50));
-    showNotification(`+${amount} TS Coins! Total: ${tsCoins}`);
     if (amount >= 1000) {
         unlockAchievement(48); 
     }
@@ -561,10 +568,9 @@ function spendTSCoins(amount) {
         tsCoins -= amount;
         localStorage.setItem('tsCoins', tsCoins.toString());
         animateTSCoinsChange(tsCoins, 800);
-        showNotification(`-${amount} TS Coins gastos. Restante: ${tsCoins}`);
         return true;
     } else {
-        showNotification("TS Coins insuficientes!");
+        showNotification("Ops.. - TSCs.");
         const tsCoinsDisplay = document.getElementById('tsCoinsDisplay');
         if (tsCoinsDisplay) {
             tsCoinsDisplay.style.animation = 'shake 0.5s ease-in-out';
@@ -649,6 +655,45 @@ document.addEventListener('keydown', function(e) {
         showAstroTimePanel();
     }
 });
+function initAdSystem() {
+    updateAdButtonState();
+    window.addEventListener('online', () => {
+        updateAdButtonState();
+    });
+    window.addEventListener('offline', () => {
+        updateAdButtonState();
+    });
+}
+function showAdDebugInfo() {
+    const info = `
+AdMob Initialized: ${admobInitialized}
+Ad Loading: ${isAdLoading}
+Online: ${navigator.onLine}
+Ad Loaded: ${rewardAd && rewardAd.isLoaded ? rewardAd.isLoaded() : false}
+Ads Watched: ${localStorage.getItem('adsWatched') || 0}
+    `;
+    console.log('📊 Ad Debug Info:', info);
+    showNotification(info, 5000);
+}
+function updateAdButtonState() {
+    const adCard = document.querySelector('#shopSection_givetscoins .shop-item');
+    const adStatus = document.getElementById('adStatus');
+    if (adCard && adStatus) {
+        if (!navigator.onLine) {
+            adCard.style.opacity = '0.6';
+            adCard.style.cursor = 'not-allowed';
+            adCard.title = "Conecte-se à internet para assistir anúncios";
+            adStatus.textContent = "❌ Offline";
+            adStatus.style.color = '#f44336';
+        } else {
+            adCard.style.opacity = '1';
+            adCard.style.cursor = 'pointer';
+            adCard.title = "Assistir anúncio por 1000 TS Coins";
+            adStatus.textContent = "✅ Disponível";
+            adStatus.style.color = '#4CAF50';
+        }
+    }
+}
 function init() {
     resizeCanvas();
     try {
@@ -679,7 +724,6 @@ function init() {
             setTimeout(() => {
                 tsCoinsDisplay.classList.remove('ts-coins-pulse');
             }, 500);
-            showNotification(`Você tem ${tsCoins} TS Coins!`);
         });
     }
     const cancelBtn = document.getElementById('cancelCreationBtn');
@@ -751,6 +795,32 @@ function init() {
         modoRetirada = savedModoRetirada === 'true';
         document.getElementById('modeRetirada').checked = modoRetirada;
     }
+    console.log('Google object:', typeof google);
+    console.log('Google.ads:', google?.ads);
+    if (typeof google === 'undefined') {
+        console.log('Tentando carregar SDK manualmente...');
+        const script = document.createElement('script');
+        script.src = 'https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-app-pub-3391757604945167~6359035577';
+        script.crossOrigin = 'anonymous';
+        script.async = true;
+        script.onload = () => console.log('✅ SDK carregado manualmente');
+        script.onerror = () => console.error('❌ Falha ao carregar SDK manualmente');
+        document.head.appendChild(script);
+    }
+    setTimeout(() => {
+        initializeAdMob();
+        addDeveloperPanel();
+        updateAdStatus();
+    }, 2000);
+    initTimers();
+    initAdSystem();
+    setTimeout(() => {
+        if (navigator.onLine) {
+            initializeAdMob();
+        } else {
+            setupAdFallback();
+        }
+    }, 2000);
     waterSlider.addEventListener('input', fgpWater);
     cloudsSlider.addEventListener('input', fgpClouds);
     gasSlider.addEventListener('input', fgpGas);
@@ -3509,7 +3579,6 @@ function transformToStone(obj) {
     obj.color = '#666666';
     obj.glowColor = '#444444';
     createStoneEffect(obj);
-    showNotification(`🗿 ${getTypeName(obj.originalType)} petrificado pela Medusa Star! (Agora cinza)`, 3000);
 }
 function createMedusaPetrificationEffect(obj) {
     for (let i = 0; i < 8; i++) {
@@ -4009,7 +4078,6 @@ function transformToMeteoroid(obj) {
     obj.satelliteBehavior = null;
     obj.superShipBehavior = null;
     createPetrificationEffect(obj);
-    showNotification(`🗿 ${getTypeName(obj.originalType)} petrificado pela Medusa Star!`, 3000);
 }
 function drawRadiationAura(medusaRadius, ctx, explosionIntensity, time) {
     const baseAuraSize = medusaRadius * 2.5;
@@ -5479,39 +5547,6 @@ function getGrayColorsByType(type) {
     };
     return colorSets[type] || { main: '#777777', glow: '#555555', secondary: '#666666', land: null, ocean: null, ring: null };
 }
-function debugPetrificationStatus() {
-    const medusaStars = planets.filter(p => p.type === 'medusaStar');
-    const petrifiedAstros = planets.filter(p => p.petrified && p.type !== 'medusaStar');
-    console.log(`=== STATUS DE PETRIFICAÇÃO ===`);
-    console.log(`Medusa Stars: ${medusaStars.length}`);
-    console.log(`Astros Petrificados: ${petrifiedAstros.length}`);
-    petrifiedAstros.forEach(astro => {
-        console.log(`- ${astro.type}: ${astro.color} (Original: ${astro.originalColor})`);
-    });
-    medusaStars.forEach(medusa => {
-        const nearbyAstros = planets.filter(other => {
-            if (other === medusa || other.type === 'medusaStar') return false;
-            const dx = other.x - medusa.x;
-            const dy = other.y - medusa.y;
-            const distance = Math.sqrt(dx * dx + dy * dy);
-            return distance < medusa.radius * 15 && !other.petrified;
-        });
-        if (nearbyAstros.length > 0) {
-            console.log(`Medusa em (${medusa.x.toFixed(0)}, ${medusa.y.toFixed(0)}) tem ${nearbyAstros.length} astros próximos não petrificados:`);
-            nearbyAstros.forEach(astro => {
-                const dx = astro.x - medusa.x;
-                const dy = astro.y - medusa.y;
-                const distance = Math.sqrt(dx * dx + dy * dy);
-                console.log(`  - ${astro.type} a ${distance.toFixed(0)} unidades`);
-            });
-        }
-    });
-}
-setInterval(() => {
-    if (DEBUG_EVOLUTION) {
-        debugPetrificationStatus();
-    }
-}, 5000);
 function transformToPetrified(obj) {
     obj.originalType = obj.type;
     obj.originalColor = obj.color;
@@ -5532,7 +5567,6 @@ function transformToPetrified(obj) {
         obj.frozen = true;
     }
     createPetrificationEffect(obj);
-    showNotification(`🪨 ${getTypeName(obj.originalType)} petrificado por Medusa Star!`, 3000);
 }
 function applyMedusaPetrification(medusaStar) {
     const petrificationRadius = medusaStar.radius * 10;
@@ -7830,9 +7864,6 @@ function fgpNitricStarBehavior(deltaTime) {
     });
 }
 function initializePetrificationSystem() {
-    console.log('=== STONE PETRIFICATION SYSTEM INITIALIZED ===');
-    console.log('Medusa Star: Turns objects gray without changing type');
-    console.log('Nitric Star: Restores original colors');
     planets.forEach(obj => {
         if (obj.petrified && obj.type === 'meteoroid' && obj.originalType) {
             console.log(`Converting old petrified object: ${obj.originalType}`);
@@ -9376,19 +9407,584 @@ function fgpTSCoinsDisplay() {
         tsCoinsDisplay.textContent = tsCoins;
     }
 }
-function watchAdForCoins() {
-    showNotification("Assistindo anúncio...");
-    const tsCoinsDisplay = document.getElementById('tsCoinsDisplay');
-    if (tsCoinsDisplay) {
-        tsCoinsDisplay.style.opacity = '0.7';
+function initializeAdMob() {
+    console.log('🔄 Inicializando AdMob...');
+    if (isNewAdAccount) {
+        console.log('🆕 Conta de anúncios nova - usando modo de desenvolvimento');
+        showNotification("🔧 Modo desenvolvimento: Anúncios simulados");
+        setupAdFallback();
+        return false;
     }
-    setTimeout(() => {
-        if (tsCoinsDisplay) {
-            tsCoinsDisplay.style.opacity = '1';
+    try {
+        if (typeof google === 'undefined' || !google.ads) {
+            console.warn('❌ Google Ads SDK não disponível');
+            const script = document.createElement('script');
+            script.src = 'https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-app-pub-3391757604945167~6359035577';
+            script.crossOrigin = 'anonymous';
+            script.async = true;
+            script.onload = () => {
+                console.log('✅ SDK carregado dinamicamente');
+                setTimeout(() => initializeAdMobReal(), 1000);
+            };
+            script.onerror = () => {
+                console.error('❌ Falha ao carregar SDK dinamicamente');
+                setupAdFallback();
+            };
+            document.head.appendChild(script);
+            return false;
         }
-        addTSCoins(1000);
-        showNotification("Anúncio concluído! +1000 TS Coins");
+        return initializeAdMobReal();
+    } catch (error) {
+        console.error('❌ Erro na inicialização do AdMob:', error);
+        setupAdFallback();
+        return false;
+    }
+}
+function initializeAdMobReal() {
+    try {
+        console.log('🚀 Inicializando AdMob real...');
+        const settings = google.ads.getGoogleAdManagerSettings();
+        if (settings) {
+            settings.setApplicationVolume(0.5);
+        }
+        rewardAd = google.ads.getRewardedVideoAd(ADMOB_REWARD_AD_ID);
+        if (!rewardAd) {
+            throw new Error('Falha ao criar instância do anúncio');
+        }
+        rewardAd.addEventListener('ad-loaded', () => {
+            console.log('✅ Anúncio carregado com sucesso');
+            isAdLoading = false;
+            updateAdStatus();
+            showNotification("✅ Anúncio pronto! Clique para assistir.");
+        });
+        rewardAd.addEventListener('ad-failed-to-load', (error) => {
+            console.error('❌ Falha ao carregar anúncio:', error);
+            isAdLoading = false;
+            updateAdStatus();
+            if (isNewAdAccount) {
+                showNotification("🆕 Conta em verificação - Use modo offline");
+            } else {
+                showNotification("❌ Falha ao carregar anúncio");
+            }
+            setupAdFallback();
+        });
+        rewardAd.addEventListener('ad-rewarded', (reward) => {
+            console.log('🎁 Recompensa concedida:', reward);
+            handleAdReward();
+        });
+        rewardAd.addEventListener('ad-opened', () => {
+            console.log('📱 Anúncio aberto');
+            showNotification("🎬 Anúncio em andamento...");
+        });
+        rewardAd.addEventListener('ad-closed', () => {
+            console.log('❎ Anúncio fechado');
+            showNotification("✅ Anúncio finalizado");
+            setTimeout(loadRewardAd, 2000);
+        });
+        admobInitialized = true;
+        console.log('✅ AdMob inicializado com sucesso');
+        loadRewardAd();
+        return true;
+    } catch (error) {
+        console.error('❌ Erro crítico no AdMob real:', error);
+        setupAdFallback();
+        return false;
+    }
+}
+function debugAdSystem() {
+    console.group('🔧 Debug do Sistema de Anúncios');
+    console.log('Navigator online:', navigator.onLine);
+    console.log('Google object:', typeof google);
+    if (typeof google !== 'undefined') {
+        console.log('Google.ads:', google.ads);
+        console.log('Reward ad loaded:', rewardAd?.isLoaded?.());
+    } else {
+        console.log('Google.ads: NOT AVAILABLE');
+        console.log('Reward ad loaded: N/A (Google not defined)');
+    }
+    console.log('AdMob initialized:', admobInitialized);
+    console.log('Ad loading:', isAdLoading);
+    console.log('Reward ad:', rewardAd);
+    console.log('Purchased items:', purchasedItems);
+    console.log('TS Coins:', tsCoins);
+    console.groupEnd();
+}
+debugAdSystem();
+function loadRewardAd() {
+    if (!admobInitialized || !rewardAd || isAdLoading) return;
+    try {
+        isAdLoading = true;
+        updateAdStatus();
+        rewardAd.load();
+    } catch (error) {
+        console.error('Erro ao carregar anúncio:', error);
+        isAdLoading = false;
+        updateAdStatus();
+    }
+}
+function waitForCoins() {
+    const now = Date.now();
+    const lastWait = parseInt(localStorage.getItem('lastWaitForCoins') || '0');
+    const cooldown = 5 * 60 * 1000;
+    if (now - lastWait < cooldown) {
+        const remaining = cooldown - (now - lastWait);
+        return;
+    }
+    addTSCoins(100);
+    localStorage.setItem('lastWaitForCoins', now.toString());
+    const card = document.getElementById('waitForCoinsCard');
+    card.classList.add('pulse-animation');
+    setTimeout(() => card.classList.remove('pulse-animation'), 1000);
+    updateWaitForCoinsUI();
+}
+function dayForCoins() {
+    const now = Date.now();
+    const lastDaily = parseInt(localStorage.getItem('lastDailyReward') || '0');
+    const streak = parseInt(localStorage.getItem('dailyRewardStreak') || '0');
+    const oneDay = 23 * 60 * 60 * 1000 + 56 * 60 * 1000;
+    if (now - lastDaily < oneDay) {
+        const nextAvailable = lastDaily + oneDay;
+        return;
+    }
+    let newStreak = streak;
+    let reward = 1000;
+    if (streak === 0 || now - lastDaily > oneDay * 2) {
+        newStreak = 1;
+        reward = 1000;
+    } else {
+        newStreak = streak + 1;
+        reward = 1000 + (newStreak - 1) * 100;
+    }
+    addTSCoins(reward);
+    localStorage.setItem('lastDailyReward', now.toString());
+    localStorage.setItem('dailyRewardStreak', newStreak.toString());
+    const card = document.getElementById('dayForCoinsCard');
+    card.classList.add('pulse-animation');
+    setTimeout(() => card.classList.remove('pulse-animation'), 1000);
+    updateDayForCoinsUI();
+    if (newStreak >= 7) unlockAchievement(51);
+    if (newStreak >= 30) unlockAchievement(52);
+}
+function formatTime(seconds) {
+    const h = Math.floor(seconds / 3600);
+    const m = Math.floor((seconds % 3600) / 60);
+    const s = Math.floor(seconds % 60);
+    return [h, m, s].map(v => v < 10 ? '0' + v : v).join(':');
+}
+function updateWaitForCoinsUI() {
+    const lastWait = parseInt(localStorage.getItem('lastWaitForCoins') || '0');
+    const cooldown = 5 * 60 * 1000;
+    const now = Date.now();
+    const remaining = cooldown - (now - lastWait);
+    const statusElement = document.getElementById('waitForCoinsStatus');
+    const timerElement = document.getElementById('waitForCoinsTimer');
+    const card = document.getElementById('waitForCoinsCard');
+    if (remaining > 0) {
+        statusElement.textContent = "⏳ ...";
+        statusElement.style.color = '#f44336';
+        timerElement.textContent = `Disponível em: ${formatTime(remaining / 1000)}`;
+        card.style.opacity = '0.6';
+        card.style.cursor = 'not-allowed';
+    } else {
+        statusElement.textContent = "✅ Disponível";
+        statusElement.style.color = '#4CAF50';
+        timerElement.textContent = 'Pronto para coletar!';
+        card.style.opacity = '1';
+        card.style.cursor = 'pointer';
+    }
+}
+function updateDayForCoinsUI() {
+    const lastDaily = parseInt(localStorage.getItem('lastDailyReward') || '0');
+    const streak = parseInt(localStorage.getItem('dailyRewardStreak') || '0');
+    const oneDay = 23 * 60 * 60 * 1000 + 56 * 60 * 1000;
+    const now = Date.now();
+    const remaining = lastDaily + oneDay - now;
+    const statusElement = document.getElementById('dayForCoinsStatus');
+    const timerElement = document.getElementById('dayForCoinsTimer');
+    const card = document.getElementById('dayForCoinsCard');
+    const rewardAmountElement = document.getElementById('dailyRewardAmount');
+    const streakInfoElement = document.getElementById('dailyStreakInfo');
+    const descriptionElement = document.getElementById('dailyRewardDescription');
+    const nextReward = 1000 + streak * 100;
+    streakInfoElement.textContent = `Streak: Day ${Math.max(1, streak)}`;
+    descriptionElement.textContent = `${nextReward} TSCs for every day (each day it adds +100).`;
+    rewardAmountElement.innerHTML = `+${nextReward} TSCs!<img src="../assets/img/tsCoins.png" class="tsCoinsIcon" alt="">`;
+    if (remaining > 0) {
+        statusElement.textContent = "⏳ ...";
+        statusElement.style.color = '#f44336';
+        timerElement.textContent = `Missing: ${formatTime(remaining / 1000)}`;
+        card.style.opacity = '0.6';
+        card.style.cursor = 'not-allowed';
+    } else {
+        statusElement.textContent = "✅";
+        statusElement.style.color = '#4CAF50';
+        timerElement.textContent = 'GET!';
+        card.style.opacity = '1';
+        card.style.cursor = 'pointer';
+    }
+}
+function initTimers() {
+    updateWaitForCoinsUI();
+    updateDayForCoinsUI();
+    waitForCoinsInterval = setInterval(updateWaitForCoinsUI, 1000);
+    dayForCoinsInterval = setInterval(updateDayForCoinsUI, 1000);
+}
+function stopTimers() {
+    if (waitForCoinsInterval) {
+        clearInterval(waitForCoinsInterval);
+    }
+    if (dayForCoinsInterval) {
+        clearInterval(dayForCoinsInterval);
+    }
+}
+async function watchAdForCoins() {
+    console.log('🎬 Iniciando watchAdForCoins');
+    debugAdSystem();
+    if (isNewAdAccount) {
+        simulateAdForNewAccount();
+        return;
+    }
+    if (!navigator.onLine) {
+        showNotification("❌ Sem conexão. Usando modo offline.");
+        simulateAdFallback();
+        return;
+    }
+    const hasAdBlock = await checkAdBlock();
+    if (hasAdBlock) {
+        showNotification("🚫 Bloqueador detectado. Desative para anúncios reais.");
+        simulateAdFallback();
+        return;
+    }
+    if (isAdLoading) {
+        showNotification("⏳ Anúncio ainda carregando...");
+        return;
+    }
+    if (admobInitialized && rewardAd && rewardAd.isLoaded && rewardAd.isLoaded()) {
+        try {
+            console.log('📱 Exibindo anúncio do AdMob');
+            rewardAd.show();
+        } catch (error) {
+            console.error('Erro ao exibir anúncio:', error);
+            showNotification("❌ Erro ao exibir anúncio. Usando fallback.");
+            simulateAdFallback();
+        }
+    } else {
+        console.log('🔄 AdMob não disponível, usando fallback');
+        showNotification("🔄 Usando sistema offline...");
+        simulateAdFallback();
+        if (!admobInitialized) {
+            console.log('🔄 Tentando reinicializar AdMob...');
+            setTimeout(() => {
+                initializeAdMob().catch(console.warn);
+            }, 5000);
+        }
+    }
+}
+function handleAdReward() {
+    console.log('💰 Processando recompensa do anúncio');
+    addTSCoins(1000);
+    const adsWatched = parseInt(localStorage.getItem('adsWatched') || '0') + 1;
+    localStorage.setItem('adsWatched', adsWatched.toString());
+    showNotification("✅ +1.000 TS Coins! Obrigado por assistir!");
+    setTimeout(() => {
+        if (admobInitialized) {
+            loadRewardAd();
+        }
     }, 3000);
+}
+function addDeveloperPanel() {
+    const panel = document.createElement('div');
+    panel.style.cssText = `
+        position: fixed;
+        bottom: 10px;
+        right: 10px;
+        background: rgba(0,0,0,0.9);
+        padding: 15px;
+        border-radius: 10px;
+        z-index: 10000;
+        color: white;
+        font-family: Arial, sans-serif;
+        font-size: 12px;
+        border: 2px solid #FF9800;
+    `;
+    panel.innerHTML = `
+        <div style="margin-bottom: 10px; font-weight: bold; color: #FF9800;">🧪 PAINEL DESENVOLVEDOR</div>
+        <div>Conta Nova: <span id="devAccountStatus">${isNewAdAccount ? 'SIM 🆕' : 'NÃO ✅'}</span></div>
+        <div>Anúncios Assistidos: <span id="devAdsWatched">${localStorage.getItem('adsWatched') || 0}</span></div>
+        <div style="margin-top: 10px;">
+            <button onclick="switchAccountMode()" style="margin: 2px; padding: 5px; font-size: 10px;">Alternar Modo</button>
+            <button onclick="debugAdSystem()" style="margin: 2px; padding: 5px; font-size: 10px;">Debug</button>
+            <button onclick="resetAdStats()" style="margin: 2px; padding: 5px; font-size: 10px;">Reset Stats</button>
+        </div>
+    `;
+    document.body.appendChild(panel);
+}
+function switchAccountMode() {
+    isNewAdAccount = !isNewAdAccount;
+    document.getElementById('devAccountStatus').textContent = isNewAdAccount ? 'SIM 🆕' : 'NÃO ✅';
+    showNotification(`Modo conta nova: ${isNewAdAccount ? 'ATIVADO' : 'DESATIVADO'}`);
+    updateAdStatus();
+    if (!isNewAdAccount) {
+        setTimeout(() => {
+            initializeAdMob();
+        }, 1000);
+    }
+}
+function updateAdStatus() {
+    const adStatus = document.querySelector('#shopSection_givetscoins .shop-item:nth-child(1) #adStatus');
+    const adCard = document.querySelector('#shopSection_givetscoins .shop-item:nth-child(1)');
+    if (!adStatus || !adCard) return;
+    if (isNewAdAccount) {
+        adStatus.innerHTML = "🆕 Em Verificação";
+        adStatus.style.color = '#FF9800';
+        adCard.style.opacity = '1';
+        adCard.style.cursor = 'pointer';
+        adCard.onclick = watchAdForCoins;
+        return;
+    }
+    if (!navigator.onLine) {
+        adStatus.innerHTML = "❌ Offline";
+        adStatus.style.color = '#f44336';
+        adCard.style.opacity = '0.8';
+        adCard.style.cursor = 'pointer';
+        adCard.onclick = simulateAdForNewAccount;
+    } else if (isAdLoading) {
+        adStatus.innerHTML = "⏳ Carregando...";
+        adStatus.style.color = '#FFA500';
+        adCard.style.opacity = '0.8';
+        adCard.style.cursor = 'wait';
+    } else if (admobInitialized && rewardAd && rewardAd.isLoaded && rewardAd.isLoaded()) {
+        adStatus.innerHTML = "✅ Pronto";
+        adStatus.style.color = '#4CAF50';
+        adCard.style.opacity = '1';
+        adCard.style.cursor = 'pointer';
+        adCard.onclick = watchAdForCoins;
+    } else {
+        adStatus.innerHTML = "🔄 Fallback";
+        adStatus.style.color = '#2196F3';
+        adCard.style.opacity = '1';
+        adCard.style.cursor = 'pointer';
+        adCard.onclick = watchAdForCoins;
+    }
+}
+function resetAdStats() {
+    if (confirm('Resetar todas as estatísticas de anúncios?')) {
+        localStorage.removeItem('adsWatched');
+        showNotification("Estatísticas de anúncios resetadas");
+    }
+}
+function addAdDebugButtons() {
+    const debugPanel = document.createElement('div');
+    debugPanel.style.cssText = `
+        position: fixed;
+        bottom: 10px;
+        right: 10px;
+        background: rgba(0,0,0,0.8);
+        padding: 10px;
+        border-radius: 5px;
+        z-index: 1000;
+        font-size: 12px;
+    `;
+    debugPanel.innerHTML = `
+        <div style="color: white; margin-bottom: 5px;">Debug Anúncios:</div>
+        <button onclick="showAdStats()" style="margin: 2px; padding: 5px;">Stats</button>
+        <button onclick="loadRewardAd()" style="margin: 2px; padding: 5px;">Recarregar</button>
+        <button onclick="resetAdStats()" style="margin: 2px; padding: 5px;">Reset</button>
+    `;
+    document.body.appendChild(debugPanel);
+}
+function showAdStats() {
+    const adsWatched = parseInt(localStorage.getItem('adsWatched') || '0');
+    const totalCoinsFromAds = adsWatched * 1000;
+    showNotification(
+        `📊 Estatísticas de Anúncios:\n` +
+        `Anúncios assistidos: ${adsWatched}\n` +
+        `TSCs ganhos: ${totalCoinsFromAds.toLocaleString()}\n` +
+        `Status: ${admobInitialized ? 'Inicializado' : 'Não inicializado'}\n` +
+        `Anúncio carregado: ${rewardAd && rewardAd.isLoaded() ? 'Sim' : 'Não'}`
+    , 5000);
+}
+function initAdSystem() {
+    console.log('🎮 Inicializando sistema de anúncios...');
+    updateAdStatus();
+    window.addEventListener('online', () => {
+        console.log('🌐 Conexão restaurada');
+        showNotification("🌐 Conexão restaurada - Tentando carregar anúncios");
+        updateAdStatus();
+        if (!admobInitialized) {
+            setTimeout(() => {
+                initializeAdMob().catch(err => {
+                    console.warn('Falha na reinicialização do AdMob:', err);
+                });
+            }, 2000);
+        } else {
+            loadRewardAd();
+        }
+    });
+    window.addEventListener('offline', () => {
+        console.log('❌ Conexão perdida');
+        showNotification("❌ Sem conexão - Anúncios indisponíveis");
+        updateAdStatus();
+        setupAdFallback();
+    });
+    setTimeout(() => {
+        if (navigator.onLine) {
+            console.log('🔄 Tentando inicializar AdMob...');
+            initializeAdMob().catch(err => {
+                console.warn('Falha na inicialização do AdMob:', err);
+                setupAdFallback();
+            });
+        } else {
+            console.log('🔌 Dispositivo offline, ativando fallback');
+            setupAdFallback();
+        }
+    }, 3000);
+    setInterval(updateAdStatus, 5000);
+    setInterval(() => {
+        if (navigator.onLine && !admobInitialized && !isAdLoading) {
+            console.log('🔄 Tentativa periódica de inicializar AdMob...');
+            initializeAdMob().catch(console.warn);
+        }
+    }, 30000);
+}
+function checkAdBlock() {
+    return new Promise((resolve) => {
+        const ad = document.createElement('div');
+        ad.innerHTML = '&nbsp;';
+        ad.className = 'adsbox';
+        ad.style.position = 'absolute';
+        ad.style.left = '-9999px';
+        ad.style.top = '-9999px';
+        document.body.appendChild(ad);
+        setTimeout(() => {
+            const isBlocked = ad.offsetHeight === 0;
+            document.body.removeChild(ad);
+            resolve(isBlocked);
+        }, 100);
+    });
+}
+function setupAdFallback() {
+    console.log('🔄 Ativando sistema de fallback para conta nova');
+    admobInitialized = false;
+    updateAdStatus();
+    const adItem = document.querySelector('#shopSection_givetscoins .shop-item:nth-child(1)');
+    if (adItem) {
+        adItem.style.opacity = '1';
+        adItem.style.cursor = 'pointer';
+        adItem.onclick = watchAdForCoins;
+    }
+}
+function simulateAdForNewAccount() {
+    console.log('🎬 Simulando anúncio para conta nova');
+    const modal = document.createElement('div');
+    modal.style.cssText = `
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        width: 320px;
+        height: 200px;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border: 3px solid #fff;
+        border-radius: 20px;
+        z-index: 10000;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-family: Arial, sans-serif;
+        text-align: center;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+    `;
+    modal.innerHTML = `
+        <div style="font-size: 24px; margin-bottom: 10px;">🎮 MODO DESENVOLVIMENTO</div>
+        <div style="font-size: 14px; margin-bottom: 20px; padding: 0 10px;">
+            Conta de anúncios em verificação<br>
+            Simulando anúncio...
+        </div>
+        <div style="width: 200px; height: 4px; background: rgba(255,255,255,0.3); border-radius: 2px; overflow: hidden;">
+            <div id="newAdProgress" style="width: 0%; height: 100%; background: #4CAF50; transition: width 0.1s ease;"></div>
+        </div>
+        <div style="font-size: 12px; margin-top: 10px; color: #e0e0e0;">
+            <span id="newAdProgressText">0%</span>
+        </div>
+    `;
+    document.body.appendChild(modal);
+    let progress = 0;
+    const progressFill = document.getElementById('newAdProgress');
+    const progressText = document.getElementById('newAdProgressText');
+    const interval = setInterval(() => {
+        progress += 2;
+        if (progressFill) progressFill.style.width = progress + '%';
+        if (progressText) progressText.textContent = progress + '%';
+        if (progress >= 100) {
+            clearInterval(interval);
+            setTimeout(() => {
+                if (document.body.contains(modal)) {
+                    document.body.removeChild(modal);
+                }
+                addTSCoins(1000);
+                showNotification("✅ +1.000 TS Coins! (Modo Desenvolvimento)");
+                const adsWatched = parseInt(localStorage.getItem('adsWatched') || '0') + 1;
+                localStorage.setItem('adsWatched', adsWatched.toString());
+                showNotification("🆕 Conta Google Ads em verificação - Anúncios reais em breve!", 4000);
+            }, 500);
+        }
+    }, 40);
+}
+function simulateAdFallback() {
+    console.log('🎬 Simulando anúncio (fallback)');
+    const progressBar = document.createElement('div');
+    progressBar.style.cssText = `
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        width: 300px;
+        height: 100px;
+        background: rgba(0, 0, 0, 0.9);
+        border: 2px solid #4CAF50;
+        border-radius: 15px;
+        z-index: 10000;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-family: Arial, sans-serif;
+    `;
+    progressBar.innerHTML = `
+        <div style="margin-bottom: 15px; font-size: 16px;">🎬 Anúncio Simulado</div>
+        <div style="width: 250px; height: 20px; background: #333; border-radius: 10px; overflow: hidden;">
+            <div id="adProgress" style="width: 0%; height: 100%; background: linear-gradient(90deg, #4CAF50, #8BC34A); transition: width 0.1s ease; border-radius: 10px;"></div>
+        </div>
+        <div style="margin-top: 10px; font-size: 12px; color: #ccc;">Carregando: <span id="adProgressText">0%</span></div>
+    `;
+    document.body.appendChild(progressBar);
+    let progress = 0;
+    const progressFill = document.getElementById('adProgress');
+    const progressText = document.getElementById('adProgressText');
+    const interval = setInterval(() => {
+        progress += 2;
+        if (progressFill) progressFill.style.width = progress + '%';
+        if (progressText) progressText.textContent = progress + '%';
+        if (progress >= 100) {
+            clearInterval(interval);
+            setTimeout(() => {
+                if (document.body.contains(progressBar)) {
+                    document.body.removeChild(progressBar);
+                }
+                addTSCoins(1000);
+                showNotification("✅ +1.000 TS Coins concedidas! (Modo Offline)");
+                const adsWatched = parseInt(localStorage.getItem('adsWatched') || '0') + 1;
+                localStorage.setItem('adsWatched', adsWatched.toString());
+            }, 500);
+        }
+    }, 50);
+}
+function simulateAd() {
+    return true;
 }
 function openShop() {
     const shopOverlay = document.getElementById('shopOverlay');
@@ -9398,6 +9994,7 @@ function openShop() {
             shopOverlay.classList.add('active');
         }, 10);
         document.body.style.overflow = 'hidden';
+        updateAdStatus();
         fgpShopDisplay();
         setTimeout(() => {
             const allIcons = document.querySelectorAll('.shop-item .tsCoinsIcon');
@@ -9417,8 +10014,28 @@ function closeShop() {
             shopOverlay.style.display = 'none';
             document.body.style.overflow = '';
         }, 300);
+        stopTimers();
     }
 }
+const style = document.createElement('style');
+style.textContent = `
+    .pulse-animation {
+        animation: pulse 0.5s ease-in-out;
+    }
+    @keyframes pulse {
+        0% { transform: scale(1); }
+        50% { transform: scale(1.05); }
+        100% { transform: scale(1); }
+    }
+    .shop-item {
+        transition: all 0.3s ease;
+    }
+    .shop-item:hover:not([style*="cursor: not-allowed"]) {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+    }
+`;
+document.head.appendChild(style);
 function openManual() {
     const manualOverlay = document.getElementById('manualOverlay');
     if (manualOverlay) {
@@ -9737,7 +10354,6 @@ function initializeShop() {
                         purchaseItem(itemId, price);
                     } else {
                         applyPurchasedItem(itemId);
-                        showNotification(`${getItemName(itemId)} já está ativo!`);
                     }
                 }
             });
@@ -11157,7 +11773,6 @@ function resetEverythingDev() {
         }
     }
     resetMemoryVariables();
-    showNotification("Reset completo realizado! Recarregando...", 3000);
     setTimeout(() => {
         location.reload();
     }, 1000);
@@ -12016,10 +12631,8 @@ function purchaseNitricStar() {
         fgpTSCoinsDisplay();
         fgpCreationGrid();
         initializeNitricStar();
-        showNotification(`Nitric Star: ${NITRIC_STAR_PRICE} TS Coins!`);
         return true;
     } else {
-        showNotification("TS Coins insuficientes para comprar a Estrela Nítrica!");
         return false;
     }
 }
@@ -12139,7 +12752,6 @@ function createAstroCard(type) {
         creationModeText.textContent = config.name;
         creationModeIndicator.style.display = 'block';
         toggleGameMenu();
-        showNotification(`Modo Criação: ${config.name}. Clique e arraste para definir a velocidade.`);
     });
     return card;
 }
@@ -12464,14 +13076,12 @@ function nextManualPage() {
     if (currentManualPage < totalManualPages) {
         currentManualPage++;
         fgpManualPage();
-        showNotification(`Página ${currentManualPage} de ${totalManualPages}`);
     }
 }
 function prevManualPage() {
     if (currentManualPage > 1) {
         currentManualPage--;
         fgpManualPage();
-        showNotification(`Página ${currentManualPage} de ${totalManualPages}`);
     }
 }
 function fgpManualPage() {
@@ -12929,7 +13539,6 @@ function resetAstroSettings() {
     ringMassSlider.value = astroSettings.ringMass;
     ringMassValue.textContent = astroSettings.ringMass;
     fgpAstroPreview();
-    showNotification("Configurações resetadas!");
 }
 function createAstro(type, x, y, vx = 0, vy = 0, customMass = null, originPlanet = null) {
     if (type === 'spaceDust') spaceDustCreated++;
@@ -14637,360 +15246,360 @@ function fgpGmlStarBehavior(deltaTime) {
         }
     });
 }
-    function fgpJavaStarBehavior(deltaTime) {
-        const now = Date.now();
-        planets.forEach(star => {
-            if (star.type !== 'javaStar' || star.markedForRemoval) return;
-            if (!star._javaNext) star._javaNext = now + 3000 + Math.random() * 3000;
-            if (now >= star._javaNext) {
-                star._javaNext = now + 3000 + Math.random() * 5000;
-                const radius = star.radius * 7 + 180;
-                star._javaPulse = Date.now() + 1000;
-                planets.forEach(p => {
-                    if (p === star || p.markedForRemoval || p.locked) return;
-                    if (p.mass > star.mass * 0.35) return;
-                    const dx = p.x - star.x;
-                    const dy = p.y - star.y;
-                    const dist = Math.hypot(dx, dy);
-                    if (dist < radius) {
-                        p.vx *= 0.6;
-                        p.vy *= 0.6;
-                        p._javaStabilized = Date.now() + 1200;
-                    }
-                });
-            }
-            if (star._javaPulse && now > star._javaPulse) star._javaPulse = null;
-        });
-    }
-    function fgpPhpStarBehavior(deltaTime) {
-        const now = Date.now();
-        planets.forEach(star => {
-            if (star.type !== 'phpStar' || star.markedForRemoval) return;
-            if (!star._phpNext) star._phpNext = now + 2200 + Math.random() * 3000;
-            if (now >= star._phpNext) {
-                star._phpNext = now + 2200 + Math.random() * 5000;
-                star._phpFlicker = Date.now() + 800;
-                if (Math.random() < 0.6) {
-                    const count = 1 + Math.floor(Math.random() * 3);
-                    for (let i = 0; i < count; i++) {
-                        createExpelledMatter('spaceDust', star.x + (Math.random()-0.5)*star.radius, star.y + (Math.random()-0.5)*star.radius, 0.02, 0.5);
-                    }
+function fgpJavaStarBehavior(deltaTime) {
+    const now = Date.now();
+    planets.forEach(star => {
+        if (star.type !== 'javaStar' || star.markedForRemoval) return;
+        if (!star._javaNext) star._javaNext = now + 3000 + Math.random() * 3000;
+        if (now >= star._javaNext) {
+            star._javaNext = now + 3000 + Math.random() * 5000;
+            const radius = star.radius * 7 + 180;
+            star._javaPulse = Date.now() + 1000;
+            planets.forEach(p => {
+                if (p === star || p.markedForRemoval || p.locked) return;
+                if (p.mass > star.mass * 0.35) return;
+                const dx = p.x - star.x;
+                const dy = p.y - star.y;
+                const dist = Math.hypot(dx, dy);
+                if (dist < radius) {
+                    p.vx *= 0.6;
+                    p.vy *= 0.6;
+                    p._javaStabilized = Date.now() + 1200;
                 }
-                planets.forEach(p => {
-                    if (p === star || p.markedForRemoval) return;
-                    const dx = p.x - star.x;
-                    const dy = p.y - star.y;
-                    const dist = Math.hypot(dx, dy);
-                    if (dist < star.radius * 6 && p.mass < star.mass * 0.3) {
-                        p.vx += (Math.random() - 0.5) * 1.5;
-                        p.vy += (Math.random() - 0.5) * 1.5;
-                        p._phpTouched = Date.now() + 600;
-                    }
-                });
+            });
+        }
+        if (star._javaPulse && now > star._javaPulse) star._javaPulse = null;
+    });
+}
+function fgpPhpStarBehavior(deltaTime) {
+    const now = Date.now();
+    planets.forEach(star => {
+        if (star.type !== 'phpStar' || star.markedForRemoval) return;
+        if (!star._phpNext) star._phpNext = now + 2200 + Math.random() * 3000;
+        if (now >= star._phpNext) {
+            star._phpNext = now + 2200 + Math.random() * 5000;
+            star._phpFlicker = Date.now() + 800;
+            if (Math.random() < 0.6) {
+                const count = 1 + Math.floor(Math.random() * 3);
+                for (let i = 0; i < count; i++) {
+                    createExpelledMatter('spaceDust', star.x + (Math.random()-0.5)*star.radius, star.y + (Math.random()-0.5)*star.radius, 0.02, 0.5);
+                }
             }
-            if (star._phpFlicker && now > star._phpFlicker) star._phpFlicker = null;
-        });
-    }
-    function fgpRustStarBehavior(deltaTime) {
-        const now = Date.now();
-        planets.forEach(star => {
-            if (star.type !== 'rustStar' || star.markedForRemoval) return;
-            if (!star._rustNext) star._rustNext = now + 2800 + Math.random() * 3200;
-            if (now >= star._rustNext) {
-                star._rustNext = now + 2800 + Math.random() * 6000;
-                star._rustSpark = Date.now() + 700;
-                planets.forEach(p => {
-                    if (p === star || p.markedForRemoval || p.locked) return;
-                    if (p.mass > star.mass * 0.25) return;
-                    const dx = p.x - star.x;
-                    const dy = p.y - star.y;
-                    const dist = Math.hypot(dx, dy);
-                    if (dist < star.radius * 6) {
-                        const angle = Math.atan2(dy, dx);
-                        const push = 1 + Math.random() * 2;
-                        p.vx += Math.cos(angle) * push;
-                        p.vy += Math.sin(angle) * push;
-                        p._rustStamped = Date.now() + 800;
-                    }
-                });
-            }
-            if (star._rustSpark && now > star._rustSpark) star._rustSpark = null;
-        });
-    }
-    function fgpGoStarBehavior(deltaTime) {
-        const now = Date.now();
-        planets.forEach(star => {
-            if (star.type !== 'goStar' || star.markedForRemoval) return;
-            if (!star._goNext) star._goNext = now + 1800 + Math.random() * 2000;
-            if (now >= star._goNext) {
-                star._goNext = now + 1800 + Math.random() * 4000;
-                star._goBurst = Date.now() + 600;
-                planets.forEach(p => {
-                    if (p === star || p.markedForRemoval) return;
-                    if (p.mass > star.mass * 0.3) return;
-                    const dx = p.x - star.x;
-                    const dy = p.y - star.y;
-                    const dist = Math.hypot(dx, dy);
-                    if (dist < star.radius * 6) {
-                        p.vx += (Math.random() - 0.5) * 3;
-                        p.vy += (Math.random() - 0.5) * 3;
-                        p._goShaken = Date.now() + 700;
-                    }
-                });
-            }
-            if (star._goBurst && now > star._goBurst) star._goBurst = null;
-        });
-    }
-    function fgpKotlinStarBehavior(deltaTime) {
-        const now = Date.now();
-        planets.forEach(star => {
-            if (star.type !== 'kotlinStar' || star.markedForRemoval) return;
-            if (!star._kotlinNext) star._kotlinNext = now + 2600 + Math.random() * 3000;
-            if (now >= star._kotlinNext) {
-                star._kotlinNext = now + 2600 + Math.random() * 5000;
-                star._kotlinPulse = Date.now() + 900;
-                planets.forEach(p => {
-                    if (p === star || p.markedForRemoval) return;
-                    if (p.mass > star.mass * 0.35) return;
-                    const dx = p.x - star.x;
-                    const dy = p.y - star.y;
-                    const dist = Math.hypot(dx, dy);
-                    if (dist < star.radius * 6) {
-                        p.vx += (Math.random() - 0.5) * 1.8;
-                        p.vy += (Math.random() - 0.5) * 1.8;
-                        p._kotlinTouched = Date.now() + 700;
-                    }
-                });
-            }
-            if (star._kotlinPulse && now > star._kotlinPulse) star._kotlinPulse = null;
-        });
-    }
-    function fgpSwiftStarBehavior(deltaTime) {
-        const now = Date.now();
-        planets.forEach(star => {
-            if (star.type !== 'swiftStar' || star.markedForRemoval) return;
-            if (!star._swiftNext) star._swiftNext = now + 2000 + Math.random() * 3000;
-            if (now >= star._swiftNext) {
-                star._swiftNext = now + 2000 + Math.random() * 4000;
-                star._swiftFlash = Date.now() + 600;
-                planets.forEach(p => {
-                    if (p === star || p.markedForRemoval) return;
-                    if (p.mass > star.mass * 0.3) return;
-                    const dx = p.x - star.x;
-                    const dy = p.y - star.y;
-                    const dist = Math.hypot(dx, dy);
-                    if (dist < star.radius * 5.5) {
-                        const kick = 2 + Math.random() * 2;
-                        const angle = Math.atan2(dy, dx);
-                        p.vx += Math.cos(angle) * kick;
-                        p.vy += Math.sin(angle) * kick;
-                        p._swiftShaken = Date.now() + 600;
-                    }
-                });
-            }
-            if (star._swiftFlash && now > star._swiftFlash) star._swiftFlash = null;
-        });
-    }
-    function fgpTsStarBehavior(deltaTime) {
-        const now = Date.now();
-        planets.forEach(star => {
-            if (star.type !== 'tsStar' || star.markedForRemoval) return;
-            if (!star._tsNext) star._tsNext = now + 2400 + Math.random() * 3200;
-            if (now >= star._tsNext) {
-                star._tsNext = now + 2400 + Math.random() * 5200;
-                star._tsPulse = Date.now() + 800;
-                planets.forEach(p => {
-                    if (p === star || p.markedForRemoval) return;
-                    if (p.mass > star.mass * 0.35) return;
-                    const dx = p.x - star.x;
-                    const dy = p.y - star.y;
-                    const dist = Math.hypot(dx, dy);
-                    if (dist < star.radius * 6) {
-                        p.vx *= 0.8;
-                        p.vy *= 0.8;
-                        p._tsCalmed = Date.now() + 900;
-                    }
-                });
-            }
-            if (star._tsPulse && now > star._tsPulse) star._tsPulse = null;
-        });
-    }
-    function fgpLuaStarBehavior(deltaTime) {
-        const now = Date.now();
-        planets.forEach(star => {
-            if (star.type !== 'luaStar' || star.markedForRemoval) return;
-            if (!star._luaNext) star._luaNext = now + 3000 + Math.random() * 3000;
-            if (now >= star._luaNext) {
-                star._luaNext = now + 3000 + Math.random() * 5000;
-                star._luaSwirl = Date.now() + 1000;
-                planets.forEach(p => {
-                    if (p === star || p.markedForRemoval) return;
-                    if (p.mass > star.mass * 0.35) return;
-                    const dx = p.x - star.x;
-                    const dy = p.y - star.y;
-                    const dist = Math.hypot(dx, dy);
-                    if (dist < star.radius * 5.5) {
-                        const angle = Math.atan2(dy, dx);
-                        const push = 1 + Math.random() * 1.5;
-                        p.vx += Math.cos(angle + 0.3) * push;
-                        p.vy += Math.sin(angle + 0.3) * push;
-                        p._luaSpun = Date.now() + 700;
-                    }
-                });
-            }
-            if (star._luaSwirl && now > star._luaSwirl) star._luaSwirl = null;
-        });
-    }
-    function fgpRubyStarBehavior(deltaTime) {
-        const now = Date.now();
-        planets.forEach(star => {
-            if (star.type !== 'rubyStar' || star.markedForRemoval) return;
-            if (!star._rubyNext) star._rubyNext = now + 2600 + Math.random() * 3400;
-            if (now >= star._rubyNext) {
-                star._rubyNext = now + 2600 + Math.random() * 5400;
-                star._rubyGlow = Date.now() + 900;
-                planets.forEach(p => {
-                    if (p === star || p.markedForRemoval) return;
-                    if (p.mass > star.mass * 0.35) return;
-                    const dx = p.x - star.x;
-                    const dy = p.y - star.y;
-                    const dist = Math.hypot(dx, dy);
-                    if (dist < star.radius * 6) {
-                        p.vx += (Math.random() - 0.5) * 2.2;
-                        p.vy += (Math.random() - 0.5) * 2.2;
-                        p._rubyTouched = Date.now() + 800;
-                    }
-                });
-            }
-            if (star._rubyGlow && now > star._rubyGlow) star._rubyGlow = null;
-        });
-    }
-    function fgpDartStarBehavior(deltaTime) {
-        const now = Date.now();
-        planets.forEach(star => {
-            if (star.type !== 'dartStar' || star.markedForRemoval) return;
-            if (!star._dartNext) star._dartNext = now + 1800 + Math.random() * 2600;
-            if (now >= star._dartNext) {
-                star._dartNext = now + 1800 + Math.random() * 4600;
-                star._dartBurst = Date.now() + 600;
-                planets.forEach(p => {
-                    if (p === star || p.markedForRemoval) return;
-                    if (p.mass > star.mass * 0.3) return;
-                    const dx = p.x - star.x;
-                    const dy = p.y - star.y;
-                    const dist = Math.hypot(dx, dy);
-                    if (dist < star.radius * 5) {
-                        p.vx += (Math.random() - 0.5) * 3.5;
-                        p.vy += (Math.random() - 0.5) * 3.5;
-                        p._dartShaken = Date.now() + 700;
-                    }
-                });
-            }
-            if (star._dartBurst && now > star._dartBurst) star._dartBurst = null;
-        });
-    }
-    function fgpHtmlStarBehavior(deltaTime) {
-        const now = Date.now();
-        planets.forEach(star => {
-            if (star.type !== 'htmlStar' || star.markedForRemoval) return;
-            if (!star._htmlNext) star._htmlNext = now + 2200 + Math.random() * 3000;
-            if (now >= star._htmlNext) {
-                star._htmlNext = now + 2200 + Math.random() * 5200;
-                star._htmlPulse = Date.now() + 800;
-                planets.forEach(p => {
-                    if (p === star || p.markedForRemoval) return;
-                    if (p.mass > star.mass * 0.35) return;
-                    const dx = p.x - star.x;
-                    const dy = p.y - star.y;
-                    const dist = Math.hypot(dx, dy);
-                    if (dist < star.radius * 6) {
-                        p.vx += (Math.random() - 0.5) * 1.6;
-                        p.vy += (Math.random() - 0.5) * 1.6;
-                        p._htmlTouched = Date.now() + 700;
-                    }
-                });
-            }
-            if (star._htmlPulse && now > star._htmlPulse) star._htmlPulse = null;
-        });
-    }
-    function fgpJsonStarBehavior(deltaTime) {
-        const now = Date.now();
-        planets.forEach(star => {
-            if (star.type !== 'jsonStar' || star.markedForRemoval) return;
-            if (!star._jsonNext) star._jsonNext = now + 2600 + Math.random() * 3000;
-            if (now >= star._jsonNext) {
-                star._jsonNext = now + 2600 + Math.random() * 5000;
-                star._jsonPulse = Date.now() + 900;
-                planets.forEach(p => {
-                    if (p === star || p.markedForRemoval) return;
-                    if (p.mass > star.mass * 0.33) return;
-                    const dx = p.x - star.x;
-                    const dy = p.y - star.y;
-                    const dist = Math.hypot(dx, dy);
-                    if (dist < star.radius * 5.5) {
-                        p.vx *= 0.9;
-                        p.vy *= 0.9;
-                        p._jsonCalmed = Date.now() + 800;
-                    }
-                });
-            }
-            if (star._jsonPulse && now > star._jsonPulse) star._jsonPulse = null;
-        });
-    }
-    function fgpAssemblyStarBehavior(deltaTime) {
-        const now = Date.now();
-        planets.forEach(star => {
-            if (star.type !== 'assemblyStar' || star.markedForRemoval) return;
-            if (!star._assemblyNext) star._assemblyNext = now + 1800 + Math.random() * 2600;
-            if (now >= star._assemblyNext) {
-                star._assemblyNext = now + 1800 + Math.random() * 4600;
-                star._assemblyBurst = Date.now() + 600;
-                planets.forEach(p => {
-                    if (p === star || p.markedForRemoval) return;
-                    if (p.mass > star.mass * 0.3) return;
-                    const dx = p.x - star.x;
-                    const dy = p.y - star.y;
-                    const dist = Math.hypot(dx, dy);
-                    if (dist < star.radius * 5) {
-                        p.vx += (Math.random() - 0.5) * 3.2;
-                        p.vy += (Math.random() - 0.5) * 3.2;
-                        p._assemblyShaken = Date.now() + 700;
-                    }
-                });
-            }
-            if (star._assemblyBurst && now > star._assemblyBurst) star._assemblyBurst = null;
-        });
-    }
-    function fgpSqlStarBehavior(deltaTime) {
-        const now = Date.now();
-        planets.forEach(star => {
-            if (star.type !== 'sqlStar' || star.markedForRemoval) return;
-            if (!star._sqlNext) star._sqlNext = now + 2400 + Math.random() * 3200;
-            if (now >= star._sqlNext) {
-                star._sqlNext = now + 2400 + Math.random() * 5200;
-                star._sqlPulse = Date.now() + 900;
-                planets.forEach(p => {
-                    if (p === star || p.markedForRemoval) return;
-                    if (p.mass > star.mass * 0.35) return;
-                    const dx = p.x - star.x;
-                    const dy = p.y - star.y;
-                    const dist = Math.hypot(dx, dy);
-                    if (dist < star.radius * 6) {
-                        const angle = Math.atan2(dy, dx);
-                        const ringIndex = Math.floor((angle + Math.PI) / (Math.PI / 4));
-                        const targetAngle = ringIndex * (Math.PI / 4) - Math.PI + (Math.random() - 0.5) * 0.2;
-                        const targetRadius = star.radius * (1.2 + (ringIndex % 4) * 0.2);
-                        const tx = Math.cos(targetAngle) * targetRadius + star.x;
-                        const ty = Math.sin(targetAngle) * targetRadius + star.y;
-                        p.vx += (tx - p.x) * 0.001 + (Math.random() - 0.5) * 0.6;
-                        p.vy += (ty - p.y) * 0.001 + (Math.random() - 0.5) * 0.6;
-                        p._sqlTouched = Date.now() + 800;
-                    }
-                });
-            }
-            if (star._sqlPulse && now > star._sqlPulse) star._sqlPulse = null;
-        });
-    }
+            planets.forEach(p => {
+                if (p === star || p.markedForRemoval) return;
+                const dx = p.x - star.x;
+                const dy = p.y - star.y;
+                const dist = Math.hypot(dx, dy);
+                if (dist < star.radius * 6 && p.mass < star.mass * 0.3) {
+                    p.vx += (Math.random() - 0.5) * 1.5;
+                    p.vy += (Math.random() - 0.5) * 1.5;
+                    p._phpTouched = Date.now() + 600;
+                }
+            });
+        }
+        if (star._phpFlicker && now > star._phpFlicker) star._phpFlicker = null;
+    });
+}
+function fgpRustStarBehavior(deltaTime) {
+    const now = Date.now();
+    planets.forEach(star => {
+        if (star.type !== 'rustStar' || star.markedForRemoval) return;
+        if (!star._rustNext) star._rustNext = now + 2800 + Math.random() * 3200;
+        if (now >= star._rustNext) {
+            star._rustNext = now + 2800 + Math.random() * 6000;
+            star._rustSpark = Date.now() + 700;
+            planets.forEach(p => {
+                if (p === star || p.markedForRemoval || p.locked) return;
+                if (p.mass > star.mass * 0.25) return;
+                const dx = p.x - star.x;
+                const dy = p.y - star.y;
+                const dist = Math.hypot(dx, dy);
+                if (dist < star.radius * 6) {
+                    const angle = Math.atan2(dy, dx);
+                    const push = 1 + Math.random() * 2;
+                    p.vx += Math.cos(angle) * push;
+                    p.vy += Math.sin(angle) * push;
+                    p._rustStamped = Date.now() + 800;
+                }
+            });
+        }
+        if (star._rustSpark && now > star._rustSpark) star._rustSpark = null;
+    });
+}
+function fgpGoStarBehavior(deltaTime) {
+    const now = Date.now();
+    planets.forEach(star => {
+        if (star.type !== 'goStar' || star.markedForRemoval) return;
+        if (!star._goNext) star._goNext = now + 1800 + Math.random() * 2000;
+        if (now >= star._goNext) {
+            star._goNext = now + 1800 + Math.random() * 4000;
+            star._goBurst = Date.now() + 600;
+            planets.forEach(p => {
+                if (p === star || p.markedForRemoval) return;
+                if (p.mass > star.mass * 0.3) return;
+                const dx = p.x - star.x;
+                const dy = p.y - star.y;
+                const dist = Math.hypot(dx, dy);
+                if (dist < star.radius * 6) {
+                    p.vx += (Math.random() - 0.5) * 3;
+                    p.vy += (Math.random() - 0.5) * 3;
+                    p._goShaken = Date.now() + 700;
+                }
+            });
+        }
+        if (star._goBurst && now > star._goBurst) star._goBurst = null;
+    });
+}
+function fgpKotlinStarBehavior(deltaTime) {
+    const now = Date.now();
+    planets.forEach(star => {
+        if (star.type !== 'kotlinStar' || star.markedForRemoval) return;
+        if (!star._kotlinNext) star._kotlinNext = now + 2600 + Math.random() * 3000;
+        if (now >= star._kotlinNext) {
+            star._kotlinNext = now + 2600 + Math.random() * 5000;
+            star._kotlinPulse = Date.now() + 900;
+            planets.forEach(p => {
+                if (p === star || p.markedForRemoval) return;
+                if (p.mass > star.mass * 0.35) return;
+                const dx = p.x - star.x;
+                const dy = p.y - star.y;
+                const dist = Math.hypot(dx, dy);
+                if (dist < star.radius * 6) {
+                    p.vx += (Math.random() - 0.5) * 1.8;
+                    p.vy += (Math.random() - 0.5) * 1.8;
+                    p._kotlinTouched = Date.now() + 700;
+                }
+            });
+        }
+        if (star._kotlinPulse && now > star._kotlinPulse) star._kotlinPulse = null;
+    });
+}
+function fgpSwiftStarBehavior(deltaTime) {
+    const now = Date.now();
+    planets.forEach(star => {
+        if (star.type !== 'swiftStar' || star.markedForRemoval) return;
+        if (!star._swiftNext) star._swiftNext = now + 2000 + Math.random() * 3000;
+        if (now >= star._swiftNext) {
+            star._swiftNext = now + 2000 + Math.random() * 4000;
+            star._swiftFlash = Date.now() + 600;
+            planets.forEach(p => {
+                if (p === star || p.markedForRemoval) return;
+                if (p.mass > star.mass * 0.3) return;
+                const dx = p.x - star.x;
+                const dy = p.y - star.y;
+                const dist = Math.hypot(dx, dy);
+                if (dist < star.radius * 5.5) {
+                    const kick = 2 + Math.random() * 2;
+                    const angle = Math.atan2(dy, dx);
+                    p.vx += Math.cos(angle) * kick;
+                    p.vy += Math.sin(angle) * kick;
+                    p._swiftShaken = Date.now() + 600;
+                }
+            });
+        }
+        if (star._swiftFlash && now > star._swiftFlash) star._swiftFlash = null;
+    });
+}
+function fgpTsStarBehavior(deltaTime) {
+    const now = Date.now();
+    planets.forEach(star => {
+        if (star.type !== 'tsStar' || star.markedForRemoval) return;
+        if (!star._tsNext) star._tsNext = now + 2400 + Math.random() * 3200;
+        if (now >= star._tsNext) {
+            star._tsNext = now + 2400 + Math.random() * 5200;
+            star._tsPulse = Date.now() + 800;
+            planets.forEach(p => {
+                if (p === star || p.markedForRemoval) return;
+                if (p.mass > star.mass * 0.35) return;
+                const dx = p.x - star.x;
+                const dy = p.y - star.y;
+                const dist = Math.hypot(dx, dy);
+                if (dist < star.radius * 6) {
+                    p.vx *= 0.8;
+                    p.vy *= 0.8;
+                    p._tsCalmed = Date.now() + 900;
+                }
+            });
+        }
+        if (star._tsPulse && now > star._tsPulse) star._tsPulse = null;
+    });
+}
+function fgpLuaStarBehavior(deltaTime) {
+    const now = Date.now();
+    planets.forEach(star => {
+        if (star.type !== 'luaStar' || star.markedForRemoval) return;
+        if (!star._luaNext) star._luaNext = now + 3000 + Math.random() * 3000;
+        if (now >= star._luaNext) {
+            star._luaNext = now + 3000 + Math.random() * 5000;
+            star._luaSwirl = Date.now() + 1000;
+            planets.forEach(p => {
+                if (p === star || p.markedForRemoval) return;
+                if (p.mass > star.mass * 0.35) return;
+                const dx = p.x - star.x;
+                const dy = p.y - star.y;
+                const dist = Math.hypot(dx, dy);
+                if (dist < star.radius * 5.5) {
+                    const angle = Math.atan2(dy, dx);
+                    const push = 1 + Math.random() * 1.5;
+                    p.vx += Math.cos(angle + 0.3) * push;
+                    p.vy += Math.sin(angle + 0.3) * push;
+                    p._luaSpun = Date.now() + 700;
+                }
+            });
+        }
+        if (star._luaSwirl && now > star._luaSwirl) star._luaSwirl = null;
+    });
+}
+function fgpRubyStarBehavior(deltaTime) {
+    const now = Date.now();
+    planets.forEach(star => {
+        if (star.type !== 'rubyStar' || star.markedForRemoval) return;
+        if (!star._rubyNext) star._rubyNext = now + 2600 + Math.random() * 3400;
+        if (now >= star._rubyNext) {
+            star._rubyNext = now + 2600 + Math.random() * 5400;
+            star._rubyGlow = Date.now() + 900;
+            planets.forEach(p => {
+                if (p === star || p.markedForRemoval) return;
+                if (p.mass > star.mass * 0.35) return;
+                const dx = p.x - star.x;
+                const dy = p.y - star.y;
+                const dist = Math.hypot(dx, dy);
+                if (dist < star.radius * 6) {
+                    p.vx += (Math.random() - 0.5) * 2.2;
+                    p.vy += (Math.random() - 0.5) * 2.2;
+                    p._rubyTouched = Date.now() + 800;
+                }
+            });
+        }
+        if (star._rubyGlow && now > star._rubyGlow) star._rubyGlow = null;
+    });
+}
+function fgpDartStarBehavior(deltaTime) {
+    const now = Date.now();
+    planets.forEach(star => {
+        if (star.type !== 'dartStar' || star.markedForRemoval) return;
+        if (!star._dartNext) star._dartNext = now + 1800 + Math.random() * 2600;
+        if (now >= star._dartNext) {
+            star._dartNext = now + 1800 + Math.random() * 4600;
+            star._dartBurst = Date.now() + 600;
+            planets.forEach(p => {
+                if (p === star || p.markedForRemoval) return;
+                if (p.mass > star.mass * 0.3) return;
+                const dx = p.x - star.x;
+                const dy = p.y - star.y;
+                const dist = Math.hypot(dx, dy);
+                if (dist < star.radius * 5) {
+                    p.vx += (Math.random() - 0.5) * 3.5;
+                    p.vy += (Math.random() - 0.5) * 3.5;
+                    p._dartShaken = Date.now() + 700;
+                }
+            });
+        }
+        if (star._dartBurst && now > star._dartBurst) star._dartBurst = null;
+    });
+}
+function fgpHtmlStarBehavior(deltaTime) {
+    const now = Date.now();
+    planets.forEach(star => {
+        if (star.type !== 'htmlStar' || star.markedForRemoval) return;
+        if (!star._htmlNext) star._htmlNext = now + 2200 + Math.random() * 3000;
+        if (now >= star._htmlNext) {
+            star._htmlNext = now + 2200 + Math.random() * 5200;
+            star._htmlPulse = Date.now() + 800;
+            planets.forEach(p => {
+                if (p === star || p.markedForRemoval) return;
+                if (p.mass > star.mass * 0.35) return;
+                const dx = p.x - star.x;
+                const dy = p.y - star.y;
+                const dist = Math.hypot(dx, dy);
+                if (dist < star.radius * 6) {
+                    p.vx += (Math.random() - 0.5) * 1.6;
+                    p.vy += (Math.random() - 0.5) * 1.6;
+                    p._htmlTouched = Date.now() + 700;
+                }
+            });
+        }
+        if (star._htmlPulse && now > star._htmlPulse) star._htmlPulse = null;
+    });
+}
+function fgpJsonStarBehavior(deltaTime) {
+    const now = Date.now();
+    planets.forEach(star => {
+        if (star.type !== 'jsonStar' || star.markedForRemoval) return;
+        if (!star._jsonNext) star._jsonNext = now + 2600 + Math.random() * 3000;
+        if (now >= star._jsonNext) {
+            star._jsonNext = now + 2600 + Math.random() * 5000;
+            star._jsonPulse = Date.now() + 900;
+            planets.forEach(p => {
+                if (p === star || p.markedForRemoval) return;
+                if (p.mass > star.mass * 0.33) return;
+                const dx = p.x - star.x;
+                const dy = p.y - star.y;
+                const dist = Math.hypot(dx, dy);
+                if (dist < star.radius * 5.5) {
+                    p.vx *= 0.9;
+                    p.vy *= 0.9;
+                    p._jsonCalmed = Date.now() + 800;
+                }
+            });
+        }
+        if (star._jsonPulse && now > star._jsonPulse) star._jsonPulse = null;
+    });
+}
+function fgpAssemblyStarBehavior(deltaTime) {
+    const now = Date.now();
+    planets.forEach(star => {
+        if (star.type !== 'assemblyStar' || star.markedForRemoval) return;
+        if (!star._assemblyNext) star._assemblyNext = now + 1800 + Math.random() * 2600;
+        if (now >= star._assemblyNext) {
+            star._assemblyNext = now + 1800 + Math.random() * 4600;
+            star._assemblyBurst = Date.now() + 600;
+            planets.forEach(p => {
+                if (p === star || p.markedForRemoval) return;
+                if (p.mass > star.mass * 0.3) return;
+                const dx = p.x - star.x;
+                const dy = p.y - star.y;
+                const dist = Math.hypot(dx, dy);
+                if (dist < star.radius * 5) {
+                    p.vx += (Math.random() - 0.5) * 3.2;
+                    p.vy += (Math.random() - 0.5) * 3.2;
+                    p._assemblyShaken = Date.now() + 700;
+                }
+            });
+        }
+        if (star._assemblyBurst && now > star._assemblyBurst) star._assemblyBurst = null;
+    });
+}
+function fgpSqlStarBehavior(deltaTime) {
+    const now = Date.now();
+    planets.forEach(star => {
+        if (star.type !== 'sqlStar' || star.markedForRemoval) return;
+        if (!star._sqlNext) star._sqlNext = now + 2400 + Math.random() * 3200;
+        if (now >= star._sqlNext) {
+            star._sqlNext = now + 2400 + Math.random() * 5200;
+            star._sqlPulse = Date.now() + 900;
+            planets.forEach(p => {
+                if (p === star || p.markedForRemoval) return;
+                if (p.mass > star.mass * 0.35) return;
+                const dx = p.x - star.x;
+                const dy = p.y - star.y;
+                const dist = Math.hypot(dx, dy);
+                if (dist < star.radius * 6) {
+                    const angle = Math.atan2(dy, dx);
+                    const ringIndex = Math.floor((angle + Math.PI) / (Math.PI / 4));
+                    const targetAngle = ringIndex * (Math.PI / 4) - Math.PI + (Math.random() - 0.5) * 0.2;
+                    const targetRadius = star.radius * (1.2 + (ringIndex % 4) * 0.2);
+                    const tx = Math.cos(targetAngle) * targetRadius + star.x;
+                    const ty = Math.sin(targetAngle) * targetRadius + star.y;
+                    p.vx += (tx - p.x) * 0.001 + (Math.random() - 0.5) * 0.6;
+                    p.vy += (ty - p.y) * 0.001 + (Math.random() - 0.5) * 0.6;
+                    p._sqlTouched = Date.now() + 800;
+                }
+            });
+        }
+        if (star._sqlPulse && now > star._sqlPulse) star._sqlPulse = null;
+    });
+}
 function canBePetrifiedByMedusa(obj) {
     if (!obj || obj.markedForRemoval || obj.petrified) return false;
     const protectedTypes = ['medusaStar', 'blackHole', 'quasar', 'whiteHole', 'wormhole'];
@@ -15231,7 +15840,6 @@ function depetrifyAstro(obj) {
     if (obj.originalVy !== undefined) obj.vy = obj.originalVy;
     if (obj.originalLocked !== undefined) obj.locked = obj.originalLocked;
     createDepetrificationEffect(obj);
-    showNotification(`✨ ${getTypeName(obj.originalType || obj.type)} desempetrificado pela Estrela Nítrica! (Cores/restauração)`, 2000);
 }
 function createDepetrificationEffect(obj) {
     for (let i = 0; i < 8; i++) {
@@ -15661,7 +16269,6 @@ function activateCreationMode(type) {
     creationModeIndicator.style.display = 'block';
     const cancelBtn = document.getElementById('cancelCreationBtn');
     if (cancelBtn) cancelBtn.style.display = 'flex';
-    showNotification(`Modo criação: ${getTypeName(type)}`);
 }
 function deactivateCreationMode() {
     creationMode = null;
@@ -15669,7 +16276,6 @@ function deactivateCreationMode() {
     creationModeIndicator.style.display = 'none';
     const cancelBtn = document.getElementById('cancelCreationBtn');
     if (cancelBtn) cancelBtn.style.display = 'none';
-    showNotification("Modo criação desativado");
 }
 function createRockets(planet, count) {
     const validTargets = planets.filter(p => 
