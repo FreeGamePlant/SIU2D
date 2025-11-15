@@ -332,6 +332,13 @@ let waitForCoinsInterval;
 let dayForCoinsInterval;
 let admobInitialized = false;
 let isAdLoading = false;
+let dailyRewardCalendar = {
+    currentDay: 0,
+    lastClaimDate: null,
+    streak: 0,
+    revealedCode1: [],
+    revealedCode2: []
+};
 //#endregion
 if (btnLock) {
     btnLock.addEventListener('click', toggleLock);
@@ -682,14 +689,14 @@ function updateAdButtonState() {
         if (!navigator.onLine) {
             adCard.style.opacity = '0.6';
             adCard.style.cursor = 'not-allowed';
-            adCard.title = "Conecte-se à internet para assistir anúncios";
+            adCard.title = "Network--";
             adStatus.textContent = "❌ Offline";
             adStatus.style.color = '#f44336';
         } else {
             adCard.style.opacity = '1';
             adCard.style.cursor = 'pointer';
-            adCard.title = "Assistir anúncio por 1000 TS Coins";
-            adStatus.textContent = "✅ Disponível";
+            adCard.title = "Watch Add for 1000 TS Coins";
+            adStatus.textContent = "✅";
             adStatus.style.color = '#4CAF50';
         }
     }
@@ -5708,9 +5715,14 @@ function drawTemperatureZones() {
 }
 function fgpPlanetsTemperature(deltaTime) {
     planets.forEach(planet => {
+        planet.waterValue = planet.waterValue || 0;
+        planet.gasValue = planet.gasValue || 0;
+        planet.cloudsValue = planet.cloudsValue || 0;
+        planet.temperature = planet.temperature || 20;
         const water = planet.waterValue;
         const gas = planet.gasValue;
         const clouds = planet.cloudsValue;
+        const temp = planet.temperature;
         if (!['rockyPlanet', 'gasGiant', 'planetoid', 'asteroid', 'meteoroid', 'spaceDust', 'comet', 'meteorite'].includes(planet.type)) return;
         let totalHeat = 0;
         planets.forEach(heatSource => {
@@ -5731,9 +5743,51 @@ function fgpPlanetsTemperature(deltaTime) {
                 totalHeat += heatIntensity;
             }
         });
+        if (temp >= 20 && temp <= 70) {
+            if (clouds < 10 && water > 0) {
+                const evaporationRate = (temp - 20) / 50;
+                const waterLoss = evaporationRate * deltaTime / 1000 * timeScale;
+                planet.waterValue = Math.max(0, water - waterLoss * 0.01);
+                planet.cloudsValue = Math.min(100, clouds + waterLoss * 0.01);
+                if (Math.random() < 10 * deltaTime / 1000 * timeScale) {
+                    planet.gasValue = Math.min(100, gas + 0.01);
+                }
+            }
+        } else if (temp > 70) {
+            if (water > 0) {
+                const evaporationRate = (temp - 70) / 30;
+                const waterLoss = evaporationRate * deltaTime / 1000 * timeScale;
+                planet.waterValue = Math.max(0, water - waterLoss * 0.05);
+                planet.cloudsValue = Math.min(100, clouds + waterLoss * 0.05);
+                if (Math.random() < 0.005 * deltaTime / 1000 * timeScale) {
+                    planet.gasValue = Math.min(100, gas + 0.02);
+                }
+            }
+        }
+        if (temp < 20 && temp >= 5) {
+            if (clouds > 0) {
+                const precipitationRate = (20 - temp) / 15;
+                const cloudLoss = precipitationRate * deltaTime / 1000 * timeScale;
+                planet.cloudsValue = Math.max(0, clouds - cloudLoss * 0.01);
+                if (water < 75) {
+                    planet.waterValue = Math.min(75, water + cloudLoss * 0.01);
+                }
+            }
+        } else if (temp < 5) {
+            if (clouds > 0) {
+                const precipitationRate = (5 - temp) / 5;
+                const cloudLoss = precipitationRate * deltaTime / 1000 * timeScale;
+                planet.cloudsValue = Math.max(0, clouds - cloudLoss * 0.05);
+                if (water < 100) {
+                    planet.waterValue = Math.min(75, water + cloudLoss * 0.05);
+                }
+            }
+        }
+        const greenhouseEffect = 1 + (clouds / 100) * 0.5;
+        const baseTargetTemp = totalHeat > 0 ? totalHeat * 0.1 : -273.15;
+        const targetTemp = baseTargetTemp * greenhouseEffect;
         const coolingRate = 0.05;
         const heatingRate = 0.1;
-        const targetTemp = totalHeat > 0 ? totalHeat * 0.1 : -273.15;
         planet.temperature = Math.max(-273.15, planet.temperature) + 
             (targetTemp - planet.temperature) * 
             (totalHeat > 0 ? heatingRate : coolingRate) * 
@@ -6630,31 +6684,724 @@ function fgpPlanetsTemperature(deltaTime) {
             planet.waterValue = planet.waterValue || 0;
             planet.gasValue = planet.gasValue || 0;
             planet.cloudsValue = planet.cloudsValue || 0;
-            planet.temperature = planet.temperature || 20;
             checkExoticTransformation(
-                ['Crystalline', 'Radioative', 'Vibrational', 'Quantum'],
-                ['Cerium', 'Zirconium', 'Tantalum', 'Ruthenium'],
-                ['-X', '-Ω', '-Δ', '-Σ']
+                ['Crystalline', 'Magnetic', 'Radioative', 'Vibrational', 'Quantum'],
+                ['Cerium', 'Zirconium', 'Tantalum', 'Ruthenium', 'Hafnium'],
+                ['-X', '-Ω', '-Δ', '-Σ', '-Φ']
             );
-            if (planet.temperature > 100) {
-                planet.planetClass = 'Lava Planetoid';
-                planet.color = '#ff0000ff';
+            fgpPlanetConditions(planet);
+            if (planet.temperature > 100 && planet.cloudsValue < 10 && graphicsQuality != 'high' && planet.cloudsValue < 100 && planet.gasValue <= 99){  
+                planet.planetClass = 'Lava Planetoid'; 
+                planet.color = '#da1600';
+                planet.landColor = '#000000ff';
+                planet.lifeChance = 0;
                 unlockAchievement(4)
-            } else if (planet.temperature < -50 && planet.waterValue > 30) {
-                planet.planetClass = 'Ice Planetoid';
-                planet.color = '#609899';
-            } else if (planet.temperature < -50) {
-                planet.planetClass = 'Frozen and Arid Planetoid';
-                planet.color = '#ffffff';
-            } else if (planet.temperature > 50 && planet.waterValue < 40) {
+            } else if (planet.temperature > 100 && planet.cloudsValue >= 0 && planet.cloudsValue < 20 && graphicsQuality === 'high' && planet.gasValue <= 99){  
+                planet.planetClass = 'Lava Planetoid'; 
+                planet.color = '#da1600';
+                planet.landColor = '#000000ff';
+                planet.lifeChance = 0;
+                unlockAchievement(4)
+            } else if (planet.temperature > 100 && planet.cloudsValue >= 0 && planet.cloudsValue < 99 && planet.gasValue > 99){  
+                planet.planetClass = 'Carbon Lava Planetoid'; 
+                planet.color = '#681f17ff';
+                planet.landColor = '#3f0000ff';
+                unlockAchievement(4)
+            } else if (planet.temperature > 100 && planet.cloudsValue >= 20 && planet.cloudsValue < 30 && graphicsQuality === 'high' && planet.gasValue <= 99){  
+                planet.planetClass = 'Lava Planetoid'; 
+                planet.color = '#8b261aff';
+                planet.landColor = '#130606ff';
+                planet.lifeChance = 0;
+                unlockAchievement(4)
+            } else if (planet.temperature > 100 && planet.cloudsValue >= 20 && planet.cloudsValue < 40 && graphicsQuality === 'high' && planet.gasValue <= 99){  
+                planet.planetClass = 'Lava Planetoid'; 
+                planet.color = '#a54338ff';
+                planet.landColor = '#422020ff';
+                planet.lifeChance = 0;
+                unlockAchievement(4)
+            } else if (planet.temperature > 100 && planet.cloudsValue >= 40 && planet.cloudsValue < 50 && graphicsQuality === 'high' && planet.gasValue <= 99){  
+                planet.planetClass = 'Lava Planetoid'; 
+                planet.color = '#b4554bff';
+                planet.landColor = '#492626ff';
+                planet.lifeChance = 0;
+                unlockAchievement(4)
+            } else if (planet.temperature > 100 && planet.cloudsValue >= 50 && planet.cloudsValue < 60 && graphicsQuality === 'high' && planet.gasValue <= 99){  
+                planet.planetClass = 'Lava Planetoid'; 
+                planet.color = '#ad675fff';
+                planet.landColor = '#5c3939ff';
+                planet.lifeChance = 0;
+                unlockAchievement(4)
+            } else if (planet.temperature > 100 && planet.cloudsValue >= 60 && planet.cloudsValue < 70 && graphicsQuality === 'high' && planet.gasValue <= 99){  
+                planet.planetClass = 'Lava Planetoid'; 
+                planet.color = '#b89a97ff';
+                planet.landColor = '#725454ff';
+                planet.lifeChance = 0;
+                unlockAchievement(4)
+            } else if (planet.temperature > 100 && planet.cloudsValue >= 70 && planet.cloudsValue < 80 && graphicsQuality === 'high' && planet.gasValue <= 99){  
+                planet.planetClass = 'Lava Planetoid'; 
+                planet.color = '#755d5bff';
+                planet.landColor = '#3f2929ff';
+                planet.lifeChance = 0;
+                unlockAchievement(4)
+            } else if (planet.temperature > 100 && planet.cloudsValue >= 80 && planet.cloudsValue <= 99 && graphicsQuality === 'high' && planet.gasValue <= 99){  
+                planet.planetClass = 'Lava Planetoid'; 
+                planet.color = '#362a29ff';
+                planet.landColor = '#201717ff';
+                planet.lifeChance = 0;
+                unlockAchievement(4)
+            } else if (planet.temperature > 100 && planet.cloudsValue >= 100) {  
+                planet.planetClass = 'Cloudy Lava Planetoid'; 
+                planet.color = '#180200ff';
+                planet.landColor = '#180200ff';
+                planet.lifeChance = 0;
+                unlockAchievement(4)
+                if (planet.gasValue > 99) {
+                planet.planetClass = 'Acidic Cloudy Lava Planetoid'; 
+                planet.color = '#ffa600ff';
+                planet.landColor = '#ffa600ff';
+            }
+            } else if (planet.temperature >= 10 && planet.temperature <= 50 &&  
+                    planet.waterValue > 99 && planet.gasValue <= 99 &&
+                    planet.cloudsValue > 99 && graphicsQuality != 'high') {
+                planet.planetClass = 'Cloudy Oceanic Planetoid'; 
+                planet.color = '#94caffff';
+                planet.landColor = '#94caffff';
+            } else if (planet.temperature >= 10 && planet.temperature <= 50 &&  
+                    planet.waterValue > 99 && planet.gasValue > 99 &&
+                    planet.cloudsValue <= 99 && graphicsQuality != 'high') {
+                planet.planetClass = 'Oxygenated Oceanic Planetoid'; 
+                planet.color = '#20ff7dff';
+                planet.landColor = '#20ff7dff';
+            } else if (planet.temperature >= 10 && planet.temperature <= 50 &&  
+                    planet.waterValue > 99 && planet.gasValue > 99 &&
+                    planet.cloudsValue > 99 && graphicsQuality != 'high') {
+                planet.planetClass = 'Oxygenated Cloudy Oceanic Planetoid'; 
+                planet.color = '#a9ff94ff';
+                planet.landColor = '#a9ff94ff';
+            } else if (planet.temperature >= 10 && planet.temperature <= 50 &&  
+                    planet.waterValue > 99 && planet.gasValue <= 99 &&
+                    planet.cloudsValue <= 99 && graphicsQuality != 'high') {
+                planet.planetClass = 'Oceanic Planetoid'; 
+                planet.color = '#004e9c';
+                planet.landColor = '#004e9c';
+            } else if (planet.temperature >= 10 && planet.temperature <= 50 &&  
+                    planet.waterValue > 99 && planet.gasValue <= 99 &&
+                    planet.cloudsValue > 0 && planet.cloudsValue <= 40 && graphicsQuality === 'high') {
+                planet.planetClass = 'Oceanic Planetoid'; 
+                planet.color = '#004e9c';
+                planet.landColor = '#004e9c';
+            } else if (planet.temperature >= 10 && planet.temperature <= 50 &&  
+                    planet.waterValue > 99 && planet.gasValue <= 99 &&
+                    planet.cloudsValue > 40 && planet.cloudsValue <= 50 && graphicsQuality === 'high') {
+                planet.planetClass = 'Oceanic Planetoid'; 
+                planet.color = '#1f61a3ff';
+                planet.landColor = '#1f61a3ff';
+            } else if (planet.temperature >= 10 && planet.temperature <= 50 &&  
+                    planet.waterValue > 99 && planet.gasValue <= 99 &&
+                    planet.cloudsValue > 50 && planet.cloudsValue <= 70 && graphicsQuality === 'high') {
+                planet.planetClass = 'Oceanic Planetoid'; 
+                planet.color = '#58a5f1ff';
+                planet.landColor = '#58a5f1ff';
+            } else if (planet.temperature >= 10 && planet.temperature <= 50 &&  
+                    planet.waterValue > 99 && planet.gasValue <= 99 &&
+                    planet.cloudsValue > 70 && planet.cloudsValue <= 90 && graphicsQuality === 'high') {
+                planet.planetClass = 'Oceanic Planetoid'; 
+                planet.color = '#7397bbff';
+                planet.landColor = '#7397bbff';
+            } else if (planet.temperature >= 10 && planet.temperature <= 50 &&  
+                    planet.waterValue > 99 && planet.gasValue <= 99 &&
+                    planet.cloudsValue > 90 && graphicsQuality === 'high') {
+                planet.planetClass = 'Cloudy Oceanic Planetoid'; 
+                planet.color = '#9accffff';
+                planet.landColor = '#9accffff';
+            } else if (planet.temperature >= 10 && planet.temperature <= 50 &&  
+                    planet.waterValue > 99 && planet.gasValue >= 100 &&
+                    planet.cloudsValue <= 99) {
+                planet.planetClass = 'Oxygenated Oceanic Planetoid'; 
+                planet.color = '#009c4eff';
+                planet.landColor = '#009c4eff';
+            } else if (planet.temperature >= 10 && planet.temperature <= 50 &&  
+                    planet.waterValue > 99 && planet.gasValue >= 100 &&
+                    planet.cloudsValue > 90 && graphicsQuality === 'high') {
+                planet.planetClass = 'Cloudy Oxygenated Oceanic Planetoid'; 
+                planet.color = '#d8ff49ff';
+                planet.landColor = '#d8ff49ff';
+            } else if (planet.temperature > -50 && planet.temperature < 10 &&  
+                    planet.waterValue > 99 && planet.gasValue <= 99 &&
+                    planet.cloudsValue > 0 && graphicsQuality != 'high') {
+                planet.planetClass = 'Storm Planetoid'; 
+                planet.color = '#00109cff';
+                planet.landColor = '#00109cff';
+            } else if (planet.temperature > -50 && planet.temperature < 10 &&  
+                    planet.waterValue > 99 && planet.gasValue > 99 &&
+                    planet.cloudsValue <= 99 && graphicsQuality != 'high') {
+                planet.planetClass = 'Oxygenated Storm Planetoid'; 
+                planet.color = '#009c60ff';
+                planet.landColor = '#009c60ff';
+            } else if (planet.temperature > -50 && planet.temperature <= 10 &&  
+                    planet.waterValue > 99 && planet.gasValue <= 99 &&
+                    planet.cloudsValue > 0 && planet.cloudsValue <= 30 && graphicsQuality === 'high') {
+                planet.planetClass = 'Storm Planetoid'; 
+                planet.color = '#0e1874ff';
+                planet.landColor = '#0e1874ff';
+            } else if (planet.temperature > -50 && planet.temperature < 10 &&  
+                    planet.waterValue > 99 && planet.gasValue > 99 &&
+                    planet.cloudsValue > 0 && planet.cloudsValue <= 99 && graphicsQuality === 'high') {
+                planet.planetClass = 'Oxygenated Storm Planetoid';
+                planet.color = '#009c60ff';
+                planet.landColor = '#009c60ff';
+            } else if (planet.temperature > -50 && planet.temperature <= 10 &&  
+                    planet.waterValue > 99 && planet.gasValue <= 99 &&
+                    planet.cloudsValue > 30 && planet.cloudsValue <= 60 && graphicsQuality === 'high') {
+                planet.planetClass = 'Storm Planetoid'; 
+                planet.color = '#0c1355ff';
+                planet.landColor = '#0c1355ff';
+            } else if (planet.temperature > -50 && planet.temperature <= 10 &&  
+                    planet.waterValue > 99 && planet.gasValue <= 99 &&
+                    planet.cloudsValue > 60 && planet.cloudsValue <= 99 && graphicsQuality === 'high') {
+                planet.planetClass = 'Storm Planetoid'; 
+                planet.color = '#060a3aff';
+                planet.landColor = '#060a3aff';
+            } else if (planet.temperature > -50 && planet.temperature <= 10 &&  
+                    planet.waterValue > 99 && planet.gasValue <= 99 &&
+                    planet.cloudsValue > 99) {
+                planet.planetClass = 'Super Storm Planetoid'; 
+                planet.color = '#000538ff';
+                planet.landColor = '#000538ff';
+            } else if (planet.temperature > -50 && planet.temperature <= 10 &&  
+                    planet.waterValue > 99 && planet.gasValue > 99 &&
+                    planet.cloudsValue > 99) {
+                planet.planetClass = 'Super Oxygenated Storm Planetoid'; 
+                planet.color = '#003827ff';
+                planet.landColor = '#003827ff';
+            } else if (planet.temperature >= - 269 && planet.temperature < 0 && planet.waterValue >= 20 && planet.cloudsValue <= 99 && planet.gasValue <= 99) {
+                planet.planetClass = 'Frozen Planetoid'; 
+                planet.color = '#70aeaf';
+                planet.landColor = '#ffffffff';
+                planet.lifeChance = 0;
+            } else if (planet.temperature >= - 269 && planet.temperature < 0 && planet.waterValue >= 20 && planet.cloudsValue > 99 && planet.gasValue <= 99) {  
+                planet.planetClass = 'Cloudy Frozen Planetoid'; 
+                planet.color = '#ffffffff';
+                planet.landColor = '#ffffffff';
+                planet.lifeChance = 0;
+            } else if (planet.temperature >= - 269 && planet.temperature < 0 && planet.waterValue >= 20 && planet.cloudsValue <= 99 && planet.gasValue > 99) {
+                planet.planetClass = 'Condensed Air Frozen Planetoid'; 
+                planet.color = '#a3af70ff';
+                planet.landColor = '#ffef95ff';
+            } else if (planet.temperature >= - 269 && planet.temperature < 0 && planet.waterValue >= 20 && planet.cloudsValue > 99 && planet.gasValue > 99) {  
+                planet.planetClass = 'Cloudy Condensed Air Frozen Planetoid'; 
+                planet.color = '#eeffa2ff';
+                planet.landColor = '#fdff92ff';
+                planet.lifeChance = 0;
+            } else if (planet.temperature >= - 269 && planet.temperature < 0 && planet.waterValue < 20 && planet.cloudsValue <= 99 && planet.gasValue <= 99) {  
+                planet.planetClass = 'Frozen and Arid Planetoid'; 
+                planet.color = '#aaaaaaff';
+                planet.landColor = '#ffffff';
+                planet.lifeChance = 0;
+            } else if (planet.temperature >= - 269 && planet.temperature < 0 && planet.waterValue < 20 && planet.cloudsValue <= 99 && planet.gasValue > 99) {  
+                planet.planetClass = 'Condensed Air Frozen and Arid Planetoid'; 
+                planet.color = '#f1f8afff';
+                planet.landColor = '#fffc62ff';
+                planet.lifeChance = 0;
+            } else if (planet.temperature >= - 269 && planet.temperature < 0 && planet.waterValue < 20 && planet.cloudsValue > 99 && planet.gasValue <= 99) {  
+                planet.planetClass = 'Cloudy Frozen and Arid Planetoid'; 
+                planet.color = '#ffffffff';
+                planet.landColor = '#cacacaff';
+                planet.lifeChance = 0;
+            } else if (planet.temperature >= - 269 && planet.temperature < 0 && planet.waterValue < 20 && planet.cloudsValue > 99 && planet.gasValue > 99) {  
+                planet.planetClass = 'Condensed Air Cloudy Frozen and Arid Planetoid'; 
+                planet.color = '#aaaaaaff';
+                planet.landColor = '#ffffff';
+                planet.lifeChance = 0;
+            } else if (planet.temperature >= 20 && planet.temperature <= 30 &&  
+                    planet.waterValue >= 30 && planet.waterValue <= 80 &&
+                    planet.gasValue >= 50 && planet.gasValue <= 80 &&
+                    planet.cloudsValue >= 20 && planet.cloudsValue <= 90 && graphicsQuality != 'high') {
+                planet.planetClass = 'Habitable Planetoid';
+                planet.color = '#0088e2ff';
+                unlockAchievement(5)
+                unlockAchievement(7)
+            } else if (planet.temperature >= 20 && planet.temperature <= 30 &&  
+                    planet.waterValue >= 30 && planet.waterValue <= 80 &&
+                    planet.gasValue > 80 &&
+                    planet.cloudsValue >= 20 && planet.cloudsValue <= 90 && graphicsQuality != 'high') {
+                planet.planetClass = 'Oxygenated Planetoid';
+                planet.color = '#00e284ff';
+                planet.landColor = '#529900ff';
+                unlockAchievement(5)
+                unlockAchievement(7)
+            } else if (planet.temperature >= 20 && planet.temperature <= 30 &&  
+                    planet.waterValue >= 30 && planet.waterValue <= 80 &&
+                    planet.gasValue >= 50 && planet.gasValue <= 80 &&
+                    planet.cloudsValue >= 20 && planet.cloudsValue <= 30 && graphicsQuality === 'high') {
+                planet.planetClass = 'Habitable Planetoid';
+                planet.color = '#0088e2ff';
+                planet.landColor = '#099900';
+                unlockAchievement(5)
+                unlockAchievement(7)
+            } else if (planet.temperature >= 20 && planet.temperature <= 30 &&  
+                    planet.waterValue >= 30 && planet.waterValue <= 80 &&
+                    planet.gasValue > 80 &&
+                    planet.cloudsValue >= 20 && planet.cloudsValue <= 30 && graphicsQuality === 'high') {
+                planet.planetClass = 'Oxygenated Planetoid';
+                planet.color = '#4af7afff';
+                planet.landColor = '#529900ff';
+                unlockAchievement(5)
+                unlockAchievement(7)
+            } else if (planet.temperature >= 20 && planet.temperature <= 30 &&  
+                    planet.waterValue >= 30 && planet.waterValue <= 80 &&
+                    planet.gasValue > 80 &&
+                    planet.cloudsValue >= 30 && planet.cloudsValue <= 60 && graphicsQuality === 'high') {
+                planet.planetClass = 'Oxygenated Planetoid';
+                planet.color = '#87f7c8ff';
+                planet.landColor = '#69a02bff';
+                unlockAchievement(5)
+                unlockAchievement(7)
+            } else if (planet.temperature >= 20 && planet.temperature <= 50 &&  
+                    planet.waterValue >= 30 && planet.waterValue <= 80 &&
+                    planet.gasValue > 80 &&
+                    planet.cloudsValue >= 60 && planet.cloudsValue <= 90 && graphicsQuality === 'high') {
+                planet.planetClass = 'Oxygenated Cloudy Planetoid';
+                planet.color = '#a8ecd0ff';
+                planet.landColor = '#b6b851ff';
+                unlockAchievement(5)
+                unlockAchievement(7)
+            } else if (planet.temperature >= 20 && planet.temperature <= 30 &&  
+                    planet.waterValue >= 30 && planet.waterValue <= 80 &&
+                    planet.gasValue >= 50 && planet.gasValue <= 80 &&
+                    planet.cloudsValue >= 30 && planet.cloudsValue <= 40 && graphicsQuality === 'high') {
+                planet.planetClass = 'Habitable Planetoid';
+                planet.color = '#1a95e7ff';
+                planet.landColor = '#20a017ff';
+                unlockAchievement(5)
+                unlockAchievement(7)
+            } else if (planet.temperature >= 20 && planet.temperature <= 30 &&  
+                    planet.waterValue >= 30 && planet.waterValue <= 80 &&
+                    planet.gasValue >= 50 && planet.gasValue <= 80 &&
+                    planet.cloudsValue >= 40 && planet.cloudsValue <= 50 && graphicsQuality === 'high') {
+                planet.planetClass = 'Habitable Planetoid';
+                planet.color = '#3da6ecff';
+                planet.landColor = '#3ea737ff';
+                unlockAchievement(5)
+                unlockAchievement(7)
+            } else if (planet.temperature >= 20 && planet.temperature <= 30 &&  
+                    planet.waterValue >= 30 && planet.waterValue <= 80 &&
+                    planet.gasValue >= 50 && planet.gasValue <= 80 &&
+                    planet.cloudsValue >= 50 && planet.cloudsValue <= 60 && graphicsQuality === 'high') {
+                planet.planetClass = 'Habitable Planetoid';
+                planet.color = '#57aee9ff';
+                planet.landColor = '#5ab353ff';
+                unlockAchievement(5)
+                unlockAchievement(7)
+            } else if (planet.temperature >= 20 && planet.temperature <= 30 &&  
+                    planet.waterValue >= 30 && planet.waterValue <= 80 &&
+                    planet.gasValue >= 50 && planet.gasValue <= 80 &&
+                    planet.cloudsValue >= 60 && planet.cloudsValue <= 70 && graphicsQuality === 'high') {
+                planet.planetClass = 'Habitable Planetoid';
+                planet.color = '#75b7e4ff';
+                planet.landColor = '#7bc276ff';
+                unlockAchievement(5)
+                unlockAchievement(7)
+            } else if (planet.temperature >= 20 && planet.temperature <= 30 &&  
+                    planet.waterValue >= 30 && planet.waterValue <= 80 &&
+                    planet.gasValue >= 50 && planet.gasValue <= 80 &&
+                    planet.cloudsValue >= 70 && planet.cloudsValue <= 80 && graphicsQuality === 'high') {
+                planet.planetClass = 'Semi Cloudy Habitable Planetoid';
+                planet.color = '#94ccf1ff';
+                planet.landColor = '#9fd49bff';
+                unlockAchievement(5)
+                unlockAchievement(7)
+            } else if (planet.temperature >= 20 && planet.temperature <= 30 &&  
+                    planet.waterValue >= 30 && planet.waterValue <= 80 &&
+                    planet.gasValue >= 50 && planet.gasValue <= 80 &&
+                    planet.cloudsValue === 90 && graphicsQuality === 'high') {
+                planet.planetClass = 'Cloudy Habitable Planetoid';
+                planet.color = '#91d3ffff';
+                planet.landColor = '#adfca8ff';
+                unlockAchievement(5)
+                unlockAchievement(7)
+            } else if (planet.temperature > 20 && planet.temperature <= 30 &&   
+                    planet.cloudsValue >= 70 &&
+                    planet.waterValue >= 30 && planet.waterValue <= 60 &&
+                    planet.gasValue >= 40 && planet.gasValue <= 70) {
+                planet.planetClass = 'Cloudy Planetoid';
+                planet.color = '#add896'; 
+                planet.landColor = '#add896';
+            } else if (planet.temperature > 20 && planet.temperature <= 30 &&   
+                    planet.cloudsValue >= 70 &&
+                    planet.waterValue >= 30 && planet.waterValue <= 60 &&
+                    planet.gasValue > 70) {
+                planet.planetClass = 'Oxygenated Cloudy Planetoid';
+                planet.color = '#d8d496ff'; 
+                planet.landColor = '#ccd896ff';
+            } else if (planet.temperature > 30 && planet.temperature <= 50 &&  
+                    planet.waterValue >= 30 && planet.waterValue <= 80 &&
+                    planet.gasValue >= 50 && planet.gasValue <= 80 &&
+                    planet.cloudsValue >= 20 && planet.cloudsValue <= 90 && graphicsQuality != 'high') {
+                planet.planetClass = 'Temperate Planetoid';
+                planet.color = '#00ffd5ff';
+                planet.landColor = '#9bd105ff';
+                unlockAchievement(5)
+            } else if (planet.temperature > 30 && planet.temperature <= 50 &&  
+                    planet.waterValue >= 30 && planet.waterValue <= 80 &&
+                    planet.gasValue >= 50 && planet.gasValue <= 80 &&
+                    planet.cloudsValue >= 20 && planet.cloudsValue <= 30 && graphicsQuality === 'high') {
+                planet.planetClass = 'Temperate Planetoid';
+                planet.color = '#00ffd5ff';
+                planet.landColor = '#9bd105ff';
+                unlockAchievement(5)
+            } else if (planet.temperature > 30 && planet.temperature <= 50 &&  
+                    planet.waterValue >= 30 && planet.waterValue <= 80 &&
+                    planet.gasValue >= 50 && planet.gasValue <= 80 &&
+                    planet.cloudsValue >= 30 && planet.cloudsValue <= 50 && graphicsQuality === 'high') {
+                planet.planetClass = 'Temperate Planetoid';
+                planet.color = '#2ffcffff';
+                planet.landColor = '#05d161ff';
+                unlockAchievement(5)
+            } else if (planet.temperature > 30 && planet.temperature <= 50 &&  
+                    planet.waterValue >= 30 && planet.waterValue <= 80 &&
+                    planet.gasValue >= 50 && planet.gasValue <= 80 &&
+                    planet.cloudsValue >= 50 && planet.cloudsValue <= 70 && graphicsQuality === 'high') {
+                planet.planetClass = 'Semi Cloudy Temperate Planetoid';
+                planet.color = '#17eef1ff';
+                planet.landColor = '#05d18dff';
+                unlockAchievement(5)
+            } else if (planet.temperature > 30 && planet.temperature <= 100 &&  
+                    planet.cloudsValue >= 70 &&
+                    planet.waterValue >= 30 && planet.waterValue <= 60 &&
+                    planet.gasValue >= 40 && planet.gasValue <= 70) {
+                planet.planetClass = 'Temperate Cloudy Planetoid';
+                planet.color = '#00CED1';
+                planet.landColor = '#00CED1';
+            } else if (planet.temperature > 50 && planet.waterValue < 40 && planet.cloudsValue <= 99 && planet.gasValue <= 99 && graphicsQuality != 'high') {  
                 planet.planetClass = 'Desert Planetoid';
-                planet.color = '#ff3300ff';
-            } else if (planet.temperature > 0 && planet.temperature < 20) {
-                planet.planetClass = 'Cold Planetoid';
-                planet.color = '#a1887f';
+                planet.color = '#ff7b00ff';
+                planet.landColor = '#FFA500';
+            } else if (planet.temperature > 50 && planet.waterValue < 40 && graphicsQuality != 'high' && planet.cloudsValue <= 99 && planet.gasValue > 99) {  
+                planet.planetClass = 'Oxygenated Desert Planetoid';
+                planet.color = '#ff1100ff';
+                planet.landColor = '#ff5e00ff';
+            } else if (planet.temperature > 50 && planet.waterValue < 40 && graphicsQuality === 'high' && planet.cloudsValue <= 20 && planet.gasValue <= 99) {  
+                planet.planetClass = 'Desert Planetoid';
+                planet.color = '#ff7b00ff';
+                planet.landColor = '#FFA500';
+            } else if (planet.temperature > 50 && planet.waterValue < 40 && graphicsQuality === 'high' && planet.cloudsValue <= 20 && planet.gasValue > 99) {  
+                planet.planetClass = 'Oxygenated Desert Planetoid';
+                planet.color = '#ff1100ff';
+                planet.landColor = '#ff5e00ff';
+            } else if (planet.temperature > 50 && planet.waterValue < 40 && graphicsQuality === 'high' && planet.cloudsValue > 20 && planet.cloudsValue <= 50 && planet.gasValue > 99) {  
+                planet.planetClass = 'Oxygenated Desert Planetoid';
+                planet.color = '#ff4c3fff';
+                planet.landColor = '#ff3232ff';
+            } else if (planet.temperature > 50 && planet.waterValue < 40 && graphicsQuality === 'high' &&  planet.cloudsValue > 50 && planet.cloudsValue <= 99 && planet.gasValue > 99) {  
+                planet.planetClass = 'Semi Cloudy Oxygenated Desert Planetoid';
+                planet.color = '#ff938bff';
+                planet.landColor = '#ff7979ff';
+            } else if (planet.temperature > 50 && planet.waterValue < 40 && graphicsQuality === 'high' && planet.cloudsValue <= 30 && planet.gasValue <= 99) {  
+                planet.planetClass = 'Desert Planetoid';
+                planet.color = '#ff8d23ff';
+                planet.landColor = '#faac1cff';
+            } else if (planet.temperature > 50 && planet.waterValue < 40 && graphicsQuality === 'high' && planet.cloudsValue > 30 && planet.cloudsValue < 60 && planet.gasValue <= 99) {  
+                planet.planetClass = 'Desert Planetoid';
+                planet.color = '#fdb169ff';
+                planet.landColor = '#ffc252ff';
+            } else if (planet.temperature > 50 && planet.waterValue < 40 && planet.cloudsValue >= 60 && planet.cloudsValue < 70 && planet.gasValue <= 99) {  
+                planet.planetClass = 'Semi Cloudy Desert Planetoid';
+                planet.color = '#ffcfa2ff';
+                planet.landColor = '#ffd483ff';
+            } else if (planet.temperature > 50 && planet.waterValue < 40 && planet.cloudsValue > 99 && planet.gasValue <= 99) {  
+                planet.planetClass = 'Cloudy Desert Planetoid';
+                planet.color = '#ffcfa2ff';
+                planet.landColor = '#ffd483ff';
+            } else if (planet.temperature > 50 && planet.waterValue < 40 && planet.cloudsValue > 99 && planet.gasValue > 99) {  
+                planet.planetClass = 'Oxygenated Cloudy Desert Planetoid';
+                planet.color = '#ffa2a2ff';
+                planet.landColor = '#ff8b83ff';
+            } else if (planet.temperature > 50 && planet.waterValue >= 40 && graphicsQuality !='high') {  
+                planet.planetClass = 'Humid Desert Planetoid';
+                planet.color = '#00ffddff';
+                planet.landColor = '#ffbb00ff';
+            } else if (planet.temperature > 50 && planet.waterValue >= 40 && graphicsQuality ==='high' && planet.cloudsValue >= 0 && planet.cloudsValue < 30 && planet.gasValue <= 99) {  
+                planet.planetClass = 'Humid Desert Planetoid';
+                planet.color = '#00ffddff';
+                planet.landColor = '#ffbb00ff';
+            } else if (planet.temperature > 50 && planet.waterValue >= 40 && graphicsQuality ==='high' && planet.cloudsValue >= 0 && planet.cloudsValue < 30 && planet.gasValue > 99) {  
+                planet.planetClass = 'Oxygenated Humid Desert Planetoid';
+                planet.color = '#00ff80ff';
+                planet.landColor = '#ff5100ff';
+            } else if (planet.temperature > 50 && planet.waterValue >= 40 && graphicsQuality ==='high' && planet.cloudsValue >= 30 && planet.cloudsValue < 50 && planet.gasValue <= 99) {  
+                planet.planetClass = 'Humid Desert Planetoid';
+                planet.color = '#58f8e3ff';
+                planet.landColor = '#ffca38ff';
+            } else if (planet.temperature > 50 && planet.waterValue >= 40 && graphicsQuality ==='high' && planet.cloudsValue >= 50 && planet.cloudsValue < 60 && planet.gasValue <= 99) {  
+                planet.planetClass = 'Semi Fog Humid Desert Planetoid';
+                planet.color = '#58f8e3ff';
+                planet.landColor = '#ffca38ff';
+            } else if (planet.temperature > 50 && planet.waterValue >= 40 && graphicsQuality ==='high' && planet.cloudsValue >= 60 && planet.cloudsValue < 70 && planet.gasValue <= 99) {  
+                planet.planetClass = 'Fog Humid Desert Planetoid';
+                planet.color = '#9cfff2ff';
+                planet.landColor = '#ffe59cff';
+            } else if (planet.temperature > 50 && planet.waterValue >= 40 && graphicsQuality ==='high' && planet.cloudsValue > 70 && planet.gasValue <= 99) {  
+                planet.planetClass = 'Super Fog Humid Desert Planetoid';
+                planet.color = '#76ffedff';
+                planet.landColor = '#83e2faff';
+            } else if (planet.temperature > 50 && planet.waterValue >= 40 && graphicsQuality ==='high' && planet.cloudsValue >= 60 && planet.cloudsValue < 70 && planet.gasValue > 99) {  
+                planet.planetClass = 'Oxygenated Fog Humid Desert Planetoid';
+                planet.color = '#bbff9cff';
+                planet.landColor = '#ffe59cff';
+            } else if (planet.temperature > 50 && planet.waterValue >= 40 && graphicsQuality ==='high' && planet.cloudsValue > 70 && planet.gasValue > 99) {  
+                planet.planetClass = 'Oxygenated Super Fog Humid Desert Planetoid';
+                planet.color = '#56ffbeff';
+                planet.landColor = '#60ffa7ff';
+            } else if (planet.temperature <= -270 ){
+                unlockAchievement(33)
+                planet.color = '#ffffffff';
+                planet.landColor = '#ffffffff';
+                planet.planetClass = 'Extreme Frozen Planetoid';
+            } else if (planet.temperature >= 0 && planet.temperature < 20 &&  
+                    planet.waterValue > 0 && planet.waterValue < 20 &&
+                    planet.gasValue > 0 && planet.gasValue < 80 &&
+                    planet.cloudsValue >= 10 && planet.cloudsValue <= 60 && graphicsQuality != 'high') {
+                planet.planetClass = 'Tundra Planetoid';
+                planet.color = '#0c01a7ff';
+                planet.landColor = '#e74c50';
+                unlockAchievement(5)
+            } else if (planet.temperature >= 0 && planet.temperature < 20 &&  
+                    planet.waterValue > 0 && planet.waterValue < 20 &&
+                    planet.gasValue >= 80 &&
+                    planet.cloudsValue >= 10 && planet.cloudsValue <= 60 && graphicsQuality != 'high') {
+                planet.planetClass = 'Oxygenated Tundra Planetoid';
+                planet.color = '#4901a7ff';
+                planet.landColor = '#e74cc0ff';
+                unlockAchievement(5)
+            } else if (planet.temperature >= 0 && planet.temperature < 20 &&  
+                    planet.waterValue > 0 && planet.waterValue < 20 &&
+                    planet.gasValue > 0 && planet.gasValue < 80 &&
+                    planet.cloudsValue >= 10 && planet.cloudsValue <= 30 && graphicsQuality === 'high') {
+                planet.planetClass = 'Tundra Planetoid';
+                planet.color = '#0c01a7ff';
+                planet.landColor = '#e74c50';
+                unlockAchievement(5)
+            } else if (planet.temperature >= 0 && planet.temperature < 20 &&  
+                    planet.waterValue > 0 && planet.waterValue < 20 &&
+                    planet.gasValue >= 80 &&
+                    planet.cloudsValue >= 10 && planet.cloudsValue <= 30 && graphicsQuality === 'high') {
+                planet.planetClass = 'Oxygenated Tundra Planetoid';
+                planet.color = '#4901a7ff';
+                planet.landColor = '#e74cc0ff';
+                unlockAchievement(5)
+            } else if (planet.temperature >= 0 && planet.temperature < 20 &&  
+                    planet.waterValue > 0 && planet.waterValue < 20 &&
+                    planet.gasValue >= 80 &&
+                    planet.cloudsValue >= 30 && planet.cloudsValue <= 60 && graphicsQuality === 'high') {
+                planet.planetClass = 'Oxygenated Tundra Planetoid';
+                planet.color = '#572c8fff';
+                planet.landColor = '#a54e8fff';
+                unlockAchievement(5)
+            } else if (planet.temperature >= 0 && planet.temperature < 20 &&  
+                    planet.waterValue > 0 && planet.waterValue < 20 &&
+                    planet.gasValue > 0 && planet.gasValue < 80 &&
+                    planet.cloudsValue >= 30 && planet.cloudsValue <= 50 && graphicsQuality === 'high') {
+                planet.planetClass = 'Tundra Planetoid';
+                planet.color = '#1e1961ff';
+                planet.landColor = '#ad5e61ff';
+                unlockAchievement(5)
+            } else if (planet.temperature >= 0 && planet.temperature < 20 &&  
+                    planet.waterValue > 0 && planet.waterValue < 20 &&
+                    planet.gasValue > 0 && planet.gasValue < 80 &&
+                    planet.cloudsValue >= 50 && planet.cloudsValue <= 60 && graphicsQuality === 'high') {
+                planet.planetClass = 'Semi Storm Tundra Planetoid';
+                planet.color = '#13122eff';
+                planet.landColor = '#362746ff';
+                unlockAchievement(5)
+            } else if (planet.temperature >= 0 && planet.temperature < 20 &&  
+                    planet.waterValue > 0 && planet.waterValue < 20 &&
+                    planet.gasValue > 0 && planet.gasValue < 80 &&
+                    planet.cloudsValue >= 60 && planet.cloudsValue <= 70) {
+                planet.planetClass = 'Storm Tundra Planetoid';
+                planet.color = '#020041ff';
+                planet.landColor = '#211c36ff';
+                unlockAchievement(5)
+            } else if (planet.temperature >= 0 && planet.temperature < 20 &&  
+                    planet.waterValue > 0 && planet.waterValue < 20 &&
+                    planet.gasValue > 0 && planet.gasValue < 80 &&
+                    planet.cloudsValue > 70) {
+                planet.planetClass = 'Super Storm Tundra Planetoid';
+                planet.color = '#020041ff';
+                planet.landColor = '#211c36ff';
+                unlockAchievement(5)
+            } else if (planet.temperature >= 0 && planet.temperature < 20 &&  
+                    planet.waterValue > 0 && planet.waterValue < 20 &&
+                    planet.gasValue >= 80 &&
+                    planet.cloudsValue >= 60 && planet.cloudsValue <= 70) {
+                planet.planetClass = 'Oxygenated Storm Tundra Planetoid';
+                planet.color = '#004123ff';
+                planet.landColor = '#31361cff';
+                unlockAchievement(5)
+            } else if (planet.temperature >= 0 && planet.temperature < 20 &&  
+                    planet.waterValue > 0 && planet.waterValue < 20 &&
+                    planet.gasValue > 80 &&
+                    planet.cloudsValue >= 70) {
+                planet.planetClass = 'Oxygenated Super Storm Tundra Planetoid';
+                planet.color = '#030e09ff';
+                planet.landColor = '#0c0e06ff';
+                unlockAchievement(5)
+            } else if (planet.temperature >= 0 && planet.temperature < 20 &&  
+                    planet.waterValue >= 20 &&
+                    planet.gasValue > 0 && planet.gasValue < 80 &&
+                    planet.cloudsValue >= 10 && planet.cloudsValue <= 60 && graphicsQuality != 'high') {
+                planet.planetClass = 'Humid Tundra Planetoid';
+                planet.color = '#0c01a7ff';
+                planet.landColor = '#564ce7ff';
+                unlockAchievement(5)
+            } else if (planet.temperature >= 0 && planet.temperature < 20 &&  
+                    planet.waterValue >= 20 &&
+                    planet.gasValue >= 80 &&
+                    planet.cloudsValue >= 10 && planet.cloudsValue <= 60 && graphicsQuality != 'high') {
+                planet.planetClass = 'Humid Oxygenated Tundra Planetoid';
+                planet.color = '#1f01a7ff';
+                planet.landColor = '#9c4ce7ff';
+                unlockAchievement(5)
+            } else if (planet.temperature >= 0 && planet.temperature < 20 &&  
+                        planet.waterValue >= 20 &&
+                    planet.gasValue > 0 && planet.gasValue < 80 &&
+                    planet.cloudsValue >= 10 && planet.cloudsValue <= 30 && graphicsQuality === 'high') {
+                planet.planetClass = 'Humid Tundra Planetoid';
+                planet.color = '#070064ff';
+                planet.landColor = '#7b4ce7ff';
+                unlockAchievement(5)
+            } else if (planet.temperature >= 0 && planet.temperature < 20 &&  
+                        planet.waterValue >= 20 &&
+                    planet.gasValue >= 80 &&
+                    planet.cloudsValue >= 10 && planet.cloudsValue <= 30 && graphicsQuality === 'high') {
+                planet.planetClass = 'Humid Oxygenated Tundra Planetoid';
+                planet.color = '#110027ff';
+                planet.landColor = '#5c4ce7ff';
+                unlockAchievement(5)
+            } else if (planet.temperature >= 0 && planet.temperature < 20 &&  
+                        planet.waterValue >= 20 &&
+                    planet.gasValue >= 80 &&
+                    planet.cloudsValue >= 30 && planet.cloudsValue <= 60 && graphicsQuality === 'high') {
+                planet.planetClass = 'Humid Oxygenated Tundra Planetoid';
+                planet.color = '#3b2c8fff';
+                planet.landColor = '#544ea5ff';
+                unlockAchievement(5)
+            } else if (planet.temperature >= 0 && planet.temperature < 20 &&  
+                        planet.waterValue >= 20 &&
+                    planet.gasValue > 0 && planet.gasValue < 80 &&
+                    planet.cloudsValue >= 30 && planet.cloudsValue <= 50 && graphicsQuality === 'high') {
+                planet.planetClass = 'Humid Tundra Planetoid';
+                planet.color = '#05004bff';
+                planet.landColor = '#765eadff';
+                unlockAchievement(5)
+            } else if (planet.temperature >= 0 && planet.temperature < 20 &&  
+                        planet.waterValue >= 20 &&
+                    planet.gasValue > 0 && planet.gasValue < 80 &&
+                    planet.cloudsValue >= 50 && planet.cloudsValue <= 60 && graphicsQuality === 'high') {
+                planet.planetClass = 'Humid Semi Storm Tundra Planetoid';
+                planet.color = '#030055ff';
+                planet.landColor = '#25004dff';
+                unlockAchievement(5)
+            } else if (planet.temperature >= 0 && planet.temperature < 20 &&  
+                        planet.waterValue >= 20 &&
+                    planet.gasValue > 0 && planet.gasValue < 80 &&
+                    planet.cloudsValue >= 60 && planet.cloudsValue <= 70) {
+                planet.planetClass = 'Humid Storm Tundra Planetoid';
+                planet.color = '#000c41ff';
+                planet.landColor = '#09002cff';
+                unlockAchievement(5)
+            } else if (planet.temperature >= 0 && planet.temperature < 20 &&  
+                        planet.waterValue >= 20 &&
+                    planet.gasValue > 0 && planet.gasValue < 80 &&
+                    planet.cloudsValue > 70) {
+                planet.planetClass = 'Humid Super Storm Tundra Planetoid';
+                planet.color = '#030218ff';
+                planet.landColor = '#070025ff';
+                unlockAchievement(5)
+            } else if (planet.temperature >= 0 && planet.temperature < 20 &&  
+                        planet.waterValue >= 20 &&
+                    planet.gasValue >= 80 &&
+                    planet.cloudsValue >= 60 && planet.cloudsValue <= 70) {
+                planet.planetClass = 'Humid Oxygenated Storm Tundra Planetoid';
+                planet.color = '#0a0041ff';
+                planet.landColor = '#2a1c36ff';
+                unlockAchievement(5)
+            } else if (planet.temperature >= 0 && planet.temperature < 20 &&  
+                        planet.waterValue >= 20 &&
+                    planet.gasValue > 80 &&
+                    planet.cloudsValue >= 70) {
+                planet.planetClass = 'Humid Oxygenated Super Storm Tundra Planetoid';
+                planet.color = '#030a0eff';
+                planet.landColor = '#06070eff';
+                unlockAchievement(5)
+            } else if (planet.temperature >= 0 && planet.temperature <= 20 &&  
+                    planet.waterValue < 20 &&
+                    planet.gasValue > 0 && planet.gasValue <= 99 &&
+                    planet.cloudsValue >= 0 && planet.cloudsValue <= 90 && graphicsQuality !='high') {
+                planet.planetClass = 'Cold Desert Planetoid';
+                planet.color = '#f85c35ff';
+                planet.landColor = '#f83200ff';
+            } else if (planet.temperature >= 0 && planet.temperature <= 20 &&  
+                    planet.waterValue < 20 &&
+                    planet.gasValue > 99 &&
+                    planet.cloudsValue >= 0 && planet.cloudsValue <= 90 && graphicsQuality !='high') {
+                planet.planetClass = 'Oxygenated Cold Desert Planetoid';
+                planet.color = '#f83535ff';
+                planet.landColor = '#f80000ff';
+            } else if (planet.temperature >= 0 && planet.temperature <= 20 &&  
+                    planet.waterValue < 20 &&
+                    planet.gasValue > 99 &&
+                    planet.cloudsValue >= 0 && planet.cloudsValue <= 90 && graphicsQuality ==='high') {
+                planet.planetClass = 'Oxygenated Cold Desert Planetoid';
+                planet.color = '#ff6a6aff';
+                planet.landColor = '#ff2d2dff';
+            } else if (planet.temperature >= 0 && planet.temperature <= 20 &&  
+                    planet.waterValue < 20 &&
+                    planet.gasValue > 0 && planet.gasValue <= 99 &&
+                    planet.cloudsValue >= 0 && planet.cloudsValue <= 20 && graphicsQuality ==='high') {
+                planet.planetClass = 'Cold Desert Planetoid';
+                planet.color = '#f85c35ff';
+                planet.landColor = '#f83200ff';
+            } else if (planet.temperature >= 0 && planet.temperature <= 20 &&  
+                    planet.waterValue < 20 &&
+                    planet.gasValue > 99 &&
+                    planet.cloudsValue >= 0 && planet.cloudsValue <= 20 && graphicsQuality ==='high') {
+                planet.planetClass = 'Cold Desert Planetoid';
+                planet.color = '#f83535ff';
+                planet.landColor = '#f80000ff';
+            } else if (planet.temperature >= 0 && planet.temperature <= 20 &&  
+                    planet.waterValue < 20 &&
+                    planet.gasValue > 0 && planet.gasValue <= 99 &&
+                    planet.cloudsValue >= 20 && planet.cloudsValue <= 40 && graphicsQuality ==='high') {
+                planet.planetClass = 'Cold Desert Planetoid';
+                planet.color = '#ff8d70ff';
+                planet.landColor = '#ff5930ff';
+            } else if (planet.temperature >= 0 && planet.temperature <= 20 &&  
+                    planet.waterValue < 20 &&
+                    planet.gasValue > 0 && planet.gasValue <= 99 &&
+                    planet.cloudsValue >= 40 && planet.cloudsValue <= 60 && graphicsQuality ==='high') {
+                planet.planetClass = 'Semi Cloudy Cold Desert Planetoid';
+                planet.color = '#ffb6a3ff';
+                planet.landColor = '#ff977dff';
+            } else if (planet.temperature >= 0 && planet.temperature <= 20 &&  
+                    planet.waterValue < 20 &&
+                    planet.gasValue > 0 && planet.gasValue <= 99 &&
+                    planet.cloudsValue >= 60) {
+                planet.planetClass = 'Cloudy Cold Desert Planetoid';
+                planet.color = '#ffb6a3ff';
+                planet.landColor = '#ff977dff';
+            } else if (planet.temperature >= 0 && planet.temperature <= 20 &&  
+                    planet.waterValue < 20 &&
+                    planet.gasValue > 99 &&
+                    planet.cloudsValue >= 60) {
+                planet.planetClass = 'Oxgenated Cloudy Cold Desert Planetoid';
+                planet.color = '#ffa3a3ff';
+                planet.landColor = '#ff7d7dff';
             } else {
                 planet.planetClass = 'Rocky Planetoid';
-                planet.color = '#a1887f';
+                planet.color = '#555555';
+                planet.landColor = '#2b2b2bff';
+                planet.lifeChance = 0;
             }
             applyExoticClass();
         }
@@ -7399,25 +8146,487 @@ function fgpPlanetsTemperature(deltaTime) {
             planet.waterValue = planet.waterValue || 0;
             planet.gasValue = planet.gasValue || 0;
             planet.cloudsValue = planet.cloudsValue || 0;
-            planet.temperature = planet.temperature || 20;
             checkExoticTransformation(
-                ['Crystalline', 'Radioative', 'Vibrational', 'Quantum'],
-                ['Cerium', 'Zirconium', 'Tantalum', 'Ruthenium'],
-                ['-X', '-Ω', '-Δ', '-Σ']
+                ['Crystalline', 'Magnetic', 'Radioative', 'Vibrational', 'Quantum'],
+                ['Cerium', 'Zirconium', 'Tantalum', 'Ruthenium', 'Hafnium'],
+                ['-X', '-Ω', '-Δ', '-Σ', '-Φ']
             );
-            if (planet.temperature > 100) {
-                planet.planetClass = 'Lava Planetoid';
+            if (planet.temperature > 100 && planet.cloudsValue >= 20 && planet.cloudsValue < 40 && graphicsQuality === 'high' && planet.gasValue <= 99){  
+                planet.planetClass = 'Lava Planetoid'; 
+                planet.lifeChance = 0;
                 unlockAchievement(4)
-            } else if (planet.temperature < -50 && planet.waterValue > 30) {
-                planet.planetClass = 'Ice Planetoid';
-            } else if (planet.temperature < -50) {
-                planet.planetClass = 'Frozen and Arid Planetoid';
-            } else if (planet.temperature > 50 && planet.waterValue < 40) {
+            } else if (planet.temperature > 100 && planet.cloudsValue >= 40 && planet.cloudsValue < 50 && graphicsQuality === 'high' && planet.gasValue <= 99){  
+                planet.planetClass = 'Lava Planetoid'; 
+                planet.lifeChance = 0;
+                unlockAchievement(4)
+            } else if (planet.temperature > 100 && planet.cloudsValue >= 50 && planet.cloudsValue < 60 && graphicsQuality === 'high' && planet.gasValue <= 99){  
+                planet.planetClass = 'Lava Planetoid'; 
+                planet.lifeChance = 0;
+                unlockAchievement(4)
+            } else if (planet.temperature > 100 && planet.cloudsValue >= 60 && planet.cloudsValue < 70 && graphicsQuality === 'high' && planet.gasValue <= 99){  
+                planet.planetClass = 'Lava Planetoid'; 
+                planet.lifeChance = 0;
+                unlockAchievement(4)
+            } else if (planet.temperature > 100 && planet.cloudsValue >= 70 && planet.cloudsValue < 80 && graphicsQuality === 'high' && planet.gasValue <= 99){  
+                planet.planetClass = 'Lava Planetoid'; 
+                planet.lifeChance = 0;
+                unlockAchievement(4)
+            } else if (planet.temperature > 100 && planet.cloudsValue >= 80 && planet.cloudsValue <= 99 && graphicsQuality === 'high' && planet.gasValue <= 99){  
+                planet.planetClass = 'Lava Planetoid'; 
+                planet.lifeChance = 0;
+                unlockAchievement(4)
+            } else if (planet.temperature > 100 && planet.cloudsValue >= 100) {  
+                planet.planetClass = 'Cloudy Lava Planetoid'; 
+                planet.lifeChance = 0;
+                unlockAchievement(4)
+                if (planet.gasValue > 99) {
+                planet.planetClass = 'Acidic Cloudy Lava Planetoid'; 
+            }
+            } else if (planet.temperature >= 10 && planet.temperature <= 50 &&  
+                    planet.waterValue > 99 && planet.gasValue <= 99 &&
+                    planet.cloudsValue > 99 && graphicsQuality != 'high') {
+                planet.planetClass = 'Cloudy Oceanic Planetoid'; 
+            } else if (planet.temperature >= 10 && planet.temperature <= 50 &&  
+                    planet.waterValue > 99 && planet.gasValue > 99 &&
+                    planet.cloudsValue <= 99 && graphicsQuality != 'high') {
+                planet.planetClass = 'Oxygenated Oceanic Planetoid'; 
+            } else if (planet.temperature >= 10 && planet.temperature <= 50 &&  
+                    planet.waterValue > 99 && planet.gasValue > 99 &&
+                    planet.cloudsValue > 99 && graphicsQuality != 'high') {
+                planet.planetClass = 'Oxygenated Cloudy Oceanic Planetoid'; 
+            } else if (planet.temperature >= 10 && planet.temperature <= 50 &&  
+                    planet.waterValue > 99 && planet.gasValue <= 99 &&
+                    planet.cloudsValue <= 99 && graphicsQuality != 'high') {
+                planet.planetClass = 'Oceanic Planetoid'; 
+            } else if (planet.temperature >= 10 && planet.temperature <= 50 &&  
+                    planet.waterValue > 99 && planet.gasValue <= 99 &&
+                    planet.cloudsValue > 0 && planet.cloudsValue <= 40 && graphicsQuality === 'high') {
+                planet.planetClass = 'Oceanic Planetoid'; 
+            } else if (planet.temperature >= 10 && planet.temperature <= 50 &&  
+                    planet.waterValue > 99 && planet.gasValue <= 99 &&
+                    planet.cloudsValue > 40 && planet.cloudsValue <= 50 && graphicsQuality === 'high') {
+                planet.planetClass = 'Oceanic Planetoid'; 
+            } else if (planet.temperature >= 10 && planet.temperature <= 50 &&  
+                    planet.waterValue > 99 && planet.gasValue <= 99 &&
+                    planet.cloudsValue > 50 && planet.cloudsValue <= 70 && graphicsQuality === 'high') {
+                planet.planetClass = 'Oceanic Planetoid'; 
+            } else if (planet.temperature >= 10 && planet.temperature <= 50 &&  
+                    planet.waterValue > 99 && planet.gasValue <= 99 &&
+                    planet.cloudsValue > 70 && planet.cloudsValue <= 90 && graphicsQuality === 'high') {
+                planet.planetClass = 'Oceanic Planetoid'; 
+            } else if (planet.temperature >= 10 && planet.temperature <= 50 &&  
+                    planet.waterValue > 99 && planet.gasValue <= 99 &&
+                    planet.cloudsValue > 90 && graphicsQuality === 'high') {
+                planet.planetClass = 'Cloudy Oceanic Planetoid'; 
+            } else if (planet.temperature >= 10 && planet.temperature <= 50 &&  
+                    planet.waterValue > 99 && planet.gasValue >= 100 &&
+                    planet.cloudsValue <= 99) {
+                planet.planetClass = 'Oxygenated Oceanic Planetoid'; 
+            } else if (planet.temperature >= 10 && planet.temperature <= 50 &&  
+                    planet.waterValue > 99 && planet.gasValue >= 100 &&
+                    planet.cloudsValue > 90 && graphicsQuality === 'high') {
+                planet.planetClass = 'Cloudy Oxygenated Oceanic Planetoid'; 
+            } else if (planet.temperature > -50 && planet.temperature < 10 &&  
+                    planet.waterValue > 99 && planet.gasValue <= 99 &&
+                    planet.cloudsValue > 0 && graphicsQuality != 'high') {
+                planet.planetClass = 'Storm Planetoid'; 
+            } else if (planet.temperature > -50 && planet.temperature < 10 &&  
+                    planet.waterValue > 99 && planet.gasValue > 99 &&
+                    planet.cloudsValue <= 99 && graphicsQuality != 'high') {
+                planet.planetClass = 'Oxygenated Storm Planetoid'; 
+            } else if (planet.temperature > -50 && planet.temperature <= 10 &&  
+                    planet.waterValue > 99 && planet.gasValue <= 99 &&
+                    planet.cloudsValue > 0 && planet.cloudsValue <= 30 && graphicsQuality === 'high') {
+                planet.planetClass = 'Storm Planetoid'; 
+            } else if (planet.temperature > -50 && planet.temperature < 10 &&  
+                    planet.waterValue > 99 && planet.gasValue > 99 &&
+                    planet.cloudsValue > 0 && planet.cloudsValue <= 99 && graphicsQuality === 'high') {
+                planet.planetClass = 'Oxygenated Storm Planetoid';
+            } else if (planet.temperature > -50 && planet.temperature <= 10 &&  
+                    planet.waterValue > 99 && planet.gasValue <= 99 &&
+                    planet.cloudsValue > 30 && planet.cloudsValue <= 60 && graphicsQuality === 'high') {
+                planet.planetClass = 'Storm Planetoid'; 
+            } else if (planet.temperature > -50 && planet.temperature <= 10 &&  
+                    planet.waterValue > 99 && planet.gasValue <= 99 &&
+                    planet.cloudsValue > 60 && planet.cloudsValue <= 99 && graphicsQuality === 'high') {
+                planet.planetClass = 'Storm Planetoid'; 
+            } else if (planet.temperature > -50 && planet.temperature <= 10 &&  
+                    planet.waterValue > 99 && planet.gasValue <= 99 &&
+                    planet.cloudsValue > 99) {
+                planet.planetClass = 'Super Storm Planetoid'; 
+            } else if (planet.temperature > -50 && planet.temperature <= 10 &&  
+                    planet.waterValue > 99 && planet.gasValue > 99 &&
+                    planet.cloudsValue > 99) {
+                planet.planetClass = 'Super Oxygenated Storm Planetoid'; 
+            } else if (planet.temperature >= - 269 && planet.temperature < 0 && planet.waterValue >= 20 && planet.cloudsValue <= 99 && planet.gasValue <= 99) {
+                planet.planetClass = 'Frozen Planetoid'; 
+                planet.lifeChance = 0;
+            } else if (planet.temperature >= - 269 && planet.temperature < 0 && planet.waterValue >= 20 && planet.cloudsValue > 99 && planet.gasValue <= 99) {  
+                planet.planetClass = 'Cloudy Frozen Planetoid'; 
+                planet.lifeChance = 0;
+            } else if (planet.temperature >= - 269 && planet.temperature < 0 && planet.waterValue >= 20 && planet.cloudsValue <= 99 && planet.gasValue > 99) {
+                planet.planetClass = 'Condensed Air Frozen Planetoid'; 
+            } else if (planet.temperature >= - 269 && planet.temperature < 0 && planet.waterValue >= 20 && planet.cloudsValue > 99 && planet.gasValue > 99) {  
+                planet.planetClass = 'Cloudy Condensed Air Frozen Planetoid'; 
+                planet.lifeChance = 0;
+            } else if (planet.temperature >= - 269 && planet.temperature < 0 && planet.waterValue < 20 && planet.cloudsValue <= 99 && planet.gasValue <= 99) {  
+                planet.planetClass = 'Frozen and Arid Planetoid'; 
+                planet.lifeChance = 0;
+            } else if (planet.temperature >= - 269 && planet.temperature < 0 && planet.waterValue < 20 && planet.cloudsValue <= 99 && planet.gasValue > 99) {  
+                planet.planetClass = 'Condensed Air Frozen and Arid Planetoid'; 
+                planet.lifeChance = 0;
+            } else if (planet.temperature >= - 269 && planet.temperature < 0 && planet.waterValue < 20 && planet.cloudsValue > 99 && planet.gasValue <= 99) {  
+                planet.planetClass = 'Cloudy Frozen and Arid Planetoid'; 
+                planet.lifeChance = 0;
+            } else if (planet.temperature >= - 269 && planet.temperature < 0 && planet.waterValue < 20 && planet.cloudsValue > 99 && planet.gasValue > 99) {  
+                planet.planetClass = 'Condensed Air Cloudy Frozen and Arid Planetoid'; 
+                planet.lifeChance = 0;
+            } else if (planet.temperature >= 20 && planet.temperature <= 30 &&  
+                    planet.waterValue >= 30 && planet.waterValue <= 80 &&
+                    planet.gasValue >= 50 && planet.gasValue <= 80 &&
+                    planet.cloudsValue >= 20 && planet.cloudsValue <= 90 && graphicsQuality != 'high') {
+                planet.planetClass = 'Habitable Planetoid';
+                unlockAchievement(5)
+                unlockAchievement(7)
+            } else if (planet.temperature >= 20 && planet.temperature <= 30 &&  
+                    planet.waterValue >= 30 && planet.waterValue <= 80 &&
+                    planet.gasValue > 80 &&
+                    planet.cloudsValue >= 20 && planet.cloudsValue <= 90 && graphicsQuality != 'high') {
+                planet.planetClass = 'Oxygenated Planetoid';
+                unlockAchievement(5)
+                unlockAchievement(7)
+            } else if (planet.temperature >= 20 && planet.temperature <= 30 &&  
+                    planet.waterValue >= 30 && planet.waterValue <= 80 &&
+                    planet.gasValue >= 50 && planet.gasValue <= 80 &&
+                    planet.cloudsValue >= 20 && planet.cloudsValue <= 30 && graphicsQuality === 'high') {
+                planet.planetClass = 'Habitable Planetoid';
+                unlockAchievement(5)
+                unlockAchievement(7)
+            } else if (planet.temperature >= 20 && planet.temperature <= 30 &&  
+                    planet.waterValue >= 30 && planet.waterValue <= 80 &&
+                    planet.gasValue > 80 &&
+                    planet.cloudsValue >= 20 && planet.cloudsValue <= 30 && graphicsQuality === 'high') {
+                planet.planetClass = 'Oxygenated Planetoid';
+                unlockAchievement(5)
+                unlockAchievement(7)
+            } else if (planet.temperature >= 20 && planet.temperature <= 30 &&  
+                    planet.waterValue >= 30 && planet.waterValue <= 80 &&
+                    planet.gasValue > 80 &&
+                    planet.cloudsValue >= 30 && planet.cloudsValue <= 60 && graphicsQuality === 'high') {
+                planet.planetClass = 'Oxygenated Planetoid';
+                unlockAchievement(5)
+                unlockAchievement(7)
+            } else if (planet.temperature >= 20 && planet.temperature <= 50 &&  
+                    planet.waterValue >= 30 && planet.waterValue <= 80 &&
+                    planet.gasValue > 80 &&
+                    planet.cloudsValue >= 60 && planet.cloudsValue <= 90 && graphicsQuality === 'high') {
+                planet.planetClass = 'Oxygenated Cloudy Planetoid';
+                unlockAchievement(5)
+                unlockAchievement(7)
+            } else if (planet.temperature >= 20 && planet.temperature <= 30 &&  
+                    planet.waterValue >= 30 && planet.waterValue <= 80 &&
+                    planet.gasValue >= 50 && planet.gasValue <= 80 &&
+                    planet.cloudsValue >= 30 && planet.cloudsValue <= 40 && graphicsQuality === 'high') {
+                planet.planetClass = 'Habitable Planetoid';
+                unlockAchievement(5)
+                unlockAchievement(7)
+            } else if (planet.temperature >= 20 && planet.temperature <= 30 &&  
+                    planet.waterValue >= 30 && planet.waterValue <= 80 &&
+                    planet.gasValue >= 50 && planet.gasValue <= 80 &&
+                    planet.cloudsValue >= 40 && planet.cloudsValue <= 50 && graphicsQuality === 'high') {
+                planet.planetClass = 'Habitable Planetoid';
+                unlockAchievement(5)
+                unlockAchievement(7)
+            } else if (planet.temperature >= 20 && planet.temperature <= 30 &&  
+                    planet.waterValue >= 30 && planet.waterValue <= 80 &&
+                    planet.gasValue >= 50 && planet.gasValue <= 80 &&
+                    planet.cloudsValue >= 50 && planet.cloudsValue <= 60 && graphicsQuality === 'high') {
+                planet.planetClass = 'Habitable Planetoid';
+                unlockAchievement(5)
+                unlockAchievement(7)
+            } else if (planet.temperature >= 20 && planet.temperature <= 30 &&  
+                    planet.waterValue >= 30 && planet.waterValue <= 80 &&
+                    planet.gasValue >= 50 && planet.gasValue <= 80 &&
+                    planet.cloudsValue >= 60 && planet.cloudsValue <= 70 && graphicsQuality === 'high') {
+                planet.planetClass = 'Habitable Planetoid';
+                unlockAchievement(5)
+                unlockAchievement(7)
+            } else if (planet.temperature >= 20 && planet.temperature <= 30 &&  
+                    planet.waterValue >= 30 && planet.waterValue <= 80 &&
+                    planet.gasValue >= 50 && planet.gasValue <= 80 &&
+                    planet.cloudsValue >= 70 && planet.cloudsValue <= 80 && graphicsQuality === 'high') {
+                planet.planetClass = 'Semi Cloudy Habitable Planetoid';
+                unlockAchievement(5)
+                unlockAchievement(7)
+            } else if (planet.temperature >= 20 && planet.temperature <= 30 &&  
+                    planet.waterValue >= 30 && planet.waterValue <= 80 &&
+                    planet.gasValue >= 50 && planet.gasValue <= 80 &&
+                    planet.cloudsValue === 90 && graphicsQuality === 'high') {
+                planet.planetClass = 'Cloudy Habitable Planetoid';
+                unlockAchievement(5)
+                unlockAchievement(7)
+            } else if (planet.temperature > 20 && planet.temperature <= 30 &&   
+                    planet.cloudsValue >= 70 &&
+                    planet.waterValue >= 30 && planet.waterValue <= 60 &&
+                    planet.gasValue >= 40 && planet.gasValue <= 70) {
+                planet.planetClass = 'Cloudy Planetoid';
+            } else if (planet.temperature > 20 && planet.temperature <= 30 &&   
+                    planet.cloudsValue >= 70 &&
+                    planet.waterValue >= 30 && planet.waterValue <= 60 &&
+                    planet.gasValue > 70) {
+                planet.planetClass = 'Oxygenated Cloudy Planetoid';
+            } else if (planet.temperature > 30 && planet.temperature <= 50 &&  
+                    planet.waterValue >= 30 && planet.waterValue <= 80 &&
+                    planet.gasValue >= 50 && planet.gasValue <= 80 &&
+                    planet.cloudsValue >= 20 && planet.cloudsValue <= 90 && graphicsQuality != 'high') {
+                planet.planetClass = 'Temperate Planetoid';
+                unlockAchievement(5)
+            } else if (planet.temperature > 30 && planet.temperature <= 50 &&  
+                    planet.waterValue >= 30 && planet.waterValue <= 80 &&
+                    planet.gasValue >= 50 && planet.gasValue <= 80 &&
+                    planet.cloudsValue >= 20 && planet.cloudsValue <= 30 && graphicsQuality === 'high') {
+                planet.planetClass = 'Temperate Planetoid';
+                unlockAchievement(5)
+            } else if (planet.temperature > 30 && planet.temperature <= 50 &&  
+                    planet.waterValue >= 30 && planet.waterValue <= 80 &&
+                    planet.gasValue >= 50 && planet.gasValue <= 80 &&
+                    planet.cloudsValue >= 30 && planet.cloudsValue <= 50 && graphicsQuality === 'high') {
+                planet.planetClass = 'Temperate Planetoid';
+                unlockAchievement(5)
+            } else if (planet.temperature > 30 && planet.temperature <= 50 &&  
+                    planet.waterValue >= 30 && planet.waterValue <= 80 &&
+                    planet.gasValue >= 50 && planet.gasValue <= 80 &&
+                    planet.cloudsValue >= 50 && planet.cloudsValue <= 70 && graphicsQuality === 'high') {
+                planet.planetClass = 'Semi Cloudy Temperate Planetoid';
+                unlockAchievement(5)
+            } else if (planet.temperature > 30 && planet.temperature <= 100 &&  
+                    planet.cloudsValue >= 70 &&
+                    planet.waterValue >= 30 && planet.waterValue <= 60 &&
+                    planet.gasValue >= 40 && planet.gasValue <= 70) {
+                planet.planetClass = 'Temperate Cloudy Planetoid';
+            } else if (planet.temperature > 50 && planet.waterValue < 40 && planet.cloudsValue <= 99 && planet.gasValue <= 99 && graphicsQuality != 'high') {  
                 planet.planetClass = 'Desert Planetoid';
-            } else if (planet.temperature > 0 && planet.temperature < 20) {
-                planet.planetClass = 'Cold Planetoid';
+            } else if (planet.temperature > 50 && planet.waterValue < 40 && graphicsQuality != 'high' && planet.cloudsValue <= 99 && planet.gasValue > 99) {  
+                planet.planetClass = 'Oxygenated Desert Planetoid';
+            } else if (planet.temperature > 50 && planet.waterValue < 40 && graphicsQuality === 'high' && planet.cloudsValue <= 20 && planet.gasValue <= 99) {  
+                planet.planetClass = 'Desert Planetoid';
+            } else if (planet.temperature > 50 && planet.waterValue < 40 && graphicsQuality === 'high' && planet.cloudsValue <= 20 && planet.gasValue > 99) {  
+                planet.planetClass = 'Oxygenated Desert Planetoid';
+            } else if (planet.temperature > 50 && planet.waterValue < 40 && graphicsQuality === 'high' && planet.cloudsValue > 20 && planet.cloudsValue <= 50 && planet.gasValue > 99) {  
+                planet.planetClass = 'Oxygenated Desert Planetoid';
+            } else if (planet.temperature > 50 && planet.waterValue < 40 && graphicsQuality === 'high' &&  planet.cloudsValue > 50 && planet.cloudsValue <= 99 && planet.gasValue > 99) {  
+                planet.planetClass = 'Semi Cloudy Oxygenated Desert Planetoid';
+            } else if (planet.temperature > 50 && planet.waterValue < 40 && graphicsQuality === 'high' && planet.cloudsValue <= 30 && planet.gasValue <= 99) {  
+                planet.planetClass = 'Desert Planetoid';
+            } else if (planet.temperature > 50 && planet.waterValue < 40 && graphicsQuality === 'high' && planet.cloudsValue > 30 && planet.cloudsValue < 60 && planet.gasValue <= 99) {  
+                planet.planetClass = 'Desert Planetoid';
+            } else if (planet.temperature > 50 && planet.waterValue < 40 && planet.cloudsValue >= 60 && planet.cloudsValue < 70 && planet.gasValue <= 99) {  
+                planet.planetClass = 'Semi Cloudy Desert Planetoid';
+            } else if (planet.temperature > 50 && planet.waterValue < 40 && planet.cloudsValue > 99 && planet.gasValue <= 99) {  
+                planet.planetClass = 'Cloudy Desert Planetoid';
+            } else if (planet.temperature > 50 && planet.waterValue < 40 && planet.cloudsValue > 99 && planet.gasValue > 99) {  
+                planet.planetClass = 'Oxygenated Cloudy Desert Planetoid';
+            } else if (planet.temperature > 50 && planet.waterValue >= 40 && graphicsQuality !='high') {  
+                planet.planetClass = 'Humid Desert Planetoid';
+            } else if (planet.temperature > 50 && planet.waterValue >= 40 && graphicsQuality ==='high' && planet.cloudsValue >= 0 && planet.cloudsValue < 30 && planet.gasValue <= 99) {  
+                planet.planetClass = 'Humid Desert Planetoid';
+            } else if (planet.temperature > 50 && planet.waterValue >= 40 && graphicsQuality ==='high' && planet.cloudsValue >= 0 && planet.cloudsValue < 30 && planet.gasValue > 99) {  
+                planet.planetClass = 'Oxygenated Humid Desert Planetoid';
+            } else if (planet.temperature > 50 && planet.waterValue >= 40 && graphicsQuality ==='high' && planet.cloudsValue >= 30 && planet.cloudsValue < 50 && planet.gasValue <= 99) {  
+                planet.planetClass = 'Humid Desert Planetoid';
+            } else if (planet.temperature > 50 && planet.waterValue >= 40 && graphicsQuality ==='high' && planet.cloudsValue >= 50 && planet.cloudsValue < 60 && planet.gasValue <= 99) {  
+                planet.planetClass = 'Semi Fog Humid Desert Planetoid';
+            } else if (planet.temperature > 50 && planet.waterValue >= 40 && graphicsQuality ==='high' && planet.cloudsValue >= 60 && planet.cloudsValue < 70 && planet.gasValue <= 99) {  
+                planet.planetClass = 'Fog Humid Desert Planetoid';
+            } else if (planet.temperature > 50 && planet.waterValue >= 40 && graphicsQuality ==='high' && planet.cloudsValue > 70 && planet.gasValue <= 99) {  
+                planet.planetClass = 'Super Fog Humid Desert Planetoid';
+            } else if (planet.temperature > 50 && planet.waterValue >= 40 && graphicsQuality ==='high' && planet.cloudsValue >= 60 && planet.cloudsValue < 70 && planet.gasValue > 99) {  
+                planet.planetClass = 'Oxygenated Fog Humid Desert Planetoid';
+            } else if (planet.temperature > 50 && planet.waterValue >= 40 && graphicsQuality ==='high' && planet.cloudsValue > 70 && planet.gasValue > 99) {  
+                planet.planetClass = 'Oxygenated Super Fog Humid Desert Planetoid';
+            } else if (planet.temperature <= -270 ){
+                unlockAchievement(33)
+                planet.planetClass = 'Extreme Frozen Planetoid';
+            } else if (planet.temperature >= 0 && planet.temperature < 20 &&  
+                    planet.waterValue > 0 && planet.waterValue < 20 &&
+                    planet.gasValue > 0 && planet.gasValue < 80 &&
+                    planet.cloudsValue >= 10 && planet.cloudsValue <= 60 && graphicsQuality != 'high') {
+                planet.planetClass = 'Tundra Planetoid';
+                unlockAchievement(5)
+            } else if (planet.temperature >= 0 && planet.temperature < 20 &&  
+                    planet.waterValue > 0 && planet.waterValue < 20 &&
+                    planet.gasValue >= 80 &&
+                    planet.cloudsValue >= 10 && planet.cloudsValue <= 60 && graphicsQuality != 'high') {
+                planet.planetClass = 'Oxygenated Tundra Planetoid';
+                unlockAchievement(5)
+            } else if (planet.temperature >= 0 && planet.temperature < 20 &&  
+                    planet.waterValue > 0 && planet.waterValue < 20 &&
+                    planet.gasValue > 0 && planet.gasValue < 80 &&
+                    planet.cloudsValue >= 10 && planet.cloudsValue <= 30 && graphicsQuality === 'high') {
+                planet.planetClass = 'Tundra Planetoid';
+                unlockAchievement(5)
+            } else if (planet.temperature >= 0 && planet.temperature < 20 &&  
+                    planet.waterValue > 0 && planet.waterValue < 20 &&
+                    planet.gasValue >= 80 &&
+                    planet.cloudsValue >= 10 && planet.cloudsValue <= 30 && graphicsQuality === 'high') {
+                planet.planetClass = 'Oxygenated Tundra Planetoid';
+                unlockAchievement(5)
+            } else if (planet.temperature >= 0 && planet.temperature < 20 &&  
+                    planet.waterValue > 0 && planet.waterValue < 20 &&
+                    planet.gasValue >= 80 &&
+                    planet.cloudsValue >= 30 && planet.cloudsValue <= 60 && graphicsQuality === 'high') {
+                planet.planetClass = 'Oxygenated Tundra Planetoid';
+                unlockAchievement(5)
+            } else if (planet.temperature >= 0 && planet.temperature < 20 &&  
+                    planet.waterValue > 0 && planet.waterValue < 20 &&
+                    planet.gasValue > 0 && planet.gasValue < 80 &&
+                    planet.cloudsValue >= 30 && planet.cloudsValue <= 50 && graphicsQuality === 'high') {
+                planet.planetClass = 'Tundra Planetoid';
+                unlockAchievement(5)
+            } else if (planet.temperature >= 0 && planet.temperature < 20 &&  
+                    planet.waterValue > 0 && planet.waterValue < 20 &&
+                    planet.gasValue > 0 && planet.gasValue < 80 &&
+                    planet.cloudsValue >= 50 && planet.cloudsValue <= 60 && graphicsQuality === 'high') {
+                planet.planetClass = 'Semi Storm Tundra Planetoid';
+                unlockAchievement(5)
+            } else if (planet.temperature >= 0 && planet.temperature < 20 &&  
+                    planet.waterValue > 0 && planet.waterValue < 20 &&
+                    planet.gasValue > 0 && planet.gasValue < 80 &&
+                    planet.cloudsValue >= 60 && planet.cloudsValue <= 70) {
+                planet.planetClass = 'Storm Tundra Planetoid';
+                unlockAchievement(5)
+            } else if (planet.temperature >= 0 && planet.temperature < 20 &&  
+                    planet.waterValue > 0 && planet.waterValue < 20 &&
+                    planet.gasValue > 0 && planet.gasValue < 80 &&
+                    planet.cloudsValue > 70) {
+                planet.planetClass = 'Super Storm Tundra Planetoid';
+                unlockAchievement(5)
+            } else if (planet.temperature >= 0 && planet.temperature < 20 &&  
+                    planet.waterValue > 0 && planet.waterValue < 20 &&
+                    planet.gasValue >= 80 &&
+                    planet.cloudsValue >= 60 && planet.cloudsValue <= 70) {
+                planet.planetClass = 'Oxygenated Storm Tundra Planetoid';
+                unlockAchievement(5)
+            } else if (planet.temperature >= 0 && planet.temperature < 20 &&  
+                    planet.waterValue > 0 && planet.waterValue < 20 &&
+                    planet.gasValue > 80 &&
+                    planet.cloudsValue >= 70) {
+                planet.planetClass = 'Oxygenated Super Storm Tundra Planetoid';
+                unlockAchievement(5)
+            } else if (planet.temperature >= 0 && planet.temperature < 20 &&  
+                    planet.waterValue >= 20 &&
+                    planet.gasValue > 0 && planet.gasValue < 80 &&
+                    planet.cloudsValue >= 10 && planet.cloudsValue <= 60 && graphicsQuality != 'high') {
+                planet.planetClass = 'Humid Tundra Planetoid';
+                unlockAchievement(5)
+            } else if (planet.temperature >= 0 && planet.temperature < 20 &&  
+                    planet.waterValue >= 20 &&
+                    planet.gasValue >= 80 &&
+                    planet.cloudsValue >= 10 && planet.cloudsValue <= 60 && graphicsQuality != 'high') {
+                planet.planetClass = 'Humid Oxygenated Tundra Planetoid';
+                unlockAchievement(5)
+            } else if (planet.temperature >= 0 && planet.temperature < 20 &&  
+                     planet.waterValue >= 20 &&
+                    planet.gasValue > 0 && planet.gasValue < 80 &&
+                    planet.cloudsValue >= 10 && planet.cloudsValue <= 30 && graphicsQuality === 'high') {
+                planet.planetClass = 'Humid Tundra Planetoid';
+                unlockAchievement(5)
+            } else if (planet.temperature >= 0 && planet.temperature < 20 &&  
+                     planet.waterValue >= 20 &&
+                    planet.gasValue >= 80 &&
+                    planet.cloudsValue >= 10 && planet.cloudsValue <= 30 && graphicsQuality === 'high') {
+                planet.planetClass = 'Humid Oxygenated Tundra Planetoid';
+                unlockAchievement(5)
+            } else if (planet.temperature >= 0 && planet.temperature < 20 &&  
+                     planet.waterValue >= 20 &&
+                    planet.gasValue >= 80 &&
+                    planet.cloudsValue >= 30 && planet.cloudsValue <= 60 && graphicsQuality === 'high') {
+                planet.planetClass = 'Humid Oxygenated Tundra Planetoid';
+                unlockAchievement(5)
+            } else if (planet.temperature >= 0 && planet.temperature < 20 &&  
+                     planet.waterValue >= 20 &&
+                    planet.gasValue > 0 && planet.gasValue < 80 &&
+                    planet.cloudsValue >= 30 && planet.cloudsValue <= 50 && graphicsQuality === 'high') {
+                planet.planetClass = 'Humid Tundra Planetoid';
+                unlockAchievement(5)
+            } else if (planet.temperature >= 0 && planet.temperature < 20 &&  
+                     planet.waterValue >= 20 &&
+                    planet.gasValue > 0 && planet.gasValue < 80 &&
+                    planet.cloudsValue >= 50 && planet.cloudsValue <= 60 && graphicsQuality === 'high') {
+                planet.planetClass = 'Humid Semi Storm Tundra Planetoid';
+                unlockAchievement(5)
+            } else if (planet.temperature >= 0 && planet.temperature < 20 &&  
+                     planet.waterValue >= 20 &&
+                    planet.gasValue > 0 && planet.gasValue < 80 &&
+                    planet.cloudsValue >= 60 && planet.cloudsValue <= 70) {
+                planet.planetClass = 'Humid Storm Tundra Planetoid';
+                unlockAchievement(5)
+            } else if (planet.temperature >= 0 && planet.temperature < 20 &&  
+                     planet.waterValue >= 20 &&
+                    planet.gasValue > 0 && planet.gasValue < 80 &&
+                    planet.cloudsValue > 70) {
+                planet.planetClass = 'Humid Super Storm Tundra Planetoid';
+                unlockAchievement(5)
+            } else if (planet.temperature >= 0 && planet.temperature < 20 &&  
+                     planet.waterValue >= 20 &&
+                    planet.gasValue >= 80 &&
+                    planet.cloudsValue >= 60 && planet.cloudsValue <= 70) {
+                planet.planetClass = 'Humid Oxygenated Storm Tundra Planetoid';
+                unlockAchievement(5)
+            } else if (planet.temperature >= 0 && planet.temperature < 20 &&  
+                     planet.waterValue >= 20 &&
+                    planet.gasValue > 80 &&
+                    planet.cloudsValue >= 70) {
+                planet.planetClass = 'Humid Oxygenated Super Storm Tundra Planetoid';
+                unlockAchievement(5)
+            } else if (planet.temperature >= 0 && planet.temperature <= 20 &&  
+                    planet.waterValue < 20 &&
+                    planet.gasValue > 0 && planet.gasValue <= 99 &&
+                    planet.cloudsValue >= 0 && planet.cloudsValue <= 90 && graphicsQuality !='high') {
+                planet.planetClass = 'Cold Desert Planetoid';
+            } else if (planet.temperature >= 0 && planet.temperature <= 20 &&  
+                    planet.waterValue < 20 &&
+                    planet.gasValue > 99 &&
+                    planet.cloudsValue >= 0 && planet.cloudsValue <= 90 && graphicsQuality !='high') {
+                planet.planetClass = 'Oxygenated Cold Desert Planetoid';
+            } else if (planet.temperature >= 0 && planet.temperature <= 20 &&  
+                    planet.waterValue < 20 &&
+                    planet.gasValue > 99 &&
+                    planet.cloudsValue >= 0 && planet.cloudsValue <= 90 && graphicsQuality ==='high') {
+                planet.planetClass = 'Oxygenated Cold Desert Planetoid';
+            } else if (planet.temperature >= 0 && planet.temperature <= 20 &&  
+                    planet.waterValue < 20 &&
+                    planet.gasValue > 0 && planet.gasValue <= 99 &&
+                    planet.cloudsValue >= 0 && planet.cloudsValue <= 20 && graphicsQuality ==='high') {
+                planet.planetClass = 'Cold Desert Planetoid';
+            } else if (planet.temperature >= 0 && planet.temperature <= 20 &&  
+                    planet.waterValue < 20 &&
+                    planet.gasValue > 99 &&
+                    planet.cloudsValue >= 0 && planet.cloudsValue <= 20 && graphicsQuality ==='high') {
+                planet.planetClass = 'Cold Desert Planetoid';
+            } else if (planet.temperature >= 0 && planet.temperature <= 20 &&  
+                    planet.waterValue < 20 &&
+                    planet.gasValue > 0 && planet.gasValue <= 99 &&
+                    planet.cloudsValue >= 20 && planet.cloudsValue <= 40 && graphicsQuality ==='high') {
+                planet.planetClass = 'Cold Desert Planetoid';
+            } else if (planet.temperature >= 0 && planet.temperature <= 20 &&  
+                    planet.waterValue < 20 &&
+                    planet.gasValue > 0 && planet.gasValue <= 99 &&
+                    planet.cloudsValue >= 40 && planet.cloudsValue <= 60 && graphicsQuality ==='high') {
+                planet.planetClass = 'Semi Cloudy Cold Desert Planetoid';
+            } else if (planet.temperature >= 0 && planet.temperature <= 20 &&  
+                    planet.waterValue < 20 &&
+                    planet.gasValue > 0 && planet.gasValue <= 99 &&
+                    planet.cloudsValue >= 60) {
+                planet.planetClass = 'Cloudy Cold Desert Planetoid';
+            } else if (planet.temperature >= 0 && planet.temperature <= 20 &&  
+                    planet.waterValue < 20 &&
+                    planet.gasValue > 99 &&
+                    planet.cloudsValue >= 60) {
+                planet.planetClass = 'Oxgenated Cloudy Cold Desert Planetoid';
             } else {
                 planet.planetClass = 'Rocky Planetoid';
+                planet.lifeChance = 0;
             }
             applyExoticClass();
         }
@@ -7578,23 +8787,7 @@ function getOriginalClass(type) {
 function generateExoticName(prefixes, cores, suffixes) {
     return `${prefixes[Math.floor(Math.random()*prefixes.length)]} ${cores[Math.floor(Math.random()*cores.length)]}${suffixes[Math.floor(Math.random()*suffixes.length)]}`;
 }
-let frameCount = 0;
 function gameLoop(timestamp) {
-    frameCount++;
-    if (frameCount % 60 === 0) {
-        const nitricStars = planets.filter(p => p.type === 'nitricStar');
-        const medusaStars = planets.filter(p => p.type === 'medusaStar');
-        console.log(`Frame ${frameCount}:`);
-        console.log(`- Nitric Stars: ${nitricStars.length}`);
-        console.log(`- Medusa Stars: ${medusaStars.length}`);
-        nitricStars.forEach((star, index) => {
-            console.log(`  Nitric Star ${index}:`, {
-                explosionActive: star.explosionActive,
-                explosionProgress: star.explosionProgress,
-                timeToNextExplosion: star.lastExplosionTime + star.explosionCooldown - Date.now()
-            });
-        });
-    }
     if (!lastTime) lastTime = timestamp;
     const deltaTime = timestamp - lastTime;
     fps = Math.floor(1000 / deltaTime);
@@ -7650,10 +8843,10 @@ function gameLoop(timestamp) {
         fgpLuaStarBehavior(deltaTime);
         fgpRubyStarBehavior(deltaTime);
         fgpDartStarBehavior(deltaTime);
-    fgpHtmlStarBehavior(deltaTime);
-    fgpJsonStarBehavior(deltaTime);
-    fgpAssemblyStarBehavior(deltaTime);
-    fgpSqlStarBehavior(deltaTime);
+        fgpHtmlStarBehavior(deltaTime);
+        fgpJsonStarBehavior(deltaTime);
+        fgpAssemblyStarBehavior(deltaTime);
+        fgpSqlStarBehavior(deltaTime);
         planets.forEach(planet => {
             if (planet.type === 'ttauriStar' && planet.debrisGeneration) {
                 const currentTime = Date.now();
@@ -9578,13 +10771,13 @@ function updateWaitForCoinsUI() {
     if (remaining > 0) {
         statusElement.textContent = "⏳ ...";
         statusElement.style.color = '#f44336';
-        timerElement.textContent = `Disponível em: ${formatTime(remaining / 1000)}`;
+        timerElement.textContent = `Missing: ${formatTime(remaining / 1000)}`;
         card.style.opacity = '0.6';
         card.style.cursor = 'not-allowed';
     } else {
-        statusElement.textContent = "✅ Disponível";
+        statusElement.textContent = "✅";
         statusElement.style.color = '#4CAF50';
-        timerElement.textContent = 'Pronto para coletar!';
+        timerElement.textContent = 'Reward!';
         card.style.opacity = '1';
         card.style.cursor = 'pointer';
     }
@@ -9663,6 +10856,484 @@ async function watchAdForCoins() {
     } else {
         console.log('🔄 AdMob não disponível, usando fallback');
         simulateAdFallback();
+        if (!admobInitialized) {
+            console.log('🔄 Tentando reinicializar AdMob...');
+            setTimeout(() => {
+                initializeAdMob().catch(console.warn);
+            }, 5000);
+        }
+    }
+}
+const myGamesAds = [
+    {
+        title: "ChessRPG",
+        description: "Chess with RPG elements! Evolve your pieces and face unique strategic challenges.",
+        image: "../../../../../app/src/data/script/js/images/ads/chessrpg.jpg",
+        url: "FGP.Oficial.com.br"
+    },
+    {
+        title: "Simulator of the Magnificent Microscopic World - SMMW",
+        description: "Explore the microscopic world in a fascinating scientific experience!",
+        image: "../../../../../app/src/data/script/js/images/ads/smmw.jpg",
+        url: "FGP.Oficial.com.br"
+    },
+    {
+        title: "The Life Of The Atoms",
+        description: "Discover the secret life of atoms in this extraordinary chemical journey!",
+        image: "../../../../../app/src/data/script/js/images/ads/atoms.jpg",
+        url: "FGP.Oficial.com.br"
+    },
+    {
+        title: "SIU3D - Coming Soon!!!",
+        description: "Ever thought about playing SIU but in 3D? So here it is! Our Incredible Universe Simulator in 3D!!!",
+        image: "../../../../../app/src/data/script/js/images/ads/siu3d.jpg",
+        url: "FGP.Oficial.com.br"
+    },
+    {
+        title: "SIU2D",
+        description: "The magnificent simulator of the incredible universe! Are you enjoying it? If so, could you rate us later?",
+        image: "../../../../../app/src/data/script/js/images/ads/siu2d.jpg",
+        url: "FGP.Oficial.com.br"
+    }
+];
+let availableGamesCache = [];
+let isCheckingGames = false;
+async function checkGameExists(gameUrl) {
+    const gameFullUrl = `https://freegameplant.github.io/${gameUrl}/`;
+    try {
+        const response = await fetch(gameFullUrl, { method: 'HEAD', cache: 'no-cache' });
+        if (response.ok) {
+            console.log(`✅ Game found: ${gameUrl}`);
+            return true;
+        }
+        return false;
+    } catch (error) {
+        return false;
+    }
+}
+async function checkGameExistsWithImage(gameUrl) {
+    return new Promise((resolve) => {
+        const img = new Image();
+        img.onload = () => resolve(true);
+        img.onerror = () => resolve(false);
+        img.src = `https://freegameplant.github.io/${gameUrl}/favicon.ico`;
+        setTimeout(() => resolve(false), 2000);
+    });
+}
+async function verifyGameAvailability(game) {
+    const cacheKey = `game_${game.url}`;
+    const cacheTime = localStorage.getItem(`${cacheKey}_time`);
+    const cacheAvailable = localStorage.getItem(`${cacheKey}_available`);
+    if (cacheTime && Date.now() - parseInt(cacheTime) < 24 * 60 * 60 * 1000) {
+        return cacheAvailable === 'true';
+    }
+    let exists = await checkGameExists(game.url);
+    if (!exists) {
+        exists = await checkGameExistsWithImage(game.url);
+    }
+    localStorage.setItem(`${cacheKey}_time`, Date.now().toString());
+    localStorage.setItem(`${cacheKey}_available`, exists.toString());
+    return exists;
+}
+async function checkAvailableGames() {
+    if (isCheckingGames) return availableGamesCache;
+    isCheckingGames = true;
+    console.log('🔄 Checking available games...');
+    const availableGames = [];
+    for (const game of myGamesAds) {
+        const isAvailable = await verifyGameAvailability(game);
+        if (isAvailable) {
+            availableGames.push(game);
+        }
+        await new Promise(resolve => setTimeout(resolve, 500));
+    }
+    availableGamesCache = availableGames;
+    isCheckingGames = false;
+    console.log(`✅ ${availableGames.length} available games found`);
+    return availableGames;
+}
+async function getAvailableGames() {
+    if (availableGamesCache.length > 0) {
+        return availableGamesCache;
+    }
+    const cachedGames = [];
+    for (const game of myGamesAds) {
+        const cacheKey = `game_${game.url}_available`;
+        const cacheTime = localStorage.getItem(`game_${game.url}_time`);
+        if (cacheTime && Date.now() - parseInt(cacheTime) < 24 * 60 * 60 * 1000) {
+            const isAvailable = localStorage.getItem(cacheKey) === 'true';
+            if (isAvailable) {
+                cachedGames.push(game);
+            }
+        }
+    }
+    if (cachedGames.length > 0) {
+        availableGamesCache = cachedGames;
+        return cachedGames;
+    }
+    checkAvailableGames().catch(console.error);
+    return [];
+}
+function showGamesStats() {
+    let availableCount = 0;
+    let totalCount = myGamesAds.length;
+    myGamesAds.forEach(game => {
+        const cacheKey = `game_${game.url}_available`;
+        const cacheTime = localStorage.getItem(`game_${game.url}_time`);
+        if (cacheTime && Date.now() - parseInt(cacheTime) < 24 * 60 * 60 * 1000) {
+            if (localStorage.getItem(cacheKey) === 'true') {
+                availableCount++;
+            }
+        }
+    });
+    console.log(`📊 Games Statistics: ${availableCount}/${totalCount} available`);
+    showNotification(`🎮 ${availableCount}/${totalCount} games available`);
+    return { available: availableCount, total: totalCount };
+}
+async function showGameAdFallback() {
+    console.log('🎮 Showing game ad fallback');
+    const availableGames = await getAvailableGames();
+    if (availableGames.length === 0) {
+        console.log('❌ No confirmed games available, using generic fallback');
+        simulateGenericFallback();
+        return;
+    }
+    const randomGame = availableGames[Math.floor(Math.random() * availableGames.length)];
+    console.log(`🎯 Showing ad for: ${randomGame.title}`);
+    createGameAdOverlay(randomGame);
+}
+function simulateGenericFallback() {
+    const adOverlay = document.createElement('div');
+    adOverlay.style.cssText = `
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+        z-index: 10000;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        color: white;
+        font-family: Arial, sans-serif;
+    `;
+    adOverlay.innerHTML = `
+        <div style="position: absolute; top: 20px; right: 20px;">
+            <button id="skipAdButton" style="
+                width: 60px;
+                height: 60px;
+                border-radius: 50%;
+                border: 2px solid rgba(255,255,255,0.3);
+                background: rgba(0,0,0,0.5);
+                color: white;
+                font-size: 18px;
+                cursor: pointer;
+                position: relative;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+            ">
+                <span style="z-index: 2; position: relative;">X</span>
+                <div id="skipProgress" style="
+                    position: absolute;
+                    top: 0;
+                    left: 0;
+                    width: 100%;
+                    height: 100%;
+                    border-radius: 50%;
+                    background: conic-gradient(#4CAF50 0%, transparent 0%);
+                "></div>
+            </button>
+            <div style="text-align: center; margin-top: 5px; font-size: 12px; color: #ccc;">Skip</div>
+        </div>
+        <div style="text-align: center; max-width: 90%; padding: 20px;">
+            <div style="font-size: 12px; color: #4CAF50; margin-bottom: 10px; text-transform: uppercase;">
+                🎮 FREE GAME PLANT
+            </div>
+            <div style="
+                width: 200px;
+                height: 200px;
+                background: linear-gradient(45deg, #667eea, #764ba2);
+                border-radius: 20px;
+                margin: 0 auto 20px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-size: 48px;
+                border: 3px solid rgba(255,255,255,0.1);
+            ">
+                🎯
+            </div>
+            <h2 style="font-size: 24px; margin: 0 0 15px 0; color: #fff;">Amazing Games Collection</h2>
+            <p style="font-size: 16px; color: #ccc; line-height: 1.4; margin: 0 0 25px 0;">
+                Discover our collection of exciting games and adventures!
+            </p>
+            <div style="
+                background: rgba(76, 175, 80, 0.2);
+                border: 1px solid #4CAF50;
+                border-radius: 10px;
+                padding: 15px;
+                margin: 20px 0;
+            ">
+                <div style="font-size: 14px; color: #4CAF50; margin-bottom: 5px;">
+                    🎁 Reward for watching
+                </div>
+                <div style="font-size: 18px; font-weight: bold; color: #fff;">
+                    +1.000 TSCs
+                </div>
+            </div>
+            <div style="font-size: 12px; color: #888; margin-top: 20px;">
+                Developer Ad • Thank you for your support!
+            </div>
+        </div>
+    `;
+    document.body.appendChild(adOverlay);
+    setupAdOverlayEvents(adOverlay);
+}
+function createGameAdOverlay(game) {
+    const adOverlay = document.createElement('div');
+    adOverlay.style.cssText = `
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+        z-index: 10000;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        color: white;
+        font-family: Arial, sans-serif;
+    `;
+    adOverlay.innerHTML = `
+        <div style="position: absolute; top: 20px; right: 20px;">
+            <button id="skipAdButton" style="
+                width: 60px;
+                height: 60px;
+                border-radius: 50%;
+                border: 2px solid rgba(255,255,255,0.3);
+                background: rgba(0,0,0,0.5);
+                color: white;
+                font-size: 18px;
+                cursor: pointer;
+                position: relative;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+            ">
+                <span style="z-index: 2; position: relative;">X</span>
+                <div id="skipProgress" style="
+                    position: absolute;
+                    top: 0;
+                    left: 0;
+                    width: 100%;
+                    height: 100%;
+                    border-radius: 50%;
+                    background: conic-gradient(#4CAF50 0%, transparent 0%);
+                "></div>
+            </button>
+            <div style="text-align: center; margin-top: 5px; font-size: 12px; color: #ccc;">Skip</div>
+        </div>
+        <div style="text-align: center; max-width: 90%; padding: 20px;">
+            <div style="font-size: 12px; color: #4CAF50; margin-bottom: 10px; text-transform: uppercase;">
+                🎮 FREE GAME PLANT
+            </div>
+            <img src="${game.image}" alt="${game.title}" style="
+                width: 200px;
+                height: 200px;
+                border-radius: 20px;
+                object-fit: cover;
+                margin: 0 auto 20px;
+                border: 3px solid rgba(255,255,255,0.1);
+                background: linear-gradient(45deg, #667eea, #764ba2);
+            " onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+            <div style="
+                width: 200px;
+                height: 200px;
+                background: linear-gradient(45deg, #667eea, #764ba2);
+                border-radius: 20px;
+                margin: 0 auto 20px;
+                display: none;
+                align-items: center;
+                justify-content: center;
+                font-size: 48px;
+                border: 3px solid rgba(255,255,255,0.1);
+            ">
+                🎯
+            </div>
+            <h2 style="font-size: 24px; margin: 0 0 15px 0; color: #fff;">${game.title}</h2>
+            <p style="font-size: 16px; color: #ccc; line-height: 1.4; margin: 0 0 25px 0;">
+                ${game.description}
+            </p>
+            <div style="
+                background: rgba(76, 175, 80, 0.2);
+                border: 1px solid #4CAF50;
+                border-radius: 10px;
+                padding: 15px;
+                margin: 20px 0;
+            ">
+                <div style="font-size: 14px; color: #4CAF50; margin-bottom: 5px;">
+                    🎁 Reward for watching
+                </div>
+                <div style="font-size: 18px; font-weight: bold; color: #fff;">
+                    +1.000 TSCs
+                </div>
+            </div>
+            <button id="playGameButton" style="display: none;">
+                🎮 Play Now
+            </button>
+            <div style="font-size: 12px; color: #888; margin-top: 20px;">
+                Developer Ad • Ad ends automatically
+            </div>
+        </div>
+    `;
+    document.body.appendChild(adOverlay);
+    setupAdOverlayEvents(adOverlay, game);
+}
+function setupAdOverlayEvents(adOverlay, game = null) {
+    let progress = 0;
+    const skipButton = document.getElementById('skipAdButton');
+    const skipProgress = document.getElementById('skipProgress');
+    let adCompleted = false;
+    const progressInterval = setInterval(() => {
+        progress += 1;
+        if (skipProgress) {
+            skipProgress.style.background = `conic-gradient(#4CAF50 ${progress}%, transparent ${progress}%)`;
+        }
+        if (progress >= 100 && !adCompleted) {
+            clearInterval(progressInterval);
+            adCompleted = true;
+            completeAdFallback(adOverlay);
+        }
+    }, 50);
+    if (skipButton) {
+        skipButton.onclick = () => {
+            if (progress >= 100) {
+                clearInterval(progressInterval);
+                document.body.removeChild(adOverlay);
+            }
+        };
+    }
+    if (game) {
+        const playButton = document.getElementById('playGameButton');
+        if (playButton) {
+            playButton.onclick = () => {
+                const gameUrl = `https://freegameplant.github.io/${game.url}/`;
+                window.open(gameUrl, '_blank');
+            };
+        }
+    }
+    adOverlay.onclick = (e) => {
+        if (e.target === adOverlay) {
+            e.preventDefault();
+            e.stopPropagation();
+        }
+    };
+}
+function completeAdFallback(adOverlay) {
+    if (document.body.contains(adOverlay)) {
+        document.body.removeChild(adOverlay);
+    }
+    addTSCoins(1000);
+    showNotification("✅ +1.000 TSCs!");
+    const adsWatched = parseInt(localStorage.getItem('adsWatched') || '0') + 1;
+    localStorage.setItem('adsWatched', adsWatched.toString());
+}
+function forceGameCheck() {
+    console.log('🔄 Forcing complete game check...');
+    myGamesAds.forEach(game => {
+        localStorage.removeItem(`game_${game.url}_time`);
+        localStorage.removeItem(`game_${game.url}_available`);
+    });
+    availableGamesCache = [];
+    checkAvailableGames().then(games => {
+        const stats = showGamesStats();
+        showNotification(`✅ ${stats.available}/${stats.total} games available`);
+    }).catch(console.error);
+}
+function initAdSystem() {
+    console.log('🎮 Initializing ad system...');
+    setTimeout(() => {
+        checkAvailableGames().catch(console.error);
+    }, 2000);
+    updateAdStatus();
+    window.addEventListener('online', () => {
+        updateAdStatus();
+        if (!admobInitialized) {
+            setTimeout(() => {
+                initializeAdMob().catch(console.warn);
+            }, 2000);
+        } else {
+            loadRewardAd();
+        }
+        checkAvailableGames().catch(console.error);
+    });
+    window.addEventListener('offline', () => {
+        updateAdStatus();
+        setupAdFallback();
+    });
+    setTimeout(() => {
+        if (navigator.onLine) {
+            initializeAdMob().catch(err => {
+                console.warn('AdMob initialization failed:', err);
+                setupAdFallback();
+            });
+        } else {
+            setupAdFallback();
+        }
+    }, 3000);
+    setInterval(updateAdStatus, 5000);
+    setInterval(() => {
+        if (navigator.onLine && !admobInitialized && !isAdLoading) {
+            initializeAdMob().catch(console.warn);
+        }
+    }, 30000);
+    setInterval(() => {
+        if (navigator.onLine) {
+            checkAvailableGames().catch(console.error);
+        }
+    }, 6 * 60 * 60 * 1000);
+}
+function simulateAdForNewAccount() {
+    showGameAdFallback();
+}
+function simulateAdFallback() {
+    showGameAdFallback();
+}
+async function watchAdForCoins() {
+    console.log('🎬 Iniciando watchAdForCoins');
+    debugAdSystem();
+    if (isNewAdAccount) {
+        showGameAdFallback();
+        return;
+    }
+    if (!navigator.onLine) {
+        showGameAdFallback();
+        return;
+    }
+    const hasAdBlock = await checkAdBlock();
+    if (hasAdBlock) {
+        showGameAdFallback();
+        return;
+    }
+    if (isAdLoading) {
+        return;
+    }
+    if (admobInitialized && rewardAd && rewardAd.isLoaded && rewardAd.isLoaded()) {
+        try {
+            console.log('📱 Exibindo anúncio do AdMob');
+            rewardAd.show();
+        } catch (error) {
+            console.error('Erro ao exibir anúncio:', error);
+            showGameAdFallback();
+        }
+    } else {
+        console.log('🔄 AdMob não disponível, usando fallback dos meus jogos');
+        showGameAdFallback();
         if (!admobInitialized) {
             console.log('🔄 Tentando reinicializar AdMob...');
             setTimeout(() => {
@@ -9758,49 +11429,6 @@ function showAdStats() {
     const adsWatched = parseInt(localStorage.getItem('adsWatched') || '0');
     const totalCoinsFromAds = adsWatched * 1000;
 }
-function initAdSystem() {
-    console.log('🎮 Inicializando sistema de anúncios...');
-    updateAdStatus();
-    window.addEventListener('online', () => {
-        console.log('🌐 Conexão restaurada');
-        showNotification("🌐 Network");
-        updateAdStatus();
-        if (!admobInitialized) {
-            setTimeout(() => {
-                initializeAdMob().catch(err => {
-                    console.warn('Falha na reinicialização do AdMob:', err);
-                });
-            }, 2000);
-        } else {
-            loadRewardAd();
-        }
-    });
-    window.addEventListener('offline', () => {
-        console.log('❌ Conexão perdida');
-        showNotification("❌ Network");
-        updateAdStatus();
-        setupAdFallback();
-    });
-    setTimeout(() => {
-        if (navigator.onLine) {
-            console.log('🔄 Tentando inicializar AdMob...');
-            initializeAdMob().catch(err => {
-                console.warn('Falha na inicialização do AdMob:', err);
-                setupAdFallback();
-            });
-        } else {
-            console.log('🔌 Dispositivo offline, ativando fallback');
-            setupAdFallback();
-        }
-    }, 3000);
-    setInterval(updateAdStatus, 5000);
-    setInterval(() => {
-        if (navigator.onLine && !admobInitialized && !isAdLoading) {
-            console.log('🔄 Tentativa periódica de inicializar AdMob...');
-            initializeAdMob().catch(console.warn);
-        }
-    }, 30000);
-}
 function checkAdBlock() {
     return new Promise((resolve) => {
         const ad = document.createElement('div');
@@ -9827,113 +11455,6 @@ function setupAdFallback() {
         adItem.style.cursor = 'pointer';
         adItem.onclick = watchAdForCoins;
     }
-}
-function simulateAdForNewAccount() {
-    console.log('🎬 Simulando anúncio para conta nova');
-    const modal = document.createElement('div');
-    modal.style.cssText = `
-        position: fixed;
-        top: 50%;
-        left: 50%;
-        transform: translate(-50%, -50%);
-        width: 320px;
-        height: 200px;
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        border: 3px solid #fff;
-        border-radius: 20px;
-        z-index: 10000;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        color: white;
-        font-family: Arial, sans-serif;
-        text-align: center;
-        box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-    `;
-    modal.innerHTML = `
-        <div style="font-size: 24px; margin-bottom: 10px;">🎮 MODO DESENVOLVIMENTO</div>
-        <div style="font-size: 14px; margin-bottom: 20px; padding: 0 10px;">
-            Conta de anúncios em verificação<br>
-            Simulando anúncio...
-        </div>
-        <div style="width: 200px; height: 4px; background: rgba(255,255,255,0.3); border-radius: 2px; overflow: hidden;">
-            <div id="newAdProgress" style="width: 0%; height: 100%; background: #4CAF50; transition: width 0.1s ease;"></div>
-        </div>
-        <div style="font-size: 12px; margin-top: 10px; color: #e0e0e0;">
-            <span id="newAdProgressText">0%</span>
-        </div>
-    `;
-    document.body.appendChild(modal);
-    let progress = 0;
-    const progressFill = document.getElementById('newAdProgress');
-    const progressText = document.getElementById('newAdProgressText');
-    const interval = setInterval(() => {
-        progress += 2;
-        if (progressFill) progressFill.style.width = progress + '%';
-        if (progressText) progressText.textContent = progress + '%';
-        if (progress >= 100) {
-            clearInterval(interval);
-            setTimeout(() => {
-                if (document.body.contains(modal)) {
-                    document.body.removeChild(modal);
-                }
-                addTSCoins(1000);
-                const adsWatched = parseInt(localStorage.getItem('adsWatched') || '0') + 1;
-                localStorage.setItem('adsWatched', adsWatched.toString());
-            }, 500);
-        }
-    }, 40);
-}
-function simulateAdFallback() {
-    console.log('🎬 Simulando anúncio (fallback)');
-    const progressBar = document.createElement('div');
-    progressBar.style.cssText = `
-        position: fixed;
-        top: 50%;
-        left: 50%;
-        transform: translate(-50%, -50%);
-        width: 300px;
-        height: 100px;
-        background: rgba(0, 0, 0, 0.9);
-        border: 2px solid #4CAF50;
-        border-radius: 15px;
-        z-index: 10000;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        color: white;
-        font-family: Arial, sans-serif;
-    `;
-    progressBar.innerHTML = `
-        <div style="margin-bottom: 15px; font-size: 16px;">🎬 Anúncio Simulado</div>
-        <div style="width: 250px; height: 20px; background: #333; border-radius: 10px; overflow: hidden;">
-            <div id="adProgress" style="width: 0%; height: 100%; background: linear-gradient(90deg, #4CAF50, #8BC34A); transition: width 0.1s ease; border-radius: 10px;"></div>
-        </div>
-        <div style="margin-top: 10px; font-size: 12px; color: #ccc;">Carregando: <span id="adProgressText">0%</span></div>
-    `;
-    document.body.appendChild(progressBar);
-    let progress = 0;
-    const progressFill = document.getElementById('adProgress');
-    const progressText = document.getElementById('adProgressText');
-    const interval = setInterval(() => {
-        progress += 2;
-        if (progressFill) progressFill.style.width = progress + '%';
-        if (progressText) progressText.textContent = progress + '%';
-        if (progress >= 100) {
-            clearInterval(interval);
-            setTimeout(() => {
-                if (document.body.contains(progressBar)) {
-                    document.body.removeChild(progressBar);
-                }
-                addTSCoins(1000);
-                showNotification("✅ +1.000 TSCs");
-                const adsWatched = parseInt(localStorage.getItem('adsWatched') || '0') + 1;
-                localStorage.setItem('adsWatched', adsWatched.toString());
-            }, 500);
-        }
-    }, 50);
 }
 function simulateAd() {
     return true;
@@ -10554,7 +12075,7 @@ function createSolarSystemSave() {
                 vx: 0, vy: 0, 
                 mass: solarMass,
                 radius: 30,
-                name: "Sol",
+                name: "Sun",
                 color: "#FFD700",
                 temperature: 10000,
                 locked: true,
@@ -10581,7 +12102,7 @@ function createSolarSystemSave() {
                 vx: 0, vy: calculateOrbitalVelocity(solarMass, 1800), 
                 mass: 3.3,
                 radius: 3,
-                name: "Mercúrio",
+                name: "Mercury",
                 color: "#8C7853",
                 temperature: 167,
                 gasValue: 2,
@@ -10596,12 +12117,12 @@ function createSolarSystemSave() {
                 vx: 0, vy: calculateOrbitalVelocity(solarMass, 3500), 
                 mass: 48.7,
                 radius: 6,
-                name: "Vênus",
+                name: "Venus",
                 color: "#E6E6FA",
                 temperature: 462,
                 gasValue: 100,
                 waterValue: 0,
-                cloudsValue: 100,
+                cloudsValue: 2270,
                 locked: false,
                 ignoreColorChanges: true
             },
@@ -10611,7 +12132,7 @@ function createSolarSystemSave() {
                 vx: 0, vy: calculateOrbitalVelocity(solarMass, 6000), 
                 mass: 50,
                 radius: 6.5,
-                name: "Terra",
+                name: "Earth",
                 color: "#1E90FF",
                 landColor: "#228B22",
                 waterValue: 70,
@@ -10633,7 +12154,7 @@ function createSolarSystemSave() {
                 vx: 0, vy: calculateOrbitalVelocity(solarMass, 6000) + calculateMoonVelocity(50, 100), 
                 mass: 0.6,
                 radius: 1.8,
-                name: "Lua",
+                name: "Moon",
                 color: "#C0C0C0",
                 locked: false,
                 ignoreColorChanges: true
@@ -10644,7 +12165,7 @@ function createSolarSystemSave() {
                 vx: 0, vy: calculateOrbitalVelocity(solarMass, 9000), 
                 mass: 5.3,
                 radius: 4,
-                name: "Marte",
+                name: "Mars",
                 color: "#FF4500",
                 temperature: -63,
                 waterValue: 15,
@@ -10660,8 +12181,9 @@ function createSolarSystemSave() {
                 vx: 0, vy: calculateOrbitalVelocity(solarMass, 9000) + calculateMoonVelocity(5.3, 100), 
                 mass: 0.2,
                 radius: 1,
-                name: "Fobos",
-                locked: false
+                name: "Phobos",
+                locked: false,
+                ignoreColorChanges: true
             },
             { 
                 type: 'asteroid', 
@@ -10670,7 +12192,8 @@ function createSolarSystemSave() {
                 mass: 0.1,
                 radius: 0.8,
                 name: "Deimos",
-                locked: false
+                locked: false,
+                ignoreColorChanges: true
             },
             { 
                 type: 'planetoid', 
@@ -10680,7 +12203,8 @@ function createSolarSystemSave() {
                 radius: 2,
                 name: "Ceres",
                 color: "#A9A9A9",
-                locked: false
+                locked: false,
+                ignoreColorChanges: true
             },
             { 
                 type: 'planetoid', 
@@ -10688,9 +12212,10 @@ function createSolarSystemSave() {
                 vx: 0, vy: calculateOrbitalVelocity(solarMass, 12500), 
                 mass: 0.8,
                 radius: 1.8,
-                name: "Vesta",
+                name: "",
                 color: "#888888",
-                locked: false
+                locked: false,
+                ignoreColorChanges: true
             },
             { 
                 type: 'planetoid', 
@@ -10700,7 +12225,8 @@ function createSolarSystemSave() {
                 radius: 1.6,
                 name: "Palas",
                 color: "#777777",
-                locked: false
+                locked: false,
+                ignoreColorChanges: true
             },
             { 
                 type: 'planetoid', 
@@ -10708,9 +12234,10 @@ function createSolarSystemSave() {
                 vx: 0, vy: calculateOrbitalVelocity(solarMass, 12200), 
                 mass: 0.6,
                 radius: 1.4,
-                name: "Hígia",
+                name: "Hygiea",
                 color: "#666666",
-                locked: false
+                locked: false,
+                ignoreColorChanges: true
             },
             { 
                 type: 'gasGiant', 
@@ -10718,13 +12245,14 @@ function createSolarSystemSave() {
                 vx: 0, vy: calculateOrbitalVelocity(solarMass, 15000), 
                 mass: 15890,
                 radius: 18,
-                name: "Júpiter",
+                name: "Jupiter",
                 color: "#DAA520",
                 temperature: -108,
                 gasValue: 95,
                 rings: true,
                 ringMass: 2,
-                locked: false
+                locked: false,
+                ignoreColorChanges: true
             },
             { 
                 type: 'planetoid', 
@@ -10734,7 +12262,8 @@ function createSolarSystemSave() {
                 radius: 2.5,
                 name: "Io",
                 color: "#FFA500",
-                locked: false
+                locked: false,
+                ignoreColorChanges: true
             },
             { 
                 type: 'planetoid', 
@@ -10744,7 +12273,8 @@ function createSolarSystemSave() {
                 radius: 2.7,
                 name: "Europa",
                 color: "#FFD700",
-                locked: false
+                locked: false,
+                ignoreColorChanges: true
             },
             { 
                 type: 'planetoid', 
@@ -10752,9 +12282,10 @@ function createSolarSystemSave() {
                 vx: 0, vy: calculateOrbitalVelocity(solarMass, 15000) + calculateMoonVelocity(15890, 600), 
                 mass: 1.2,
                 radius: 3.0,
-                name: "Ganimedes",
+                name: "Ganymede",
                 color: "#DAA520",
-                locked: false
+                locked: false,
+                ignoreColorChanges: true
             },
             { 
                 type: 'planetoid', 
@@ -10762,9 +12293,10 @@ function createSolarSystemSave() {
                 vx: 0, vy: calculateOrbitalVelocity(solarMass, 15000) + calculateMoonVelocity(15890, 800), 
                 mass: 1.1,
                 radius: 2.9,
-                name: "Calisto",
+                name: "Callisto",
                 color: "#A9A9A9",
-                locked: false
+                locked: false,
+                ignoreColorChanges: true
             },
             { 
                 type: 'gasGiant', 
@@ -10772,13 +12304,14 @@ function createSolarSystemSave() {
                 vx: 0, vy: calculateOrbitalVelocity(solarMass, 22000), 
                 mass: 4760,
                 radius: 15,
-                name: "Saturno",
+                name: "Saturn",
                 color: "#F0E68C",
                 temperature: -139,
                 gasValue: 90,
                 rings: true,
                 ringMass: 40,
-                locked: false
+                locked: false,
+                ignoreColorChanges: true
             },
             { 
                 type: 'planetoid', 
@@ -10788,7 +12321,8 @@ function createSolarSystemSave() {
                 radius: 2.2,
                 name: "Mimas",
                 color: "#C0C0C0",
-                locked: false
+                locked: false,
+                ignoreColorChanges: true
             },
             { 
                 type: 'planetoid', 
@@ -10796,9 +12330,10 @@ function createSolarSystemSave() {
                 vx: 0, vy: calculateOrbitalVelocity(solarMass, 22000) + calculateMoonVelocity(4760, 400), 
                 mass: 0.7,
                 radius: 2.5,
-                name: "Encélado",
+                name: "Enceladus",
                 color: "#F5F5F5",
-                locked: false
+                locked: false,
+                ignoreColorChanges: true
             },
             { 
                 type: 'planetoid', 
@@ -10806,9 +12341,10 @@ function createSolarSystemSave() {
                 vx: 0, vy: calculateOrbitalVelocity(solarMass, 22000) + calculateMoonVelocity(4760, 600), 
                 mass: 1.0,
                 radius: 3.0,
-                name: "Titã",
+                name: "Titan",
                 color: "#FFA500",
-                locked: false
+                locked: false,
+                ignoreColorChanges: true
             },
             { 
                 type: 'planetoid', 
@@ -10816,9 +12352,10 @@ function createSolarSystemSave() {
                 vx: 0, vy: calculateOrbitalVelocity(solarMass, 22000) + calculateMoonVelocity(4760, 800), 
                 mass: 0.9,
                 radius: 2.8,
-                name: "Reia",
+                name: "Rhea",
                 color: "#D3D3D3",
-                locked: false
+                locked: false,
+                ignoreColorChanges: true
             },
             { 
                 type: 'gasGiant', 
@@ -10826,13 +12363,14 @@ function createSolarSystemSave() {
                 vx: 0, vy: calculateOrbitalVelocity(solarMass, 32000), 
                 mass: 725,
                 radius: 12,
-                name: "Urano",
+                name: "Uranus",
                 color: "#AFEEEE",
                 temperature: -197,
                 gasValue: 85,
                 rings: true,
                 ringMass: 10,
-                locked: false
+                locked: false,
+                ignoreColorChanges: true
             },
             { 
                 type: 'planetoid', 
@@ -10842,7 +12380,8 @@ function createSolarSystemSave() {
                 radius: 2.0,
                 name: "Miranda",
                 color: "#D3D3D3",
-                locked: false
+                locked: false,
+                ignoreColorChanges: true
             },
             { 
                 type: 'planetoid', 
@@ -10852,7 +12391,8 @@ function createSolarSystemSave() {
                 radius: 2.3,
                 name: "Ariel",
                 color: "#F0F8FF",
-                locked: false
+                locked: false,
+                ignoreColorChanges: true
             },
             { 
                 type: 'planetoid', 
@@ -10862,7 +12402,8 @@ function createSolarSystemSave() {
                 radius: 2.5,
                 name: "Umbriel",
                 color: "#A9A9A9",
-                locked: false
+                locked: false,
+                ignoreColorChanges: true
             },
             { 
                 type: 'planetoid', 
@@ -10870,9 +12411,10 @@ function createSolarSystemSave() {
                 vx: 0, vy: calculateOrbitalVelocity(solarMass, 32000) + calculateMoonVelocity(725, 800), 
                 mass: 0.8,
                 radius: 2.7,
-                name: "Titânia",
+                name: "Titania",
                 color: "#F5F5F5",
-                locked: false
+                locked: false,
+                ignoreColorChanges: true
             },
             { 
                 type: 'planetoid', 
@@ -10882,7 +12424,8 @@ function createSolarSystemSave() {
                 radius: 2.7,
                 name: "Oberon",
                 color: "#D3D3D3",
-                locked: false
+                locked: false,
+                ignoreColorChanges: true
             },
             { 
                 type: 'gasGiant', 
@@ -10890,13 +12433,14 @@ function createSolarSystemSave() {
                 vx: 0, vy: calculateOrbitalVelocity(solarMass, 38000), 
                 mass: 855,
                 radius: 11,
-                name: "Netuno",
+                name: "Neptune",
                 color: "#1E90FF",
                 temperature: -201,
                 gasValue: 85,
                 rings: true,
                 ringMass: 5,
-                locked: false
+                locked: false,
+                ignoreColorChanges: true
             },
             { 
                 type: 'planetoid', 
@@ -10904,9 +12448,10 @@ function createSolarSystemSave() {
                 vx: 0, vy: calculateOrbitalVelocity(solarMass, 38000) + calculateMoonVelocity(855, 200), 
                 mass: 0.7,
                 radius: 2.5,
-                name: "Tritão",
+                name: "Triton",
                 color: "#ADD8E6",
-                locked: false
+                locked: false,
+                ignoreColorChanges: true
             },
             { 
                 type: 'planetoid', 
@@ -10914,9 +12459,10 @@ function createSolarSystemSave() {
                 vx: 0, vy: calculateOrbitalVelocity(solarMass, 38000) + calculateMoonVelocity(855, 400), 
                 mass: 0.3,
                 radius: 1.5,
-                name: "Nereida",
+                name: "Nereid",
                 color: "#87CEEB",
-                locked: false
+                locked: false,
+                ignoreColorChanges: true
             },
             { 
                 type: 'planetoid', 
@@ -10924,9 +12470,10 @@ function createSolarSystemSave() {
                 vx: 0, vy: calculateOrbitalVelocity(solarMass, 45000), 
                 mass: 1.1,
                 radius: 1.5,
-                name: "Plutão",
+                name: "Pluto",
                 color: "#A9A9A9",
-                locked: false
+                locked: false,
+                ignoreColorChanges: true
             },
             { 
                 type: 'planetoid', 
@@ -10934,9 +12481,10 @@ function createSolarSystemSave() {
                 vx: 0, vy: calculateOrbitalVelocity(solarMass, 45000) + calculateMoonVelocity(1.1, 50), 
                 mass: 0.3,
                 radius: 1.0,
-                name: "Caronte",
+                name: "Charon",
                 color: "#C0C0C0",
-                locked: false
+                locked: false,
+                ignoreColorChanges: true
             },
             { 
                 type: 'planetoid', 
@@ -10946,7 +12494,8 @@ function createSolarSystemSave() {
                 radius: 1.8,
                 name: "Haumea",
                 color: "#98FB98",
-                locked: false
+                locked: false,
+                ignoreColorChanges: true
             },
             { 
                 type: 'planetoid', 
@@ -10956,7 +12505,8 @@ function createSolarSystemSave() {
                 radius: 1.6,
                 name: "Makemake",
                 color: "#DEB887",
-                locked: false
+                locked: false,
+                ignoreColorChanges: true
             },
             { 
                 type: 'planetoid', 
@@ -10964,9 +12514,10 @@ function createSolarSystemSave() {
                 vx: 0, vy: calculateOrbitalVelocity(solarMass, 60000), 
                 mass: 2.2,
                 radius: 2.0,
-                name: "Éris",
+                name: "Eris",
                 color: "#F0E68C",
-                locked: false
+                locked: false,
+                ignoreColorChanges: true
             },
             { 
                 type: 'planetoid', 
@@ -10976,18 +12527,797 @@ function createSolarSystemSave() {
                 radius: 1.2,
                 name: "Sedna",
                 color: "#CD5C5C",
-                locked: false
+                locked: false,
+                ignoreColorChanges: true
+            },
+            { 
+                type: 'planetoid', 
+                x: 85000, y: 5000, 
+                vx: 0, vy: calculateOrbitalVelocity(solarMass, 85000), 
+                mass: 0.5,
+                radius: 1.1,
+                name: "Orcus",
+                color: "#D2B48C",
+                locked: false,
+                ignoreColorChanges: true
+            },
+            { 
+                type: 'planetoid', 
+                x: 88000, y: -8000, 
+                vx: 0, vy: calculateOrbitalVelocity(solarMass, 88000), 
+                mass: 0.7,
+                radius: 1.3,
+                name: "Salacia",
+                color: "#E6E6FA",
+                locked: false,
+                ignoreColorChanges: true
+            },
+            { 
+                type: 'planetoid', 
+                x: 92000, y: 12000, 
+                vx: 0, vy: calculateOrbitalVelocity(solarMass, 92000), 
+                mass: 0.9,
+                radius: 1.4,
+                name: "Quaoar",
+                color: "#DEB887",
+                locked: false,
+                ignoreColorChanges: true
+            },
+            { 
+                type: 'planetoid', 
+                x: 95000, y: -15000, 
+                vx: 0, vy: calculateOrbitalVelocity(solarMass, 95000), 
+                mass: 1.1,
+                radius: 1.6,
+                name: "Gonggong",
+                color: "#CD853F",
+                locked: false,
+                ignoreColorChanges: true
+            },
+            { 
+                type: 'planetoid', 
+                x: 100000, y: 20000, 
+                vx: 0, vy: calculateOrbitalVelocity(solarMass, 100000), 
+                mass: 1.8,
+                radius: 2.2,
+                name: "Varda",
+                color: "#F0E68C",
+                locked: false,
+                ignoreColorChanges: true
+            },
+            { 
+                type: 'planetoid', 
+                x: 105000, y: -18000, 
+                vx: 0, vy: calculateOrbitalVelocity(solarMass, 105000), 
+                mass: 0.6,
+                radius: 1.2,
+                name: "Ixion",
+                color: "#DAA520",
+                locked: false,
+                ignoreColorChanges: true
+            },
+            { 
+                type: 'planetoid', 
+                x: 110000, y: 25000, 
+                vx: 0, vy: calculateOrbitalVelocity(solarMass, 110000), 
+                mass: 1.3,
+                radius: 1.8,
+                name: "Varuna",
+                color: "#BC8F8F",
+                locked: false,
+                ignoreColorChanges: true
+            },
+            { 
+                type: 'planetoid', 
+                x: 120000, y: 0, 
+                vx: 0, vy: calculateOrbitalVelocity(solarMass, 120000), 
+                mass: 2.5,
+                radius: 2.5,
+                name: "2007 OR10",
+                color: "#A0522D",
+                locked: false,
+                ignoreColorChanges: true
+            },
+            { 
+                type: 'comet', 
+                x: 50000, y: 80000, 
+                vx: -calculateOrbitalVelocity(solarMass, 80000) * 0.8, 
+                vy: calculateOrbitalVelocity(solarMass, 50000) * 0.6,
+                mass: 0.01,
+                radius: 0.8,
+                name: "Halley",
+                color: "#FFFFFF",
+                locked: false,
+                ignoreColorChanges: true
+            },
+            { 
+                type: 'comet', 
+                x: -40000, y: 60000, 
+                vx: calculateOrbitalVelocity(solarMass, 60000) * 0.7, 
+                vy: -calculateOrbitalVelocity(solarMass, 40000) * 0.5,
+                mass: 0.02,
+                radius: 1.0,
+                name: "Hale-Bopp",
+                color: "#F0F8FF",
+                locked: false,
+                ignoreColorChanges: true
+            },
+            { 
+                type: 'asteroid', 
+                x: 15000, y: 2600, 
+                vx: 0, vy: calculateOrbitalVelocity(solarMass, 15000), 
+                mass: 0.1,
+                radius: 1.2,
+                name: "Hektor",
+                color: "#696969",
+                locked: false,
+                ignoreColorChanges: true
+            },
+            { 
+                type: 'asteroid', 
+                x: 15000, y: -2600, 
+                vx: 0, vy: calculateOrbitalVelocity(solarMass, 15000), 
+                mass: 0.08,
+                radius: 1.0,
+                name: "Achilles",
+                color: "#778899",
+                locked: false,
+                ignoreColorChanges: true
+            },
+            { 
+                type: 'planetoid', 
+                x: 22250, y: 180, 
+                vx: 0, vy: calculateOrbitalVelocity(solarMass, 22000) + calculateMoonVelocity(4760, 250), 
+                mass: 0.1,
+                radius: 1.2,
+                name: "Tethys",
+                color: "#F5F5DC",
+                locked: false,
+                ignoreColorChanges: true
+            },
+            { 
+                type: 'planetoid', 
+                x: 22500, y: -220, 
+                vx: 0, vy: calculateOrbitalVelocity(solarMass, 22000) + calculateMoonVelocity(4760, 500), 
+                mass: 0.2,
+                radius: 1.5,
+                name: "Dione",
+                color: "#DCDCDC",
+                locked: false,
+                ignoreColorChanges: true
+            },
+            { 
+                type: 'planetoid', 
+                x: 22750, y: 280, 
+                vx: 0, vy: calculateOrbitalVelocity(solarMass, 22000) + calculateMoonVelocity(4760, 750), 
+                mass: 0.08,
+                radius: 1.0,
+                name: "Hyperion",
+                color: "#A9A9A9",
+                locked: false,
+                ignoreColorChanges: true
+            },
+            { 
+                type: 'planetoid', 
+                x: 23000, y: -320, 
+                vx: 0, vy: calculateOrbitalVelocity(solarMass, 22000) + calculateMoonVelocity(4760, 1000), 
+                mass: 0.15,
+                radius: 1.3,
+                name: "Iapetus",
+                color: "#8B4513",
+                locked: false,
+                ignoreColorChanges: true
+            },
+            { 
+                type: 'planetoid', 
+                x: 15250, y: -200, 
+                vx: 0, vy: calculateOrbitalVelocity(solarMass, 15000) + calculateMoonVelocity(15890, 250), 
+                mass: 0.05,
+                radius: 0.8,
+                name: "Amalthea",
+                color: "#D2691E",
+                locked: false,
+                ignoreColorChanges: true
+            },
+            { 
+                type: 'planetoid', 
+                x: 15500, y: 250, 
+                vx: 0, vy: calculateOrbitalVelocity(solarMass, 15000) + calculateMoonVelocity(15890, 500), 
+                mass: 0.06,
+                radius: 0.9,
+                name: "Himalia",
+                color: "#DEB887",
+                locked: false,
+                ignoreColorChanges: true
+            },
+            { 
+                type: 'planetoid', 
+                x: 15750, y: -300, 
+                vx: 0, vy: calculateOrbitalVelocity(solarMass, 15000) + calculateMoonVelocity(15890, 750), 
+                mass: 0.04,
+                radius: 0.7,
+                name: "Elara",
+                color: "#BC8F8F",
+                locked: false,
+                ignoreColorChanges: true
+            },
+            { 
+                type: 'planetoid', 
+                x: 32250, y: -150, 
+                vx: 0, vy: calculateOrbitalVelocity(solarMass, 32000) + calculateMoonVelocity(725, 250), 
+                mass: 0.03,
+                radius: 0.6,
+                name: "Puck",
+                color: "#F0F8FF",
+                locked: false,
+                ignoreColorChanges: true
+            },
+            { 
+                type: 'planetoid', 
+                x: 38250, y: 120, 
+                vx: 0, vy: calculateOrbitalVelocity(solarMass, 38000) + calculateMoonVelocity(855, 250), 
+                mass: 0.02,
+                radius: 0.5,
+                name: "Proteus",
+                color: "#87CEEB",
+                locked: false,
+                ignoreColorChanges: true
+            },
+            { 
+                type: 'satellite', 
+                x: 6050, y: 50, 
+                vx: 0, vy: calculateOrbitalVelocity(solarMass, 6000) + calculateMoonVelocity(50, 50), 
+                mass: 0.0001,
+                radius: 0.1,
+                name: "ISS",
+                color: "#FFFFFF",
+                locked: false,
+                ignoreColorChanges: true
+            },
+            { 
+                type: 'satellite', 
+                x: 6150, y: -30, 
+                vx: 0, vy: calculateOrbitalVelocity(solarMass, 6000) + calculateMoonVelocity(50, 150), 
+                mass: 0.00005,
+                radius: 0.08,
+                name: "Hubble",
+                color: "#F0F0F0",
+                locked: false,
+                ignoreColorChanges: true
+            },
+            { 
+                type: 'planetoid', 
+                x: 65000, y: 10000, 
+                vx: 0, vy: calculateOrbitalVelocity(solarMass, 65000), 
+                mass: 1.6,
+                radius: 2.1,
+                name: "Orcus Moon",
+                color: "#D3D3D3",
+                locked: false,
+                ignoreColorChanges: true
+            },
+            { 
+                type: 'planetoid', 
+                x: 65050, y: 10000, 
+                vx: 0, vy: calculateOrbitalVelocity(solarMass, 65000) + calculateMoonVelocity(1.6, 50), 
+                mass: 0.2,
+                radius: 0.8,
+                name: "Vanth",
+                color: "#A9A9A9",
+                locked: false,
+                ignoreColorChanges: true
+            },
+            { 
+                type: 'planetoid', 
+                x: 75000, y: -12000, 
+                vx: 0, vy: calculateOrbitalVelocity(solarMass, 75000), 
+                mass: 1.0,
+                radius: 1.7,
+                name: "2002 MS4",
+                color: "#CD853F",
+                locked: false,
+                ignoreColorChanges: true
+            },
+            { 
+                type: 'planetoid', 
+                x: 82000, y: 15000, 
+                vx: 0, vy: calculateOrbitalVelocity(solarMass, 82000), 
+                mass: 0.9,
+                radius: 1.5,
+                name: "2002 AW197",
+                color: "#D2B48C",
+                locked: false,
+                ignoreColorChanges: true
+            },
+            { 
+                type: 'asteroid', 
+                x: 11000, y: 2000, 
+                vx: 0, vy: calculateOrbitalVelocity(solarMass, 11000), 
+                mass: 0.3,
+                radius: 1.4,
+                name: "Vesta",
+                color: "#8B7355",
+                locked: false,
+                ignoreColorChanges: true
+            },
+            { 
+                type: 'asteroid', 
+                x: 12500, y: -1800, 
+                vx: 0, vy: calculateOrbitalVelocity(solarMass, 12500), 
+                mass: 0.4,
+                radius: 1.6,
+                name: "Juno",
+                color: "#A0522D",
+                locked: false,
+                ignoreColorChanges: true
+            },
+            { 
+                type: 'asteroid', 
+                x: 13500, y: 2200, 
+                vx: 0, vy: calculateOrbitalVelocity(solarMass, 13500), 
+                mass: 0.2,
+                radius: 1.2,
+                name: "Eros",
+                color: "#CD853F",
+                locked: false,
+                ignoreColorChanges: true
+            },
+            { 
+                type: 'comet', 
+                x: -30000, y: -50000, 
+                vx: calculateOrbitalVelocity(solarMass, 50000) * 0.9, 
+                vy: -calculateOrbitalVelocity(solarMass, 30000) * 0.7,
+                mass: 0.015,
+                radius: 0.9,
+                name: "Tempel-1",
+                color: "#F8F8FF",
+                locked: false,
+                ignoreColorChanges: true
+            },
+            { 
+                type: 'comet', 
+                x: 60000, y: -40000, 
+                vx: -calculateOrbitalVelocity(solarMass, 40000) * 0.6, 
+                vy: calculateOrbitalVelocity(solarMass, 60000) * 0.8,
+                mass: 0.025,
+                radius: 1.1,
+                name: "Wild-2",
+                color: "#E6E6FA",
+                locked: false,
+                ignoreColorChanges: true
+            },
+            { 
+                type: 'asteroid', 
+                x: 15000, y: 3000, 
+                vx: 0, vy: calculateOrbitalVelocity(solarMass, 15000), 
+                mass: 0.06,
+                radius: 0.9,
+                name: "Agamemnon",
+                color: "#708090",
+                locked: false,
+                ignoreColorChanges: true
+            },
+            { 
+                type: 'asteroid', 
+                x: 15000, y: -2800, 
+                vx: 0, vy: calculateOrbitalVelocity(solarMass, 15000), 
+                mass: 0.07,
+                radius: 1.0,
+                name: "Patroclus",
+                color: "#778899",
+                locked: false,
+                ignoreColorChanges: true
+            },
+            { 
+                type: 'planetoid', 
+                x: 130000, y: 35000, 
+                vx: 0, vy: calculateOrbitalVelocity(solarMass, 130000), 
+                mass: 0.8,
+                radius: 1.3,
+                name: "2014 UZ224",
+                color: "#B8860B",
+                locked: false,
+                ignoreColorChanges: true
+            },
+            { 
+                type: 'planetoid', 
+                x: 150000, y: -25000, 
+                vx: 0, vy: calculateOrbitalVelocity(solarMass, 150000), 
+                mass: 1.2,
+                radius: 1.8,
+                name: "2018 VG18",
+                color: "#DAA520",
+                locked: false,
+                ignoreColorChanges: true
+            },
+            { 
+                type: 'planetoid', 
+                x: 22280, y: 350, 
+                vx: 0, vy: calculateOrbitalVelocity(solarMass, 22000) + calculateMoonVelocity(4760, 350), 
+                mass: 0.09,
+                radius: 1.1,
+                name: "Phoebe",
+                color: "#8B7355",
+                locked: false,
+                ignoreColorChanges: true
+            },
+            { 
+                type: 'planetoid', 
+                x: 22520, y: -450, 
+                vx: 0, vy: calculateOrbitalVelocity(solarMass, 22000) + calculateMoonVelocity(4760, 520), 
+                mass: 0.07,
+                radius: 0.9,
+                name: "Janus",
+                color: "#D2B48C",
+                locked: false,
+                ignoreColorChanges: true
+            },
+            { 
+                type: 'planetoid', 
+                x: 22780, y: 520, 
+                vx: 0, vy: calculateOrbitalVelocity(solarMass, 22000) + calculateMoonVelocity(4760, 680), 
+                mass: 0.06,
+                radius: 0.8,
+                name: "Epimetheus",
+                color: "#BC8F8F",
+                locked: false,
+                ignoreColorChanges: true
+            },
+            { 
+                type: 'planetoid', 
+                x: 16000, y: 800, 
+                vx: 0, vy: calculateOrbitalVelocity(solarMass, 15000) + calculateMoonVelocity(15890, 1000), 
+                mass: 0.03,
+                radius: 0.6,
+                name: "Carme",
+                color: "#A0522D",
+                locked: false,
+                ignoreColorChanges: true
+            },
+            { 
+                type: 'planetoid', 
+                x: 16200, y: -950, 
+                vx: 0, vy: calculateOrbitalVelocity(solarMass, 15000) + calculateMoonVelocity(15890, 1200), 
+                mass: 0.02,
+                radius: 0.5,
+                name: "Pasiphae",
+                color: "#8B4513",
+                locked: false,
+                ignoreColorChanges: true
+            },
+            { 
+                type: 'planetoid', 
+                x: 15800, y: 1100, 
+                vx: 0, vy: calculateOrbitalVelocity(solarMass, 15000) + calculateMoonVelocity(15890, 800), 
+                mass: 0.04,
+                radius: 0.7,
+                name: "Sinope",
+                color: "#CD853F",
+                locked: false,
+                ignoreColorChanges: true
+            },
+            { 
+                type: 'planetoid', 
+                x: 33500, y: 2000, 
+                vx: 0, vy: calculateOrbitalVelocity(solarMass, 32000) + calculateMoonVelocity(725, 1500), 
+                mass: 0.02,
+                radius: 0.5,
+                name: "Sycorax",
+                color: "#4682B4",
+                locked: false,
+                ignoreColorChanges: true
+            },
+            { 
+                type: 'planetoid', 
+                x: 33700, y: -1800, 
+                vx: 0, vy: calculateOrbitalVelocity(solarMass, 32000) + calculateMoonVelocity(725, 1700), 
+                mass: 0.015,
+                radius: 0.4,
+                name: "Prospero",
+                color: "#5F9EA0",
+                locked: false,
+                ignoreColorChanges: true
+            },
+            { 
+                type: 'planetoid', 
+                x: 39000, y: 1500, 
+                vx: 0, vy: calculateOrbitalVelocity(solarMass, 38000) + calculateMoonVelocity(855, 1000), 
+                mass: 0.01,
+                radius: 0.3,
+                name: "Neso",
+                color: "#4169E1",
+                locked: false,
+                ignoreColorChanges: true
+            },
+            { 
+                type: 'planetoid', 
+                x: 39200, y: -1200, 
+                vx: 0, vy: calculateOrbitalVelocity(solarMass, 38000) + calculateMoonVelocity(855, 1400), 
+                mass: 0.008,
+                radius: 0.25,
+                name: "Psamathe",
+                color: "#1E90FF",
+                locked: false,
+                ignoreColorChanges: true
+            },
+            { 
+                type: 'satellite', 
+                x: 6080, y: -80, 
+                vx: 0, vy: calculateOrbitalVelocity(solarMass, 6000) + calculateMoonVelocity(50, 80), 
+                mass: 0.00008,
+                radius: 0.07,
+                name: "GPS Satellite",
+                color: "#C0C0C0",
+                locked: false,
+                ignoreColorChanges: true
+            },
+            { 
+                type: 'satellite', 
+                x: 6120, y: 100, 
+                vx: 0, vy: calculateOrbitalVelocity(solarMass, 6000) + calculateMoonVelocity(50, 120), 
+                mass: 0.00006,
+                radius: 0.06,
+                name: "Weather Satellite",
+                color: "#F5F5F5",
+                locked: false,
+                ignoreColorChanges: true
+            },
+            { 
+                type: 'planetoid', 
+                x: 68000, y: -8000, 
+                vx: 0, vy: calculateOrbitalVelocity(solarMass, 68000), 
+                mass: 1.3,
+                radius: 1.9,
+                name: "2005 FY9",
+                color: "#DAA520",
+                locked: false,
+                ignoreColorChanges: true
+            },
+            { 
+                type: 'planetoid', 
+                x: 68050, y: -8000, 
+                vx: 0, vy: calculateOrbitalVelocity(solarMass, 68000) + calculateMoonVelocity(1.3, 50), 
+                mass: 0.15,
+                radius: 0.7,
+                name: "MK2",
+                color: "#B8860B",
+                locked: false,
+                ignoreColorChanges: true
+            },
+            { 
+                type: 'planetoid', 
+                x: 72000, y: 12000, 
+                vx: 0, vy: calculateOrbitalVelocity(solarMass, 72000), 
+                mass: 0.8,
+                radius: 1.4,
+                name: "2003 AZ84",
+                color: "#CD853F",
+                locked: false,
+                ignoreColorChanges: true
+            },
+            { 
+                type: 'planetoid', 
+                x: 78000, y: -9000, 
+                vx: 0, vy: calculateOrbitalVelocity(solarMass, 78000), 
+                mass: 1.1,
+                radius: 1.7,
+                name: "2004 GV9",
+                color: "#DEB887",
+                locked: false,
+                ignoreColorChanges: true
+            },
+            { 
+                type: 'asteroid', 
+                x: 11500, y: 1500, 
+                vx: 0, vy: calculateOrbitalVelocity(solarMass, 11500), 
+                mass: 0.25,
+                radius: 1.3,
+                name: "Pallas",
+                color: "#8B7355",
+                locked: false,
+                ignoreColorChanges: true
+            },
+            { 
+                type: 'asteroid', 
+                x: 12800, y: -1200, 
+                vx: 0, vy: calculateOrbitalVelocity(solarMass, 12800), 
+                mass: 0.35,
+                radius: 1.5,
+                name: "Hygiea",
+                color: "#A0522D",
+                locked: false,
+                ignoreColorChanges: true
+            },
+            { 
+                type: 'asteroid', 
+                x: 13200, y: 1800, 
+                vx: 0, vy: calculateOrbitalVelocity(solarMass, 13200), 
+                mass: 0.18,
+                radius: 1.1,
+                name: "Interamnia",
+                color: "#CD853F",
+                locked: false,
+                ignoreColorChanges: true
+            },
+            { 
+                type: 'asteroid', 
+                x: 13800, y: -1500, 
+                vx: 0, vy: calculateOrbitalVelocity(solarMass, 13800), 
+                mass: 0.22,
+                radius: 1.2,
+                name: "Europa",
+                color: "#D2691E",
+                locked: false,
+                ignoreColorChanges: true
+            },
+            { 
+                type: 'asteroid', 
+                x: 14800, y: 2800, 
+                vx: 0, vy: calculateOrbitalVelocity(solarMass, 15000), 
+                mass: 0.05,
+                radius: 0.8,
+                name: "Aeneas",
+                color: "#708090",
+                locked: false,
+                ignoreColorChanges: true
+            },
+            { 
+                type: 'asteroid', 
+                x: 15200, y: -2600, 
+                vx: 0, vy: calculateOrbitalVelocity(solarMass, 15000), 
+                mass: 0.04,
+                radius: 0.7,
+                name: "Anchises",
+                color: "#778899",
+                locked: false,
+                ignoreColorChanges: true
+            },
+            { 
+                type: 'asteroid', 
+                x: 14600, y: 2400, 
+                vx: 0, vy: calculateOrbitalVelocity(solarMass, 15000), 
+                mass: 0.06,
+                radius: 0.9,
+                name: "Troilus",
+                color: "#696969",
+                locked: false,
+                ignoreColorChanges: true
+            },
+            { 
+                type: 'comet', 
+                x: -25000, y: 70000, 
+                vx: calculateOrbitalVelocity(solarMass, 70000) * 0.8, 
+                vy: -calculateOrbitalVelocity(solarMass, 25000) * 0.6,
+                mass: 0.012,
+                radius: 0.85,
+                name: "Encke",
+                color: "#F0F8FF",
+                locked: false,
+                ignoreColorChanges: true
+            },
+            { 
+                type: 'comet', 
+                x: 45000, y: -55000, 
+                vx: -calculateOrbitalVelocity(solarMass, 55000) * 0.7, 
+                vy: calculateOrbitalVelocity(solarMass, 45000) * 0.9,
+                mass: 0.018,
+                radius: 0.95,
+                name: "Giacobini-Zinner",
+                color: "#E6E6FA",
+                locked: false,
+                ignoreColorChanges: true
+            },
+            { 
+                type: 'planetoid', 
+                x: 110000, y: 40000, 
+                vx: 0, vy: calculateOrbitalVelocity(solarMass, 110000), 
+                mass: 0.9,
+                radius: 1.5,
+                name: "2000 CR105",
+                color: "#B8860B",
+                locked: false,
+                ignoreColorChanges: true
+            },
+            { 
+                type: 'planetoid', 
+                x: 140000, y: -30000, 
+                vx: 0, vy: calculateOrbitalVelocity(solarMass, 140000), 
+                mass: 1.4,
+                radius: 2.0,
+                name: "2012 VP113",
+                color: "#DAA520",
+                locked: false,
+                ignoreColorChanges: true
+            },
+            { 
+                type: 'planetoid', 
+                x: 160000, y: 45000, 
+                vx: 0, vy: calculateOrbitalVelocity(solarMass, 160000), 
+                mass: 1.7,
+                radius: 2.3,
+                name: "2015 TG387",
+                color: "#CD853F",
+                locked: false,
+                ignoreColorChanges: true
+            },
+            { 
+                type: 'asteroid', 
+                x: 5000, y: 800, 
+                vx: 0, vy: calculateOrbitalVelocity(solarMass, 5000), 
+                mass: 0.08,
+                radius: 0.9,
+                name: "Aten",
+                color: "#8B7355",
+                locked: false,
+                ignoreColorChanges: true
+            },
+            { 
+                type: 'asteroid', 
+                x: 4500, y: -600, 
+                vx: 0, vy: calculateOrbitalVelocity(solarMass, 4500), 
+                mass: 0.06,
+                radius: 0.7,
+                name: "Ra-Shalom",
+                color: "#A0522D",
+                locked: false,
+                ignoreColorChanges: true
+            },
+            { 
+                type: 'asteroid', 
+                x: 8000, y: 2000, 
+                vx: 0, vy: calculateOrbitalVelocity(solarMass, 8000), 
+                mass: 0.12,
+                radius: 1.1,
+                name: "Apollo",
+                color: "#CD853F",
+                locked: false,
+                ignoreColorChanges: true
+            },
+            { 
+                type: 'asteroid', 
+                x: 7500, y: -1800, 
+                vx: 0, vy: calculateOrbitalVelocity(solarMass, 7500), 
+                mass: 0.09,
+                radius: 0.95,
+                name: "Icarus",
+                color: "#D2691E",
+                locked: false,
+                ignoreColorChanges: true
+            },
+            { 
+                type: 'asteroid', 
+                x: 8500, y: 2200, 
+                vx: 0, vy: calculateOrbitalVelocity(solarMass, 8500), 
+                mass: 0.15,
+                radius: 1.3,
+                name: "Amor",
+                color: "#8B4513",
+                locked: false,
+                ignoreColorChanges: true
+            },
+            { 
+                type: 'asteroid', 
+                x: 8800, y: -1900, 
+                vx: 0, vy: calculateOrbitalVelocity(solarMass, 8800), 
+                mass: 0.11,
+                radius: 1.0,
+                name: "Alinda",
+                color: "#A0522D",
+                locked: false,
+                ignoreColorChanges: true
             }
         ],
         universeAge: 4.6e9,
         universeTime: 0,
         camera: { x: 0, y: 0, zoom: 0.3 }
     };
-    const asteroidBelt = generateAsteroidBelt(50, 10000, 14000);
+    const asteroidBelt = generateAsteroidBelt(100, 10000, 14000);
     solarSystemData.planets.push(...asteroidBelt);
-    const kuiperBelt = generateKuiperBelt(30, 40000, 70000);
+    const kuiperBelt = generateKuiperBelt(100, 10000, 120000);
     solarSystemData.planets.push(...kuiperBelt);
     createSpecialSave("Sistema Solar Completo", solarSystemData);
+    const oortCloud = generateKuiperBelt(200, 200000, 500000);
+    solarSystemData.planets.push(...oortCloud);
 }
 function createCompleteSolarSystemSave() {
     const G = 6.67430e-2;
@@ -11073,7 +13403,8 @@ function createCompleteSolarSystemSave() {
                 name: "Sol",
                 color: "#FFD700",
                 temperature: 10000,
-                locked: true
+                locked: true,
+                ignoreColorChanges: true
             },
             { 
                 type: 'rockyPlanet', 
@@ -11099,7 +13430,8 @@ function createCompleteSolarSystemSave() {
                 name: "Nêmisis",
                 color: "#f00050",
                 temperature: 3500,
-                locked: true
+                locked: true,
+                ignoreColorChanges: true
             },
             { 
                 type: 'rockyPlanet', 
@@ -11113,7 +13445,8 @@ function createCompleteSolarSystemSave() {
                 gasValue: 2,
                 waterValue: 1,
                 cloudsValue: 0,
-                locked: false
+                locked: false,
+                ignoreColorChanges: true
             },
             { 
                 type: 'rockyPlanet', 
@@ -11126,8 +13459,9 @@ function createCompleteSolarSystemSave() {
                 temperature: 462,
                 gasValue: 100,
                 waterValue: 0,
-                cloudsValue: 100,
+                cloudsValue: 2270,
                 locked: false,
+                ignoreColorChanges: true
             },
             { 
                 type: 'rockyPlanet', 
@@ -11148,7 +13482,8 @@ function createCompleteSolarSystemSave() {
                 intelligentSpecies: ["Homo Sapiens"],
                 knowledgePoints: 1500,
                 locked: false,
-                continents: generateRealisticContinents(6)
+                continents: generateRealisticContinents(6),
+                ignoreColorChanges: true
             },
             { 
                 type: 'planetoid', 
@@ -11158,7 +13493,8 @@ function createCompleteSolarSystemSave() {
                 radius: 1.8,
                 name: "Lua",
                 color: "#C0C0C0",
-                locked: false
+                locked: false,
+                ignoreColorChanges: true
             },
             { 
                 type: 'rockyPlanet', 
@@ -11175,7 +13511,8 @@ function createCompleteSolarSystemSave() {
                 locked: false,
                 rings: true,
                 ringMass: 20,
-                continents: generateRealisticContinents(4)
+                continents: generateRealisticContinents(4),
+                ignoreColorChanges: true
             },
             { 
                 type: 'rockyPlanet', 
@@ -11222,7 +13559,8 @@ function createCompleteSolarSystemSave() {
                 cloudsValue: 5,
                 gasValue: 20,
                 locked: false,
-                continents: generateRealisticContinents(3)
+                continents: generateRealisticContinents(3),
+                ignoreColorChanges: true
             },
             { 
                 type: 'asteroid', 
@@ -11230,8 +13568,9 @@ function createCompleteSolarSystemSave() {
                 vx: 0, vy: calculateOrbitalVelocity(solarMass, 9000) + calculateMoonVelocity(5.3, 100), 
                 mass: 0.2,
                 radius: 1,
-                name: "Fobos",
-                locked: false
+                name: "Phobos",
+                locked: false,
+                ignoreColorChanges: true
             },
             { 
                 type: 'asteroid', 
@@ -11240,7 +13579,8 @@ function createCompleteSolarSystemSave() {
                 mass: 0.1,
                 radius: 0.8,
                 name: "Deimos",
-                locked: false
+                locked: false,
+                ignoreColorChanges: true
             },
             { 
                 type: 'planetoid', 
@@ -11250,7 +13590,8 @@ function createCompleteSolarSystemSave() {
                 radius: 2,
                 name: "Ceres",
                 color: "#A9A9A9",
-                locked: false
+                locked: false,
+                ignoreColorChanges: true
             },
             { 
                 type: 'planetoid', 
@@ -11260,7 +13601,8 @@ function createCompleteSolarSystemSave() {
                 radius: 1.8,
                 name: "Vesta",
                 color: "#888888",
-                locked: false
+                locked: false,
+                ignoreColorChanges: true
             },
             { 
                 type: 'planetoid', 
@@ -11270,7 +13612,8 @@ function createCompleteSolarSystemSave() {
                 radius: 1.6,
                 name: "Palas",
                 color: "#777777",
-                locked: false
+                locked: false,
+                ignoreColorChanges: true
             },
             { 
                 type: 'planetoid', 
@@ -11280,7 +13623,8 @@ function createCompleteSolarSystemSave() {
                 radius: 1.4,
                 name: "Hígia",
                 color: "#666666",
-                locked: false
+                locked: false,
+                ignoreColorChanges: true
             },
             { 
                 type: 'gasGiant', 
@@ -11294,7 +13638,8 @@ function createCompleteSolarSystemSave() {
                 gasValue: 95,
                 rings: true,
                 ringMass: 2,
-                locked: false
+                locked: false,
+                ignoreColorChanges: true
             },
             { 
                 type: 'planetoid', 
@@ -11304,7 +13649,8 @@ function createCompleteSolarSystemSave() {
                 radius: 2.5,
                 name: "Io",
                 color: "#FFA500",
-                locked: false
+                locked: false,
+                ignoreColorChanges: true
             },
             { 
                 type: 'planetoid', 
@@ -11314,7 +13660,8 @@ function createCompleteSolarSystemSave() {
                 radius: 2.7,
                 name: "Europa",
                 color: "#FFD700",
-                locked: false
+                locked: false,
+                ignoreColorChanges: true
             },
             { 
                 type: 'planetoid', 
@@ -11322,9 +13669,10 @@ function createCompleteSolarSystemSave() {
                 vx: 0, vy: calculateOrbitalVelocity(solarMass, 15000) + calculateMoonVelocity(15890, 600), 
                 mass: 1.2,
                 radius: 3.0,
-                name: "Ganimedes",
+                name: "Ganymede",
                 color: "#DAA520",
-                locked: false
+                locked: false,
+                ignoreColorChanges: true
             },
             { 
                 type: 'planetoid', 
@@ -11332,9 +13680,10 @@ function createCompleteSolarSystemSave() {
                 vx: 0, vy: calculateOrbitalVelocity(solarMass, 15000) + calculateMoonVelocity(15890, 800), 
                 mass: 1.1,
                 radius: 2.9,
-                name: "Calisto",
+                name: "Callisto",
                 color: "#A9A9A9",
-                locked: false
+                locked: false,
+                ignoreColorChanges: true
             },
             { 
                 type: 'gasGiant', 
@@ -11348,7 +13697,8 @@ function createCompleteSolarSystemSave() {
                 gasValue: 90,
                 rings: true,
                 ringMass: 40,
-                locked: false
+                locked: false,
+                ignoreColorChanges: true
             },
             { 
                 type: 'planetoid', 
@@ -11358,7 +13708,8 @@ function createCompleteSolarSystemSave() {
                 radius: 2.2,
                 name: "Mimas",
                 color: "#C0C0C0",
-                locked: false
+                locked: false,
+                ignoreColorChanges: true
             },
             { 
                 type: 'planetoid', 
@@ -11368,7 +13719,8 @@ function createCompleteSolarSystemSave() {
                 radius: 2.5,
                 name: "Encélado",
                 color: "#F5F5F5",
-                locked: false
+                locked: false,
+                ignoreColorChanges: true
             },
             { 
                 type: 'planetoid', 
@@ -11378,7 +13730,8 @@ function createCompleteSolarSystemSave() {
                 radius: 3.0,
                 name: "Titã",
                 color: "#FFA500",
-                locked: false
+                locked: false,
+                ignoreColorChanges: true
             },
             { 
                 type: 'planetoid', 
@@ -11388,7 +13741,8 @@ function createCompleteSolarSystemSave() {
                 radius: 2.8,
                 name: "Reia",
                 color: "#D3D3D3",
-                locked: false
+                locked: false,
+                ignoreColorChanges: true
             },
             { 
                 type: 'gasGiant', 
@@ -11402,7 +13756,8 @@ function createCompleteSolarSystemSave() {
                 gasValue: 85,
                 rings: true,
                 ringMass: 10,
-                locked: false
+                locked: false,
+                ignoreColorChanges: true
             },
             { 
                 type: 'planetoid', 
@@ -11412,7 +13767,8 @@ function createCompleteSolarSystemSave() {
                 radius: 2.0,
                 name: "Miranda",
                 color: "#D3D3D3",
-                locked: false
+                locked: false,
+                ignoreColorChanges: true
             },
             { 
                 type: 'planetoid', 
@@ -11422,7 +13778,8 @@ function createCompleteSolarSystemSave() {
                 radius: 2.3,
                 name: "Ariel",
                 color: "#F0F8FF",
-                locked: false
+                locked: false,
+                ignoreColorChanges: true
             },
             { 
                 type: 'planetoid', 
@@ -11432,7 +13789,8 @@ function createCompleteSolarSystemSave() {
                 radius: 2.5,
                 name: "Umbriel",
                 color: "#A9A9A9",
-                locked: false
+                locked: false,
+                ignoreColorChanges: true
             },
             { 
                 type: 'planetoid', 
@@ -11442,7 +13800,8 @@ function createCompleteSolarSystemSave() {
                 radius: 2.7,
                 name: "Titânia",
                 color: "#F5F5F5",
-                locked: false
+                locked: false,
+                ignoreColorChanges: true
             },
             { 
                 type: 'planetoid', 
@@ -11452,7 +13811,8 @@ function createCompleteSolarSystemSave() {
                 radius: 2.7,
                 name: "Oberon",
                 color: "#D3D3D3",
-                locked: false
+                locked: false,
+                ignoreColorChanges: true
             },
             { 
                 type: 'gasGiant', 
@@ -11466,7 +13826,8 @@ function createCompleteSolarSystemSave() {
                 gasValue: 85,
                 rings: true,
                 ringMass: 5,
-                locked: false
+                locked: false,
+                ignoreColorChanges: true
             },
             { 
                 type: 'planetoid', 
@@ -11474,9 +13835,10 @@ function createCompleteSolarSystemSave() {
                 vx: 0, vy: calculateOrbitalVelocity(solarMass, 38000) + calculateMoonVelocity(855, 200), 
                 mass: 0.7,
                 radius: 2.5,
-                name: "Tritão",
+                name: "Triton",
                 color: "#ADD8E6",
-                locked: false
+                locked: false,
+                ignoreColorChanges: true
             },
             { 
                 type: 'planetoid', 
@@ -11486,7 +13848,8 @@ function createCompleteSolarSystemSave() {
                 radius: 1.5,
                 name: "Nereida",
                 color: "#87CEEB",
-                locked: false
+                locked: false,
+                ignoreColorChanges: true
             },
             { 
                 type: 'gasGiant', 
@@ -11500,7 +13863,8 @@ function createCompleteSolarSystemSave() {
                 gasValue: 80,
                 rings: true,
                 ringMass: 8,
-                locked: false
+                locked: false,
+                ignoreColorChanges: true
             },
             { 
                 type: 'planetoid', 
@@ -11510,7 +13874,8 @@ function createCompleteSolarSystemSave() {
                 radius: 1.5,
                 name: "Plutão",
                 color: "#A9A9A9",
-                locked: false
+                locked: false,
+                ignoreColorChanges: true
             },
             { 
                 type: 'planetoid', 
@@ -11520,7 +13885,8 @@ function createCompleteSolarSystemSave() {
                 radius: 1.0,
                 name: "Caronte",
                 color: "#C0C0C0",
-                locked: false
+                locked: false,
+                ignoreColorChanges: true
             },
             { 
                 type: 'planetoid', 
@@ -11530,7 +13896,8 @@ function createCompleteSolarSystemSave() {
                 radius: 1.8,
                 name: "Haumea",
                 color: "#98FB98",
-                locked: false
+                locked: false,
+                ignoreColorChanges: true
             },
             { 
                 type: 'planetoid', 
@@ -11540,7 +13907,8 @@ function createCompleteSolarSystemSave() {
                 radius: 1.6,
                 name: "Makemake",
                 color: "#DEB887",
-                locked: false
+                locked: false,
+                ignoreColorChanges: true
             },
             { 
                 type: 'planetoid', 
@@ -11550,7 +13918,8 @@ function createCompleteSolarSystemSave() {
                 radius: 2.0,
                 name: "Éris",
                 color: "#F0E68C",
-                locked: false
+                locked: false,
+                ignoreColorChanges: true
             },
             { 
                 type: 'planetoid', 
@@ -12112,7 +14481,8 @@ function createPastSolarSystem() {
                 radius: 1.8,
                 name: "Protoceres",
                 color: "#696969",
-                locked: false
+                locked: false,
+                ignoreColorChanges: true
             },
             { 
                 type: 'gasGiant', 
@@ -12124,7 +14494,8 @@ function createPastSolarSystem() {
                 color: "#D2691E",
                 temperature: -80,
                 gasValue: 70,
-                locked: false
+                locked: false,
+                ignoreColorChanges: true
             },
             { 
                 type: 'gasGiant', 
@@ -12137,7 +14508,8 @@ function createPastSolarSystem() {
                 temperature: -120,
                 gasValue: 65,
                 rings: false,
-                locked: false
+                locked: false,
+                ignoreColorChanges: true
             },
             { 
                 type: 'gasGiant', 
@@ -12149,7 +14521,8 @@ function createPastSolarSystem() {
                 color: "#87CEEB",
                 temperature: -170,
                 gasValue: 60,
-                locked: false
+                locked: false,
+                ignoreColorChanges: true
             },
             { 
                 type: 'gasGiant', 
@@ -12161,7 +14534,8 @@ function createPastSolarSystem() {
                 color: "#1E90FF",
                 temperature: -190,
                 gasValue: 60,
-                locked: false
+                locked: false,
+                ignoreColorChanges: true
             },
             ...generateEarlyAsteroidBelt(40, 50000, 80000),
             { 
@@ -12172,7 +14546,8 @@ function createPastSolarSystem() {
                 radius: 3,
                 name: "Impactador Alpha",
                 color: "#8B4513",
-                locked: false
+                locked: false,
+                ignoreColorChanges: true
             },
             { 
                 type: 'planetoid', 
@@ -12182,7 +14557,8 @@ function createPastSolarSystem() {
                 radius: 2.5,
                 name: "Impactador Beta",
                 color: "#A0522D",
-                locked: false
+                locked: false,
+                ignoreColorChanges: true
             },
             { 
                 type: 'comet', 
@@ -12193,7 +14569,8 @@ function createPastSolarSystem() {
                 name: "Cometa Primordial",
                 color: "#F5F5DC",
                 temperature: -220,
-                locked: false
+                locked: false,
+                ignoreColorChanges: true
             },
             { 
                 type: 'comet', 
