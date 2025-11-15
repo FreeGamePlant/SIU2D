@@ -467,15 +467,12 @@ height: 200px;
 :fullscreen {
 background: #000;
 }
-
 :-webkit-full-screen {
 background: #000;
 }
-
 :-moz-full-screen {
 background: #000;
 }
-
 :-ms-fullscreen {
 background: #000;
 }
@@ -485,4 +482,125 @@ height: 100%;
 margin: 0;
 padding: 0;
 overflow: hidden;
+}
+#introScreen {
+position: fixed;
+top: 0;
+left: 0;
+width: 100%;
+height: 100%;
+background: linear-gradient(135deg, #051422 0%, #081c30 50%, #061725 100%);
+display: flex;
+justify-content: center;
+align-items: center;
+z-index: 1000;
+opacity: 1;
+transition: opacity 1.5s ease-in-out;
+}
+#introScreen.fade-out {
+opacity: 0;
+}
+#introTextContainer {
+position: relative;
+text-align: center;
+}
+#introText {
+font-size: 5rem;
+font-weight: 900;
+color: #ffffff;
+letter-spacing: 0.5rem;
+text-transform: uppercase;
+position: relative;
+text-shadow: 0 0 10px rgba(255, 255, 255, 0.8),
+0 0 20px rgba(255, 224, 102, 0.6),
+0 0 30px rgba(255, 165, 0, 0.4);
+-webkit-font-smoothing: antialiased;
+-moz-osx-font-smoothing: grayscale;
+font-family: 'Arial', sans-serif;
+opacity: 1;
+}
+@keyframes textGlow {
+0% {
+text-shadow: 0 0 10px rgba(255, 255, 255, 0.8),
+0 0 20px rgba(255, 224, 102, 0.6),
+0 0 30px rgba(255, 165, 0, 0.4);
+}
+100% {
+text-shadow: 0 0 15px rgba(255, 255, 255, 1),
+0 0 30px rgba(255, 224, 102, 0.8),
+0 0 45px rgba(255, 165, 0, 0.6),
+0 0 60px rgba(255, 140, 0, 0.4);
+}
+}
+@keyframes bounceIn {
+0% {
+opacity: 0;
+transform: translateY(-100px) scale(0.3);
+}
+50% {
+opacity: 1;
+transform: translateY(30px) scale(1.05);
+}
+70% {
+transform: translateY(-10px) scale(0.98);
+}
+85% {
+transform: translateY(5px) scale(1.01);
+}
+100% {
+opacity: 1;
+transform: translateY(0) scale(1);
+}
+}
+@keyframes bounceInLetter {
+0% {
+opacity: 0;
+transform: translateY(-80px) scale(0.3) rotate(-10deg);
+}
+60% {
+opacity: 1;
+transform: translateY(20px) scale(1.1) rotate(5deg);
+}
+75% {
+transform: translateY(-8px) scale(0.95) rotate(-2deg);
+}
+90% {
+transform: translateY(3px) scale(1.02) rotate(1deg);
+}
+100% {
+opacity: 1;
+transform: translateY(0) scale(1) rotate(0deg);
+}
+}
+.letter {
+display: inline-block;
+opacity: 0;
+animation: bounceInLetter 0.8s cubic-bezier(0.68, -0.55, 0.265, 1.55) forwards;
+}
+.space {
+display: inline-block;
+width: 1rem;
+}
+@media (max-width: 768px) {
+#introText {
+font-size: 3rem;
+letter-spacing: 0.3rem;
+}
+}
+@media (max-width: 480px) {
+#introText {
+font-size: 2.2rem;
+letter-spacing: 0.2rem;
+}
+}
+@media (max-width: 320px) {
+#introText {
+font-size: 1.8rem;
+letter-spacing: 0.15rem;
+}
+}
+@media (min-width: 1920px) {
+#introText {
+font-size: 6rem;
+}
 }

@@ -6,6 +6,18 @@ function getRandomBackground() {
     const randomIndex = Math.floor(Math.random() * backgrounds.length);
     return backgrounds[randomIndex];
 }
+function setRandomBackground() {
+    const randomBg = getRandomBackground();
+    const img = new Image();
+    img.onload = function() {
+        document.body.style.backgroundImage = `url('${randomBg}')`;
+        document.body.style.backgroundSize = 'cover';
+        document.body.style.backgroundPosition = 'center center';
+        document.body.style.backgroundRepeat = 'no-repeat';
+        document.body.style.backgroundAttachment = 'fixed';
+    };
+    img.src = randomBg;
+}
 function playBackgroundMusic() {
     const audio = new Audio('app/src/data/assets/audio/SIU2D_intro.mp3');
     audio.loop = true;
@@ -26,7 +38,6 @@ function enterFullscreen() {
                                 element.webkitRequestFullscreen?.() ||
                                 element.msRequestFullscreen?.() ||
                                 element.mozRequestFullScreen?.();
-        
         if (fullscreenPromise) {
             fullscreenPromise.then(resolve).catch(reject);
         } else {
@@ -36,17 +47,6 @@ function enterFullscreen() {
 }
 function isMobileDevice() {
     return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-}
-function lockOrientation() {
-    if (isMobileDevice() && screen.orientation && screen.orientation.lock) {
-        screen.orientation.lock('landscape').catch(() => {
-            console.log('Orientation lock not supported');
-        });
-    }
-}
-function setRandomBackground() {
-    const randomBg = getRandomBackground();
-    document.body.style.backgroundImage = `url('${randomBg}')`;
 }
 function createParticles() {
     const particlesContainer = document.getElementById('particles');
@@ -124,7 +124,52 @@ function showRandomQuote(loadingQuotesArr) {
     nextQuote();
     quoteInterval = setInterval(nextQuote, 8500);
 }
-(function mainLoading() {
+function showIntroAnimation() {
+    return new Promise((resolve) => {
+        const introScreen = document.getElementById('introScreen');
+        const introText = document.getElementById('introText');
+        const text = "FREE GAME PLANT";
+        introScreen.style.background = '#000000';
+        setTimeout(() => {
+            introScreen.style.background = 'linear-gradient(135deg, #051422 0%, #081c30 50%, #061725 100%)';
+            introScreen.style.transition = 'background 2s ease-in-out';
+        }, 800);
+        setTimeout(() => {
+            let index = 0;
+            const letters = [];
+            for (let i = 0; i < text.length; i++) {
+                const span = document.createElement('span');
+                span.className = 'letter';
+                span.textContent = text[i];
+                span.style.animationDelay = `${i * 0.15}s`;
+                span.style.opacity = '0';
+                letters.push(span);
+            }
+            introText.innerHTML = '';
+            letters.forEach(letter => {
+                introText.appendChild(letter);
+            });
+            const showNextLetter = () => {
+                if (index < letters.length) {
+                    letters[index].style.opacity = '1';
+                    index++;
+                    setTimeout(showNextLetter, 150);
+                } else {
+                    introText.style.animation = 'textGlow 2s ease-in-out infinite alternate';
+                    setTimeout(() => {
+                        introScreen.classList.add('fade-out');
+                        setTimeout(() => {
+                            introScreen.style.display = 'none';
+                            resolve();
+                        }, 1500);
+                    }, 2000);
+                }
+            };
+            showNextLetter();
+        }, 1500);
+    });
+}
+function startMainLoading() {
     setRandomBackground();
     createParticles();
     preloadSinguImages();
@@ -169,11 +214,24 @@ function showRandomQuote(loadingQuotesArr) {
     setTimeout(() => {
         window.location.href = "app/src/data/html/SIU2Dgame.html";
     }, totalTime);
+}
+(function main() {
+    document.body.style.background = '#000000';
+    document.body.style.backgroundSize = 'cover';
+    document.body.style.backgroundPosition = 'center center';
+    document.body.style.backgroundRepeat = 'no-repeat';
+    document.body.style.backgroundAttachment = 'fixed';
+    document.getElementById('splashScreen').style.display = 'none';
+    showIntroAnimation().then(() => {
+        setRandomBackground();
+        document.getElementById('splashScreen').style.display = 'flex';
+        startMainLoading();
+    });
 })();
 const info = [
     '0.0.3',
     'vs code "Engine"',
     'By Free Game Plant',
     'Thank for gaming :D'
-]
-console.log(info)
+];
+console.log(info);
